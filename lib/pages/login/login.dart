@@ -1,4 +1,3 @@
-
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
@@ -287,12 +286,17 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                       child: (images.isNotEmpty)
                           ? Column(
                               children: [
-                                SizedBox(
-                                  height: media.height * 0.6,
-                                  width: media.width,
-                                  child: ClipPath(
-                                      clipper: ShapePainter(),
-                                      child: images[currentPage]),
+                                GestureDetector(
+                                  onTap: () {
+                                    print(images[currentPage]);
+                                  },
+                                  child: SizedBox(
+                                    height: media.height * 0.6,
+                                    width: media.width,
+                                    child: ClipPath(
+                                        clipper: ShapePainter(),
+                                        child: images[currentPage]),
+                                  ),
                                 ),
                                 SizedBox(
                                   height: media.height * 0.18,
@@ -1356,8 +1360,8 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                                       controller: _mobile,
                                                       decoration: InputDecoration(
                                                           hintText: countries[
-                                                                      phcode]
-                                                                  ['dial_code'] ??
+                                                                      phcode][
+                                                                  'dial_code'] ??
                                                               "",
                                                           border:
                                                               InputBorder.none),
@@ -2482,7 +2486,9 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                                       // });
                                                     } else {
                                                       //  setState(() {
-                                                      _error = languages[choosenLanguage]['Please enter valid mobile number'];
+                                                      _error = languages[
+                                                              choosenLanguage][
+                                                          'Please enter valid mobile number'];
                                                       // });
                                                     }
                                                   } else {

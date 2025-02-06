@@ -2524,65 +2524,68 @@ class _ChoosePaymentMethodContainerState
                                           MainAxisAlignment.center,
                                       children: [
                                         Expanded(
-                                          flex: 2,
-                                          child: (etaDetails[choosenVehicle]
-                                                          ['payment_type']
-                                                      .toString()
-                                                      .split(',')
-                                                      .toList()[i] ==
-                                                  'cash')
-                                              ? Image.asset(
-                                                  'assets/images/cash.png',
-                                                  width: media.width * 0.05,
-                                                  height: media.width * 0.05,
-                                                  fit: BoxFit.contain,
-                                                )
-                                              : (etaDetails[choosenVehicle]
-                                                              ['payment_type']
-                                                          .toString()
-                                                          .split(',')
-                                                          .toList()[i] ==
-                                                      'wallet')
-                                                  ? Image.asset(
-                                                      'assets/images/wallet.png',
-                                                      width: media.width * 0.1,
-                                                      height: media.width * 0.1,
-                                                      fit: BoxFit.contain,
-                                                    ):SizedBox()
-                                                  // : (etaDetails[choosenVehicle][
-                                                  //                 'payment_type']
-                                                  //             .toString()
-                                                  //             .split(',')
-                                                  //             .toList()[i] ==
-                                                  //         'card')
-                                                  //     ? Image.asset(
-                                                  //         'assets/images/card.png',
-                                                  //         width:
-                                                  //             media.width * 0.1,
-                                                  //         height:
-                                                  //             media.width * 0.1,
-                                                  //         fit: BoxFit.contain,
-                                                  //       )
-                                                  //     : (etaDetails[choosenVehicle]
-                                                  //                     [
-                                                  //                     'payment_type']
-                                                  //                 .toString()
-                                                  //                 .split(',')
-                                                  //                 .toList()[i] ==
-                                                  //             'upi')
-                                                  //         ? Image.asset(
-                                                  //             'assets/images/upi.png',
-                                                  //             width:
-                                                  //                 media.width *
-                                                  //                     0.1,
-                                                  //             height:
-                                                  //                 media.width *
-                                                  //                     0.1,
-                                                  //             fit: BoxFit
-                                                  //                 .contain,
-                                                  //           )
-                                                  //         : Container(),
-                                        ),
+                                            flex: 2,
+                                            child: (etaDetails[choosenVehicle]
+                                                            ['payment_type']
+                                                        .toString()
+                                                        .split(',')
+                                                        .toList()[i] ==
+                                                    'cash')
+                                                ? Image.asset(
+                                                    'assets/images/cash.png',
+                                                    width: media.width * 0.05,
+                                                    height: media.width * 0.05,
+                                                    fit: BoxFit.contain,
+                                                  )
+                                                : (etaDetails[choosenVehicle]
+                                                                ['payment_type']
+                                                            .toString()
+                                                            .split(',')
+                                                            .toList()[i] ==
+                                                        'wallet')
+                                                    ? Image.asset(
+                                                        'assets/images/wallet.png',
+                                                        width:
+                                                            media.width * 0.1,
+                                                        height:
+                                                            media.width * 0.1,
+                                                        fit: BoxFit.contain,
+                                                      )
+                                                    : SizedBox()
+                                            // : (etaDetails[choosenVehicle][
+                                            //                 'payment_type']
+                                            //             .toString()
+                                            //             .split(',')
+                                            //             .toList()[i] ==
+                                            //         'card')
+                                            //     ? Image.asset(
+                                            //         'assets/images/card.png',
+                                            //         width:
+                                            //             media.width * 0.1,
+                                            //         height:
+                                            //             media.width * 0.1,
+                                            //         fit: BoxFit.contain,
+                                            //       )
+                                            //     : (etaDetails[choosenVehicle]
+                                            //                     [
+                                            //                     'payment_type']
+                                            //                 .toString()
+                                            //                 .split(',')
+                                            //                 .toList()[i] ==
+                                            //             'upi')
+                                            //         ? Image.asset(
+                                            //             'assets/images/upi.png',
+                                            //             width:
+                                            //                 media.width *
+                                            //                     0.1,
+                                            //             height:
+                                            //                 media.width *
+                                            //                     0.1,
+                                            //             fit: BoxFit
+                                            //                 .contain,
+                                            //           )
+                                            //         : Container(),
+                                            ),
                                         SizedBox(
                                           width: media.width * 0.02,
                                         ),

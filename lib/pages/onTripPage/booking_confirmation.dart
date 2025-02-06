@@ -522,88 +522,89 @@ class _BookingConfirmationState extends State<BookingConfirmation>
   }
 
 //add drop marker
-  addPickDropMarker() async {
-    if (mapType == 'google') {
-      addMarker();
-      // Future.delayed(const Duration(milliseconds: 200), () async {
-      if (userRequestData.isNotEmpty &&
-          userRequestData['is_rental'] != true &&
-          userRequestData['drop_address'] != null) {
-        addDropMarker();
+addPickDropMarker() async {
+  if (mapType == 'google') {
+    await addMarker(); // إضافة علامة الالتقاط
 
-        if (userRequestData.isEmpty) {
-          polyline.add(
-            Polyline(
-                polylineId: const PolylineId('1'),
-                color: buttonColor,
-                points: [
-                  addressList
-                      .firstWhere((element) => element.id == 'pickup')
-                      .latlng,
-                  addressList
-                      .firstWhere((element) => element.id == 'pickup')
-                      .latlng
-                ],
-                geodesic: false,
-                width: 5),
-          );
-          getPolylines('', '', '', '');
-        } else {
-          polyGot = false;
-        }
-      } else if (widget.type == null) {
-        addDropMarker();
-        if (userRequestData.isEmpty) {
-          polyline.add(
-            Polyline(
-                polylineId: const PolylineId('1'),
-                color: buttonColor,
-                points: [
-                  addressList
-                      .firstWhere((element) => element.type == 'pickup')
-                      .latlng,
-                  addressList
-                      .firstWhere((element) => element.type == 'pickup')
-                      .latlng
-                ],
-                geodesic: false,
-                width: 5),
-          );
-          await getPolylines('', '', '', '');
-        } else {
-          polyGot = false;
-        }
+    // إذا كانت هناك بيانات طلب وكانت ليست تأجيرًا وكان هناك عنوان نزول
+    if (userRequestData.isNotEmpty &&
+        userRequestData['is_rental'] != true &&
+        userRequestData['drop_address'] != null) {
+      await addDropMarker(); // إضافة علامة النزول
+
+      // إذا لم تكن هناك بيانات طلب، إضافة خط (Polyline) بين نقطة الالتقاط ونفس النقطة
+      if (userRequestData.isEmpty) {
+        final pickupLatLng = addressList
+            .firstWhere((element) => element.id == 'pickup')
+            .latlng;
+
+        polyline.add(
+          Polyline(
+            polylineId: const PolylineId('1'),
+            color: buttonColor,
+            points: [pickupLatLng, pickupLatLng],
+            geodesic: false,
+            width: 5,
+          ),
+        );
+
+        await getPolylines('', '', '', ''); // الحصول على الخطوط
       } else {
-        if (userRequestData.isNotEmpty) {
-          CameraUpdate cameraUpdate = CameraUpdate.newLatLng(
-              LatLng(userRequestData['pick_lat'], userRequestData['pick_lng']));
-          _controller!.animateCamera(cameraUpdate);
-        } else {
-          CameraUpdate cameraUpdate = CameraUpdate.newLatLng(addressList
-              .firstWhere((element) => element.type == 'pickup')
-              .latlng);
-          _controller!.animateCamera(cameraUpdate);
-        }
-        polyGot = false;
+        polyGot = false; // تعيين polyGot إلى false
+      }
+    } else if (widget.type == null) {
+      await addDropMarker(); // إضافة علامة النزول
+
+      if (userRequestData.isEmpty) {
+        final pickupLatLng = addressList
+            .firstWhere((element) => element.type == 'pickup')
+            .latlng;
+
+        polyline.add(
+          Polyline(
+            polylineId: const PolylineId('1'),
+            color: buttonColor,
+            points: [pickupLatLng, pickupLatLng],
+            geodesic: false,
+            width: 5,
+          ),
+        );
+
+        await getPolylines('', '', '', ''); // الحصول على الخطوط
+      } else {
+        polyGot = false; // تعيين polyGot إلى false
       }
     } else {
-      if (addressList.length > 1 &&
-          fmPolyGot == false &&
-          userRequestData.isEmpty) {
-        fmPolyGot = true;
-        double lat = (addressList[0].latlng.latitude +
-                addressList[addressList.length - 1].latlng.latitude) /
-            2;
-        double lon = (addressList[0].latlng.longitude +
-                addressList[addressList.length - 1].latlng.longitude) /
-            2;
-        _center = LatLng(lat, lon);
-        _fmController.move(
-            fmlt.LatLng(_center.latitude, _center.longitude), 13);
-      }
+      // تحريك الكاميرا إلى نقطة الالتقاط
+      final pickupLatLng = userRequestData.isNotEmpty
+          ? LatLng(userRequestData['pick_lat'], userRequestData['pick_lng'])
+          : addressList.firstWhere((element) => element.type == 'pickup').latlng;
+
+      final cameraUpdate = CameraUpdate.newLatLng(pickupLatLng);
+      await _controller!.animateCamera(cameraUpdate);
+
+      polyGot = false; // تعيين polyGot إلى false
+    }
+  } else {
+    // إذا كانت الخريطة ليست من نوع جوجل
+    if (addressList.length > 1 && !fmPolyGot && userRequestData.isEmpty) {
+      fmPolyGot = true;
+
+      // حساب النقطة الوسطى بين أول نقطة وآخر نقطة
+      final double lat = (addressList[0].latlng.latitude +
+              addressList[addressList.length - 1].latlng.latitude) /
+          2;
+      final double lon = (addressList[0].latlng.longitude +
+              addressList[addressList.length - 1].latlng.longitude) /
+          2;
+
+      _center = LatLng(lat, lon);
+
+      // تحريك الكاميرا إلى النقطة الوسطى
+      await _fmController.move(fmlt.LatLng(_center.latitude, _center.longitude), 13);
     }
   }
-
+}
   Future<Uint8List> getBytesFromAsset(String path, int width) async {
     ByteData data = await rootBundle.load(path);
     ui.Codec codec = await ui.instantiateImageCodec(data.buffer.asUint8List(),
@@ -2893,8 +2894,8 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                                                                                             SizedBox(
                                                                                                                               width: media.width * 0.3,
                                                                                                                               child: Text(etaDetails[i]['name'],
-                                                                                                                              maxLines: 1,
-                                                                                                                              overflow: TextOverflow.ellipsis,
+                                                                                                                                  maxLines: 1,
+                                                                                                                                  overflow: TextOverflow.ellipsis,
                                                                                                                                   style: GoogleFonts.notoSans(
                                                                                                                                       fontSize: media.width * fourteen,
                                                                                                                                       fontWeight: FontWeight.w600,
@@ -3514,7 +3515,7 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                                             spreadRadius: 2)
                                                                       ],
                                                                       color:
-                                                                         page,
+                                                                          page,
                                                                     ),
                                                                     child:
                                                                         Column(

@@ -663,16 +663,18 @@ updatePassword(email, password, loginby) async {
 
 //user login
 userLogin(number, login, password, isOtp) async {
-  bearerToken.clear();
+  bearerToken.clear(); // مسح رموز التصديق القديمة
   dynamic result;
   try {
-    print('drops-login ${url}api/v1/user/login');
+    print('رابط تسجيل الدخول: ${url}api/v1/user/login');
     String? token;
     if (Platform.isIOS) {
+      // إذا كان النظام هو iOS
       String? apnsToken = await FirebaseMessaging.instance.getAPNSToken();
       if (apnsToken != null) {
         token = await FirebaseMessaging.instance.getToken();
       } else {
+        // إذا لم يكن هناك رمز APNs، انتظر 3 ثوانٍ
         await Future<void>.delayed(
           const Duration(
             seconds: 3,
@@ -684,83 +686,92 @@ userLogin(number, login, password, isOtp) async {
         }
       }
     } else {
+      // إذا كان النظام هو Android
       token = await FirebaseMessaging.instance.getToken();
     }
-    var fcm = token.toString();
-
+    var fcm = token.toString(); // تخزين رمز FCM
+    print("-------->fcm $fcm ");
+    // إرسال طلب تسجيل الدخول
     var response = await http.post(Uri.parse('${url}api/v1/user/login'),
         headers: {
           'Content-Type': 'application/json',
         },
         body: (isOtp == false)
             ? jsonEncode({
-                if (login == 0) "mobile": number,
-                if (login == 1) "email": number,
-                'password': password,
-                'device_token': fcm,
-                "login_by":
-                    (platform == TargetPlatform.android) ? 'android' : 'ios',
+                if (login == 0)
+                  "mobile": number, // إذا كان تسجيل الدخول برقم الهاتف
+                if (login == 1)
+                  "email": number, // إذا كان تسجيل الدخول بالبريد الإلكتروني
+                'password': password, // كلمة المرور
+                'device_token': fcm, // رمز الجهاز
+                "login_by": (platform == TargetPlatform.android)
+                    ? 'android'
+                    : 'ios', // تحديد النظام
               })
             : (login == 0)
                 ? jsonEncode({
-                    "mobile": number,
+                    "mobile": number, // إذا كان تسجيل الدخول برقم الهاتف
                     'device_token': fcm,
                     "login_by": (platform == TargetPlatform.android)
                         ? 'android'
                         : 'ios',
                   })
                 : jsonEncode({
-                    "email": number,
-                    "otp": password,
+                    "email": number, // إذا كان تسجيل الدخول بالبريد الإلكتروني
+                    "otp": password, // رمز التحقق
                     'device_token': fcm,
                     "login_by": (platform == TargetPlatform.android)
                         ? 'android'
                         : 'ios',
                   }));
-    print('drops-login2 ${response.statusCode}');
+
+    print(
+        "number ${number} , login ${login} , password ${password} , isOtp ${isOtp} , fcm ${fcm} , ");
+    print('حالة الاستجابة: ${response.statusCode}');
     if (response.statusCode == 200) {
-      print('drops-login3');
+      print('تم تسجيل الدخول بنجاح');
+      print("استجابة الخادم: ${response.body}");
 
       var jsonVal = jsonDecode(response.body);
       bearerToken.add(BearerClass(
           type: jsonVal['token_type'].toString(),
-          token: jsonVal['access_token'].toString()));
+          token: jsonVal['access_token'].toString())); // إضافة رموز التصديق
       result = true;
       pref.setString('Bearer', bearerToken[0].token);
+
       package = await PackageInfo.fromPlatform();
       if (platform == TargetPlatform.android && package != null) {
-        await FirebaseDatabase.instance
-            .ref()
-            .update({'user_package_name': package.packageName.toString()});
+        await FirebaseDatabase.instance.ref().update({
+          'user_package_name': package.packageName.toString()
+        }); // تحديث قاعدة البيانات
       } else if (package != null) {
         await FirebaseDatabase.instance
             .ref()
             .update({'user_bundle_id': package.packageName.toString()});
       }
     } else if (response.statusCode == 422) {
-      print('drops-login4');
-
+      print('خطأ في بيانات الإدخال');
       debugPrint(response.body);
       var error = jsonDecode(response.body)['errors'];
       result = error[error.keys.toList()[0]]
           .toString()
           .replaceAll('[', '')
           .replaceAll(']', '')
-          .toString();
+          .toString(); // معالجة الأخطاء
     } else {
-      print('drops-login5');
+      print('خطأ غير متوقع');
       debugPrint(response.body);
       result = false;
     }
   } catch (e) {
-    print('drops-login6 $e');
+    print('خطأ: $e');
 
     if (e is SocketException) {
-      internet = false;
-      result = 'no internet';
+      internet = false; // تعيين حالة عدم الاتصال
+      result = 'لا يوجد إنترنت';
     }
   }
-  return result;
+  return result; // إرجاع النتيجة
 }
 
 Map<String, dynamic> userDetails = {};
@@ -4296,6 +4307,7 @@ getLandingImages() async {
       for (var element in _images) {
         if (element['screen'] == 'user') {
           loginImages.add(element);
+          print("test ${loginImages.length}");
         }
       }
       phcode =

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:taxista/translations/translation.dart';
+import 'package:taxista/utils/text_form_faild.dart';
 
 import '../../functions/functions.dart';
 import '../../styles/styles.dart';
@@ -951,7 +952,8 @@ class _WalletPageState extends State<WalletPage> {
                                                                         .text);
                                                             Navigator.pop(
                                                                 context);
-                                                            result == 'Money added successfully'
+                                                            result ==
+                                                                    'Money added successfully'
                                                                 ? showSuccessToast(
                                                                     msg: result)
                                                                 : showErrorToast(
