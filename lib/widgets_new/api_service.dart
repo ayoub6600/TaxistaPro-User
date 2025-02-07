@@ -430,32 +430,23 @@ class ApiService {
   }
 
   String getError(Response json) {
+    print("json ${json.data}");
     final jsonString = jsonEncode(json.data);
 
-    if (jsonString.contains("errors")) {
-      String error = "";
-
-      try {
-        Map<String, dynamic> jsonData = jsonDecode(jsonString);
-        Map<String, dynamic> errors = jsonData['msg'];
+    try {
+      Map<String, dynamic> jsonData = jsonDecode(jsonString);
+      if (jsonData.containsKey('errors')) {
+        // Assuming 'errors' is a Map
+        Map<String, dynamic> errors = jsonData['errors'];
         // Get the first error message
-        error = errors.values.first.first;
-        error = error.replaceAll('"', '');
-      } catch (e) {
-        error = 'something want wrong try again later';
+        return errors.values.first.first.replaceAll('"', '');
+      } else if (jsonData.containsKey('message')) {
+        return jsonData['message'].replaceAll('"', '');
       }
-
-      return error;
-    } else {
-      String error = "";
-      try {
-        error = jsonEncode(json.data['msg']);
-        error = error.replaceAll('"', '');
-      } catch (e) {
-        error = 'something want wrong try again later';
-      }
-      return error;
+    } catch (e) {
+      return 'Something went wrong, try again later.';
     }
+    return 'Something went wrong, try again later.';
   }
 
   String getUrl() {
