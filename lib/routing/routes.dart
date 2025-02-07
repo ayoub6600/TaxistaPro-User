@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:taxista/features/auth/forgot_password/view/forgot_password_view.dart';
 import 'package:taxista/features/auth/login/data/repo/login_repo.dart';
 import 'package:taxista/features/auth/login/manager/login_cubit.dart';
 import 'package:taxista/features/auth/login/view/login_view.dart';
@@ -68,6 +69,13 @@ List<RouteBase> appRoutes = [
         ),
         child: const CreatAccountView(),
       );
+    },
+  ),
+  GoRoute(
+    parentNavigatorKey: navigatorKey,
+    path: RoutesKeys.kForgot,
+    builder: (context, state) {
+      return const ForgotPasswordView();
     },
   ),
 ];
