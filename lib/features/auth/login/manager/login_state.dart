@@ -11,7 +11,7 @@ class LoginState extends Equatable {
   final TextEditingController phoneController;
   final TextEditingController passwordController;
   final String? selectedCountryCode; // Add selectedCountryCode field
-  final LoginResponse? modelData; // Add modelData field
+  final LoginResponce? modelData; // Add modelData field
   final bool isObscureText; // Add isObscureText field
 
   const LoginState({
@@ -53,7 +53,7 @@ class LoginState extends Equatable {
     TextEditingController? phoneController,
     TextEditingController? passwordController,
     String? selectedCountryCode,
-    LoginResponse? modelData, // Include modelData in copyWith
+    LoginResponce? modelData, // Include modelData in copyWith
     bool? isObscureText,
   }) {
     return LoginState(

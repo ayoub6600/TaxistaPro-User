@@ -30,9 +30,9 @@ class LoginCubit extends Cubit<LoginState> {
         emit(state.copyWith(loginStatus: LoginStatus.initial));
       },
       (model) async {
-        if (model.success == true) {
-          if (model.data != null && model.data!.token != null) {
-            await setData(model.data!);
+        if (model.accessToken != null) {
+          if (model.accessToken != null && model.tokenType != null) {
+            await setData(model);
           }
         }
 
@@ -57,18 +57,13 @@ class LoginCubit extends Cubit<LoginState> {
     emit(state.copyWith(isObscureText: !state.isObscureText));
   }
 
-  setData(LoginResponseData data) {
-    SharedPreferenceUtil.putString(PrefKey.login, data.token!.toString());
-    SharedPreferenceUtil.putString(PrefKey.fullName, data.name!);
-    SharedPreferenceUtil.putString(PrefKey.mobile, data.phoneNo!);
-    SharedPreferenceUtil.putString(PrefKey.email, data.email!);
-    SharedPreferenceUtil.putString(PrefKey.profileImage, data.imageUri!);
-    // if (SharedPreferenceUtil.getString(PrefKey.currentLanguageCode) == '') {
-    //   SharedPreferenceUtil.putString(PrefKey.currentLanguageCode, 'ar');
-    // }
-    SharedPreferenceUtil.putInt(PrefKey.userId, data.id!);
-    SharedPreferenceUtil.putString(PrefKey.fcmToken, data.fcmToken ?? '');
-    SharedPreferenceUtil.putString(PrefKey.gender, data.gender!);
+  setData(LoginResponce data) {
+    SharedPreferenceUtil.putString(PrefKey.login, data.accessToken!.toString());
+    SharedPreferenceUtil.putString(
+        PrefKey.loginType, data.tokenType!.toString());
+    SharedPreferenceUtil.putString(
+        PrefKey.loginExpire, data.expiresIn!.toString());
+
     SharedPreferenceUtil.putBool(PrefKey.isLoggedIn, true);
   }
 }

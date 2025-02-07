@@ -115,10 +115,15 @@ class _LoginScreenViewBodyState extends State<LoginScreenViewBody> {
                     ),
                     HeightSpace(10.h),
                     Row(children: [
-                      Text(
-                        getTranslated(context, LangConst.textForgoPassword),
-                        style: AppStyle.style15W500Black.copyWith(
-                          color: AppColor.primary,
+                      GestureDetector(
+                        onTap: () {
+                          GoRouter.of(context).push(RoutesKeys.kForgot);
+                        },
+                        child: Text(
+                          getTranslated(context, LangConst.textForgoPassword),
+                          style: AppStyle.style15W500Black.copyWith(
+                            color: AppColor.primary,
+                          ),
                         ),
                       ),
                     ]),
