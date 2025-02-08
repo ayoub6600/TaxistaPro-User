@@ -1,4 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:taxista/constants/keys_values.dart';
+import 'package:taxista/constants/preference_utility.dart';
+import 'package:taxista/features/auth/login/data/model/login_response_model.dart';
 
 import 'package:taxista/features/auth/register/data/repo/creat_account_repo.dart';
 import 'package:taxista/features/auth/register/manager/creat_account_state.dart';
@@ -37,8 +40,19 @@ class CreateAccountCubit extends Cubit<CreateAccountState> {
             modelData: model));
 
         emit(state.copyWith(createAccountStatus: CreateAccountStatus.initial));
+        setData(model);
       },
     );
+  }
+
+  setData(LoginResponce data) {
+    SharedPreferenceUtil.putString(PrefKey.login, data.accessToken!.toString());
+    SharedPreferenceUtil.putString(
+        PrefKey.loginType, data.tokenType!.toString());
+    SharedPreferenceUtil.putString(
+        PrefKey.loginExpire, data.expiresIn!.toString());
+
+    SharedPreferenceUtil.putBool(PrefKey.isLoggedIn, true);
   }
 
   void togglePasswordVisibility() {

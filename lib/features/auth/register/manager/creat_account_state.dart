@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
-import 'package:taxista/features/auth/register/data/model/register_model.dart';
+import 'package:taxista/features/auth/login/data/model/login_response_model.dart';
 import 'package:taxista/widgets_new/failures.dart';
 
 enum CreateAccountStatus { initial, submitting, success, error }
@@ -11,7 +11,7 @@ class CreateAccountState extends Equatable {
   final Failure failure;
   final CreateAccountStatus createAccountStatus;
   final String? selectedCountryCode;
-  final RegisterResponseModel modelData;
+  final LoginResponce modelData;
   final String gender; // Added gender field
 
   final TextEditingController nameController;
@@ -45,8 +45,7 @@ class CreateAccountState extends Equatable {
       passwordController: TextEditingController(),
       selectedCountryCode: '966',
       gender: 'male',
-      modelData:
-          RegisterResponseModel(), // Make sure this is initialized correctly
+      modelData: LoginResponce(), // Make sure this is initialized correctly
     );
   }
 
@@ -67,7 +66,7 @@ class CreateAccountState extends Equatable {
     Failure? failure,
     CreateAccountStatus? createAccountStatus,
     String? selectedCountryCode,
-    RegisterResponseModel? modelData,
+    LoginResponce? modelData,
     String? gender, // Added gender field
 
     // You might consider returning TextEditingController values instead of instances

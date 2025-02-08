@@ -1,5 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:taxista/features/auth/forgot_password/data/repo/send_otp_repo.dart';
+import 'package:taxista/features/auth/forgot_password/manager/forgot_pass_cubit.dart';
 import 'package:taxista/features/auth/forgot_password/view/forgot_password_view.dart';
 import 'package:taxista/features/auth/login/data/repo/login_repo.dart';
 import 'package:taxista/features/auth/login/manager/login_cubit.dart';
@@ -7,6 +9,8 @@ import 'package:taxista/features/auth/login/view/login_view.dart';
 import 'package:taxista/features/auth/register/data/repo/creat_account_repo.dart';
 import 'package:taxista/features/auth/register/manager/creat_account_cubit.dart';
 import 'package:taxista/features/auth/register/view/creat_account_view.dart';
+import 'package:taxista/features/auth/set_new_pass/view/set_new_pass_view.dart';
+import 'package:taxista/features/auth/verifaction/view/verifaction_view.dart';
 import 'package:taxista/features/language/view/language_view.dart';
 import 'package:taxista/features/splash/manager/onboarding_cubit.dart';
 import 'package:taxista/features/splash/presentation/onboarding_view.dart';
@@ -75,7 +79,53 @@ List<RouteBase> appRoutes = [
     parentNavigatorKey: navigatorKey,
     path: RoutesKeys.kForgot,
     builder: (context, state) {
-      return const ForgotPasswordView();
+      return BlocProvider(
+        create: (context) => VerifyUserCubit(
+          verifyUserRepo: getIt.get<VerifyUserRepo>(),
+        ),
+        child: const ForgotPasswordView(),
+      );
     },
   ),
+  GoRoute(
+    parentNavigatorKey: navigatorKey,
+    path: RoutesKeys.kOtpVerification,
+    builder: (context, state) {
+      var arguments = state.extra as String;
+      return VerifactionView(
+        phone: arguments,
+      );
+    },
+  ),
+  GoRoute(
+    parentNavigatorKey: navigatorKey,
+    path: RoutesKeys.kNewPassword,
+    builder: (context, state) {
+      return SetNewPassView();
+    },
+  ),
+
+  // GoRoute(
+  //   parentNavigatorKey: navigatorKey,
+  //   path: RoutesKeys.kVerifactionView,
+  //   builder: (context, state) {
+  //     if (state.extra is Map<String, dynamic>) {
+  //       var arguments = state.extra as Map<String, dynamic>;
+  //       var body = arguments['body'];
+  //       var isForgetPass =
+  //           arguments['isForgetPass'] ?? true; // Default to true if null
+
+  //       return BlocProvider(
+  //         create: (context) => SendOtpCubit(getIt.get<SendOtpRepo>()),
+  //         child: VerifactionView(
+  //           data: body,
+  //           isForgetPass: isForgetPass,
+  //         ),
+  //       );
+  //     } else {
+  //       // Handle error or fallback
+  //       return SizedBox.shrink();
+  //     }
+  //   },
+  // ),
 ];

@@ -345,11 +345,12 @@ getLocalData() async {
   return result;
 }
 
-//register user
+//------------------------------------------___> Done register user
 
 List<BearerClass> bearerToken = <BearerClass>[];
 
 registerUser() async {
+  print('registerUser');
   bearerToken.clear();
   dynamic result;
   try {
@@ -530,72 +531,89 @@ otpCall() async {
 
 // verify user already exist
 
-verifyUser(String number, int login, String password, String email, isOtp,
-    forgot) async {
+Future<dynamic> verifyUser(String number, int login, String password,
+    String email, bool isOtp, bool forgot) async {
   dynamic val;
-  print('drops1 ${url}api/v1/user/validate-mobile-for-login');
+  print(
+      'Attempting to verify user with number: $number, email: $email, login type: $login');
+
   try {
     var response = await http.post(
-        Uri.parse('${url}api/v1/user/validate-mobile-for-login'),
-        body: (number != '' && email != '')
-            ? {"mobile": number, "email": email}
-            : (login == 0)
-                ? {
-                    "mobile": number,
-                  }
-                : {
-                    "email": number,
-                  });
+      Uri.parse('${url}api/v1/user/validate-mobile-for-login'),
+      body: (number.isNotEmpty && email.isNotEmpty)
+          ? {"mobile": number, "email": email}
+          : (login == 0)
+              ? {"mobile": number}
+              : {"email": number},
+    );
+
+    print('Response status code: ${response.statusCode}');
 
     if (response.statusCode == 200) {
-      print('drops2 ');
+      print('Successful response received.');
       val = jsonDecode(response.body)['success'];
-      if (val == true) {
-        if ((number != '' && email != '') || forgot == true) {
-          print('drops33 ');
+      print('Success flag from response: $val');
 
-          if (forgot == true) {
+      if (val == true) {
+        if ((number.isNotEmpty && email.isNotEmpty) || forgot) {
+          print('Processing existence checks.');
+
+          if (forgot) {
             val = true;
-          } else if (jsonDecode(response.body)['message'] == 'email_exists') {
-            val = 'Email Already Exists';
-          } else if (jsonDecode(response.body)['message'] == 'mobile_exists') {
-            val = 'Mobile Already Exists';
+            print('Forgot password flow initiated.');
           } else {
-            val = 'Email and Mobile Already Exists';
+            String message = jsonDecode(response.body)['message'];
+            print('Existence check message: $message');
+
+            if (message == 'email_exists') {
+              val = 'Email Already Exists';
+            } else if (message == 'mobile_exists') {
+              val = 'Mobile Already Exists';
+            } else {
+              val = 'Email and Mobile Already Exists';
+            }
+            print('Existence validation result: $val');
           }
         } else {
-          print('drops4 ');
+          print('Proceeding to user login.');
           var check = await userLogin(number, login, password, isOtp);
+          print('User login check result: $check');
+
           if (check == true) {
             var uCheck = await getUserDetails();
+            print('User details retrieved: $uCheck');
             val = uCheck;
           } else {
             val = check;
+            print('User login failed with response: $val');
           }
         }
       } else {
-        print('drops5 ');
+        print('User validation failed.');
         val = false;
       }
     } else if (response.statusCode == 422) {
-      print('drops ${response.body}');
+      print('Validation error response: ${response.body}');
       var error = jsonDecode(response.body)['errors'];
       val = error[error.keys.toList()[0]]
           .toString()
           .replaceAll('[', '')
-          .replaceAll(']', '')
-          .toString();
+          .replaceAll(']', '');
+      print('Validation error message: $val');
     } else {
-      print('drops ${response.body}');
+      print('Unexpected response: ${response.body}');
       val = jsonDecode(response.body)['message'];
     }
   } catch (e) {
-    print('drops $e');
+    print('Exception occurred: $e');
     if (e is SocketException) {
-      val = 'no internet';
+      val = 'No internet connection';
       internet = false;
+      print('Internet status updated: $internet');
     }
   }
+
+  print('Final return value: $val');
   return val;
 }
 
@@ -661,7 +679,7 @@ updatePassword(email, password, loginby) async {
   return result;
 }
 
-//user login
+//user login (done )
 userLogin(number, login, password, isOtp) async {
   bearerToken.clear(); // مسح رموز التصديق القديمة
   dynamic result;
@@ -4095,6 +4113,7 @@ sendOTPtoEmail(String email) async {
 }
 
 emailVerify(String email, otpNumber) async {
+  print('drops ${url}api/v1/validate-email-otp');
   dynamic val;
   try {
     var response = await http.post(Uri.parse('${url}api/v1/validate-email-otp'),

@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:taxista/Localization/localization_constant.dart';
 import 'package:taxista/constants/spaces.dart';
 import 'package:taxista/constants/text_style.dart';
 import 'package:taxista/features/auth/register/manager/creat_account_cubit.dart';
 import 'package:taxista/features/auth/register/manager/creat_account_state.dart';
 import 'package:taxista/features/auth/register/view/widgets/chooes_gender.dart';
+import 'package:taxista/routing/routes_keys.dart';
 import 'package:taxista/utils/lang_const.dart';
 import 'package:taxista/utils/text_form_faild.dart';
 import 'package:taxista/widgets_new/button_auth.dart';
+import 'package:taxista/widgets_new/custom_error_toast.dart';
+import 'package:taxista/widgets_new/custom_loading_dialog.dart';
 
 class CreatAccountViewBody extends StatelessWidget {
   CreatAccountViewBody({super.key});
@@ -19,7 +23,26 @@ class CreatAccountViewBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocConsumer<CreateAccountCubit, CreateAccountState>(
       listener: (context, state) {
-        // TODO: implement listener
+        switch (state.createAccountStatus) {
+          case CreateAccountStatus.initial:
+            break;
+          case CreateAccountStatus.submitting:
+            customLoadingDialog(context);
+            break;
+          case CreateAccountStatus.error:
+            Navigator.pop(context);
+
+            showCustomErrorToast(state.failure.errMessage);
+            break;
+          case CreateAccountStatus.success:
+            Navigator.pop(context);
+            // showCustomSuccessToast(
+            //   state.modelData.msg.toString(),
+            // ),
+            GoRouter.of(context).go(RoutesKeys.kHome);
+
+            break;
+        }
       },
       builder: (context, state) {
         return SafeArea(

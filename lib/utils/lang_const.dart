@@ -8,7 +8,6 @@ class LangConst {
   static const String textNext = "Next";
   static const String textYourRide = "Your Ride, On Demand";
   static const String textLogin = "text_login";
-  static const String textPhoneNumber = "Enter Mobile Number";
   static const String textGetStarted = "Let's Get Started!";
   static const String textFillForm = "Fill the form to continue.";
   static const String textInsurance = 'text_insurance';
@@ -31,4 +30,18 @@ class LangConst {
   static const String alreadyHaveAnAccount = "already_have_an_account";
   static const String textName = "text_name";
   static const String textEmail = "text_email";
+  static const String forgotPassword = "forgot_password";
+  static const String enterYourRegisteredPhoneNumber =
+      "enter_your_registered_phone_number_we_will_send_an_OTP";
+  static const String textPhoneNumber = "text_phone_number";
+  static const String textResendCode = "text_resend_code";
+  static const String rememberYourPassword = "remember_your_password";
+  static const String doNotGetOTP = "do_not_get_OTP";
+  static const String resend = "resend";
+  static const String verification = "verification";
+  static const String enterTheVerificationCodeBelow =
+      "enter_the_verification_code_below";
+  static const String textverify = "text_verify";
+  static const String setPassword = "set_password";
+  static const String updatePassword = "update_password";
 }

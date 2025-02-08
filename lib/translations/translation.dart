@@ -1,6 +1,4 @@
 Map<String, dynamic> languages = {
-
-
   "ar": {
     "text_enter_social": "أو أدخل وسائل التواصل الاجتماعي",
     "text_sign_up": "التسجيل",
@@ -721,11 +719,6 @@ Map<String, dynamic> languages = {
     "text_new_trip_req": "طلب رحلة جديدة",
     "text_new_trip_req_bid": "طلب رحلة جديدة، يمكنك تقديم عرض أو رفض الطلب"
   },
-  
-  
-  
-  
-  
   "en": {
     "text_enter_social": "Or Enter Social Media",
     "text_sign_up": "Sign Up",
@@ -1455,8 +1448,4 @@ Map<String, dynamic> languages = {
     "text_new_trip_req_bid":
         "New Trip Requested, You Can Bid Or Reject The Request"
   },
-
-
-
-
 };

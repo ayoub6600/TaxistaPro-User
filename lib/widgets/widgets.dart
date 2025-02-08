@@ -78,7 +78,9 @@ class _ButtonState extends State<Button> {
                   fontSize: media.width * sixteen,
                   color: (widget.textcolor != null)
                       ? widget.textcolor
-                      : !isDarkTheme? const Color.fromARGB(255, 255, 255, 255):Colors.black,
+                      : !isDarkTheme
+                          ? const Color.fromARGB(255, 255, 255, 255)
+                          : Colors.black,
                   fontWeight: widget.fontweight ?? FontWeight.bold,
                   letterSpacing: 1),
             ),

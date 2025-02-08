@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
-import 'package:taxista/features/auth/register/data/model/register_model.dart';
+import 'package:taxista/features/auth/login/data/model/login_response_model.dart';
 import 'package:taxista/features/auth/register/data/repo/creat_account_repo.dart';
 import 'package:taxista/widgets_new/api_service.dart';
 import 'package:taxista/widgets_new/failures.dart';
@@ -13,7 +13,7 @@ class CreatAccountImap implements CreatAccountRepo {
   CreatAccountImap({required this.apiService});
 
   @override
-  Future<Either<Failure, RegisterResponseModel>> creatAccountMethod({
+  Future<Either<Failure, LoginResponce>> creatAccountMethod({
     required String name,
     required String email,
     required String mobile,
@@ -40,7 +40,7 @@ class CreatAccountImap implements CreatAccountRepo {
 
       // Check response code and return appropriate result
       if (response.code >= 200 && response.code < 300) {
-        var model = RegisterResponseModel.fromJson(response.data);
+        var model = LoginResponce.fromJson(response.data);
         return right(model);
       } else {
         return left(Failure(response.errorMessage));

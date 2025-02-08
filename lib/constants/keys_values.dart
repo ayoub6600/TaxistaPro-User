@@ -14,4 +14,7 @@ class PrefKey {
   static const String currentLanguageCode = "currentLanguageCode";
   static const String chucker = "chucker";
   static const String homeDialog = "homeDialog";
+  static const String loginType = "loginType";
+  static const String loginExpire = "loginExpire";
+  static const String contactDialog = "contactDialog";
 }

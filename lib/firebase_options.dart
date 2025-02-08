@@ -64,7 +64,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '1066498192256',
     projectId: 'taxista-ee27d',
     storageBucket: 'taxista-ee27d.firebasestorage.app',
-    androidClientId: '1066498192256-0s8qle9uqvprpad59c2gnis4f4dvb8um.apps.googleusercontent.com',
+    androidClientId:
+        '1066498192256-0s8qle9uqvprpad59c2gnis4f4dvb8um.apps.googleusercontent.com',
     iosBundleId: 'com.taxista.user',
   );
 
@@ -74,7 +75,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '1066498192256',
     projectId: 'taxista-ee27d',
     storageBucket: 'taxista-ee27d.firebasestorage.app',
-    androidClientId: '1066498192256-0s8qle9uqvprpad59c2gnis4f4dvb8um.apps.googleusercontent.com',
+    androidClientId:
+        '1066498192256-0s8qle9uqvprpad59c2gnis4f4dvb8um.apps.googleusercontent.com',
     iosBundleId: 'com.taxista.user',
   );
 
