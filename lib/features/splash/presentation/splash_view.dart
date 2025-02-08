@@ -26,7 +26,7 @@ class _SplashViewState extends State<SplashView> {
         } else if (result == '1') {
           GoRouter.of(context).pushReplacement(RoutesKeys.kLogin);
         } else {
-          GoRouter.of(context).pushReplacement(RoutesKeys.kHome);
+          GoRouter.of(context).pushReplacement(RoutesKeys.kLogin);
         }
       },
     );
