@@ -15,6 +15,7 @@ import 'package:taxista/utils/text_form_faild.dart';
 import 'package:taxista/widgets_new/button_auth.dart';
 import 'package:taxista/widgets_new/custom_error_toast.dart';
 import 'package:taxista/widgets_new/custom_loading_dialog.dart';
+import 'package:taxista/widgets_new/custom_success_toast.dart';
 
 class LoginScreenViewBody extends StatefulWidget {
   const LoginScreenViewBody({super.key});
@@ -25,30 +26,9 @@ class LoginScreenViewBody extends StatefulWidget {
 
 class _LoginScreenViewBodyState extends State<LoginScreenViewBody> {
   @override
-  @override
   Widget build(BuildContext context) {
     return BlocConsumer<LoginCubit, LoginState>(
-      listener: (context, state) {
-        switch (state.loginStatus) {
-          case LoginStatus.initial:
-            break;
-          case LoginStatus.submitting:
-            customLoadingDialog(context);
-            break;
-          case LoginStatus.error:
-            Navigator.pop(context);
-
-            showCustomErrorToast(state.failure.errMessage);
-            break;
-          case LoginStatus.success:
-            {
-              Navigator.pop(context);
-              GoRouter.of(context).go(RoutesKeys.kHome);
-              //  showCustomSuccessToast(state.modelData?.msg.toString() ?? "");
-            }
-            break;
-        }
-      },
+      listener: _handleStateChanges,
       builder: (context, state) {
         return SafeArea(
           child: Padding(
@@ -58,119 +38,179 @@ class _LoginScreenViewBodyState extends State<LoginScreenViewBody> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    _buildHeader(context),
+                    _buildLoginForm(context, state),
+                    HeightSpace(2.h),
+                    _buildForgotPassword(context),
                     HeightSpace(50.h),
-                    Center(
-                      child: Text(
-                        getTranslated(context, LangConst.textLogin),
-                        style: AppStyle.style24W500Black,
-                      ),
-                    ),
-                    HeightSpace(20.h),
-                    Center(
-                      child: Text(
-                        getTranslated(context, LangConst.textHello),
-                        style: AppStyle.style15W500Black
-                            .copyWith(color: AppColor.darkGrey),
-                      ),
-                    ),
-                    HeightSpace(50.h),
-                    Text(
-                      getTranslated(context, LangConst.textEmailMobile),
-                      style: AppStyle.style15W500Black,
-                    ),
-                    HeightSpace(10.h),
-                    NewCustomTextFormField(
-                      txtController: state.phoneController,
-                      hint: getTranslated(context, LangConst.textEmailMobile),
-                      keyboardType: TextInputType.emailAddress,
-                      obscureText: false,
-                      enabled: true,
-                      readOnly: false,
-                      onTap: () {},
-                    ),
-                    HeightSpace(20.h),
-                    Text(
-                      getTranslated(context, LangConst.password),
-                      style: AppStyle.style15W500Black,
-                    ),
-                    HeightSpace(10.h),
-                    NewCustomTextFormField(
-                      txtController: state.passwordController,
-                      hint: getTranslated(context, LangConst.textEnterPassword),
-                      keyboardType: TextInputType.visiblePassword,
-                      obscureText: state.isObscureText,
-                      enabled: true,
-                      readOnly: false,
-                      onTap: () {},
-                      suffixIcon: InkWell(
-                        onTap: () {
-                          context.read<LoginCubit>().togglePasswordVisibility();
-                        },
-                        child: Icon(
-                          state.isObscureText
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                        ),
-                      ),
-                    ),
-                    HeightSpace(10.h),
-                    Row(children: [
-                      GestureDetector(
-                        onTap: () {
-                          GoRouter.of(context).push(RoutesKeys.kForgot);
-                        },
-                        child: Text(
-                          getTranslated(context, LangConst.textForgoPassword),
-                          style: AppStyle.style15W500Black.copyWith(
-                            color: AppColor.primary,
-                          ),
-                        ),
-                      ),
-                    ]),
-                    HeightSpace(50.h),
-                    ButtonAuth(
-                      onTap: () {
-                        if (state.phoneController.text.isEmpty) {
-                          showCustomErrorToast(getTranslated(
-                              context, LangConst.textEmailMobile));
-                        } else if (state.passwordController.text.isEmpty) {
-                          showCustomErrorToast(getTranslated(
-                              context, LangConst.textEnterPassword));
-                        } else {
-                          context.read<LoginCubit>().loginMethod();
-                        }
-                      },
-                      text: getTranslated(context, LangConst.textLogin),
-                    ),
+                    _buildLoginButton(context, state),
                   ],
                 ),
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: RichText(
-                    text: TextSpan(
-                      text: getTranslated(context, LangConst.dontHaveAccount)
-                          .toString(),
-                      style: AppStyle.style16W500Black,
-                      children: [
-                        TextSpan(
-                          text: getTranslated(context, LangConst.textSignUp)
-                              .toString(),
-                          style: AppStyle.style16W500Black
-                              .copyWith(color: AppColor.primary),
-                          recognizer: TapGestureRecognizer()
-                            ..onTap = () {
-                              GoRouter.of(context).push(RoutesKeys.kRegister);
-                            },
-                        ),
-                      ],
-                    ),
-                  ),
-                )
+                _buildSignUpText(context),
               ],
             ),
           ),
         );
       },
+    );
+  }
+
+  void _handleStateChanges(BuildContext context, LoginState state) {
+    switch (state.loginStatus) {
+      case LoginStatus.initial:
+        break;
+      case LoginStatus.submitting:
+        customLoadingDialog(context);
+        break;
+      case LoginStatus.error:
+        Navigator.pop(context);
+        showCustomErrorToast(state.failure.errMessage);
+        break;
+      case LoginStatus.success:
+        Navigator.pop(context);
+        showCustomSuccessToast(getTranslated(context, LangConst.textHello));
+        GoRouter.of(context).go(RoutesKeys.kHome);
+        break;
+    }
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Column(
+      children: [
+        HeightSpace(50.h),
+        Center(
+          child: Text(
+            getTranslated(context, LangConst.textLogin),
+            style: AppStyle.style24W500Black,
+          ),
+        ),
+        HeightSpace(8.h),
+        Center(
+          child: Text(
+            getTranslated(context, LangConst.textHello),
+            style: AppStyle.style15W500Black.copyWith(color: AppColor.darkGrey),
+          ),
+        ),
+        HeightSpace(50.h),
+      ],
+    );
+  }
+
+  Widget _buildLoginForm(BuildContext context, LoginState state) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildTextField(
+          context,
+          label: LangConst.textPhoneNumber,
+          controller: state.phoneController,
+          hint: LangConst.textPhoneNumber,
+          keyboardType: TextInputType.phone,
+        ),
+        HeightSpace(20.h),
+        _buildTextField(
+          context,
+          label: LangConst.password,
+          controller: state.passwordController,
+          hint: LangConst.textEnterPassword,
+          keyboardType: TextInputType.visiblePassword,
+          obscureText: state.isObscureText,
+          suffixIcon: _buildPasswordVisibilityToggle(context, state),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTextField(
+    BuildContext context, {
+    required String label,
+    required TextEditingController controller,
+    required String hint,
+    TextInputType? keyboardType,
+    bool obscureText = false,
+    Widget? suffixIcon,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          getTranslated(context, label),
+          style: AppStyle.style15W500Black,
+        ),
+        HeightSpace(10.h),
+        NewCustomTextFormField(
+          txtController: controller,
+          hint: getTranslated(context, hint),
+          keyboardType: keyboardType,
+          obscureText: obscureText,
+          enabled: true,
+          readOnly: false,
+          suffixIcon: suffixIcon,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPasswordVisibilityToggle(
+      BuildContext context, LoginState state) {
+    return InkWell(
+      onTap: () => context.read<LoginCubit>().togglePasswordVisibility(),
+      child: Icon(
+        state.isObscureText
+            ? Icons.visibility_off_outlined
+            : Icons.visibility_outlined,
+      ),
+    );
+  }
+
+  Widget _buildForgotPassword(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: GestureDetector(
+        onTap: () => GoRouter.of(context).push(RoutesKeys.kForgot),
+        child: Text(
+          getTranslated(context, LangConst.textForgoPassword),
+          style: AppStyle.style15W500Black.copyWith(color: AppColor.primary),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoginButton(BuildContext context, LoginState state) {
+    return ButtonAuth(
+      onTap: () {
+        if (state.phoneController.text.isEmpty) {
+          showCustomErrorToast(
+              getTranslated(context, LangConst.textPhoneNumber));
+        } else if (state.passwordController.text.isEmpty) {
+          showCustomErrorToast(
+              getTranslated(context, LangConst.textEnterPassword));
+        } else {
+          context.read<LoginCubit>().loginMethod();
+        }
+      },
+      text: getTranslated(context, LangConst.textLogin),
+    );
+  }
+
+  Widget _buildSignUpText(BuildContext context) {
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: RichText(
+        text: TextSpan(
+          text: getTranslated(context, LangConst.dontHaveAccount),
+          style: AppStyle.style16W500Black,
+          children: [
+            TextSpan(
+              text: getTranslated(context, LangConst.textSignUp),
+              style:
+                  AppStyle.style16W500Black.copyWith(color: AppColor.primary),
+              recognizer: TapGestureRecognizer()
+                ..onTap = () => GoRouter.of(context).push(RoutesKeys.kRegister),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

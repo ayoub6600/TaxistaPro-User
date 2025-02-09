@@ -9,7 +9,6 @@ import 'package:taxista/features/auth/login/data/repo/login_repo.dart';
 import 'package:taxista/features/auth/login/manager/login_state.dart';
 import 'package:taxista/functions/functions.dart';
 import 'package:taxista/pages/loadingPage/loadingpage.dart';
-import 'package:taxista/widgets_new/custom_error_toast.dart';
 
 class LoginCubit extends Cubit<LoginState> {
   final LoginRepo repo;
@@ -17,6 +16,8 @@ class LoginCubit extends Cubit<LoginState> {
   LoginCubit(this.repo) : super(LoginState.initial());
   String? fcmToken;
   void loginMethod() async {
+    print(
+        "--------->${SharedPreferenceUtil.getString(PrefKey.currentLanguageCode)}");
     emit(state.copyWith(loginStatus: LoginStatus.submitting));
 
     var result = await repo.loginMethod(

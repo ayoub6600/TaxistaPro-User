@@ -60,15 +60,12 @@ class LoginRepoImap implements LoginRepo {
       // Await the API response
       var response = await apiService.post(
           endPoint: 'api/v1/user/login', rawData: jsonData);
-      print('---->${response.code}');
+      //print('---->${response.code}');
       if (response.code >= 200 && response.code < 300) {
         var model = LoginResponce.fromJson(response.data);
         return right(model);
       } else {
         if (response.code == 422) {
-          print(
-            "response.errorMessage ${response}",
-          );
           return left(Failure(response.errorMessage));
         }
         return left(Failure(response.errorMessage));
