@@ -14,6 +14,7 @@ import 'package:taxista/utils/text_form_faild.dart';
 import 'package:taxista/widgets_new/button_auth.dart';
 import 'package:taxista/widgets_new/custom_error_toast.dart';
 import 'package:taxista/widgets_new/custom_loading_dialog.dart';
+import 'package:taxista/widgets_new/custom_success_toast.dart';
 
 class CreatAccountViewBody extends StatelessWidget {
   CreatAccountViewBody({super.key});
@@ -36,9 +37,9 @@ class CreatAccountViewBody extends StatelessWidget {
             break;
           case CreateAccountStatus.success:
             Navigator.pop(context);
-            // showCustomSuccessToast(
-            //   state.modelData.msg.toString(),
-            // ),
+            showCustomSuccessToast(
+              getTranslated(context, LangConst.textHello),
+            );
             GoRouter.of(context).go(RoutesKeys.kHome);
 
             break;
@@ -46,126 +47,157 @@ class CreatAccountViewBody extends StatelessWidget {
       },
       builder: (context, state) {
         return SafeArea(
-          child: Form(
-            child: Padding(
-              padding: EdgeInsets.all(24.0.h),
-              child: SingleChildScrollView(
-                child: Form(
-                  key: formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      HeightSpace(20.h),
-                      Center(
-                        child: Text(
-                          'انشاء حساب',
-                          // getTranslated(context, LangConst.textCreateAccount)
-                          //     .toString(),
-                          style: AppStyle.style24W500Black,
-                        ),
-                      ),
-                      HeightSpace(20.h),
-
-                      //name
-                      Text(
-                        getTranslated(context, LangConst.textName).toString(),
-                        style: AppStyle.style16W500Black,
-                      ),
-                      HeightSpace(5.h),
-                      NewCustomTextFormField(
-                        txtController: state.nameController,
-                        hint: getTranslated(context, LangConst.textName),
-                        keyboardType: TextInputType.emailAddress,
-                        obscureText: false,
-                        enabled: true,
-                        readOnly: false,
-                        onTap: () {},
-                      ),
-                      HeightSpace(20.h),
-                      //mobile
-                      Text(
-                        "رقم الجوال",
-                        style: AppStyle.style16W500Black,
-                      ),
-                      HeightSpace(5.h),
-                      NewCustomTextFormField(
-                        txtController: state.phoneController,
-                        hint: "ادخل رقم الجوال",
-                        keyboardType: TextInputType.emailAddress,
-                        obscureText: false,
-                        enabled: true,
-                        readOnly: false,
-                        onTap: () {},
-                      ),
-                      //email
-                      HeightSpace(20.h),
-                      Text(
-                        getTranslated(context, LangConst.textEmail).toString(),
-                        style: AppStyle.style16W500Black,
-                      ),
-                      HeightSpace(5.h),
-
-                      NewCustomTextFormField(
-                        txtController: state.emailController,
-                        hint: getTranslated(context, LangConst.textEmail),
-                        keyboardType: TextInputType.emailAddress,
-                        obscureText: false,
-                        enabled: true,
-                        readOnly: false,
-                        onTap: () {},
-                      ),
-                      HeightSpace(20.h),
-                      //password
-
-                      Text(
-                        getTranslated(context, LangConst.password).toString(),
-                        style: AppStyle.style16W500Black,
-                      ),
-                      HeightSpace(5.h),
-
-                      NewCustomTextFormField(
-                        hint: getTranslated(context, LangConst.password)
+          child: Padding(
+            padding: EdgeInsets.all(24.0.h),
+            child: SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    HeightSpace(20.h),
+                    Center(
+                      child: Text(
+                        getTranslated(context, LangConst.textCreateAccount)
                             .toString(),
-                        txtController: state.passwordController,
-                        obscureText: state.isObscureText,
-                        suffixIcon: InkWell(
-                          onTap: () {
-                            context
-                                .read<CreateAccountCubit>()
-                                .togglePasswordVisibility();
-                          },
-                          child: Icon(
-                            state.isObscureText
-                                ? Icons.visibility_off_outlined
-                                : Icons.visibility_outlined,
+                        style: AppStyle.style24W500Black,
+                      ),
+                    ),
+                    HeightSpace(20.h),
+
+                    Text(
+                      getTranslated(context, LangConst.textName).toString(),
+                      style: AppStyle.style16W500Black,
+                    ),
+                    HeightSpace(5.h),
+                    NewCustomTextFormField(
+                      txtController: state.nameController,
+                      hint: getTranslated(context, LangConst.textName),
+                      keyboardType: TextInputType.text,
+                      obscureText: false,
+                      enabled: true,
+                      readOnly: false,
+                      onTap: () {},
+                    ),
+                    HeightSpace(20.h),
+                    //mobile
+                    Text(
+                      getTranslated(context, LangConst.textPhoneNumber)
+                          .toString(),
+                      style: AppStyle.style16W500Black,
+                    ),
+                    HeightSpace(5.h),
+                    Row(
+                      children: [
+                        // InkWell(
+                        //   onTap: () {},
+                        //   child: Container(
+                        //     height: 50.h,
+                        //     padding: EdgeInsets.symmetric(horizontal: 10.w),
+                        //     //width: 80.w,
+                        //     decoration: BoxDecoration(
+                        //         color: const Color(0xffF6F6F6),
+                        //         borderRadius: BorderRadius.circular(5),
+                        //         border: Border.all(
+                        //             color: const Color(0xffF6F6F6))),
+                        //     child: Center(
+                        //         child: Row(
+                        //       mainAxisAlignment: MainAxisAlignment.center,
+                        //       children: [
+                        //         // const Icon(Icons.arrow_drop_down),
+                        //         Text(
+                        //           "+218",
+                        //           style: AppStyle.style16W500Black,
+                        //           textDirection: TextDirection.ltr,
+                        //           //  '+${context.read<LoginCubit>().selectedCountry}',
+                        //         ),
+                        //       ],
+                        //     )),
+                        //   ),
+                        // ),
+                        // WidthSpace(10.w),
+                        Expanded(
+                          child: NewCustomTextFormField(
+                            txtController: state.phoneController,
+                            hint: getTranslated(
+                                context, LangConst.textPhoneNumber),
+                            keyboardType: TextInputType.emailAddress,
+                            obscureText: false,
+                            enabled: true,
+                            readOnly: false,
+                            onTap: () {},
                           ),
                         ),
-                      ),
+                      ],
+                    ),
+                    //email
+                    HeightSpace(20.h),
+                    Text(
+                      getTranslated(context, LangConst.textEmail).toString(),
+                      style: AppStyle.style16W500Black,
+                    ),
+                    HeightSpace(5.h),
 
-                      HeightSpace(20.h),
-                      //gender
-                      Text(
-                        "اختر النوع",
-                        style: AppStyle.style16W500Black,
-                      ),
-                      HeightSpace(10.h),
-                      ChooseGender(
-                        onGenderSelected: (value) {
-                          print(value);
-                          context.read<CreateAccountCubit>().setGender(value);
-                        },
-                      ),
-                      HeightSpace(50.h),
-                      ButtonAuth(
-                        text: "انشاء حساب",
+                    NewCustomTextFormField(
+                      txtController: state.emailController,
+                      hint: getTranslated(context, LangConst.textEmail),
+                      keyboardType: TextInputType.emailAddress,
+                      obscureText: false,
+                      enabled: true,
+                      readOnly: false,
+                      onTap: () {},
+                    ),
+                    HeightSpace(20.h),
+                    //password
+
+                    Text(
+                      getTranslated(context, LangConst.password).toString(),
+                      style: AppStyle.style16W500Black,
+                    ),
+                    HeightSpace(5.h),
+
+                    NewCustomTextFormField(
+                      hint:
+                          getTranslated(context, LangConst.password).toString(),
+                      txtController: state.passwordController,
+                      obscureText: state.isObscureText,
+                      suffixIcon: InkWell(
                         onTap: () {
-                          if (formKey.currentState!.validate()) {
-                            context.read<CreateAccountCubit>().createAccount();
-                          }
+                          context
+                              .read<CreateAccountCubit>()
+                              .togglePasswordVisibility();
                         },
+                        child: Icon(
+                          state.isObscureText
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                        ),
                       ),
-                    ],
-                  ),
+                    ),
+
+                    HeightSpace(20.h),
+                    //gender
+                    Text(
+                      getTranslated(context, LangConst.textGender).toString(),
+                      style: AppStyle.style16W500Black,
+                    ),
+                    HeightSpace(10.h),
+                    ChooseGender(
+                      onGenderSelected: (value) {
+                        print(value);
+                        context.read<CreateAccountCubit>().setGender(value);
+                      },
+                    ),
+                    HeightSpace(50.h),
+                    ButtonAuth(
+                      text: getTranslated(context, LangConst.textSignUp),
+                      onTap: () {
+                        if (formKey.currentState!.validate()) {
+                          context.read<CreateAccountCubit>().createAccount();
+                        }
+                      },
+                    ),
+                  ],
                 ),
               ),
             ),

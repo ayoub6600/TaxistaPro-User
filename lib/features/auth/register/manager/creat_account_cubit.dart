@@ -21,7 +21,7 @@ class CreateAccountCubit extends Cubit<CreateAccountState> {
       name: state.nameController.text,
       email: state.emailController.text,
       mobile: state.phoneController.text,
-      country: "country",
+      country: "+218",
       gender: state.gender,
       password: state.passwordController.text,
     );

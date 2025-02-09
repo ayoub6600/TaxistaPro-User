@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:taxista/Localization/localization_constant.dart';
+import 'package:taxista/constants/app_color.dart';
+import 'package:taxista/constants/spaces.dart';
 import 'package:taxista/constants/text_style.dart';
 
 class ChooseGender extends StatefulWidget {
@@ -11,19 +15,19 @@ class ChooseGender extends StatefulWidget {
 }
 
 class _ChooseGenderState extends State<ChooseGender> {
-  String selectedGender = 'male'; // Default value
+  String selectedGender = 'male'; // Default gender selection
 
   void _selectGender(String value) {
     setState(() {
       selectedGender = value;
     });
-    widget.onGenderSelected(value); // Pass gender to parent
+    widget.onGenderSelected(value);
   }
 
-  Widget _buildGenderOption(String label, String value) {
+  Widget _buildGenderOption(String key, String value) {
     return Expanded(
       child: InkWell(
-        onTap: () => _selectGender(value), // Update state on tap
+        onTap: () => _selectGender(value),
         child: Row(
           children: [
             Container(
@@ -38,16 +42,21 @@ class _ChooseGenderState extends State<ChooseGender> {
                   ? Container(
                       height: 10,
                       width: 10,
-                      decoration: const BoxDecoration(
-                          shape: BoxShape.circle, color: Colors.black),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColor.primary,
+                      ),
                     )
-                  : Container(),
+                  : null,
             ),
-            SizedBox(width: 10),
-            Text(
-              label,
-              style: AppStyle.style14W500Black,
-              maxLines: 1,
+            WidthSpace(10.w),
+            GestureDetector(
+              onTap: () => _selectGender(value),
+              child: Text(
+                getTranslated(context, key), // Localized text
+                style: AppStyle.style16W500hepo,
+                maxLines: 1,
+              ),
             ),
           ],
         ),
@@ -60,8 +69,8 @@ class _ChooseGenderState extends State<ChooseGender> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
-        _buildGenderOption('Male', 'male'),
-        _buildGenderOption('Female', 'female'),
+        _buildGenderOption('male', 'male'),
+        _buildGenderOption('female', 'female'),
       ],
     );
   }
