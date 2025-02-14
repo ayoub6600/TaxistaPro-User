@@ -242,6 +242,10 @@ class Assets {
   /// assets/images/landingtwo.jpg
   static const String assetsImagesLandingtwo = "assets/images/landingtwo.jpg";
 
+  /// Assets for assetsImagesLibya
+  /// assets/images/libya.png
+  static const String assetsImagesLibya = "assets/images/libya.png";
+
   /// Assets for assetsImagesLocationPerm
   /// assets/images/location_perm.png
   static const String assetsImagesLocationPerm =

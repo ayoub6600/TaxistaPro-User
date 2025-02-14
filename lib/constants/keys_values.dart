@@ -17,4 +17,7 @@ class PrefKey {
   static const String loginType = "loginType";
   static const String loginExpire = "loginExpire";
   static const String contactDialog = "contactDialog";
+  static const String latitude = "latitude";
+  static const String longitude = "longitude";
+  static const String fullAddress = "fullAddress";
 }

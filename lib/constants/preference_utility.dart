@@ -113,7 +113,8 @@ class SharedPreferenceUtil {
   }
 
   /// get double
-  static double getDouble(String key, {double defValue = 0.0}) {
+  static double getDouble(String key, double latitude,
+      {double defValue = 0.0}) {
     if (_prefs == null) return defValue;
     return _prefs!.getDouble(key) ?? defValue;
   }
