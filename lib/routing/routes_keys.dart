@@ -1,9 +1,18 @@
 class RoutesKeys {
   static const kSplash = '/';
+  static const kManagerAddressView = '/ManagerAddressView';
+  static const kCurrentLocation = '/CurrentLocationView';
+  static const kChangeAddressLocation = '/ChangeAddressLocation';
+  static const kAddAddress = '/AddAddress';
+  static const kAddLocation = '/AddLocation';
   static const kWelcome = '/kWelcome';
   static const kOnboarding = '/kOnboarding';
+  static const kComplaintView = '/kComplaintView';
   static const kLogin = '/kLogin';
   static const kHome = '/kHome';
+  static const kProfail = '/kProfailView';
+  static const keditProfail = '/keditProfail';
+
   static const kRegister = '/kRegister';
   static const kForgot = '/kForgot';
   static const kOtpVerification = '/kOtpVerification';
