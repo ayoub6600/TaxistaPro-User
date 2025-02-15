@@ -3,9 +3,8 @@ import 'dart:convert';
 import 'package:chucker_flutter/chucker_flutter.dart';
 import 'package:dio/dio.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
-
-import '../Constants/keys_values.dart';
-import '../Constants/preference_utility.dart';
+import 'package:taxista/constants/keys_values.dart';
+import 'package:taxista/constants/preference_utility.dart';
 
 class ApiService {
   final Dio _dio;
@@ -136,6 +135,8 @@ class ApiService {
       {required String endPoint,
       Map<String, dynamic>? queryParameters,
       Map<String, dynamic>? data}) async {
+    print(
+        "---------------->   Bearer ${SharedPreferenceUtil.getString(PrefKey.login)}");
     var response = await _dio.get(
       '${getUrl()}$endPoint',
       queryParameters: queryParameters,
