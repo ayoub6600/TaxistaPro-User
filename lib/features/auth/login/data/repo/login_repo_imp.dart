@@ -5,6 +5,8 @@ import 'package:dartz/dartz.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:taxista/features/auth/login/data/model/login_response_model.dart';
 import 'package:taxista/features/auth/login/data/repo/login_repo.dart';
+import 'package:taxista/features/profail/data/model/user_data_responce.dart';
+import 'package:taxista/features/profail/data/repo/get_user_data.dart';
 import 'package:taxista/widgets_new/api_service.dart';
 import 'package:taxista/widgets_new/failures.dart';
 import 'package:dio/dio.dart';
@@ -63,6 +65,7 @@ class LoginRepoImap implements LoginRepo {
       //print('---->${response.code}');
       if (response.code >= 200 && response.code < 300) {
         var model = LoginResponce.fromJson(response.data);
+
         return right(model);
       } else {
         if (response.code == 422) {
@@ -76,5 +79,10 @@ class LoginRepoImap implements LoginRepo {
       }
       return left(ServerFailure(e.toString()));
     }
+  }
+
+  @override
+  Future<Either<Failure, UserProfile>> getUserData() {
+    return GetUserData(apiService).getUserData();
   }
 }

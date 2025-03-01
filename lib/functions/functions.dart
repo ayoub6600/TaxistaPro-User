@@ -195,6 +195,8 @@ List languagesCode = [
 //getting country code
 
 List countries = [];
+
+//✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅
 getCountryCode() async {
   dynamic result;
   try {
@@ -345,7 +347,7 @@ getLocalData() async {
   return result;
 }
 
-//------------------------------------------___> Done register user
+//  ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅  register user
 
 List<BearerClass> bearerToken = <BearerClass>[];
 
@@ -529,7 +531,7 @@ otpCall() async {
   return result;
 }
 
-// verify user already exist
+//✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅   verify user already exist
 
 Future<dynamic> verifyUser(String number, int login, String password,
     String email, bool isOtp, bool forgot) async {
@@ -648,7 +650,10 @@ acceptRequest(body) async {
   }
 }
 
+//✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅    Udate password
+
 updatePassword(email, password, loginby) async {
+  print('update password');
   dynamic result;
 
   try {
@@ -679,7 +684,7 @@ updatePassword(email, password, loginby) async {
   return result;
 }
 
-//user login (done )
+// ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ user login (done )
 userLogin(number, login, password, isOtp) async {
   bearerToken.clear(); // مسح رموز التصديق القديمة
   dynamic result;
@@ -799,7 +804,8 @@ List banners = [];
 bool ismulitipleride = false;
 bool polyGot = false;
 bool changeBound = false;
-//user current state
+// ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅   but api/v1/user?current_ride=$id'  dont work
+// user current state
 
 getUserDetails({id}) async {
   dynamic result;
@@ -1569,101 +1575,77 @@ etaRequest({transport, outstation}) async {
   etaDetails.clear();
   dynamic result;
   try {
-    var response = await http.post(Uri.parse('${url}api/v1/request/eta'),
-        headers: {
-          'Authorization': 'Bearer ${bearerToken[0].token}',
-          'Content-Type': 'application/json',
-        },
-        body: (addressList
-                    .where((element) => element.type == 'drop')
-                    .isNotEmpty &&
-                dropStopList.isEmpty)
-            ? jsonEncode({
-                'pick_lat': (userRequestData.isNotEmpty)
-                    ? userRequestData['pick_lat']
-                    : addressList
-                        .firstWhere((e) => e.type == 'pickup')
-                        .latlng
-                        .latitude,
-                'pick_lng': (userRequestData.isNotEmpty)
-                    ? userRequestData['pick_lng']
-                    : addressList
-                        .firstWhere((e) => e.type == 'pickup')
-                        .latlng
-                        .longitude,
-                'drop_lat': (userRequestData.isNotEmpty)
-                    ? userRequestData['drop_lat']
-                    : addressList
-                        .lastWhere((e) => e.type == 'drop')
-                        .latlng
-                        .latitude,
-                'drop_lng': (userRequestData.isNotEmpty)
-                    ? userRequestData['drop_lng']
-                    : addressList
-                        .lastWhere((e) => e.type == 'drop')
-                        .latlng
-                        .longitude,
-                'ride_type': 1,
-                'transport_type': (transport == null)
-                    ? (choosenTransportType == 0)
-                        ? 'taxi'
-                        : 'delivery'
-                    : transport,
-                'is_outstation': outstation
-              })
-            : (dropStopList.isNotEmpty &&
-                    addressList
-                        .where((element) => element.type == 'drop')
-                        .isNotEmpty)
-                ? jsonEncode({
-                    'pick_lat': (userRequestData.isNotEmpty)
-                        ? userRequestData['pick_lat']
-                        : addressList
-                            .firstWhere((e) => e.type == 'pickup')
-                            .latlng
-                            .latitude,
-                    'pick_lng': (userRequestData.isNotEmpty)
-                        ? userRequestData['pick_lng']
-                        : addressList
-                            .firstWhere((e) => e.type == 'pickup')
-                            .latlng
-                            .longitude,
-                    'drop_lat': (userRequestData.isNotEmpty)
-                        ? userRequestData['drop_lat']
-                        : addressList
-                            .lastWhere((e) => e.type == 'drop')
-                            .latlng
-                            .latitude,
-                    'drop_lng': (userRequestData.isNotEmpty)
-                        ? userRequestData['drop_lng']
-                        : addressList
-                            .lastWhere((e) => e.type == 'drop')
-                            .latlng
-                            .longitude,
-                    'stops': jsonEncode(dropStopList),
-                    'ride_type': 1,
-                    'transport_type':
-                        (choosenTransportType == 0) ? 'taxi' : 'delivery',
-                    'is_outstation': outstation
-                  })
-                : jsonEncode({
-                    'pick_lat': (userRequestData.isNotEmpty)
-                        ? userRequestData['pick_lat']
-                        : addressList
-                            .firstWhere((e) => e.type == 'pickup')
-                            .latlng
-                            .latitude,
-                    'pick_lng': (userRequestData.isNotEmpty)
-                        ? userRequestData['pick_lng']
-                        : addressList
-                            .firstWhere((e) => e.type == 'pickup')
-                            .latlng
-                            .longitude,
-                    'ride_type': 1,
-                    'transport_type':
-                        (choosenTransportType == 0) ? 'taxi' : 'delivery',
-                    'is_outstation': outstation
-                  }));
+    String urlString = '${url}api/v1/request/eta';
+    var requestBody = (addressList
+                .where((element) => element.type == 'drop')
+                .isNotEmpty &&
+            dropStopList.isEmpty)
+        ? jsonEncode({
+            'pick_lat': (userRequestData.isNotEmpty)
+                ? userRequestData['pick_lat']
+                : addressList
+                    .firstWhere((e) => e.type == 'pickup')
+                    .latlng
+                    .latitude,
+            'pick_lng': (userRequestData.isNotEmpty)
+                ? userRequestData['pick_lng']
+                : addressList
+                    .firstWhere((e) => e.type == 'pickup')
+                    .latlng
+                    .longitude,
+            'drop_lat': (userRequestData.isNotEmpty)
+                ? userRequestData['drop_lat']
+                : addressList
+                    .lastWhere((e) => e.type == 'drop')
+                    .latlng
+                    .latitude,
+            'drop_lng': (userRequestData.isNotEmpty)
+                ? userRequestData['drop_lng']
+                : addressList
+                    .lastWhere((e) => e.type == 'drop')
+                    .latlng
+                    .longitude,
+            'ride_type': 1,
+            'transport_type': (transport == null)
+                ? (choosenTransportType == 0)
+                    ? 'taxi'
+                    : 'delivery'
+                : transport,
+            'is_outstation': outstation
+          })
+        : // other cases
+        jsonEncode({
+            'pick_lat': (userRequestData.isNotEmpty)
+                ? userRequestData['pick_lat']
+                : addressList
+                    .firstWhere((e) => e.type == 'pickup')
+                    .latlng
+                    .latitude,
+            'pick_lng': (userRequestData.isNotEmpty)
+                ? userRequestData['pick_lng']
+                : addressList
+                    .firstWhere((e) => e.type == 'pickup')
+                    .latlng
+                    .longitude,
+            'ride_type': 1,
+            'transport_type': (choosenTransportType == 0) ? 'taxi' : 'delivery',
+            'is_outstation': outstation
+          });
+
+    print('Calling API: $urlString');
+    print('Request Body: $requestBody');
+
+    var response = await http.post(
+      Uri.parse(urlString),
+      headers: {
+        'Authorization': 'Bearer ${bearerToken[0].token}',
+        'Content-Type': 'application/json',
+      },
+      body: requestBody,
+    );
+
+    print('Response Status Code: ${response.statusCode}');
+    print('Response Body: ${response.body}');
 
     if (response.statusCode == 200) {
       etaDetails = jsonDecode(response.body)['data'];
@@ -1678,7 +1660,6 @@ etaRequest({transport, outstation}) async {
     } else if (response.statusCode == 401) {
       result = 'logout';
     } else {
-      debugPrint(response.body);
       if (jsonDecode(response.body)['message'] ==
           "service not available with this location") {
         serviceNotAvailable = true;
@@ -1687,6 +1668,7 @@ etaRequest({transport, outstation}) async {
     }
     return result;
   } catch (e) {
+    print('Error: $e');
     if (e is SocketException) {
       internet = false;
     }
@@ -1695,6 +1677,8 @@ etaRequest({transport, outstation}) async {
 
 etaRequestWithPromo({outstation}) async {
   dynamic result;
+  print('promoCode: $promoCode');
+  print("-------_---------->aa");
   // etaDetails.clear();
   try {
     var response = await http.post(Uri.parse('${url}api/v1/request/eta'),
@@ -1848,6 +1832,7 @@ rentalEta() async {
 
 bool couponerror = false;
 rentalRequestWithPromo() async {
+  print('------------->');
   dynamic result;
   try {
     var response = await http.post(
@@ -1910,42 +1895,60 @@ Map<String, dynamic> userRequestData = {};
 //create request
 String tripError = '';
 createRequest(value, api) async {
+  print("-----------> Starting createRequest");
   waitingTime = 0;
   dynamic result;
-  print('drops1 $url$api');
+  print('API Endpoint: $url$api');
+  print('Request Body: $value');
+
   try {
-    var response = await http.post(Uri.parse('$url$api'),
-        headers: {
-          'Authorization': 'Bearer ${bearerToken[0].token}',
-          'Content-Type': 'application/json',
-        },
-        body: value);
+    var response = await http.post(
+      Uri.parse('$url$api'),
+      headers: {
+        'Authorization': 'Bearer ${bearerToken[0].token}',
+        'Content-Type': 'application/json',
+      },
+      body: value,
+    );
+
+    print('Response Status Code: ${response.statusCode}');
+    print('Response Body: ${response.body}');
+
     if (response.statusCode == 200) {
       userRequestData = jsonDecode(response.body)['data'];
+      print('User Request Data: $userRequestData');
       streamRequest();
       result = 'success';
       valueNotifierBook.incrementNotifier();
     } else if (response.statusCode == 401) {
+      print('Unauthorized: Logging out');
       result = 'logout';
     } else {
       debugPrint(response.body);
-      if (jsonDecode(response.body)['message'] == 'no drivers available') {
+      var responseMessage = jsonDecode(response.body)['message'];
+      if (responseMessage == 'no drivers available') {
         noDriverFound = true;
+        print('No drivers available');
       } else {
-        tripError = jsonDecode(response.body)['message'].toString();
+        tripError = responseMessage.toString();
         tripReqError = true;
+        print('Trip Error: $tripError');
       }
-
       result = 'failure';
       valueNotifierBook.incrementNotifier();
     }
   } catch (e) {
     if (e is SocketException) {
       internet = false;
+      print('No Internet Connection');
       result = 'no internet';
       valueNotifierBook.incrementNotifier();
+    } else {
+      print('Unexpected Error: $e');
     }
   }
+
+  print('Final Result: $result');
   return result;
 }
 
@@ -1954,6 +1957,7 @@ createRequest(value, api) async {
 createRequestLater(val, api) async {
   dynamic result;
   waitingTime = 0;
+  print("-----------> zoz");
   print('drop $url$api');
   try {
     var response = await http.post(Uri.parse('$url$api'),
@@ -1993,6 +1997,7 @@ createRequestLater(val, api) async {
 
 createRequestLaterPromo() async {
   print('drop2x ${url}api/v1/request/create');
+  print('---------------------__>Ahmed ');
   dynamic result;
   waitingTime = 0;
   try {
@@ -2065,6 +2070,7 @@ createRequestLaterPromo() async {
 
 createRentalRequest() async {
   dynamic result;
+  print('---------------------__>Ahmed1 ');
   print('drops2 ${url}api/v1/request/create');
 
   try {
@@ -3057,7 +3063,7 @@ getFaqPages(id) async {
   }
 }
 
-//remove fav address
+// ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅  remove fav address
 
 removeFavAddress(id) async {
   dynamic result;
@@ -3149,6 +3155,7 @@ List myHistory = [];
 Map<String, dynamic> myHistoryPage = {};
 
 String historyFiltter = 'is_completed=1';
+
 getHistory() async {
   dynamic result;
   try {
@@ -3163,6 +3170,7 @@ getHistory() async {
           Uri.parse('${url}api/v1/request/history?$historyFiltter'),
           headers: {'Authorization': 'Bearer ${bearerToken[0].token}'});
     }
+    print('url ${url}api/v1/request/history?$historyFiltter');
     if (response.statusCode == 200) {
       myHistory = jsonDecode(response.body)['data'];
       myHistoryPage = jsonDecode(response.body)['meta'];
@@ -3627,40 +3635,58 @@ cashFreePaymentSuccess() async {
   return result;
 }
 
-//edit user profile
-
-updateProfile(name, email, usergender) async {
+//   ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅  edit user profile
+//Ahmed
+Future<String> updateProfile(
+    String name, String email, String usergender) async {
   dynamic result;
   try {
+    print("Starting updateProfile...");
+
     var response = http.MultipartRequest(
       'POST',
       Uri.parse('${url}api/v1/user/profile'),
     );
     response.headers
         .addAll({'Authorization': 'Bearer ${bearerToken[0].token}'});
+    print("Headers set: ${response.headers}");
+
     if (profileImageFile != null) {
       response.files.add(await http.MultipartFile.fromPath(
           'profile_picture', profileImageFile));
+      print("Profile picture added.");
     }
+
     response.fields['email'] = email;
     response.fields['name'] = name;
-    response.fields['gender'] = (gender == 'male')
+    response.fields['gender'] = (usergender == 'male')
         ? 'male'
-        : (gender == 'female')
+        : (usergender == 'female')
             ? 'female'
             : 'others';
+
+    print("Fields added: ${response.fields}");
+
     var request = await response.send();
+    print("Request sent, waiting for response...");
+
     var respon = await http.Response.fromStream(request);
     final val = jsonDecode(respon.body);
+
+    print("Response received: ${respon.body}");
+
     if (request.statusCode == 200) {
       result = 'success';
+      print("Update successful.");
       if (val['success'] == true) {
+        print("Fetching user details...");
         await getUserDetails();
       }
     } else if (request.statusCode == 401) {
       result = 'logout';
+      print("Unauthorized: Logging out.");
     } else if (request.statusCode == 422) {
-      debugPrint(respon.body);
+      print("Validation error: ${respon.body}");
       var error = jsonDecode(respon.body)['errors'];
       result = error[error.keys.toList()[0]]
           .toString()
@@ -3668,14 +3694,18 @@ updateProfile(name, email, usergender) async {
           .replaceAll(']', '')
           .toString();
     } else {
-      debugPrint(val);
+      print("Unexpected error: ${val}");
       result = jsonDecode(respon.body)['message'];
     }
   } catch (e) {
+    print("Exception caught: $e");
     if (e is SocketException) {
       result = 'no internet';
+      print("No internet connection.");
     }
   }
+
+  print("Final result: $result");
   return result;
 }
 
@@ -4219,6 +4249,7 @@ getemailmodule() async {
   return res;
 }
 
+//---------------------------->  Done ✅✅✅✅✅✅✅✅✅  Mobile OTP
 sendOTPtoMobile(String mobile, String countryCode) async {
   dynamic result;
   try {

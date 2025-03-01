@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:taxista/Localization/localization_constant.dart';
+import 'package:taxista/utils/lang_const.dart';
 
 class NewCustomTextFormField extends StatelessWidget {
   const NewCustomTextFormField({
@@ -57,7 +59,7 @@ class NewCustomTextFormField extends StatelessWidget {
       inputFormatters: inputFormatters ?? _getInputFormatters(keyboardType),
       validator: (value) {
         if (value!.isEmpty) {
-          return 'Please enter some text';
+          return getTranslated(context, LangConst.pleaseEnterSomeText);
         }
         return null;
       },

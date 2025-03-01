@@ -7,6 +7,7 @@ import 'package:taxista/constants/preference_utility.dart';
 import 'package:taxista/features/auth/login/data/model/login_response_model.dart';
 import 'package:taxista/features/auth/login/data/repo/login_repo.dart';
 import 'package:taxista/features/auth/login/manager/login_state.dart';
+import 'package:taxista/features/profail/data/model/user_data_responce.dart';
 import 'package:taxista/functions/functions.dart';
 import 'package:taxista/pages/loadingPage/loadingpage.dart';
 
@@ -35,6 +36,9 @@ class LoginCubit extends Cubit<LoginState> {
           if (model.accessToken != null && model.tokenType != null) {
             await setData(model);
           }
+          print("token ${model.accessToken}");
+          print("token ${SharedPreferenceUtil.getString(PrefKey.login)}");
+          getUserData();
         }
 
         emit(
@@ -54,6 +58,19 @@ class LoginCubit extends Cubit<LoginState> {
     );
   }
 
+  void getUserData() async {
+    var result = await repo.getUserData();
+    result.fold(
+      (failure) {
+        emit(state.copyWith(failure: failure));
+      },
+      (model) {
+        saveData(model);
+        emit(state.copyWith());
+      },
+    );
+  }
+
   void togglePasswordVisibility() {
     emit(state.copyWith(isObscureText: !state.isObscureText));
   }
@@ -66,5 +83,15 @@ class LoginCubit extends Cubit<LoginState> {
         PrefKey.loginExpire, data.expiresIn!.toString());
 
     SharedPreferenceUtil.putBool(PrefKey.isLoggedIn, true);
+  }
+
+  saveData(UserProfile data) {
+    SharedPreferenceUtil.putInt(PrefKey.userId, data.data.id);
+    SharedPreferenceUtil.putString(PrefKey.email, data.data.email);
+    SharedPreferenceUtil.putString(PrefKey.fullName, data.data.name);
+    SharedPreferenceUtil.putString(PrefKey.mobile, data.data.mobile);
+    SharedPreferenceUtil.putString(PrefKey.gender, data.data.gender);
+    SharedPreferenceUtil.putString(
+        PrefKey.profileImage, data.data.profilePicture);
   }
 }

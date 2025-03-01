@@ -6,6 +6,7 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../functions/functions.dart';
@@ -52,18 +53,14 @@ class _ButtonState extends State<Button> {
       child: Container(
         width: (widget.width != null) ? widget.width : media.width * 0.9,
         decoration: BoxDecoration(
-            color: (widget.color != null)
-                ? widget.color
-                : (isDarkTheme)
-                    ? buttonColor
-                    : Colors.black,
-            border: Border.all(
-                color: (widget.borcolor != null)
-                    ? widget.borcolor
-                    : (isDarkTheme)
-                        ? buttonColor
-                        : Colors.black),
-            borderRadius: BorderRadius.circular(media.width * 0.02)),
+            color: Colors.blue,
+            // border: Border.all(
+            //     color: (widget.borcolor != null)
+            //         ? widget.borcolor
+            //         : (isDarkTheme)
+            //             ? buttonColor
+            //             : Colors.black),
+            borderRadius: BorderRadius.circular(20.r)),
         child: Container(
           height: widget.height ?? media.width * 0.12,
           // width: (widget.width != null) ? widget.width : media.width * 0.9,
@@ -186,7 +183,7 @@ class MyText extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text == null ? '' : text.toString(),
-      style: GoogleFonts.notoSans(
+      style: GoogleFonts.cairo(
           fontSize: size,
           fontWeight: fontweight ?? FontWeight.normal,
           color: color ?? textColor),

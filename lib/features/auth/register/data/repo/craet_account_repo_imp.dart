@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:taxista/features/auth/login/data/model/login_response_model.dart';
@@ -25,10 +24,10 @@ class CreatAccountImap implements CreatAccountRepo {
       final body = {
         'name': name,
         'mobile': mobile,
-        'country': '+218',
+        'country': country, // Use the passed `country` parameter
         'email': email,
         'gender': gender,
-        'password': password
+        'password': password,
       };
       String jsonData = json.encode(body);
 
@@ -47,6 +46,26 @@ class CreatAccountImap implements CreatAccountRepo {
       }
     } catch (e) {
       // Catch any exception and return it as a Failure
+      if (e is DioException) {
+        return left(ServerFailure.fromDioError(e));
+      }
+      return left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<dynamic>>> getCountryCode() async {
+    try {
+      var response = await apiService.get(endPoint: 'api/v1/countries-new');
+
+      if (response.code >= 200 && response.code < 300) {
+        var countries = response.data['data']['countries']['data'];
+
+        return right(countries);
+      } else {
+        return left(Failure(response.errorMessage));
+      }
+    } catch (e) {
       if (e is DioException) {
         return left(ServerFailure.fromDioError(e));
       }

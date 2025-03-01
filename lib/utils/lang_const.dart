@@ -1,5 +1,25 @@
 class LangConst {
   // General Texts
+
+  static const String textRental = "text_rental";
+  static const String textCompleted = "text_completed";
+  static const String textEdit = "text_edit";
+  static const String managementAddress = "management_address";
+  static const String textCancel = "text_cancel";
+  static const String textNotification = "text_notification";
+  static const String textMakeComplaint = "text_make_complaints";
+  static const String textChooseComplaint = "text_choose_complaint";
+  static const String textComplaint = "text_complaint_2";
+  static const String textdescriptioncomplaint = "text_description_complaint";
+  static const String textNoDataFound = "text_noDataFound";
+  static const String textSend = "text_send";
+  //textAreYouSureYouWantToMakeAComplaint
+  static const String textAreYouSureYouWantToMakeAComplaint =
+      "textAreYouSureYouWantToMakeAComplaint";
+
+  static const String textTapAddAddress = "text_tap_add_address";
+  //text_tap_add_address
+  static const String textPersonalInfo = "text_personal_info";
   static const String textSignUp = "text_sign_up";
   static const String textTrackLocation = "Tracking Driver Location";
   static const String textKeepTrack =
@@ -44,4 +64,12 @@ class LangConst {
   static const String textverify = "text_verify";
   static const String setPassword = "set_password";
   static const String updatePassword = "update_password";
+  static const String newPassword = "new_password";
+  static const String confirmPassword = "confirm_password";
+  static const String invalidPhone = "invalid_phone_format";
+  static const String textCreateAccount = "text_create_account";
+  static const String textGender = "text_gender";
+  //phone
+  static const String phone = "phone";
+  static const String pleaseEnterSomeText = "please_enter_some_text";
 }

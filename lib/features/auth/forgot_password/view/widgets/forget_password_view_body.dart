@@ -8,6 +8,7 @@ import 'package:taxista/constants/text_style.dart';
 import 'package:taxista/features/auth/forgot_password/manager/forgot_pass_cubit.dart';
 import 'package:taxista/features/auth/forgot_password/manager/forgot_pass_state.dart';
 import 'package:taxista/features/auth/forgot_password/view/widgets/for_got_password_phone.dart';
+import 'package:taxista/features/auth/login/view/widgets/logo.dart';
 import 'package:taxista/routing/routes_keys.dart';
 import 'package:taxista/utils/lang_const.dart';
 import 'package:taxista/widgets_new/button_auth.dart';
@@ -24,7 +25,7 @@ class ForgotPasswordViewBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<VerifyUserCubit, VerifyUserState>(
-      listener: (context, state) {
+      listener: (context, state) async {
         switch (state.verifyUserStates) {
           case VerifyUserStates.initial:
             break;
@@ -40,13 +41,16 @@ class ForgotPasswordViewBody extends StatelessWidget {
             {
               Navigator.pop(context);
               if (state.modelData?.success == true) {
-                GoRouter.of(context).push(RoutesKeys.kOtpVerification,
-                    extra: state.phoneController.text);
+                await context.read<VerifyUserCubit>().sendOTPtoMobile(
+                    mobile: state.phoneController.text, countryCode: "+218");
               }
-
-              //  showCustomSuccessToast(state.modelData?.msg.toString() ?? "");
             }
             break;
+        }
+
+        if (state.sendOTPtoMobileState == SendOTPtoMobileStates.success) {
+          GoRouter.of(context).push(RoutesKeys.kOtpVerification,
+              extra: state.phoneController.text);
         }
       },
       builder: (context, state) {
@@ -65,6 +69,8 @@ class ForgotPasswordViewBody extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      const LogoWidgets(),
+                      const HeightSpace(20),
                       CustmheaderAuth(
                         title: getTranslated(context, LangConst.forgotPassword),
                         subtitle: getTranslated(

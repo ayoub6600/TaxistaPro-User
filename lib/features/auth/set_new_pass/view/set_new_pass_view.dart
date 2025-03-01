@@ -5,16 +5,17 @@ import 'package:taxista/features/auth/set_new_pass/view/widgets/set_new_pass_vie
 class SetNewPassView extends StatelessWidget {
   const SetNewPassView({
     super.key,
+    required this.phone,
   });
-  // final Map<String, dynamic>? data;
+  final String phone;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColor.white,
       body: SetNewPassViewBody(
-          //    data: data,
-          ),
+        phone: phone,
+      ),
     );
   }
 }

@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geolocator/geolocator.dart' as geolocs;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -387,7 +388,8 @@ class _DropLocationState extends State<DropLocation>
                                         // minZoom: 10,
                                         urlTemplate:
                                             'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                                        userAgentPackageName: 'com.taxista.user',
+                                        userAgentPackageName:
+                                            'com.taxista.user',
                                       ),
                                       const fm.RichAttributionWidget(
                                         attributions: [],
@@ -599,26 +601,24 @@ class _DropLocationState extends State<DropLocation>
                                               child: Row(
                                                 children: [
                                                   Container(
-                                                    height: media.width * 0.04,
-                                                    width: media.width * 0.04,
-                                                    alignment: Alignment.center,
-                                                    decoration: BoxDecoration(
-                                                        shape: BoxShape.circle,
-                                                        color: const Color(
-                                                                0xffFF0000)
-                                                            .withOpacity(0.3)),
-                                                    child: Container(
                                                       height:
-                                                          media.width * 0.02,
-                                                      width: media.width * 0.02,
-                                                      decoration:
-                                                          const BoxDecoration(
-                                                              shape: BoxShape
-                                                                  .circle,
-                                                              color: Color(
-                                                                  0xffFF0000)),
-                                                    ),
-                                                  ),
+                                                          media.width * 0.06,
+                                                      width: media.width * 0.06,
+                                                      alignment:
+                                                          Alignment.center,
+                                                      decoration: BoxDecoration(
+                                                          shape:
+                                                              BoxShape.circle,
+                                                          color: const Color(
+                                                                  0xffFF0000)
+                                                              .withOpacity(
+                                                                  0.3)),
+                                                      child: const Icon(
+                                                        Icons.location_pin,
+                                                        color:
+                                                            Color(0xffFF0000),
+                                                        size: 10,
+                                                      )),
                                                   SizedBox(
                                                       width:
                                                           media.width * 0.02),
@@ -650,7 +650,7 @@ class _DropLocationState extends State<DropLocation>
                                                                     child: Text(
                                                                       dropAddressConfirmation,
                                                                       style: GoogleFonts
-                                                                          .notoSans(
+                                                                          .cairo(
                                                                         fontSize:
                                                                             media.width *
                                                                                 twelve,
@@ -1985,11 +1985,20 @@ class _DropLocationState extends State<DropLocation>
                                                 ['text_saveaddressas'],
                                             style: GoogleFonts.notoSans(
                                                 fontSize: media.width * sixteen,
-                                                color: textColor,
+                                                color: Colors.blue,
                                                 fontWeight: FontWeight.w600),
                                           ),
                                           SizedBox(
-                                            height: media.width * 0.025,
+                                            height: 20.h,
+                                          ),
+                                          Text(
+                                            "${languages[choosenLanguage]['text_address']}",
+                                            style: GoogleFonts.cairo(
+                                                fontSize: 12.sp,
+                                                color: Colors.blue),
+                                          ),
+                                          SizedBox(
+                                            height: 10.h,
                                           ),
                                           Text(
                                             favSelectedAddress,
@@ -2055,9 +2064,11 @@ class _DropLocationState extends State<DropLocation>
                                                         width:
                                                             media.width * 0.01,
                                                       ),
-                                                      Text(languages[
-                                                              choosenLanguage]
-                                                          ['text_home'])
+                                                      Text(
+                                                        languages[
+                                                                choosenLanguage]
+                                                            ['text_home'],
+                                                      )
                                                     ],
                                                   ),
                                                 ),
@@ -2181,38 +2192,57 @@ class _DropLocationState extends State<DropLocation>
                                             ],
                                           ),
                                           (favName == 'Others')
-                                              ? Container(
-                                                  padding: EdgeInsets.all(
-                                                      media.width * 0.025),
-                                                  decoration: BoxDecoration(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              12),
-                                                      border: Border.all(
-                                                          color: borderLines,
-                                                          width: 1.2)),
-                                                  child: TextField(
-                                                    decoration: InputDecoration(
-                                                        border:
-                                                            InputBorder.none,
-                                                        hintText: languages[
-                                                                choosenLanguage]
-                                                            [
-                                                            'text_enterfavname'],
-                                                        hintStyle: GoogleFonts
-                                                            .notoSans(
+                                              ? Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      "${languages[choosenLanguage]['text_name']}",
+                                                      style: GoogleFonts.cairo(
+                                                          fontSize: 13.sp,
+                                                          color: textColor,
+                                                          fontWeight:
+                                                              FontWeight.w600),
+                                                    ),
+                                                    SizedBox(
+                                                      height:
+                                                          media.width * 0.02,
+                                                    ),
+                                                    Container(
+                                                      padding:
+                                                          EdgeInsets.symmetric(
+                                                              horizontal: 5.w),
+                                                      decoration: BoxDecoration(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(12),
+                                                          border: Border.all(
+                                                              color:
+                                                                  borderLines,
+                                                              width: 1.2)),
+                                                      child: TextField(
+                                                        decoration: InputDecoration(
+                                                            border: InputBorder
+                                                                .none,
+                                                            hintText: languages[
+                                                                    choosenLanguage]
+                                                                [
+                                                                'text_enterfavname'],
+                                                            hintStyle: GoogleFonts.notoSans(
                                                                 fontSize: media
                                                                         .width *
                                                                     twelve,
                                                                 color:
                                                                     hintColor)),
-                                                    maxLines: 1,
-                                                    onChanged: (val) {
-                                                      setState(() {
-                                                        favNameText = val;
-                                                      });
-                                                    },
-                                                  ),
+                                                        maxLines: 1,
+                                                        onChanged: (val) {
+                                                          setState(() {
+                                                            favNameText = val;
+                                                          });
+                                                        },
+                                                      ),
+                                                    ),
+                                                  ],
                                                 )
                                               : Container(),
                                           SizedBox(

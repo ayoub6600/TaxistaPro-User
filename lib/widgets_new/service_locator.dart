@@ -9,6 +9,8 @@ import 'package:taxista/features/auth/register/data/repo/craet_account_repo_imp.
 import 'package:taxista/features/auth/register/data/repo/creat_account_repo.dart';
 import 'package:taxista/features/auth/set_new_pass/data/repo/new_pass_repo.dart';
 import 'package:taxista/features/auth/set_new_pass/data/repo/new_pass_repo_imp.dart';
+import 'package:taxista/features/booking/data/repo/booking_repo.dart';
+import 'package:taxista/features/booking/data/repo/booking_repo_imp.dart';
 import 'package:taxista/features/complaint/data/repo/complaint_repo.dart';
 import 'package:taxista/features/complaint/data/repo/complaint_repo_imp.dart';
 import 'package:taxista/features/edit_profail.dart/data/repo/edit_profail_repo.dart';
@@ -55,6 +57,10 @@ Future<void> setupServiceLocator() async {
   ));
   //MangerAddressRepo
   getIt.registerSingleton<MangerAddressRepo>(MangerAddressRepoImp(
+    apiService: getIt.get<ApiService>(),
+  ));
+  //BookingRepo
+  getIt.registerSingleton<BookingRepo>(BookingRepoImp(
     apiService: getIt.get<ApiService>(),
   ));
 }

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:taxista/Localization/localization_constant.dart';
 import 'package:taxista/constants/spaces.dart';
+import 'package:taxista/constants/text_style.dart';
+import 'package:taxista/utils/lang_const.dart';
 import 'package:taxista/utils/text_form_faild.dart';
 
 class PasswordFieldsNewPass extends StatelessWidget {
@@ -25,10 +28,11 @@ class PasswordFieldsNewPass extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // LadelText(
-        //   ladelText: getTranslated(context, LangConst.password).toString(),
-        // ),
-        // const HeightBox(6),
+        Text(
+          getTranslated(context, LangConst.newPassword).toString(),
+          style: AppStyle.style16W500Black,
+        ),
+        const HeightSpace(6),
         NewCustomTextFormField(
           txtController: passwordController,
           hint: "**********",
@@ -42,11 +46,11 @@ class PasswordFieldsNewPass extends StatelessWidget {
             ),
           ),
         ),
-        const HeightSpace(18),
-        // LadelText(
-        //   ladelText:
-        //       getTranslated(context, LangConst.confirmPassword).toString(),
-        // ),
+        const HeightSpace(20),
+        Text(
+          getTranslated(context, LangConst.confirmPassword).toString(),
+          style: AppStyle.style16W500Black,
+        ),
         const HeightSpace(6),
         NewCustomTextFormField(
           txtController: confirmPasswordController,

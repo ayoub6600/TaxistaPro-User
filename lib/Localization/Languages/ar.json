@@ -684,7 +684,7 @@
   "text_map": "الخريطة",
   "text_drop_loc": "تسليم",
   "text_stop": "توقف",
-  "text_pickup_loc": "استلام",
+  "text_pickup_loc": "مكان بدء الرحلة",
   "text_search_no_results": "لم يتم العثور على نتائج. حاول اختيار من الخريطة",
   "text_searching": "جارٍ البحث...",
   "text_search_results": "نتائج البحث",

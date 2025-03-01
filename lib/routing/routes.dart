@@ -13,6 +13,9 @@ import 'package:taxista/features/auth/set_new_pass/data/repo/new_pass_repo.dart'
 import 'package:taxista/features/auth/set_new_pass/manager/new_pass_cubit.dart';
 import 'package:taxista/features/auth/set_new_pass/view/set_new_pass_view.dart';
 import 'package:taxista/features/auth/verifaction/view/verifaction_view.dart';
+import 'package:taxista/features/booking/data/repo/booking_repo.dart';
+import 'package:taxista/features/booking/manager/booking_cubit.dart';
+import 'package:taxista/features/booking/view/booking_view.dart';
 import 'package:taxista/features/complaint/data/repo/complaint_repo.dart';
 import 'package:taxista/features/complaint/manager/complaint_cubit.dart';
 import 'package:taxista/features/complaint/view/complaint_view.dart';
@@ -68,6 +71,17 @@ List<RouteBase> appRoutes = [
       return BlocProvider(
           create: (context) => NotificationCubit(getIt.get<NotificationRepo>()),
           child: NotifactionView());
+    },
+  ),
+  GoRoute(
+    parentNavigatorKey: navigatorKey,
+    path: RoutesKeys.kMyBookingsScreen,
+    builder: (context, state) {
+      return BlocProvider(
+          create: (context) => BookingCubit(
+                getIt.get<BookingRepo>(),
+              ),
+          child: BookingView());
     },
   ),
   //ComplaintView

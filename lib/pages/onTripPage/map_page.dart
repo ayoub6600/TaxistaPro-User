@@ -10,6 +10,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart' as fm;
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geolocator/geolocator.dart' as geolocs;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -1938,8 +1939,8 @@ class _MapsState extends State<Maps>
                                                                                 // media.width * 0.02,
                                                                                 media.width * 0.05),
 
-                                                                                ////////
-                                                                        
+                                                                        ////////
+
                                                                         //////////
                                                                         (userDetails['show_ride_without_destination'].toString() == '1' &&
                                                                                 choosenTransportType == 0 &&
@@ -2066,25 +2067,43 @@ class _MapsState extends State<Maps>
                                                                                                       }
                                                                                                     });
                                                                                                   },
-                                                                                                  child: Icon(Icons.arrow_back_ios, color: textColor),
+                                                                                                  child: CircleAvatar(
+                                                                                                    radius: media.width * 0.05,
+                                                                                                    backgroundColor: Colors.grey,
+                                                                                                    child: Icon(
+                                                                                                      Icons.arrow_back,
+                                                                                                      color: (choosenTransportType == 0) ? Colors.white : Colors.black,
+                                                                                                    ),
+                                                                                                  ),
+                                                                                                ),
+                                                                                                Expanded(
+                                                                                                  child: Center(
+                                                                                                    child: Text("بداية الرحلة",
+                                                                                                        style: GoogleFonts.cairo(
+                                                                                                          fontSize: media.width * 0.05,
+                                                                                                          color: (isDarkTheme) ? textColor : Colors.black,
+                                                                                                          fontWeight: FontWeight.bold,
+                                                                                                        )),
+                                                                                                  ),
                                                                                                 ),
                                                                                               ],
                                                                                             ),
                                                                                             SizedBox(
-                                                                                              height: media.width * 0.02,
+                                                                                              height: 20.h,
                                                                                             ),
                                                                                             Column(
                                                                                               children: [
                                                                                                 Container(
                                                                                                   // height: media.width * 0.1,
-                                                                                                  height: media.width * 0.12,
+                                                                                                  height: media.width * 0.15,
                                                                                                   width: media.width * 0.9,
                                                                                                   alignment: Alignment.center,
                                                                                                   padding: EdgeInsets.all(media.width * 0.01),
                                                                                                   decoration: BoxDecoration(
-                                                                                                    color: hintColor.withOpacity(0.1),
+                                                                                                    color: Colors.grey[200],
                                                                                                     borderRadius: BorderRadius.circular(media.width * 0.02),
-                                                                                                    border: Border.all(color: textColor.withOpacity(0.3)),
+                                                                                                    // border: Border.all(color: textColor.withOpacity(0.3),
+                                                                                                    // ),
                                                                                                   ),
                                                                                                   child: Row(
                                                                                                     children: [
@@ -2099,8 +2118,8 @@ class _MapsState extends State<Maps>
                                                                                                                         // if (pickOnchange)
                                                                                                                         Text(
                                                                                                                           languages[choosenLanguage]['text_pickup_loc'],
-                                                                                                                          style: GoogleFonts.notoSans(
-                                                                                                                            fontSize: media.width * ten,
+                                                                                                                          style: GoogleFonts.cairo(
+                                                                                                                            fontSize: 12.sp,
                                                                                                                             textBaseline: TextBaseline.alphabetic,
                                                                                                                             color: online,
                                                                                                                           ),
@@ -2209,11 +2228,12 @@ class _MapsState extends State<Maps>
                                                                                                                               children: [
                                                                                                                                 MyText(
                                                                                                                                   text: languages[choosenLanguage]['text_pickup_loc'],
-                                                                                                                                  size: media.width * ten,
+                                                                                                                                  size: 12.sp,
                                                                                                                                   color: online,
                                                                                                                                   maxLines: 1,
                                                                                                                                   overflow: TextOverflow.ellipsis,
                                                                                                                                 ),
+                                                                                                                                SizedBox(height: 10.h),
                                                                                                                                 Expanded(
                                                                                                                                   child: MyText(
                                                                                                                                     text: (addressList.where((element) => element.type == 'pickup').isNotEmpty) ? addressList.firstWhere((element) => element.type == 'pickup', orElse: () => AddressList(id: '', address: '', pickup: true, latlng: const LatLng(0.0, 0.0))).address : languages[choosenLanguage]['text_4letterpickup'],
@@ -2243,10 +2263,14 @@ class _MapsState extends State<Maps>
                                                                                                                 _pickaddress = true;
                                                                                                               });
                                                                                                             },
-                                                                                                            child: Icon(
-                                                                                                              Icons.cancel_outlined,
-                                                                                                              size: 20,
-                                                                                                              color: textColor,
+                                                                                                            child: CircleAvatar(
+                                                                                                              backgroundColor: Colors.red,
+                                                                                                              radius: 10.r,
+                                                                                                              child: Icon(
+                                                                                                                Icons.close,
+                                                                                                                size: 20.w,
+                                                                                                                color: Colors.white,
+                                                                                                              ),
                                                                                                             ),
                                                                                                           ),
                                                                                                         Container(
@@ -2271,20 +2295,34 @@ class _MapsState extends State<Maps>
                                                                                                           child: Row(
                                                                                                             children: [
                                                                                                               SizedBox(
-                                                                                                                width: media.width * 0.03,
-                                                                                                                height: media.width * 0.08,
-                                                                                                                child: Image.asset(
-                                                                                                                  'assets/images/pickupmarker.png',
-                                                                                                                ),
-                                                                                                              ),
+                                                                                                                  width: media.width * 0.03,
+                                                                                                                  height: media.width * 0.08,
+                                                                                                                  child: Icon(
+                                                                                                                    Icons.location_on,
+                                                                                                                    size: media.width * 0.05,
+                                                                                                                    color: Colors.green,
+                                                                                                                  )),
                                                                                                               SizedBox(
                                                                                                                 width: media.width * 0.01,
                                                                                                               ),
-                                                                                                              MyText(
-                                                                                                                text: languages[choosenLanguage]['text_map'],
-                                                                                                                size: media.width * twelve,
-                                                                                                                maxLines: 1,
-                                                                                                                overflow: TextOverflow.ellipsis,
+                                                                                                              Container(
+                                                                                                                decoration: BoxDecoration(
+                                                                                                                  borderRadius: BorderRadius.circular(10),
+                                                                                                                  color: hintColor.withOpacity(0.1),
+                                                                                                                ),
+                                                                                                                padding: EdgeInsets.only(left: 2, right: 2),
+                                                                                                                height: media.width * 0.08,
+                                                                                                                alignment: Alignment.center,
+                                                                                                                // width: media.width * 0.4,
+                                                                                                                // constraints: BoxConstraints(
+                                                                                                                //   minWidth: media.width * 0.4,
+                                                                                                                // ),
+                                                                                                                child: MyText(
+                                                                                                                  text: languages[choosenLanguage]['text_map'],
+                                                                                                                  size: media.width * twelve,
+                                                                                                                  maxLines: 1,
+                                                                                                                  overflow: TextOverflow.ellipsis,
+                                                                                                                ),
                                                                                                               ),
                                                                                                             ],
                                                                                                           ),
@@ -2302,12 +2340,16 @@ class _MapsState extends State<Maps>
                                                                                                           child: Row(
                                                                                                             children: [
                                                                                                               SizedBox(
-                                                                                                                width: media.width * 0.03,
+                                                                                                                width: media.width * 0.04,
                                                                                                                 height: media.width * 0.08,
-                                                                                                                child: Icon(
-                                                                                                                  Icons.cancel_outlined,
-                                                                                                                  size: 20,
-                                                                                                                  color: textColor,
+                                                                                                                child: CircleAvatar(
+                                                                                                                  backgroundColor: Colors.red,
+                                                                                                                  radius: 40.r,
+                                                                                                                  child: Icon(
+                                                                                                                    Icons.close,
+                                                                                                                    size: 10,
+                                                                                                                    color: Colors.white,
+                                                                                                                  ),
                                                                                                                 ),
                                                                                                               ),
                                                                                                               SizedBox(
@@ -2324,14 +2366,13 @@ class _MapsState extends State<Maps>
                                                                                                 ),
                                                                                                 Container(
                                                                                                   // height: media.width * 0.1,
-                                                                                                  height: media.width * 0.12,
+                                                                                                  height: media.width * 0.15,
                                                                                                   width: media.width * 0.9,
                                                                                                   alignment: Alignment.center,
                                                                                                   padding: EdgeInsets.all(media.width * 0.01),
                                                                                                   decoration: BoxDecoration(
-                                                                                                    color: hintColor.withOpacity(0.1),
+                                                                                                    color: Colors.grey[200],
                                                                                                     borderRadius: BorderRadius.circular(media.width * 0.02),
-                                                                                                    border: Border.all(color: textColor.withOpacity(0.3)),
                                                                                                   ),
                                                                                                   child: Row(
                                                                                                     children: [
@@ -2346,11 +2387,14 @@ class _MapsState extends State<Maps>
                                                                                                                         // if (dropOnchange)
                                                                                                                         Text(
                                                                                                                           languages[choosenLanguage]['text_drop_loc'],
-                                                                                                                          style: GoogleFonts.notoSans(
-                                                                                                                            fontSize: media.width * ten,
+                                                                                                                          style: GoogleFonts.cairo(
+                                                                                                                            fontSize: 12.sp,
                                                                                                                             textBaseline: TextBaseline.alphabetic,
                                                                                                                             color: dropColor,
                                                                                                                           ),
+                                                                                                                        ),
+                                                                                                                        SizedBox(
+                                                                                                                          height: 10.h,
                                                                                                                         ),
                                                                                                                         Expanded(
                                                                                                                           child: SizedBox(
@@ -2526,6 +2570,7 @@ class _MapsState extends State<Maps>
                                                                                   : const SizedBox(),
                                                                               (_bottom == 1 && userDetails['show_ride_without_destination'].toString() == '1' && choosenTransportType == 0 && !isOutStation)
                                                                                   ? Column(
+                                                                                      crossAxisAlignment: CrossAxisAlignment.start,
                                                                                       children: [
                                                                                         SizedBox(
                                                                                           height: media.width * 0.025,
@@ -2534,7 +2579,7 @@ class _MapsState extends State<Maps>
                                                                                           width: media.width * 1,
                                                                                           // color: topBar,
                                                                                           child: Row(
-                                                                                            mainAxisAlignment: MainAxisAlignment.center,
+                                                                                            mainAxisAlignment: MainAxisAlignment.start,
                                                                                             children: [
                                                                                               InkWell(
                                                                                                 onTap: () {
@@ -2555,6 +2600,8 @@ class _MapsState extends State<Maps>
                                                                                                   // }
                                                                                                 },
                                                                                                 child: Row(
+                                                                                                  mainAxisAlignment: MainAxisAlignment.start,
+                                                                                                  crossAxisAlignment: CrossAxisAlignment.center,
                                                                                                   children: [
                                                                                                     Container(
                                                                                                       padding: EdgeInsets.all(media.width * 0.01),

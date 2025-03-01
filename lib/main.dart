@@ -1,10 +1,12 @@
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:oktoast/oktoast.dart';
 import 'package:taxista/Localization/localization_constant.dart';
 import 'package:taxista/constants/keys_values.dart';
 import 'package:taxista/constants/preference_utility.dart';
+import 'package:taxista/features/current_location/manager/current_location_cubit.dart';
 import 'package:taxista/firebase_options.dart';
 import 'package:taxista/pages/loadingPage/loadingpage.dart';
 import 'package:taxista/routing/app_router.dart';
@@ -88,50 +90,59 @@ class _MyAppState extends State<MyApp> {
               valueListenable: valueNotifierBook.value,
               builder: (context, value, child) {
                 return OKToast(
-                  child: Builder(
-                    builder: (BuildContext context) {
-                      return MaterialApp.router(
-                        routerConfig: AppRouter.router,
-                        debugShowCheckedModeBanner: false,
-                        title: 'Taxista',
-                        locale: _locale,
+                  child: MultiBlocProvider(
+                    providers: [
+                      BlocProvider(
+                        create: (context) => CurrentLocationCubit(),
+                      ),
+                    ],
+                    child: Builder(
+                      builder: (BuildContext context) {
+                        return MaterialApp(
+                          // routerConfig: AppRouter.router,
+                          home: const LoadingPage(),
+                          navigatorObservers: [BotToastNavigatorObserver()],
+                          debugShowCheckedModeBanner: false,
+                          title: 'Taxista',
+                          locale: _locale,
 
-                        supportedLocales: const [
-                          Locale(english, 'US'),
-                          Locale(arabic, 'AE'),
-                        ],
-                        localeResolutionCallback:
-                            (deviceLocal, supportedLocales) {
-                          for (var local in supportedLocales) {
-                            if (local.languageCode ==
-                                    deviceLocal!.languageCode &&
-                                local.countryCode == deviceLocal.countryCode) {
-                              return deviceLocal;
+                          supportedLocales: const [
+                            Locale(english, 'US'),
+                            Locale(arabic, 'AE'),
+                          ],
+                          localeResolutionCallback:
+                              (deviceLocal, supportedLocales) {
+                            for (var local in supportedLocales) {
+                              if (local.languageCode ==
+                                      deviceLocal!.languageCode &&
+                                  local.countryCode ==
+                                      deviceLocal.countryCode) {
+                                return deviceLocal;
+                              }
                             }
-                          }
-                          return supportedLocales.first;
-                        },
-                        localizationsDelegates: const [
-                          LanguageLocalization.delegate,
-                          GlobalMaterialLocalizations.delegate,
-                          GlobalWidgetsLocalizations.delegate,
-                          GlobalCupertinoLocalizations.delegate,
-                        ],
-                        theme: ThemeData(),
-                        // home: const LoadingPage(),
-                        // navigatorObservers: [BotToastNavigatorObserver()],
-                        builder: (context, widget) {
-                          Function botToast = BotToastInit();
-                          Widget mWidget = botToast(context, widget);
-                          return MediaQuery(
-                            //Setting font does not change with system font size
-                            data: MediaQuery.of(context).copyWith(
-                                textScaler: const TextScaler.linear(1.0)),
-                            child: mWidget,
-                          );
-                        },
-                      );
-                    },
+                            return supportedLocales.first;
+                          },
+                          localizationsDelegates: const [
+                            LanguageLocalization.delegate,
+                            GlobalMaterialLocalizations.delegate,
+                            GlobalWidgetsLocalizations.delegate,
+                            GlobalCupertinoLocalizations.delegate,
+                          ],
+                          theme: ThemeData(),
+
+                          builder: (context, widget) {
+                            Function botToast = BotToastInit();
+                            Widget mWidget = botToast(context, widget);
+                            return MediaQuery(
+                              //Setting font does not change with system font size
+                              data: MediaQuery.of(context).copyWith(
+                                  textScaler: const TextScaler.linear(1.0)),
+                              child: mWidget,
+                            );
+                          },
+                        );
+                      },
+                    ),
                   ),
                 );
               })),

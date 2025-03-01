@@ -1,71 +1,72 @@
-// import 'package:carq_employee/Widget/failures.dart';
-// import 'package:carq_employee/auth/login/data/model/login_model.dart';
-// import 'package:equatable/equatable.dart';
-// import 'package:flutter/material.dart';
+import 'package:equatable/equatable.dart';
+import 'package:flutter/material.dart';
+import 'package:taxista/widgets_new/failures.dart';
 
-// enum NewPasswordStatus { initial, submitting, success, error }
+import '../../login/data/model/login_response_model.dart';
 
-// class NewPasswordState extends Equatable {
-//   final bool isObscureConfirmText;
-//   final bool isObscureText;
-//   final NewPasswordStatus newPasswordStatus;
-//   final Failure? failure;
-//   final TextEditingController newPasswordController;
-//   final TextEditingController phoneController;
-//   final LoginResponse? modelData;
+enum NewPasswordStatus { initial, submitting, success, error }
 
-//   const NewPasswordState({
-//     required this.newPasswordStatus,
-//     required this.newPasswordController,
-//     required this.phoneController,
-//     this.isObscureText = true,
-//     this.isObscureConfirmText = true,
-//     this.modelData,
+class NewPasswordState extends Equatable {
+  final bool isObscureConfirmText;
+  final bool isObscureText;
+  final NewPasswordStatus newPasswordStatus;
+  final Failure? failure;
+  final TextEditingController newPasswordController;
+  final TextEditingController phoneController;
+  final LoginResponce? modelData;
 
-//     // Default to true (password hidden)
-//     this.failure,
-//   });
+  const NewPasswordState({
+    required this.newPasswordStatus,
+    required this.newPasswordController,
+    required this.phoneController,
+    this.isObscureText = true,
+    this.isObscureConfirmText = true,
+    this.modelData,
 
-//   factory NewPasswordState.initial() {
-//     return NewPasswordState(
-//       newPasswordStatus: NewPasswordStatus.initial,
-//       newPasswordController: TextEditingController(),
-//       phoneController: TextEditingController(),
-//       isObscureText: true,
-//       isObscureConfirmText: true,
-//       modelData: null,
-//     );
-//   }
+    // Default to true (password hidden)
+    this.failure,
+  });
 
-//   NewPasswordState copyWith({
-//     bool? isObscureText,
-//     bool? isObscureConfirmText,
-//     NewPasswordStatus? newPasswordStatus,
-//     Failure? failure,
-//     TextEditingController? newPasswordController,
-//     TextEditingController? phoneController,
-//     LoginResponse? modelData,
-//   }) {
-//     return NewPasswordState(
-//       newPasswordStatus: newPasswordStatus ?? this.newPasswordStatus,
-//       failure: failure ?? this.failure,
-//       newPasswordController:
-//           newPasswordController ?? this.newPasswordController,
-//       phoneController: phoneController ?? this.phoneController,
-//       isObscureText: isObscureText ?? this.isObscureText,
-//       isObscureConfirmText: isObscureConfirmText ?? this.isObscureConfirmText,
-//       modelData: modelData ?? this.modelData,
-//     );
-//   }
+  factory NewPasswordState.initial() {
+    return NewPasswordState(
+      newPasswordStatus: NewPasswordStatus.initial,
+      newPasswordController: TextEditingController(),
+      phoneController: TextEditingController(),
+      isObscureText: true,
+      isObscureConfirmText: true,
+      modelData: null,
+    );
+  }
 
-//   @override
-//   List<Object?> get props => [
-//         newPasswordStatus,
-//         failure,
-//         newPasswordController,
-//         phoneController,
-//         isObscureText,
-//         isObscureConfirmText,
-//         modelData,
-//       ];
-// }
+  NewPasswordState copyWith({
+    bool? isObscureText,
+    bool? isObscureConfirmText,
+    NewPasswordStatus? newPasswordStatus,
+    Failure? failure,
+    TextEditingController? newPasswordController,
+    TextEditingController? phoneController,
+    LoginResponce? modelData,
+  }) {
+    return NewPasswordState(
+      newPasswordStatus: newPasswordStatus ?? this.newPasswordStatus,
+      failure: failure ?? this.failure,
+      newPasswordController:
+          newPasswordController ?? this.newPasswordController,
+      phoneController: phoneController ?? this.phoneController,
+      isObscureText: isObscureText ?? this.isObscureText,
+      isObscureConfirmText: isObscureConfirmText ?? this.isObscureConfirmText,
+      modelData: modelData ?? this.modelData,
+    );
+  }
+
+  @override
+  List<Object?> get props => [
+        newPasswordStatus,
+        failure,
+        newPasswordController,
+        phoneController,
+        isObscureText,
+        isObscureConfirmText,
+        modelData,
+      ];
+}

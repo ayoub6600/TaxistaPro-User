@@ -5,10 +5,12 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:taxista/Localization/localization_constant.dart';
 import 'package:taxista/constants/app_color.dart';
+import 'package:taxista/constants/assets.dart';
 import 'package:taxista/constants/spaces.dart';
 import 'package:taxista/constants/text_style.dart';
 import 'package:taxista/features/auth/login/manager/login_cubit.dart';
 import 'package:taxista/features/auth/login/manager/login_state.dart';
+import 'package:taxista/features/auth/login/view/widgets/logo.dart';
 import 'package:taxista/routing/routes_keys.dart';
 import 'package:taxista/utils/lang_const.dart';
 import 'package:taxista/utils/text_form_faild.dart';
@@ -38,6 +40,8 @@ class _LoginScreenViewBodyState extends State<LoginScreenViewBody> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    HeightSpace(40.h),
+                    const LogoWidgets(),
                     _buildHeader(context),
                     _buildLoginForm(context, state),
                     HeightSpace(2.h),
@@ -69,7 +73,7 @@ class _LoginScreenViewBodyState extends State<LoginScreenViewBody> {
       case LoginStatus.success:
         Navigator.pop(context);
         showCustomSuccessToast(getTranslated(context, LangConst.textHello));
-        GoRouter.of(context).go(RoutesKeys.kHome);
+        GoRouter.of(context).go(RoutesKeys.kCurrentLocation);
         break;
     }
   }

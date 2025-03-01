@@ -898,22 +898,32 @@ class _InvoiceState extends State<Invoice> {
                                                                 color:
                                                                     Colors.red,
                                                               ),
-                                                              MyText(
-                                                                text: userRequestData['requestBill']
-                                                                            [
-                                                                            'data']
-                                                                        [
-                                                                        'requested_currency_symbol'] +
-                                                                    ' ' +
-                                                                    userRequestData['requestBill']['data']
-                                                                            [
-                                                                            'promo_discount']
-                                                                        .toString(),
-                                                                size: media
-                                                                        .width *
-                                                                    twelve,
-                                                                color:
-                                                                    Colors.red,
+                                                              GestureDetector(
+                                                                onTap: () {
+                                                                  print(userRequestData[
+                                                                              'requestBill']
+                                                                          [
+                                                                          'data']
+                                                                      [
+                                                                      'promo_discount']);
+                                                                },
+                                                                child: MyText(
+                                                                  text: userRequestData['requestBill']
+                                                                              [
+                                                                              'data']
+                                                                          [
+                                                                          'requested_currency_symbol'] +
+                                                                      ' ' +
+                                                                      userRequestData['requestBill']['data']
+                                                                              [
+                                                                              'promo_discount']
+                                                                          .toString(),
+                                                                  size: media
+                                                                          .width *
+                                                                      twelve,
+                                                                  color: Colors
+                                                                      .red,
+                                                                ),
                                                               ),
                                                             ],
                                                           ),

@@ -11,4 +11,6 @@ abstract class CreatAccountRepo {
     required String gender,
     required String password,
   });
+
+  Future<Either<Failure, List<dynamic>>> getCountryCode();
 }
