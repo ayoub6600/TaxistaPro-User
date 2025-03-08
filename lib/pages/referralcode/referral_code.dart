@@ -39,6 +39,7 @@ class _ReferralState extends State<Referral> {
     var media = MediaQuery.of(context).size;
 
     return Material(
+      color: page,
       child: Directionality(
         textDirection: (languageDirection == 'rtl')
             ? TextDirection.rtl
@@ -51,13 +52,34 @@ class _ReferralState extends State<Referral> {
               height: media.height * 1,
               width: media.width * 1,
               // color: theme,
-              decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [theme.withOpacity(0.5), backgroundColor])),
+
               child: Column(
                 children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Button(
+                          width: media.width * 0.4,
+                          onTap: () async {
+                            setState(() {
+                              _loading = true;
+                            });
+                            // var val = await registerUser();
+                            FocusManager.instance.primaryFocus?.unfocus();
+                            _error = '';
+                            Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const Maps()));
+
+                            setState(() {
+                              _loading = false;
+                            });
+                          },
+                          text: languages[choosenLanguage]['text_skip']),
+                    ],
+                  ),
                   SizedBox(
                     height: media.height * 0.05 +
                         MediaQuery.of(context).padding.top,
@@ -75,7 +97,7 @@ class _ReferralState extends State<Referral> {
                     width: media.width * 0.8,
                     decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(8),
-                        color: Colors.white),
+                        color: Colors.grey.shade200),
                     padding: EdgeInsets.only(
                         right: media.width * 0.025, left: media.width * 0.025),
                     child: TextField(
@@ -102,26 +124,6 @@ class _ReferralState extends State<Referral> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      //skip
-                      Button(
-                          width: media.width * 0.4,
-                          onTap: () async {
-                            setState(() {
-                              _loading = true;
-                            });
-                            // var val = await registerUser();
-                            FocusManager.instance.primaryFocus?.unfocus();
-                            _error = '';
-                            Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const Maps()));
-
-                            setState(() {
-                              _loading = false;
-                            });
-                          },
-                          text: languages[choosenLanguage]['text_skip']),
                       //apply code
                       Button(
                         width: media.width * 0.4,

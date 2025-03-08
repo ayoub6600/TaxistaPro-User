@@ -90,11 +90,14 @@ class _NavDrawerState extends State<NavDrawer> {
                                     fontweight: FontWeight.w600,
                                     maxLines: 1,
                                   ),
-                                  MyText(
-                                    text: userDetails['mobile'],
-                                    size: media.width * fourteen,
-                                    fontweight: FontWeight.w500,
-                                    maxLines: 1,
+                                  Text(
+                                    userDetails['mobile'],
+                                    textDirection: TextDirection.ltr,
+                                    style: GoogleFonts.cairo(
+                                      fontSize: media.width * fourteen,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.grey[200],
+                                    ),
                                   ),
                                 ],
                               )),
@@ -104,7 +107,7 @@ class _NavDrawerState extends State<NavDrawer> {
                               Icon(
                                 Icons.arrow_forward_ios,
                                 size: media.width * 0.04,
-                                color: textColor,
+                                color: Colors.white,
                               )
                             ],
                           ),
@@ -126,7 +129,8 @@ class _NavDrawerState extends State<NavDrawer> {
                                 },
                                 text: languages[choosenLanguage]
                                     ['text_fav_address'],
-                                icon: Icons.stars_outlined,
+                                // icon: Icons.favorite_outlined,
+                                image: "assets/images/bookmark.png",
                               ),
                             ),
                             SizedBox(
@@ -141,7 +145,8 @@ class _NavDrawerState extends State<NavDrawer> {
                                 },
                                 text: languages[choosenLanguage]
                                     ['text_enable_history'],
-                                icon: Icons.view_list_outlined,
+                                //  icon: Icons.view_list_outlined,
+                                image: "assets/images/booking.png",
                               ),
                             ),
                             ValueListenableBuilder(
@@ -167,8 +172,8 @@ class _NavDrawerState extends State<NavDrawer> {
                                         children: [
                                           Icon(
                                             Icons.notifications_none,
-                                            size: media.width * 0.04,
-                                            color: textColor,
+                                            size: media.width * 0.06,
+                                            color: Colors.blue,
                                           ),
                                           SizedBox(
                                             width: media.width * 0.025,
@@ -264,7 +269,8 @@ class _NavDrawerState extends State<NavDrawer> {
                                       },
                                       text: languages[choosenLanguage]
                                           ['text_enable_wallet'],
-                                      icon: Icons.payment,
+                                      // icon: Icons.payment,
+                                      image: "assets/images/wallet (1).png",
                                     ),
                                   )
                                 : Container(),
@@ -283,14 +289,15 @@ class _NavDrawerState extends State<NavDrawer> {
                                   }
                                 },
                                 text: languages[choosenLanguage]['text_sos'],
-                                icon: Icons.connect_without_contact,
+                                image: "assets/images/phone.png",
                               ),
                             ),
                             //makecomplaints
                             SizedBox(
                               width: media.width * 0.7,
                               child: NavMenu(
-                                icon: Icons.toc,
+                                image: "assets/images/complaint.png",
+                                //icon: Icons.toc,
                                 text: languages[choosenLanguage]
                                     ['text_make_complaints'],
                                 onTap: () {
@@ -319,7 +326,8 @@ class _NavDrawerState extends State<NavDrawer> {
                                 },
                                 text: languages[choosenLanguage]
                                     ['text_settings'],
-                                icon: Icons.settings,
+                                //  icon: Icons.settings,
+                                image: "assets/images/settings.png",
                               ),
                             ),
 
@@ -341,9 +349,12 @@ class _NavDrawerState extends State<NavDrawer> {
                                           top: media.width * 0.07),
                                       child: Row(
                                         children: [
-                                          Icon(Icons.support_agent,
-                                              size: media.width * 0.04,
-                                              color: textColor),
+                                          Image.asset(
+                                            "assets/images/chat (1).png",
+                                            height: media.width * 0.08,
+                                            width: media.width * 0.08,
+                                            // color: textColor,
+                                          ),
                                           SizedBox(
                                             width: media.width * 0.025,
                                           ),
@@ -412,7 +423,7 @@ class _NavDrawerState extends State<NavDrawer> {
                                 },
                                 text: languages[choosenLanguage]
                                     ['text_referral'],
-                                image: 'assets/images/referral.png',
+                                image: "assets/images/gift.png",
                               ),
                             ),
                             SizedBox(
@@ -428,7 +439,8 @@ class _NavDrawerState extends State<NavDrawer> {
                                 },
                                 text: languages[choosenLanguage]
                                     ['text_sign_out'],
-                                icon: Icons.logout,
+                                //  icon: Icons.logout,
+                                image: "assets/images/logout.png",
                                 textcolor: Colors.red,
                               ),
                             ),

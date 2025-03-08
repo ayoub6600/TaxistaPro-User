@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:taxista/translations/translation.dart';
 
@@ -364,7 +365,14 @@ class _WalletPageState extends State<WalletPage> {
                                                                     BorderRadius
                                                                         .circular(
                                                                             10),
-                                                                color: topBar),
+                                                                color: (walletHistory[i]
+                                                                            [
+                                                                            'is_credit'] ==
+                                                                        1)
+                                                                    ? Colors
+                                                                        .green
+                                                                    : Colors
+                                                                        .red),
                                                             alignment: Alignment
                                                                 .center,
                                                             child: Text(
@@ -374,6 +382,8 @@ class _WalletPageState extends State<WalletPage> {
                                                                   ? '+'
                                                                   : '-',
                                                               style: TextStyle(
+                                                                  color: Colors
+                                                                      .white,
                                                                   fontSize: media
                                                                           .width *
                                                                       twentyfour),
@@ -388,17 +398,25 @@ class _WalletPageState extends State<WalletPage> {
                                                                 CrossAxisAlignment
                                                                     .start,
                                                             children: [
-                                                              MyText(
-                                                                text: walletHistory[
-                                                                            i][
-                                                                        'remarks']
-                                                                    .toString(),
-                                                                size: media
-                                                                        .width *
-                                                                    fourteen,
-                                                                fontweight:
-                                                                    FontWeight
-                                                                        .w600,
+                                                              GestureDetector(
+                                                                onTap: () {
+                                                                  print(
+                                                                      walletHistory[
+                                                                          i]);
+                                                                },
+                                                                child: MyText(
+                                                                  text: walletHistory[
+                                                                              i]
+                                                                          [
+                                                                          'remarks']
+                                                                      .toString(),
+                                                                  size: media
+                                                                          .width *
+                                                                      fourteen,
+                                                                  fontweight:
+                                                                      FontWeight
+                                                                          .w600,
+                                                                ),
                                                               ),
                                                               SizedBox(
                                                                 height: media
@@ -600,8 +618,10 @@ class _WalletPageState extends State<WalletPage> {
                                 height: media.width * 0.15,
                                 width: media.width * 0.9,
                                 alignment: Alignment.center,
-                                color: Colors.grey.withOpacity(0.3),
-                                // color: textColor,
+                                decoration: BoxDecoration(
+                                  color: Colors.blueAccent,
+                                  borderRadius: BorderRadius.circular(12.r),
+                                ),
                                 child: Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceEvenly,
@@ -755,12 +775,7 @@ class _WalletPageState extends State<WalletPage> {
                                                                       InputBorder
                                                                           .none,
                                                                   hintText:
-                                                                      'Enter Code here'
-                                                                  // languages[
-                                                                  //         choosenLanguage]
-                                                                  //     [
-                                                                  //     'text_enteramount']
-                                                                  ,
+                                                                      'Enter Code here',
                                                                   hintStyle:
                                                                       GoogleFonts
                                                                           .notoSans(
@@ -951,95 +966,33 @@ class _WalletPageState extends State<WalletPage> {
                                                                         .text);
                                                             Navigator.pop(
                                                                 context);
-                                                            result == 'Money added successfully'
+                                                            result ==
+                                                                    'Money added successfully'
                                                                 ? showSuccessToast(
-                                                                    msg: result)
+                                                                    msg: languages[
+                                                                            choosenLanguage]
+                                                                        [
+                                                                        'text_money_added'],
+                                                                  )
                                                                 : showErrorToast(
                                                                     msg:
                                                                         result);
                                                             await getWallet();
                                                             print(
                                                                 'drops $result');
-                                                            ////// Wallet Drop //////
-                                                            // FocusManager
-                                                            //     .instance
-                                                            //     .primaryFocus
-                                                            //     ?.unfocus();
-                                                            // if (addMoney != 0 &&
-                                                            //     addMoney !=
-                                                            //         null) {
-                                                            //   Navigator.pop(
-                                                            //       context);
-                                                            //   showModalBottomSheet(
-                                                            //       context:
-                                                            //           context,
-                                                            //       isScrollControlled:
-                                                            //           true,
-                                                            //       builder:
-                                                            //           (context) {
-                                                            //         return Container(
-                                                            //           padding: EdgeInsets.all(
-                                                            //               media.width *
-                                                            //                   0.05),
-                                                            //           height:
-                                                            //               media.width *
-                                                            //                   1,
-                                                            //           width:
-                                                            //               media.width *
-                                                            //                   1,
-                                                            //           child:
-                                                            //               SingleChildScrollView(
-                                                            //             child:
-                                                            //                 Column(
-                                                            //               children: paymentGateways
-                                                            //                   .map((i, value) {
-                                                            //                     return MapEntry(
-                                                            //                         i,
-                                                            //                         // (paymentGateways[i]['enabled'] == true)
-                                                            //                         //     ? InkWell(
-                                                            //                         //         onTap: () async {
-                                                            //                         //           Navigator.pop(context);
-                                                            //                         //           var val = await Navigator.push(context, MaterialPageRoute(builder: (context) => PaymentGatwaysPage(url: paymentGateways[i]['url'])));
-                                                            //                         //           if (val != null) {
-                                                            //                         //             if (val) {
-                                                            //                         //               setState(() {
-                                                            //                         //                 isLoading = true;
-
-                                                            //                         //                 addMoney = null;
-                                                            //                         //               });
-                                                            //                         //               await getWallet();
-                                                            //                         //             }
-                                                            //                         //           }
-                                                            //                         //         },
-                                                            //                         //         child: Container(
-                                                            //                         //           height: media.width * 0.15,
-                                                            //                         //           width: media.width * 0.6,
-                                                            //                         //           margin: EdgeInsets.only(bottom: media.width * 0.02),
-                                                            //                         //           decoration: BoxDecoration(image: DecorationImage(image: NetworkImage(paymentGateways[i]['image']))),
-                                                            //                         //         ),
-                                                            //                         //       )
-                                                            //                         //     : Container()
-                                                            //                             );
-                                                            //                   })
-                                                            //                   .values
-                                                            //                   .toList(),
-                                                            //             ),
-                                                            //           ),
-                                                            //         );
-                                                            //       });
-                                                            //    }
                                                           },
                                                           text: languages[
                                                                   choosenLanguage]
                                                               ['text_addmoney'],
-                                                          width:
-                                                              media.width * 0.4,
+                                                          // width:
+                                                          //     media.width * 0.4,
                                                         ),
                                                         SizedBox(
                                                           height: media.width *
                                                               0.02,
                                                         ),
-                                                        InkWell(
+                                                        Button(
+                                                          color: Colors.red,
                                                           onTap: () {
                                                             setState(() {
                                                               addMoney = null;
@@ -1053,26 +1006,9 @@ class _WalletPageState extends State<WalletPage> {
                                                                   context);
                                                             });
                                                           },
-                                                          child: Padding(
-                                                            padding: EdgeInsets
-                                                                .all(media
-                                                                        .width *
-                                                                    0.02),
-                                                            child: MyText(
-                                                              textAlign:
-                                                                  TextAlign
-                                                                      .center,
-                                                              text: languages[
-                                                                      choosenLanguage]
-                                                                  [
-                                                                  'text_cancel'],
-                                                              size:
-                                                                  media.width *
-                                                                      sixteen,
-                                                              color:
-                                                                  verifyDeclined,
-                                                            ),
-                                                          ),
+                                                          text: languages[
+                                                                  choosenLanguage]
+                                                              ['text_cancel'],
                                                         ),
                                                       ]),
                                                 ),
@@ -1085,7 +1021,7 @@ class _WalletPageState extends State<WalletPage> {
                                             Icons.credit_card,
                                             color: (ischeckmoneytransfer == 1)
                                                 ? const Color(0xFFFF0000)
-                                                : textColor,
+                                                : Colors.white,
                                           ),
                                           const SizedBox(
                                             width: 5,
@@ -1096,7 +1032,7 @@ class _WalletPageState extends State<WalletPage> {
                                               size: media.width * sixteen,
                                               color: (ischeckmoneytransfer == 1)
                                                   ? const Color(0xFFFF0000)
-                                                  : textColor)
+                                                  : Colors.white)
                                         ],
                                       ),
                                     ),

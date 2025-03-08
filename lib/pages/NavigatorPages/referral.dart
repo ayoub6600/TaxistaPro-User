@@ -97,29 +97,34 @@ class _ReferralPageState extends State<ReferralPage> {
                                           ),
                                         ),
                                         Positioned(
-                                            child: InkWell(
+                                            child: Row(
+                                          children: [
+                                            InkWell(
                                                 onTap: () {
                                                   Navigator.pop(context);
                                                 },
                                                 child: Icon(
                                                     Icons.arrow_back_ios,
-                                                    color: textColor)))
+                                                    color: textColor)),
+                                            Expanded(
+                                              child: Center(
+                                                child: MyText(
+                                                  text:
+                                                      languages[choosenLanguage]
+                                                              ['text_referral']
+                                                          .toString()
+                                                          .toUpperCase(),
+                                                  size: media.width * sixteen,
+                                                  fontweight: FontWeight.w700,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ))
                                       ],
                                     ),
                                     SizedBox(
                                       height: media.width * 0.05,
-                                    ),
-                                    Row(
-                                      children: [
-                                        MyText(
-                                          text: languages[choosenLanguage]
-                                                  ['text_referral']
-                                              .toString()
-                                              .toUpperCase(),
-                                          size: media.width * sixteen,
-                                          fontweight: FontWeight.w700,
-                                        ),
-                                      ],
                                     ),
                                     SizedBox(
                                       height: media.width * 0.03,

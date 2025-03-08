@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:taxista/pages/login/login.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../functions/functions.dart';
@@ -249,13 +250,10 @@ class _NotificationPageState extends State<NotificationPage> {
                                                               });
                                                             },
                                                             child: Container(
-                                                              margin: EdgeInsets.only(
-                                                                  top: media
-                                                                          .width *
-                                                                      0.02,
-                                                                  bottom: media
-                                                                          .width *
-                                                                      0.02),
+                                                              margin: EdgeInsets
+                                                                  .symmetric(
+                                                                vertical: 8.h,
+                                                              ),
                                                               width:
                                                                   media.width *
                                                                       0.9,
@@ -278,20 +276,31 @@ class _NotificationPageState extends State<NotificationPage> {
                                                                 children: [
                                                                   Row(
                                                                     children: [
-                                                                      Container(
-                                                                          height: media.width *
-                                                                              0.1067,
-                                                                          width: media.width *
-                                                                              0.1067,
+                                                                      GestureDetector(
+                                                                        onTap:
+                                                                            () {
+                                                                          print(
+                                                                              "notification-------->${notificationHistory[i]}");
+                                                                        },
+                                                                        child:
+                                                                            Container(
+                                                                          height:
+                                                                              media.width * 0.1067,
+                                                                          width:
+                                                                              media.width * 0.1067,
                                                                           decoration: BoxDecoration(
-                                                                              borderRadius: BorderRadius.circular(
-                                                                                  10),
-                                                                              color: const Color(0xff000000).withOpacity(
-                                                                                  0.05)),
-                                                                          alignment: Alignment
-                                                                              .center,
+                                                                              borderRadius: BorderRadius.circular(10),
+                                                                              color: const Color(0xff000000).withOpacity(0.05)),
+                                                                          alignment:
+                                                                              Alignment.center,
                                                                           child:
-                                                                              const Icon(Icons.notifications)),
+                                                                              const Icon(
+                                                                            Icons.notifications,
+                                                                            color:
+                                                                                Colors.blue,
+                                                                          ),
+                                                                        ),
+                                                                      ),
                                                                       SizedBox(
                                                                         width: media.width *
                                                                             0.025,
@@ -304,7 +313,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                                                               width: media.width * 0.55,
                                                                               child: MyText(
                                                                                 text: notificationHistory[i]['title'].toString(),
-                                                                                size: media.width * fourteen,
+                                                                                size: 16.sp,
                                                                                 fontweight: FontWeight.w600,
                                                                                 overflow: TextOverflow.ellipsis,
                                                                               )),
@@ -323,14 +332,6 @@ class _NotificationPageState extends State<NotificationPage> {
                                                                             height:
                                                                                 media.width * 0.01,
                                                                           ),
-                                                                          SizedBox(
-                                                                              width: media.width * 0.55,
-                                                                              child: MyText(
-                                                                                text: notificationHistory[i]['converted_created_at'].toString(),
-                                                                                size: media.width * twelve,
-                                                                                fontweight: FontWeight.w600,
-                                                                                overflow: TextOverflow.ellipsis,
-                                                                              )),
                                                                         ],
                                                                       ),
                                                                       Expanded(
@@ -339,18 +340,25 @@ class _NotificationPageState extends State<NotificationPage> {
                                                                         mainAxisAlignment:
                                                                             MainAxisAlignment.end,
                                                                         children: [
-                                                                          Container(
-                                                                              alignment: Alignment.centerRight,
-                                                                              width: media.width * 0.15,
-                                                                              child: IconButton(
-                                                                                onPressed: () {
-                                                                                  setState(() {
-                                                                                    error = true;
-                                                                                    notificationid = notificationHistory[i]['id'];
-                                                                                  });
-                                                                                },
-                                                                                icon: const Icon(Icons.delete_forever),
-                                                                              ))
+                                                                          IconButton(
+                                                                            onPressed:
+                                                                                () {
+                                                                              setState(() {
+                                                                                error = true;
+                                                                                notificationid = notificationHistory[i]['id'];
+                                                                              });
+                                                                            },
+                                                                            icon:
+                                                                                CircleAvatar(
+                                                                              backgroundColor: Colors.red,
+                                                                              radius: 10.r,
+                                                                              child: const Icon(
+                                                                                Icons.delete_forever,
+                                                                                color: Colors.white,
+                                                                                size: 16,
+                                                                              ),
+                                                                            ),
+                                                                          )
                                                                         ],
                                                                       ))
                                                                     ],
@@ -373,13 +381,35 @@ class _NotificationPageState extends State<NotificationPage> {
                                                                           'image'],
                                                                       height:
                                                                           media.width *
-                                                                              0.1,
+                                                                              0.2,
                                                                       width: media
                                                                               .width *
                                                                           0.8,
                                                                       fit: BoxFit
-                                                                          .contain,
-                                                                    )
+                                                                          .cover,
+                                                                    ),
+                                                                  Row(
+                                                                    mainAxisAlignment:
+                                                                        MainAxisAlignment
+                                                                            .end,
+                                                                    crossAxisAlignment:
+                                                                        CrossAxisAlignment
+                                                                            .start,
+                                                                    children: [
+                                                                      MyText(
+                                                                        text: notificationHistory[i]['converted_created_at']
+                                                                            .toString(),
+                                                                        size: media.width *
+                                                                            twelve,
+                                                                        color: Colors
+                                                                            .grey,
+                                                                        fontweight:
+                                                                            FontWeight.w600,
+                                                                        overflow:
+                                                                            TextOverflow.ellipsis,
+                                                                      ),
+                                                                    ],
+                                                                  ),
                                                                 ],
                                                               ),
                                                             ),

@@ -4,10 +4,12 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geolocator/geolocator.dart' as geolocs;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
+import 'package:taxista/pages/onTripPage/debouncer.dart';
 import 'package:uuid/uuid.dart';
 import 'package:permission_handler/permission_handler.dart' as perm;
 
@@ -387,7 +389,8 @@ class _DropLocationState extends State<DropLocation>
                                         // minZoom: 10,
                                         urlTemplate:
                                             'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                                        userAgentPackageName: 'com.taxista.user',
+                                        userAgentPackageName:
+                                            'com.taxista.user',
                                       ),
                                       const fm.RichAttributionWidget(
                                         attributions: [],
@@ -466,8 +469,8 @@ class _DropLocationState extends State<DropLocation>
                               height: (media.height / 2) - media.width * 0.08,
                             ),
                             Image.asset(
-                              'assets/images/dropmarker.png',
-                              width: media.width * 0.07,
+                              'assets/images/gps.png',
+                              width: media.width * 0.08,
                               height: media.width * 0.08,
                             ),
                             // if(userDetails['enable_map_location_icon_drag_and_drop_feature']=='0')
@@ -564,7 +567,7 @@ class _DropLocationState extends State<DropLocation>
                                                   BorderRadius.circular(
                                                       media.width * 0.02)),
                                           child: Icon(Icons.my_location_sharp,
-                                              color: textColor),
+                                              color: Colors.blue, size: 25),
                                         ),
                                       ),
                                     ),
@@ -599,26 +602,24 @@ class _DropLocationState extends State<DropLocation>
                                               child: Row(
                                                 children: [
                                                   Container(
-                                                    height: media.width * 0.04,
-                                                    width: media.width * 0.04,
-                                                    alignment: Alignment.center,
-                                                    decoration: BoxDecoration(
-                                                        shape: BoxShape.circle,
-                                                        color: const Color(
-                                                                0xffFF0000)
-                                                            .withOpacity(0.3)),
-                                                    child: Container(
                                                       height:
-                                                          media.width * 0.02,
-                                                      width: media.width * 0.02,
-                                                      decoration:
-                                                          const BoxDecoration(
-                                                              shape: BoxShape
-                                                                  .circle,
-                                                              color: Color(
-                                                                  0xffFF0000)),
-                                                    ),
-                                                  ),
+                                                          media.width * 0.08,
+                                                      width: media.width * 0.08,
+                                                      alignment:
+                                                          Alignment.center,
+                                                      decoration: BoxDecoration(
+                                                          shape:
+                                                              BoxShape.circle,
+                                                          color: Color.fromARGB(
+                                                              255,
+                                                              98,
+                                                              180,
+                                                              71)),
+                                                      child: Icon(
+                                                        Icons.location_on,
+                                                        color: Colors.white,
+                                                        size: 16.sp,
+                                                      )),
                                                   SizedBox(
                                                       width:
                                                           media.width * 0.02),
@@ -643,10 +644,7 @@ class _DropLocationState extends State<DropLocation>
                                                                     MainAxisAlignment
                                                                         .spaceBetween,
                                                                 children: [
-                                                                  SizedBox(
-                                                                    width: media
-                                                                            .width *
-                                                                        0.7,
+                                                                  Expanded(
                                                                     child: Text(
                                                                       dropAddressConfirmation,
                                                                       style: GoogleFonts
@@ -709,6 +707,8 @@ class _DropLocationState extends State<DropLocation>
                                                   if (choosenTransportType ==
                                                           0 &&
                                                       widget.from == null) {
+                                                    print("---------->1");
+
                                                     if (addressList
                                                         .where((element) =>
                                                             element.type ==
@@ -725,6 +725,7 @@ class _DropLocationState extends State<DropLocation>
                                                           latlng: _center,
                                                           pickup: false));
                                                     } else {
+                                                      print("---------->2");
                                                       addressList
                                                               .firstWhere(
                                                                   (element) =>
@@ -744,6 +745,33 @@ class _DropLocationState extends State<DropLocation>
                                                   } else if (choosenTransportType ==
                                                           0 &&
                                                       widget.from != null) {
+                                                    print("---------->3");
+                                                    // setState(() {
+                                                    //  // polyline.clear();
+                                                    //   // polyline.add(Polyline(
+                                                    //   //   polylineId:
+                                                    //   //       const PolylineId(
+                                                    //   //           "unique_route"), // Ensure the same ID is used
+                                                    //   //   points: [
+                                                    //   //     LatLng(
+                                                    //   //         addressList[widget
+                                                    //   //                 .from]
+                                                    //   //             .latlng
+                                                    //   //             .latitude,
+                                                    //   //         addressList[widget
+                                                    //   //                 .from]
+                                                    //   //             .latlng
+                                                    //   //             .longitude),
+                                                    //   //     LatLng(
+                                                    //   //         _center.latitude,
+                                                    //   //         _center
+                                                    //   //             .longitude),
+                                                    //   //   ],
+                                                    //   //   color: Colors.red,
+                                                    //   //   width: 5,
+                                                    //   // ));
+                                                    // });
+
                                                     if (widget.from != null &&
                                                         widget.from !=
                                                             'add stop' &&
@@ -862,6 +890,7 @@ class _DropLocationState extends State<DropLocation>
                                                         favLng =
                                                             _center.longitude;
                                                       });
+
                                                       await addFavLocation(
                                                           favLat,
                                                           favLng,
@@ -870,13 +899,13 @@ class _DropLocationState extends State<DropLocation>
                                                       valueNotifierHome
                                                           .incrementNotifier();
                                                     }
+
                                                     Navigator.pop(
-                                                        // ignore: use_build_context_synchronously
-                                                        context,
-                                                        true);
+                                                        context, true);
                                                   } else if (choosenTransportType ==
                                                       1) {
                                                     if (widget.from == null) {
+                                                      print("---------->4");
                                                       if ((addressList
                                                           .where((element) =>
                                                               element.id == '2')
@@ -893,6 +922,7 @@ class _DropLocationState extends State<DropLocation>
                                                             instructions: null,
                                                             pickup: false));
                                                       } else {
+                                                        print("---------->5");
                                                         addressList
                                                                 .firstWhere(
                                                                     (element) =>
@@ -910,7 +940,7 @@ class _DropLocationState extends State<DropLocation>
                                                             .latlng = _center;
                                                       }
                                                     }
-
+                                                    print("---------->6");
                                                     if (recentSearchesList
                                                             .length >
                                                         3) {
@@ -926,6 +956,7 @@ class _DropLocationState extends State<DropLocation>
                                                                 .address
                                                                 .toString())) {
                                                     } else {
+                                                      print("---------->7");
                                                       recentSearchesList.add({
                                                         'address':
                                                             addressList[1]
@@ -988,6 +1019,7 @@ class _DropLocationState extends State<DropLocation>
                                                     if (recentSearchesList
                                                             .length >
                                                         3) {
+                                                      print("---------->9");
                                                       recentSearchesList
                                                           .removeAt(0);
                                                     }
@@ -1000,6 +1032,7 @@ class _DropLocationState extends State<DropLocation>
                                                                 .address
                                                                 .toString())) {
                                                     } else {
+                                                      print("---------->10");
                                                       recentSearchesList.add({
                                                         'address':
                                                             addressList[1]
@@ -1066,6 +1099,7 @@ class _DropLocationState extends State<DropLocation>
                                                       choosenTransportType ==
                                                           2 &&
                                                       widget.from == null) {
+                                                    print("---------->12");
                                                     ismulitipleride = false;
 
                                                     if (recentSearchesList
@@ -1083,6 +1117,7 @@ class _DropLocationState extends State<DropLocation>
                                                                 .address
                                                                 .toString())) {
                                                     } else {
+                                                      print("---------->13");
                                                       recentSearchesList.add({
                                                         'address':
                                                             addressList[1]

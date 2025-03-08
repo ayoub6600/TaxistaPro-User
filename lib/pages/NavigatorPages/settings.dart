@@ -119,7 +119,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                       ? Icons.brightness_4_outlined
                                       : Icons.brightness_3_rounded,
                                   size: media.width * 0.075,
-                                  color: textColor.withOpacity(0.5),
+                                  color: Colors.blue,
                                 ),
                                 SizedBox(
                                   width: media.width * 0.025,
@@ -150,7 +150,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                         userDetails['owner_id'] == null
                             ? SubMenu(
-                                icon: Icons.delete_outline,
+                                icon: Icons.logout_outlined,
                                 text: languages[choosenLanguage]
                                     ['text_delete_account'],
                                 onTap: () {

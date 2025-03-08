@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:taxista/functions/functions.dart';
@@ -51,7 +52,7 @@ class _ApplyCouponsContainerState extends State<ApplyCouponsContainer> {
                     languages[choosenLanguage]['text_coupons']),
                 size: media.width * sixteen,
                 fontweight: FontWeight.w600,
-                color: textColor,
+                color: Colors.blue,
               ),
             ),
             SizedBox(
@@ -59,22 +60,25 @@ class _ApplyCouponsContainerState extends State<ApplyCouponsContainer> {
             ),
             Container(
               width: media.width * 0.8,
-              height: media.width * 0.12,
+              height: 50.sp,
               padding: EdgeInsets.fromLTRB(media.width * 0.025,
                   media.width * 0.01, media.width * 0.025, media.width * 0.01),
               alignment: Alignment.centerLeft,
               decoration: BoxDecoration(
+                  color: Colors.grey[200],
                   border: Border.all(color: textColor.withOpacity(0.4)),
                   borderRadius: BorderRadius.circular(media.width * 0.02)),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: TextField(
+                    child: TextFormField(
+                      textAlign: TextAlign.right,
                       controller: promoKey,
                       decoration: InputDecoration(
                         border: InputBorder.none,
                         hintText: languages[choosenLanguage]['text_enterpromo'],
-                        hintStyle: GoogleFonts.notoSans(
+                        hintStyle: GoogleFonts.cairo(
                             color: hintColor, fontSize: media.width * fourteen),
                       ),
                       style: GoogleFonts.notoSans(color: textColor),
@@ -97,6 +101,18 @@ class _ApplyCouponsContainerState extends State<ApplyCouponsContainer> {
                 ],
               ),
             ),
+            if (promoStatus != null && promoStatus == 2 && couponerror == true)
+              Container(
+                width: media.width * 0.9,
+                padding: EdgeInsets.only(top: media.width * 0.025),
+                child: Center(
+                  child: MyText(
+                    text: languages[choosenLanguage]['text_promorejected'],
+                    size: 14.sp,
+                    color: Colors.red,
+                  ),
+                ),
+              ),
             SizedBox(
               height: media.width * 0.04,
             ),
@@ -150,32 +166,18 @@ class _ApplyCouponsContainerState extends State<ApplyCouponsContainer> {
                     isLoading = false;
                   });
                 },
-                color: (promoKey.text == '')
-                    ? Colors.grey
-                    : (isDarkTheme)
-                        ? Colors.white
-                        : Colors.black,
+                color: (promoKey.text == '') ? Colors.grey : Colors.blue,
                 textcolor: (!isDarkTheme) ? Colors.white : Colors.black,
                 borderRadius: 12.0,
               ),
             ),
-            if (promoStatus != null && promoStatus == 2 && couponerror == true)
-              Container(
-                width: media.width * 0.9,
-                padding: EdgeInsets.only(top: media.width * 0.025),
-                child: MyText(
-                  text: languages[choosenLanguage]['text_promorejected'],
-                  size: media.width * twelve,
-                  color: Colors.red,
-                ),
-              ),
             (choosenVehicle != null)
                 ? SizedBox(
                     height: media.width * 0.025,
                   )
                 : Container(),
             SizedBox(
-              height: media.width * 0.04,
+              height: 8.h,
             ),
             InkWell(
                 onTap: () {
@@ -197,12 +199,18 @@ class _ApplyCouponsContainerState extends State<ApplyCouponsContainer> {
                   Navigator.pop(context);
                 },
                 child: Container(
+                  height: 40.h,
                   alignment: Alignment.center,
+
+                  decoration: BoxDecoration(
+                    color: verifyDeclined,
+                    borderRadius: BorderRadius.circular(20.r),
+                  ),
                   // width: media.width * 0.8,
                   child: MyText(
                     text: languages[choosenLanguage]['text_cancel'],
                     size: media.width * sixteen,
-                    color: verifyDeclined,
+                    color: Colors.white,
                   ),
                 )),
           ],
@@ -2480,7 +2488,7 @@ class _ChoosePaymentMethodContainerState
     var media = MediaQuery.of(context).size;
 
     return Container(
-      height: media.width * 0.7,
+      height: media.height * 0.5,
       width: media.width * 1,
       padding: EdgeInsets.all(media.width * 0.05),
       decoration: BoxDecoration(
@@ -2492,11 +2500,12 @@ class _ChoosePaymentMethodContainerState
         children: [
           MyText(
             text: languages[choosenLanguage]['text_choose_payment'],
-            size: media.width * sixteen,
-            fontweight: FontWeight.bold,
+            size: 16.sp,
+            fontweight: FontWeight.w500,
+            color: Colors.blue,
           ),
           SizedBox(
-            height: media.width * 0.03,
+            height: 20.h,
           ),
           Expanded(
             child: SingleChildScrollView(
@@ -2517,91 +2526,64 @@ class _ChoosePaymentMethodContainerState
                                     });
                                   },
                                   child: SizedBox(
-                                    height: media.width * 0.106,
+                                    height: media.height * 0.106,
                                     width: media.width * 0.9,
                                     child: Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.center,
                                       children: [
                                         Expanded(
-                                          flex: 2,
-                                          child: (etaDetails[choosenVehicle]
-                                                          ['payment_type']
-                                                      .toString()
-                                                      .split(',')
-                                                      .toList()[i] ==
-                                                  'cash')
-                                              ? Image.asset(
-                                                  'assets/images/cash.png',
-                                                  width: media.width * 0.05,
-                                                  height: media.width * 0.05,
-                                                  fit: BoxFit.contain,
-                                                )
-                                              : (etaDetails[choosenVehicle]
-                                                              ['payment_type']
-                                                          .toString()
-                                                          .split(',')
-                                                          .toList()[i] ==
-                                                      'wallet')
-                                                  ? Image.asset(
-                                                      'assets/images/wallet.png',
-                                                      width: media.width * 0.1,
-                                                      height: media.width * 0.1,
-                                                      fit: BoxFit.contain,
-                                                    ):SizedBox()
-                                                  // : (etaDetails[choosenVehicle][
-                                                  //                 'payment_type']
-                                                  //             .toString()
-                                                  //             .split(',')
-                                                  //             .toList()[i] ==
-                                                  //         'card')
-                                                  //     ? Image.asset(
-                                                  //         'assets/images/card.png',
-                                                  //         width:
-                                                  //             media.width * 0.1,
-                                                  //         height:
-                                                  //             media.width * 0.1,
-                                                  //         fit: BoxFit.contain,
-                                                  //       )
-                                                  //     : (etaDetails[choosenVehicle]
-                                                  //                     [
-                                                  //                     'payment_type']
-                                                  //                 .toString()
-                                                  //                 .split(',')
-                                                  //                 .toList()[i] ==
-                                                  //             'upi')
-                                                  //         ? Image.asset(
-                                                  //             'assets/images/upi.png',
-                                                  //             width:
-                                                  //                 media.width *
-                                                  //                     0.1,
-                                                  //             height:
-                                                  //                 media.width *
-                                                  //                     0.1,
-                                                  //             fit: BoxFit
-                                                  //                 .contain,
-                                                  //           )
-                                                  //         : Container(),
-                                        ),
+                                            flex: 2,
+                                            child: (etaDetails[choosenVehicle]
+                                                            ['payment_type']
+                                                        .toString()
+                                                        .split(',')
+                                                        .toList()[i] ==
+                                                    'cash')
+                                                ? Image.asset(
+                                                    'assets/images/cash-on-delivery.png',
+                                                    width: media.width * 0.06,
+                                                    height: media.width * 0.06,
+                                                    fit: BoxFit.contain,
+                                                  )
+                                                : (etaDetails[choosenVehicle]
+                                                                ['payment_type']
+                                                            .toString()
+                                                            .split(',')
+                                                            .toList()[i] ==
+                                                        'wallet')
+                                                    ? Image.asset(
+                                                        'assets/images/wallet (1).png',
+                                                        width:
+                                                            media.width * 0.1,
+                                                        height:
+                                                            media.width * 0.1,
+                                                        fit: BoxFit.contain,
+                                                      )
+                                                    : Image.asset(
+                                                        'assets/images/debit-card.png',
+                                                        width:
+                                                            media.width * 0.1,
+                                                        height:
+                                                            media.width * 0.1,
+                                                        fit: BoxFit.contain,
+                                                      )),
                                         SizedBox(
                                           width: media.width * 0.02,
                                         ),
                                         Expanded(
                                           flex: 6,
                                           child: MyText(
-                                            text: etaDetails[choosenVehicle]
-                                                    ['payment_type']
-                                                .toString()
-                                                .split(',')
-                                                .toList()[i],
+                                            text: _getTranslatedPaymentType(
+                                                etaDetails[choosenVehicle]
+                                                        ['payment_type']
+                                                    .toString()
+                                                    .split(',')
+                                                    .toList()[i]),
                                             size: media.width * fourteen,
-                                            color:
-                                                // (choosenInPopUp == i)
-                                                //     ? const Color(0xffFF0000)
-                                                //     :
-                                                (isDarkTheme == true)
-                                                    ? Colors.white
-                                                    : Colors.black,
+                                            color: (isDarkTheme == true)
+                                                ? Colors.white
+                                                : Colors.black,
                                           ),
                                         ),
                                         Expanded(
@@ -2772,12 +2754,30 @@ class _ChoosePaymentMethodContainerState
                     ),
             ),
           ),
+          SizedBox(
+            height: 20.h,
+          ),
           Button(
               onTap: widget.onTap,
               text: languages[choosenLanguage]['text_confirm'])
         ],
       ),
     );
+  }
+
+  String _getTranslatedPaymentType(String paymentType) {
+    switch (paymentType) {
+      case 'cash':
+        return languages[choosenLanguage]['text_cash'];
+      case 'wallet':
+        return languages[choosenLanguage]['text_wallet'];
+      case 'card':
+        return languages[choosenLanguage]['text_card'];
+      case 'upi':
+        return languages[choosenLanguage]['text_upi'];
+      default:
+        return paymentType; // Fallback to original text if no translation found
+    }
   }
 }
 
@@ -2797,7 +2797,7 @@ class _RideLaterBottomSheetState extends State<RideLaterBottomSheet> {
     var media = MediaQuery.of(context).size;
 
     return Container(
-      height: media.width * 1,
+      height: media.height * 0.5,
       width: media.width * 1,
       padding: EdgeInsets.all(media.width * 0.03),
       alignment: Alignment.bottomCenter,
@@ -2807,7 +2807,8 @@ class _RideLaterBottomSheetState extends State<RideLaterBottomSheet> {
               topLeft: Radius.circular(media.width * 0.05),
               topRight: Radius.circular(media.width * 0.05))),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Column(
             children: [
@@ -2815,6 +2816,10 @@ class _RideLaterBottomSheetState extends State<RideLaterBottomSheet> {
                 text: languages[choosenLanguage]['text_choose_date'],
                 size: media.width * eighteen,
                 fontweight: FontWeight.w600,
+                color: Colors.blue,
+              ),
+              SizedBox(
+                height: 20.h,
               ),
               (confirmRideLater)
                   ? Row(
@@ -2841,18 +2846,25 @@ class _RideLaterBottomSheetState extends State<RideLaterBottomSheet> {
                 decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12), color: topBar),
                 child: CupertinoDatePicker(
-                    minimumDate: DateTime.now().add(Duration(
-                        minutes: int.parse(userDetails[
-                            'user_can_make_a_ride_after_x_miniutes']))),
-                    initialDateTime: DateTime.now().add(Duration(
-                        minutes: int.parse(userDetails[
-                            'user_can_make_a_ride_after_x_miniutes']))),
-                    maximumDate: DateTime.now().add(const Duration(days: 4)),
-                    onDateTimeChanged: (val) {
-                      // setState(() {
+                  minimumDate: DateTime.now().add(Duration(
+                      minutes: int.parse(userDetails[
+                          'user_can_make_a_ride_after_x_miniutes']))),
+                  initialDateTime: DateTime.now().add(Duration(
+                      minutes: int.parse(userDetails[
+                          'user_can_make_a_ride_after_x_miniutes']))),
+                  maximumDate: DateTime.now().add(const Duration(days: 4)),
+                  onDateTimeChanged: (val) {
+                    setState(() {
                       choosenDateTime = val;
-                      // });
-                    }),
+                      // Format the date to Arabic
+                      final DateFormat arabicDateFormat =
+                          DateFormat.yMMMMd('ar');
+                      String formattedDate =
+                          arabicDateFormat.format(choosenDateTime);
+                      print(formattedDate); // Display this in your UI
+                    });
+                  },
+                ),
               ),
             ],
           ),
@@ -2872,14 +2884,24 @@ class _RideLaterBottomSheetState extends State<RideLaterBottomSheet> {
               onTap: () {
                 Navigator.pop(context);
               },
-              child: SizedBox(
-                height: media.width * 0.06,
-                width: media.width * 0.9,
-                child: MyText(
-                  textAlign: TextAlign.center,
-                  text: languages[choosenLanguage]['text_cancel'],
-                  size: media.width * fourteen,
+              child: Container(
+                margin: EdgeInsets.symmetric(horizontal: 20.w),
+                padding: EdgeInsets.symmetric(vertical: 10.h),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20.r),
                   color: verifyDeclined,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    MyText(
+                      textAlign: TextAlign.center,
+                      text: languages[choosenLanguage]['text_cancel'],
+                      size: media.width * fourteen,
+                      color: Colors.white,
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -2962,305 +2984,186 @@ class VehicleInfoBottomSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Image.network(
-            (type != 1)
-                ? etaDetails[i]['icon']
-                : rentalOption[choosenVehicle]['icon'],
-            width: width * 0.4,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Image.network(
+              (type != 1)
+                  ? etaDetails[i]['icon']
+                  : rentalOption[choosenVehicle]['icon'],
+              width: 60,
+              height: 60,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) =>
+                  const Icon(Icons.car_rental, size: 60, color: Colors.grey),
+            ),
           ),
+
           SizedBox(
             height: width * 0.02,
           ),
+          //name
           MyText(
             text: (type != 1)
                 ? etaDetails[i]['name']
                 : '${rentalOption[choosenVehicle]['name']} (${etaDetails[rentalChoosenOption]['package_name']})',
             // : '${etaDetails[i]['typesWithPrice']['data'][0]['name']} (${etaDetails[i]['package_name']})',
-            size: width * sixteen,
-            fontweight: FontWeight.bold,
+            size: 16.sp,
+            color: Colors.blue,
+            // fontweight: FontWeight.bold,
           ),
           SizedBox(
             height: width * 0.03,
           ),
+          //discrption
+
           MyText(
-              text: ((type != 1))
-                  ? etaDetails[i]['short_description']
-                  : rentalOption[choosenVehicle]['short_description'],
-              size: width * fourteen),
+            text: ((type != 1))
+                ? etaDetails[i]['short_description']
+                : rentalOption[choosenVehicle]['short_description'],
+            size: 12.sp,
+            color: Colors.grey,
+          ),
           SizedBox(
             height: width * 0.05,
           ),
-          // ((( isOneway) ||
-          //         (type == 1 || type == 2)))
-          //     ? Container(
-          //         width: width * 0.9,
-          //         padding: EdgeInsets.all(width * 0.02),
-          //         decoration: BoxDecoration(
-          //             color: hintColor.withOpacity(0.1).withOpacity(0.1)),
-          //         child: Column(
-          //           children: [
-          //             Row(
-          //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          //               children: [
-          //                 if (type != 2)
-          //                   MyText(text: 'Fare', size: width * fourteen),
-          //                 if (type != 2)
-          //                   (rentalOption[choosenVehicle]['has_discount']!=true||etaDetails[i]['has_discount'] != true)
-          //                       ? Row(
-          //                           mainAxisAlignment: MainAxisAlignment.end,
-          //                           children: [
-          //                             (type != 1)
-          //                                 ? Text(
-          //                                     (etaDetails[i]['currency'] +
-          //                                         etaDetails[i]['total']
-          //                                             .toString()),
-          //                                     style: GoogleFonts.notoSans(
-          //                                         fontSize: width * fourteen,
-          //                                         fontWeight: FontWeight.w700,
-          //                                         color: (choosenVehicle != i)
-          //                                             ? (isDarkTheme == true)
-          //                                                 ? Colors.white
-          //                                                 : textColor
-          //                                             : textColor),
-          //                                   )
-          //                                 : Text(
-          //                                     // etaDetails[i]['currency'] +
-          //                                     rentalOption[choosenVehicle]
-          //                                                 ['currency']+
-          //                                         rentalOption[choosenVehicle]
-          //                                                 ['fare_amount']
-          //                                             .toString(),
-          //                                     style: GoogleFonts.notoSans(
-          //                                         fontSize: width * fourteen,
-          //                                         fontWeight: FontWeight.w700,
-          //                                         color: (choosenVehicle != i)
-          //                                             ? (isDarkTheme == true)
-          //                                                 ? Colors.white
-          //                                                 : textColor
-          //                                             : textColor),
-          //                                   ),
-          //                           ],
-          //                         )
-          //                       : Row(
-          //                           mainAxisAlignment: MainAxisAlignment.end,
-          //                           children: [
-          //                             Text(
-          //                               etaDetails[i]['currency'] + ' ',
-          //                               style: GoogleFonts.notoSans(
-          //                                   fontSize: width * fourteen,
-          //                                   color: (choosenVehicle != i)
-          //                                       ? Colors.white
-          //                                       : Colors.black,
-          //                                   fontWeight: FontWeight.w600),
-          //                             ),
-          //                             Column(
-          //                               children: [
-          //                                 Text(
-          //                                   (type != 1)
-          //                                       ? etaDetails[i]['total']
-          //                                           .toString()
-          //                                       : rentalOption[choosenVehicle]
-          //                                               ['fare_amount']
-          //                                           .toString(),
-          //                                   style: GoogleFonts.notoSans(
-          //                                       fontSize: width * fourteen,
-          //                                       color: (choosenVehicle != i)
-          //                                           ? (isDarkTheme == true)
-          //                                               ? Colors.white
-          //                                               : textColor
-          //                                           : Colors.black,
-          //                                       fontWeight: FontWeight.w600,
-          //                                       decoration:
-          //                                           TextDecoration.lineThrough),
-          //                                 ),
-          //                                 Text(
-          //                                   (type != 1)
-          //                                       ? etaDetails[i]
-          //                                               ['discounted_totel']
-          //                                           .toString()
-          //                                       : rentalOption[choosenVehicle]
-          //                                               ['discounted_totel']
-          //                                           .toString(),
-          //                                   style: GoogleFonts.notoSans(
-          //                                       fontSize: width * fourteen,
-          //                                       color: (choosenVehicle != i)
-          //                                           ? (isDarkTheme == true)
-          //                                               ? Colors.white
-          //                                               : textColor
-          //                                           : Colors.black,
-          //                                       fontWeight: FontWeight.w700),
-          //                                 )
-          //                               ],
-          //                             ),
-          //                           ],
-          //                         )
-          //               ],
-          //             ),
-          //             SizedBox(
-          //               height: width * 0.02,
-          //             ),
-          //             FareBreakupDetails(
-          //                 width: width,
-          //                 heading: 'Time Price',
-          //                 value: (type != 1)
-          //                     ? '${etaDetails[i]['currency']} ${etaDetails[i]['price_per_time']} / min'
-          //                     : '${rentalOption[choosenVehicle]['currency']} ${rentalOption[choosenVehicle]['time_price_per_min'].toString()} / min'),
-          //             SizedBox(
-          //               height: width * 0.02,
-          //             ),
-          //             FareBreakupDetails(
-          //                 width: width,
-          //                 heading: 'Distance Price',
-          //                 value: (type != 1)
-          //                     ? '${etaDetails[i]['currency']} ${etaDetails[i]['price_per_distance']} / ${etaDetails[i]['unit_in_words']}'
-          //                     : '${rentalOption[choosenVehicle]['currency']} ${rentalOption[choosenVehicle]['distance_price_per_km'].toString()} / ${rentalOption[choosenVehicle]['unit_in_words']}'),
-          //             SizedBox(
-          //               height: width * 0.02,
-          //             ),
-          //             FareBreakupDetails(
-          //                 width: width,
-          //                 heading: 'Payment Types',
-          //                 value: (type != 1)
-          //                     ? etaDetails[i]['payment_type'].toString()
-          //                     : rentalOption[choosenVehicle]['payment_type']
-          //                         .toString()),
-          //           ],
-          //         ),
-          //       )
-          //     : Container(),
+
           (((etaDetails[i]['enable_bidding'] == false && isOneway) ||
                   (type == 1 || type == 2)))
               ? Container(
                   width: width * 0.9,
                   padding: EdgeInsets.all(width * 0.02),
                   decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20.r),
                       color: hintColor.withOpacity(0.1).withOpacity(0.1)),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          if (type != 2)
-                            MyText(text: 'Fare', size: width * fourteen),
-                          if (type != 2)
-                            (etaDetails[i]['has_discount'] != true)
-                                ? Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      (type != 1)
-                                          ? Text(
-                                              (etaDetails[i]['currency'] +
-                                                  etaDetails[i]['total']
-                                                      .toString()),
-                                              style: GoogleFonts.notoSans(
-                                                  fontSize: width * fourteen,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: (choosenVehicle != i)
-                                                      ? (isDarkTheme == true)
-                                                          ? Colors.white
-                                                          : textColor
-                                                      : textColor),
-                                            )
-                                          : Text(
-                                              etaDetails[i]['currency'] +
-                                                  rentalOption[choosenVehicle]
+                  child: GestureDetector(
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            if (type != 2)
+                            
+                              MyText(text: 'Fare', size: width * fourteen),
+                            if (type != 2)
+                              (etaDetails[i]['has_discount'] != true)
+                                  ? Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        (type != 1)
+                                            ? Text(
+                                                (etaDetails[i]['currency'] +
+                                                    etaDetails[i]['total']
+                                                        .toString()),
+                                                style: GoogleFonts.notoSans(
+                                                    fontSize: width * fourteen,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: (choosenVehicle != i)
+                                                        ? (isDarkTheme == true)
+                                                            ? Colors.white
+                                                            : textColor
+                                                        : textColor),
+                                              )
+                                            : Text(
+                                                etaDetails[i]['currency'] +
+                                                    rentalOption[choosenVehicle]
+                                                            ['fare_amount']
+                                                        .toString(),
+                                                style: GoogleFonts.notoSans(
+                                                    fontSize: width * fourteen,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: (choosenVehicle != i)
+                                                        ? (isDarkTheme == true)
+                                                            ? Colors.white
+                                                            : textColor
+                                                        : textColor),
+                                              ),
+                                      ],
+                                    )
+                                  : Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        Text(
+                                          etaDetails[i]['currency'] + ' ',
+                                          style: GoogleFonts.notoSans(
+                                              fontSize: width * fourteen,
+                                              color: (choosenVehicle != i)
+                                                  ? Colors.white
+                                                  : Colors.black,
+                                              fontWeight: FontWeight.w600),
+                                        ),
+                                        Column(
+                                          children: [
+                                            Text(
+                                              (type != 1)
+                                                  ? etaDetails[i]['total']
+                                                      .toString()
+                                                  : rentalOption[choosenVehicle]
                                                           ['fare_amount']
                                                       .toString(),
                                               style: GoogleFonts.notoSans(
                                                   fontSize: width * fourteen,
-                                                  fontWeight: FontWeight.w700,
                                                   color: (choosenVehicle != i)
                                                       ? (isDarkTheme == true)
                                                           ? Colors.white
                                                           : textColor
-                                                      : textColor),
+                                                      : Colors.black,
+                                                  fontWeight: FontWeight.w600,
+                                                  decoration: TextDecoration
+                                                      .lineThrough),
                                             ),
-                                    ],
-                                  )
-                                : Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      Text(
-                                        etaDetails[i]['currency'] + ' ',
-                                        style: GoogleFonts.notoSans(
-                                            fontSize: width * fourteen,
-                                            color: (choosenVehicle != i)
-                                                ? Colors.white
-                                                : Colors.black,
-                                            fontWeight: FontWeight.w600),
-                                      ),
-                                      Column(
-                                        children: [
-                                          Text(
-                                            (type != 1)
-                                                ? etaDetails[i]['total']
-                                                    .toString()
-                                                : rentalOption[choosenVehicle]
-                                                        ['fare_amount']
-                                                    .toString(),
-                                            style: GoogleFonts.notoSans(
-                                                fontSize: width * fourteen,
-                                                color: (choosenVehicle != i)
-                                                    ? (isDarkTheme == true)
-                                                        ? Colors.white
-                                                        : textColor
-                                                    : Colors.black,
-                                                fontWeight: FontWeight.w600,
-                                                decoration:
-                                                    TextDecoration.lineThrough),
-                                          ),
-                                          Text(
-                                            (type != 1)
-                                                ? etaDetails[i]
-                                                        ['discounted_totel']
-                                                    .toString()
-                                                : rentalOption[choosenVehicle]
-                                                        ['discounted_totel']
-                                                    .toString(),
-                                            style: GoogleFonts.notoSans(
-                                                fontSize: width * fourteen,
-                                                color: (choosenVehicle != i)
-                                                    ? (isDarkTheme == true)
-                                                        ? Colors.white
-                                                        : textColor
-                                                    : Colors.black,
-                                                fontWeight: FontWeight.w700),
-                                          )
-                                        ],
-                                      ),
-                                    ],
-                                  )
-                        ],
-                      ),
-                      SizedBox(
-                        height: width * 0.02,
-                      ),
-                      FareBreakupDetails(
-                          width: width,
-                          heading: 'Time Price',
-                          value: (type != 1)
-                              ? '${etaDetails[i]['currency']} ${etaDetails[i]['price_per_time']} / min'
-                              : '${etaDetails[choosenVehicle]['currency']} ${rentalOption[choosenVehicle]['time_price_per_min'].toString()} / min'),
-                      SizedBox(
-                        height: width * 0.02,
-                      ),
-                      FareBreakupDetails(
-                          width: width,
-                          heading: 'Distance Price',
-                          value: (type != 1)
-                              ? '${etaDetails[i]['currency']} ${etaDetails[i]['price_per_distance']} / ${etaDetails[i]['unit_in_words']}'
-                              : '${etaDetails[choosenVehicle]['currency']} ${rentalOption[choosenVehicle]['distance_price_per_km'].toString()} / ${rentalOption[choosenVehicle]['unit_in_words']}'),
-                      SizedBox(
-                        height: width * 0.02,
-                      ),
-                      FareBreakupDetails(
-                          width: width,
-                          heading: 'Payment Types',
-                          value: (type != 1)
-                              ? etaDetails[i]['payment_type'].toString()
-                              : rentalOption[choosenVehicle]['payment_type']
-                                  .toString()),
-                    ],
+                                            Text(
+                                              (type != 1)
+                                                  ? etaDetails[i]
+                                                          ['discounted_totel']
+                                                      .toString()
+                                                  : rentalOption[choosenVehicle]
+                                                          ['discounted_totel']
+                                                      .toString(),
+                                              style: GoogleFonts.notoSans(
+                                                  fontSize: width * fourteen,
+                                                  color: (choosenVehicle != i)
+                                                      ? (isDarkTheme == true)
+                                                          ? Colors.white
+                                                          : textColor
+                                                      : Colors.black,
+                                                  fontWeight: FontWeight.w700),
+                                            )
+                                          ],
+                                        ),
+                                      ],
+                                    )
+                          ],
+                        ),
+                        SizedBox(
+                          height: width * 0.02,
+                        ),
+                        FareBreakupDetails(
+                            width: width,
+                            heading: 'Time Price',
+                            value: (type != 1)
+                                ? '${etaDetails[i]['currency']} ${etaDetails[i]['price_per_time']} / min'
+                                : '${etaDetails[choosenVehicle]['currency']} ${rentalOption[choosenVehicle]['time_price_per_min'].toString()} / min'),
+                        SizedBox(
+                          height: width * 0.02,
+                        ),
+                        FareBreakupDetails(
+                            width: width,
+                            heading: 'Distance Price',
+                            value: (type != 1)
+                                ? '${etaDetails[i]['currency']} ${etaDetails[i]['price_per_distance']} / ${etaDetails[i]['unit_in_words']}'
+                                : '${etaDetails[choosenVehicle]['currency']} ${rentalOption[choosenVehicle]['distance_price_per_km'].toString()} / ${rentalOption[choosenVehicle]['unit_in_words']}'),
+                        SizedBox(
+                          height: width * 0.02,
+                        ),
+                        FareBreakupDetails(
+                            width: width,
+                            heading: 'Payment Types',
+                            value: (type != 1)
+                                ? etaDetails[i]['payment_type'].toString()
+                                : rentalOption[choosenVehicle]['payment_type']
+                                    .toString()),
+                      ],
+                    ),
                   ),
                 )
               : Container(),
@@ -3278,7 +3181,23 @@ class VehicleInfoBottomSheet extends StatelessWidget {
                     size: width * fourteen),
               )
             ],
-          )
+          ),
+          const SizedBox(height: 12),
+          // Wrap(
+          //   spacing: 6,
+          //   runSpacing: 6,
+          //   children: etaDetails[i]['supported_vehicles']
+          //       .split(',') // تحويل النص إلى قائمة
+          //       .take(5) // أخذ أول 5 عناصر فقط
+          //       .map<Widget>((vehicle) {
+          //     // تحديد نوع العنصر المُرجع
+          //     return Chip(
+          //       label: Text(vehicle.trim(),
+          //           style: const TextStyle(
+          //               fontSize: 12)), // إزالة المسافات الزائدة
+          //     );
+          //   }).toList(), // تحويل Iterable إلى List
+          // ),
         ],
       ),
     );
@@ -3343,7 +3262,8 @@ class _ChoosePreferencesContainerState
           MyText(
             text: languages[choosenLanguage]['text_choose_preference'],
             size: media.width * sixteen,
-            fontweight: FontWeight.bold,
+            fontweight: FontWeight.w600,
+            color: Colors.blue,
           ),
           SizedBox(
             height: media.width * 0.03,
@@ -3375,11 +3295,7 @@ class _ChoosePreferencesContainerState
                                       Icon(
                                         Icons.pets,
                                         size: media.width * 0.05,
-                                        color: (choosePets == true)
-                                            ? theme
-                                            : (isDarkTheme)
-                                                ? Colors.white
-                                                : Colors.black,
+                                        color: Colors.blue,
                                       ),
                                       SizedBox(
                                         width: media.width * 0.025,
@@ -3387,7 +3303,7 @@ class _ChoosePreferencesContainerState
                                       MyText(
                                         text: languages[choosenLanguage]
                                             ['text_pets'],
-                                        size: media.width * sixteen,
+                                        size: 14.sp,
                                         fontweight: FontWeight.w600,
                                       ),
                                     ],
@@ -3402,7 +3318,7 @@ class _ChoosePreferencesContainerState
                                             ? theme
                                             : Colors.transparent,
                                         borderRadius:
-                                            BorderRadius.circular(2.5)),
+                                            BorderRadius.circular(100)),
                                     child: Icon(
                                       Icons.done,
                                       size: media.width * 0.035,
@@ -3444,11 +3360,7 @@ class _ChoosePreferencesContainerState
                                         width: media.width * 0.05,
                                         child: Image.asset(
                                           'assets/images/luggages.png',
-                                          color: (chooseLuggages == true)
-                                              ? theme
-                                              : (isDarkTheme)
-                                                  ? Colors.white
-                                                  : Colors.black,
+                                          color: Colors.blue,
                                         ),
                                       ),
                                       SizedBox(
@@ -3457,7 +3369,7 @@ class _ChoosePreferencesContainerState
                                       MyText(
                                         text: languages[choosenLanguage]
                                             ['text_luggages'],
-                                        size: media.width * sixteen,
+                                        size: 14.sp,
                                         fontweight: FontWeight.w600,
                                       ),
                                     ],
@@ -3472,7 +3384,7 @@ class _ChoosePreferencesContainerState
                                             ? theme
                                             : Colors.transparent,
                                         borderRadius:
-                                            BorderRadius.circular(2.5)),
+                                            BorderRadius.circular(100)),
                                     child: Icon(
                                       Icons.done,
                                       size: media.width * 0.035,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:taxista/functions/functions.dart';
 import 'package:taxista/pages/loadingPage/loading.dart';
 import 'package:taxista/pages/onTripPage/drop_loc_select.dart';
@@ -65,6 +66,7 @@ class _FavAddressPageState extends State<FavAddressPage> {
                         padding: EdgeInsets.fromLTRB(media.width * 0.05,
                             media.width * 0.05, media.width * 0.05, 0),
                         child: Column(
+                          mainAxisSize: MainAxisSize.max,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
@@ -77,39 +79,22 @@ class _FavAddressPageState extends State<FavAddressPage> {
                                   child: Icon(Icons.arrow_back_ios,
                                       color: textColor),
                                 ),
-                                if (others.length < 4)
-                                  InkWell(
-                                    onTap: () {
-                                      setState(() {
-                                        newAddressController.text = '';
-                                      });
-
-                                      showDialog(
-                                        context: context,
-                                        builder: (context) {
-                                          return addDialoge(context);
-                                        },
-                                      ).then((_) async {
-                                        await getFavLocations();
-                                      });
-                                    },
-                                    child: Icon(Icons.add, color: textColor),
+                                Expanded(
+                                  child: Center(
+                                    child: MyText(
+                                      text: languages[choosenLanguage]
+                                              ['text_fav_address']
+                                          .toString()
+                                          .toUpperCase(),
+                                      size: 16.sp,
+                                      fontweight: FontWeight.w600,
+                                    ),
                                   ),
+                                ),
                               ],
                             ),
                             SizedBox(
-                              height: media.width * 0.05,
-                            ),
-                            MyText(
-                              text: languages[choosenLanguage]
-                                      ['text_fav_address']
-                                  .toString()
-                                  .toUpperCase(),
-                              size: media.width * sixteen,
-                              fontweight: FontWeight.w800,
-                            ),
-                            SizedBox(
-                              height: media.width * 0.05,
+                              height: 25.h,
                             ),
                             (home.isEmpty)
                                 ? Padding(
@@ -148,7 +133,11 @@ class _FavAddressPageState extends State<FavAddressPage> {
                                           child: Row(
                                             children: [
                                               const CircleAvatar(
-                                                child: Icon(Icons.home_filled),
+                                                backgroundColor: Colors.blue,
+                                                child: Icon(
+                                                  Icons.home_filled,
+                                                  color: Colors.white,
+                                                ),
                                               ),
                                               const SizedBox(width: 15),
                                               Column(
@@ -194,7 +183,7 @@ class _FavAddressPageState extends State<FavAddressPage> {
                                                   Icons.add_circle_outline,
                                                   color: (isDarkTheme == true)
                                                       ? Colors.white
-                                                      : Colors.black,
+                                                      : Colors.blue,
                                                 ),
                                               ),
                                             ],
@@ -233,7 +222,11 @@ class _FavAddressPageState extends State<FavAddressPage> {
                                           child: Row(
                                             children: [
                                               const CircleAvatar(
-                                                child: Icon(Icons.home_filled),
+                                                backgroundColor: Colors.blue,
+                                                child: Icon(
+                                                  Icons.home_filled,
+                                                  color: Colors.white,
+                                                ),
                                               ),
                                               const SizedBox(width: 15),
                                               SizedBox(
@@ -274,11 +267,12 @@ class _FavAddressPageState extends State<FavAddressPage> {
                                                     },
                                                   );
                                                 },
-                                                child: Icon(
-                                                  Icons.cancel_outlined,
-                                                  color: (isDarkTheme == true)
-                                                      ? Colors.white
-                                                      : Colors.black,
+                                                child: CircleAvatar(
+                                                  backgroundColor: Colors.red,
+                                                  radius: 8.r,
+                                                  child: Icon(Icons.close,
+                                                      color: Colors.white,
+                                                      size: 16.sp),
                                                 ),
                                               ),
                                             ],
@@ -326,8 +320,12 @@ class _FavAddressPageState extends State<FavAddressPage> {
                                               horizontal: 10),
                                           child: Row(
                                             children: [
-                                              const CircleAvatar(
-                                                child: Icon(Icons.work),
+                                              CircleAvatar(
+                                                backgroundColor: Colors.blue,
+                                                child: Icon(
+                                                  Icons.home_work_outlined,
+                                                  color: Colors.white,
+                                                ),
                                               ),
                                               const SizedBox(width: 15),
                                               Column(
@@ -340,8 +338,7 @@ class _FavAddressPageState extends State<FavAddressPage> {
                                                     text: languages[
                                                             choosenLanguage]
                                                         ['text_work'],
-                                                    size:
-                                                        media.width * fourteen,
+                                                    size: 14.sp,
                                                     fontweight: FontWeight.w500,
                                                   ),
                                                   MyText(
@@ -373,7 +370,7 @@ class _FavAddressPageState extends State<FavAddressPage> {
                                                   Icons.add_circle_outline,
                                                   color: (isDarkTheme == true)
                                                       ? Colors.white
-                                                      : Colors.black,
+                                                      : Colors.blue,
                                                 ),
                                               ),
                                             ],
@@ -412,7 +409,11 @@ class _FavAddressPageState extends State<FavAddressPage> {
                                           child: Row(
                                             children: [
                                               const CircleAvatar(
-                                                child: Icon(Icons.work),
+                                                backgroundColor: Colors.blue,
+                                                child: Icon(
+                                                  Icons.home_work_outlined,
+                                                  color: Colors.white,
+                                                ),
                                               ),
                                               const SizedBox(width: 15),
                                               SizedBox(
@@ -453,11 +454,14 @@ class _FavAddressPageState extends State<FavAddressPage> {
                                                     },
                                                   );
                                                 },
-                                                child: Icon(
-                                                  Icons.cancel_outlined,
-                                                  color: (isDarkTheme == true)
-                                                      ? Colors.white
-                                                      : Colors.black,
+                                                child: CircleAvatar(
+                                                  backgroundColor: Colors.red,
+                                                  radius: 8.r,
+                                                  child: Icon(
+                                                    Icons.close,
+                                                    color: Colors.white,
+                                                    size: 16.sp,
+                                                  ),
                                                 ),
                                               ),
                                             ],
@@ -508,7 +512,12 @@ class _FavAddressPageState extends State<FavAddressPage> {
                                               child: Row(
                                                 children: [
                                                   const CircleAvatar(
-                                                    child: Icon(Icons.favorite),
+                                                    backgroundColor:
+                                                        Colors.blue,
+                                                    child: Icon(
+                                                      Icons.favorite,
+                                                      color: Colors.white,
+                                                    ),
                                                   ),
                                                   const SizedBox(width: 15),
                                                   SizedBox(
@@ -554,12 +563,15 @@ class _FavAddressPageState extends State<FavAddressPage> {
                                                         },
                                                       );
                                                     },
-                                                    child: Icon(
-                                                      Icons.cancel_outlined,
-                                                      color:
-                                                          (isDarkTheme == true)
-                                                              ? Colors.white
-                                                              : Colors.black,
+                                                    child: CircleAvatar(
+                                                      backgroundColor:
+                                                          Colors.red,
+                                                      radius: 8.r,
+                                                      child: Icon(
+                                                        Icons.close,
+                                                        color: Colors.white,
+                                                        size: 16.sp,
+                                                      ),
                                                     ),
                                                   ),
                                                 ],
@@ -571,7 +583,7 @@ class _FavAddressPageState extends State<FavAddressPage> {
                                     },
                                   ),
                                 ),
-                              )
+                              ),
                           ],
                         ),
                       ),
@@ -579,6 +591,31 @@ class _FavAddressPageState extends State<FavAddressPage> {
                     (_isLoading == true)
                         ? const Positioned(child: Loading())
                         : Container(),
+                    if (others.length < 4)
+                      Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Padding(
+                          padding: EdgeInsets.only(bottom: 10.h),
+                          child: Button(
+                            onTap: () {
+                              setState(() {
+                                newAddressController.text = '';
+                              });
+
+                              showDialog(
+                                context: context,
+                                builder: (context) {
+                                  return addDialoge(context);
+                                },
+                              ).then((_) async {
+                                await getFavLocations();
+                              });
+                            },
+                            text: languages[choosenLanguage]
+                                ['text_add_new_address'],
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ));
@@ -645,11 +682,11 @@ class _FavAddressPageState extends State<FavAddressPage> {
       titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
       contentPadding: const EdgeInsets.all(20),
       backgroundColor:
-          (isDarkTheme == true) ? borderLines.withOpacity(0.5) : page,
+          (isDarkTheme == true) ? borderLines.withOpacity(0.3) : page,
       title: Center(
         child: Text(
-          languages[choosenLanguage]['text_add_new'],
-          style: GoogleFonts.notoSans(
+          languages[choosenLanguage]['text_add_new_address_fav'],
+          style: GoogleFonts.cairo(
               fontSize: media.width * twenty,
               color: textColor,
               fontWeight: FontWeight.bold),
@@ -657,11 +694,21 @@ class _FavAddressPageState extends State<FavAddressPage> {
       ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
+          Text(
+            languages[choosenLanguage]['text_name_enter'],
+            style: GoogleFonts.cairo(
+                fontSize: 12.sp, color: textColor, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(
+            height: 5.h,
+          ),
           TextField(
             controller: newAddressController,
             autofocus: false,
             maxLines: 1,
+            textDirection: TextDirection.rtl,
             textAlignVertical: TextAlignVertical.center,
             decoration: InputDecoration(
               isDense: true,
@@ -672,12 +719,12 @@ class _FavAddressPageState extends State<FavAddressPage> {
                 borderSide: BorderSide(color: textColor.withOpacity(0.3)),
               ),
               hintText: languages[choosenLanguage]['text_new_type_address'],
-              hintStyle: GoogleFonts.notoSans(
+              hintStyle: GoogleFonts.cairo(
                 fontSize: media.width * twelve,
                 color: textColor.withOpacity(0.4),
               ),
             ),
-            style: GoogleFonts.notoSans(
+            style: GoogleFonts.cairo(
                 fontSize: media.width * fourteen,
                 color: (isDarkTheme == true) ? Colors.white : textColor),
             onTap: () {},

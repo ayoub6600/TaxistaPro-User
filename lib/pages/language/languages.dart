@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../functions/functions.dart';
 import '../../styles/styles.dart';
@@ -41,6 +43,7 @@ class _LanguagesState extends State<Languages> {
         width: media.width * 1,
         color: page,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
               height: media.width * 0.11 + MediaQuery.of(context).padding.top,
@@ -69,7 +72,7 @@ class _LanguagesState extends State<Languages> {
             ),
             SizedBox(
               width: media.width * 0.9,
-              height: media.height * 0.16,
+              height: media.height * 0.4,
               child: Image.asset(
                 'assets/images/selectLanguage.png',
                 fit: BoxFit.contain,
@@ -78,7 +81,13 @@ class _LanguagesState extends State<Languages> {
             SizedBox(
               height: media.width * 0.1,
             ),
-            //languages list
+            Text(languages[choosenLanguage]['text_choose_language'],
+                style: GoogleFonts.cairo(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w600,
+                  color: textColor,
+                )),
+            SizedBox(height: 20.h),
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
@@ -108,7 +117,7 @@ class _LanguagesState extends State<Languages> {
                                         .firstWhere(
                                             (e) => e['code'] == i)['name']
                                         .toString(),
-                                    size: media.width * sixteen,
+                                    size: 16.sp,
                                   ),
                                   Container(
                                     height: media.width * 0.05,
@@ -116,8 +125,7 @@ class _LanguagesState extends State<Languages> {
                                     decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         border: Border.all(
-                                            color: const Color(0xff222222),
-                                            width: 1.2)),
+                                            color: Colors.blue, width: 1.2)),
                                     alignment: Alignment.center,
                                     child: (choosenLanguage == i)
                                         ? Container(
@@ -125,7 +133,7 @@ class _LanguagesState extends State<Languages> {
                                             width: media.width * 0.03,
                                             decoration: const BoxDecoration(
                                                 shape: BoxShape.circle,
-                                                color: Color(0xff222222)),
+                                                color: Colors.blue),
                                           )
                                         : Container(),
                                   )

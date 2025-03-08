@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:taxista/pages/NavigatorPages/paymentgateways.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../functions/functions.dart';
@@ -26,6 +27,7 @@ class _InvoiceState extends State<Invoice> {
   String _error = '';
   String myPaymentMethod = '';
 
+  bool isShow = false;
   @override
   void initState() {
     myMarkers.clear();
@@ -437,578 +439,620 @@ class _InvoiceState extends State<Invoice> {
                                       : (userRequestData['requestBill'] != null)
                                           ? Column(
                                               children: [
-                                                MyText(
-                                                  text:
-                                                      languages[choosenLanguage]
+                                                GestureDetector(
+                                                  onTap: () {
+                                                    setState(() {
+                                                      isShow = !isShow;
+                                                    });
+                                                  },
+                                                  child: Container(
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                            horizontal: 10.w,
+                                                            vertical: 10.h),
+                                                    decoration: BoxDecoration(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              20.r),
+                                                      color: Colors.blue,
+                                                    ),
+                                                    child: MyText(
+                                                      text: languages[
+                                                              choosenLanguage]
                                                           ['text_tripfare'],
-                                                  size: media.width * fourteen,
-                                                  fontweight: FontWeight.w700,
+                                                      size: media.width *
+                                                          fourteen,
+                                                      fontweight:
+                                                          FontWeight.w700,
+                                                      color: Colors.white,
+                                                    ),
+                                                  ),
                                                 ),
-                                                SizedBox(
-                                                  height: media.height * 0.03,
-                                                ),
-                                                (userRequestData['is_rental'] ==
-                                                        true)
-                                                    ? Container(
-                                                        padding:
-                                                            EdgeInsets.only(
-                                                                bottom: media
-                                                                        .width *
-                                                                    0.05),
+                                                isShow == true
+                                                    ? Column(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          SizedBox(
+                                                            height:
+                                                                media.height *
+                                                                    0.03,
+                                                          ),
+                                                          (userRequestData[
+                                                                      'is_rental'] ==
+                                                                  true)
+                                                              ? Container(
+                                                                  padding: EdgeInsets.only(
+                                                                      bottom: media
+                                                                              .width *
+                                                                          0.05),
+                                                                  child: Row(
+                                                                    mainAxisAlignment:
+                                                                        MainAxisAlignment
+                                                                            .spaceBetween,
+                                                                    children: [
+                                                                      Text(
+                                                                        languages[choosenLanguage]
+                                                                            [
+                                                                            'text_ride_type'],
+                                                                        style: GoogleFonts.notoSans(
+                                                                            fontSize: media.width *
+                                                                                fourteen,
+                                                                            color:
+                                                                                textColor),
+                                                                      ),
+                                                                      Text(
+                                                                        userRequestData[
+                                                                            'rental_package_name'],
+                                                                        style: GoogleFonts.notoSans(
+                                                                            fontSize: media.width *
+                                                                                fourteen,
+                                                                            color:
+                                                                                textColor),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                )
+                                                              : Container(),
+                                                          Column(
+                                                            children: [
+                                                              Row(
+                                                                mainAxisAlignment:
+                                                                    MainAxisAlignment
+                                                                        .spaceBetween,
+                                                                children: [
+                                                                  MyText(
+                                                                    text: languages[
+                                                                            choosenLanguage]
+                                                                        [
+                                                                        'text_baseprice'],
+                                                                    size: media
+                                                                            .width *
+                                                                        twelve,
+                                                                  ),
+                                                                  MyText(
+                                                                    text: (userRequestData.isNotEmpty &&
+                                                                            userRequestData['requestBill'] !=
+                                                                                null)
+                                                                        ? userRequestData['requestBill']['data']['requested_currency_symbol'] +
+                                                                            ' ' +
+                                                                            userRequestData['requestBill']['data']['base_price'].toString()
+                                                                        : '',
+                                                                    size: media
+                                                                            .width *
+                                                                        twelve,
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                              Container(
+                                                                margin: EdgeInsets.only(
+                                                                    top: media
+                                                                            .width *
+                                                                        0.03,
+                                                                    bottom: media
+                                                                            .width *
+                                                                        0.03),
+                                                                height: 1.5,
+                                                                color: const Color(
+                                                                    0xffE0E0E0),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                          Column(
+                                                            children: [
+                                                              Row(
+                                                                mainAxisAlignment:
+                                                                    MainAxisAlignment
+                                                                        .spaceBetween,
+                                                                children: [
+                                                                  MyText(
+                                                                    text: languages[
+                                                                            choosenLanguage]
+                                                                        [
+                                                                        'text_distprice'],
+                                                                    size: media
+                                                                            .width *
+                                                                        twelve,
+                                                                  ),
+                                                                  MyText(
+                                                                    text: (userRequestData.isNotEmpty &&
+                                                                            userRequestData['requestBill'] !=
+                                                                                null)
+                                                                        ? userRequestData['requestBill']['data']['requested_currency_symbol'] +
+                                                                            ' ' +
+                                                                            userRequestData['requestBill']['data']['distance_price'].toString()
+                                                                        : '',
+                                                                    size: media
+                                                                            .width *
+                                                                        twelve,
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                              Container(
+                                                                margin: EdgeInsets.only(
+                                                                    top: media
+                                                                            .width *
+                                                                        0.03,
+                                                                    bottom: media
+                                                                            .width *
+                                                                        0.03),
+                                                                height: 1.5,
+                                                                color: const Color(
+                                                                    0xffE0E0E0),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                          Column(
+                                                            children: [
+                                                              Row(
+                                                                mainAxisAlignment:
+                                                                    MainAxisAlignment
+                                                                        .spaceBetween,
+                                                                children: [
+                                                                  MyText(
+                                                                    text: languages[
+                                                                            choosenLanguage]
+                                                                        [
+                                                                        'text_timeprice'],
+                                                                    size: media
+                                                                            .width *
+                                                                        twelve,
+                                                                  ),
+                                                                  MyText(
+                                                                    text: (userRequestData.isNotEmpty &&
+                                                                            userRequestData['requestBill'] !=
+                                                                                null)
+                                                                        ? userRequestData['requestBill']['data']['requested_currency_symbol'] +
+                                                                            ' ' +
+                                                                            userRequestData['requestBill']['data']['time_price'].toString()
+                                                                        : '',
+                                                                    size: media
+                                                                            .width *
+                                                                        twelve,
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                              Container(
+                                                                margin: EdgeInsets.only(
+                                                                    top: media
+                                                                            .width *
+                                                                        0.03,
+                                                                    bottom: media
+                                                                            .width *
+                                                                        0.03),
+                                                                height: 1.5,
+                                                                color: const Color(
+                                                                    0xffE0E0E0),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                          (userRequestData[
+                                                                          'requestBill'] !=
+                                                                      null &&
+                                                                  userRequestData['requestBill']
+                                                                              [
+                                                                              'data']
+                                                                          [
+                                                                          'cancellation_fee'] !=
+                                                                      0)
+                                                              ? Column(
+                                                                  children: [
+                                                                    Row(
+                                                                      mainAxisAlignment:
+                                                                          MainAxisAlignment
+                                                                              .spaceBetween,
+                                                                      children: [
+                                                                        MyText(
+                                                                          text: languages[choosenLanguage]
+                                                                              [
+                                                                              'text_cancelfee'],
+                                                                          size: media.width *
+                                                                              twelve,
+                                                                        ),
+                                                                        MyText(
+                                                                          text: (userRequestData.isNotEmpty && userRequestData['requestBill'] != null)
+                                                                              ? userRequestData['requestBill']['data']['requested_currency_symbol'] + ' ' + userRequestData['requestBill']['data']['cancellation_fee'].toString()
+                                                                              : '',
+                                                                          size: media.width *
+                                                                              twelve,
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                    Container(
+                                                                      margin: EdgeInsets.only(
+                                                                          top: media.width *
+                                                                              0.03,
+                                                                          bottom:
+                                                                              media.width * 0.03),
+                                                                      height:
+                                                                          1.5,
+                                                                      color: const Color(
+                                                                          0xffE0E0E0),
+                                                                    ),
+                                                                  ],
+                                                                )
+                                                              : Container(),
+                                                          (userRequestData[
+                                                                          'requestBill'] !=
+                                                                      null &&
+                                                                  userRequestData['requestBill']
+                                                                              [
+                                                                              'data']
+                                                                          [
+                                                                          'airport_surge_fee'] !=
+                                                                      0)
+                                                              ? Column(
+                                                                  children: [
+                                                                    Row(
+                                                                      mainAxisAlignment:
+                                                                          MainAxisAlignment
+                                                                              .spaceBetween,
+                                                                      children: [
+                                                                        MyText(
+                                                                          text: languages[choosenLanguage]
+                                                                              [
+                                                                              'text_surge_fee'],
+                                                                          size: media.width *
+                                                                              twelve,
+                                                                        ),
+                                                                        MyText(
+                                                                          text: (userRequestData.isNotEmpty && userRequestData['requestBill'] != null)
+                                                                              ? userRequestData['requestBill']['data']['requested_currency_symbol'] + ' ' + userRequestData['requestBill']['data']['airport_surge_fee'].toString()
+                                                                              : '',
+                                                                          size: media.width *
+                                                                              twelve,
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                    Container(
+                                                                      margin: EdgeInsets.only(
+                                                                          top: media.width *
+                                                                              0.03,
+                                                                          bottom:
+                                                                              media.width * 0.03),
+                                                                      height:
+                                                                          1.5,
+                                                                      color: const Color(
+                                                                          0xffE0E0E0),
+                                                                    ),
+                                                                  ],
+                                                                )
+                                                              : Container(),
+                                                          Column(
+                                                            children: [
+                                                              Row(
+                                                                mainAxisAlignment:
+                                                                    MainAxisAlignment
+                                                                        .spaceBetween,
+                                                                children: [
+                                                                  MyText(
+                                                                    text: languages[choosenLanguage]['text_waiting_price'] +
+                                                                        ' (' +
+                                                                        userRequestData['requestBill']['data']
+                                                                            [
+                                                                            'requested_currency_symbol'] +
+                                                                        ' ' +
+                                                                        userRequestData['requestBill']['data']['waiting_charge_per_min']
+                                                                            .toString() +
+                                                                        ' x ' +
+                                                                        userRequestData['requestBill']['data']['calculated_waiting_time']
+                                                                            .toString() +
+                                                                        ' ' +
+                                                                        languages[choosenLanguage]
+                                                                            [
+                                                                            'text_mins'] +
+                                                                        ')',
+                                                                    size: media
+                                                                            .width *
+                                                                        twelve,
+                                                                  ),
+                                                                  MyText(
+                                                                    text: userRequestData['requestBill']['data']
+                                                                            [
+                                                                            'requested_currency_symbol'] +
+                                                                        ' ' +
+                                                                        userRequestData['requestBill']['data']['waiting_charge']
+                                                                            .toString(),
+                                                                    size: media
+                                                                            .width *
+                                                                        twelve,
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                              Container(
+                                                                margin: EdgeInsets.only(
+                                                                    top: media
+                                                                            .width *
+                                                                        0.03,
+                                                                    bottom: media
+                                                                            .width *
+                                                                        0.03),
+                                                                height: 1.5,
+                                                                color: const Color(
+                                                                    0xffE0E0E0),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                          (userRequestData[
+                                                                          'requestBill'] !=
+                                                                      null &&
+                                                                  userRequestData['requestBill']
+                                                                              [
+                                                                              'data']
+                                                                          [
+                                                                          'admin_commision'] !=
+                                                                      0)
+                                                              ? Column(
+                                                                  children: [
+                                                                    Row(
+                                                                      mainAxisAlignment:
+                                                                          MainAxisAlignment
+                                                                              .spaceBetween,
+                                                                      children: [
+                                                                        MyText(
+                                                                          text: languages[choosenLanguage]
+                                                                              [
+                                                                              'text_convfee'],
+                                                                          size: media.width *
+                                                                              twelve,
+                                                                        ),
+                                                                        MyText(
+                                                                          text: userRequestData['requestBill']['data']['requested_currency_symbol'] +
+                                                                              ' ' +
+                                                                              userRequestData['requestBill']['data']['admin_commision'].toString(),
+                                                                          size: media.width *
+                                                                              twelve,
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                    Container(
+                                                                      margin: EdgeInsets.only(
+                                                                          top: media.width *
+                                                                              0.03,
+                                                                          bottom:
+                                                                              media.width * 0.03),
+                                                                      height:
+                                                                          1.5,
+                                                                      color: const Color(
+                                                                          0xffE0E0E0),
+                                                                    ),
+                                                                  ],
+                                                                )
+                                                              : Container(),
+                                                          (userRequestData[
+                                                                          'requestBill'] !=
+                                                                      null &&
+                                                                  userRequestData['requestBill']
+                                                                              [
+                                                                              'data']
+                                                                          [
+                                                                          'promo_discount'] !=
+                                                                      null)
+                                                              ? Column(
+                                                                  children: [
+                                                                    Row(
+                                                                      mainAxisAlignment:
+                                                                          MainAxisAlignment
+                                                                              .spaceBetween,
+                                                                      children: [
+                                                                        MyText(
+                                                                          text: languages[choosenLanguage]
+                                                                              [
+                                                                              'text_discount'],
+                                                                          size: media.width *
+                                                                              twelve,
+                                                                          color:
+                                                                              Colors.red,
+                                                                        ),
+                                                                        MyText(
+                                                                          text: userRequestData['requestBill']['data']['requested_currency_symbol'] +
+                                                                              ' ' +
+                                                                              userRequestData['requestBill']['data']['promo_discount'].toString(),
+                                                                          size: media.width *
+                                                                              twelve,
+                                                                          color:
+                                                                              Colors.red,
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                    Container(
+                                                                      margin: EdgeInsets.only(
+                                                                          top: media.width *
+                                                                              0.03,
+                                                                          bottom:
+                                                                              media.width * 0.03),
+                                                                      height:
+                                                                          1.5,
+                                                                      color: const Color(
+                                                                          0xffE0E0E0),
+                                                                    ),
+                                                                  ],
+                                                                )
+                                                              : Container(),
+                                                          Column(
+                                                            children: [
+                                                              Row(
+                                                                mainAxisAlignment:
+                                                                    MainAxisAlignment
+                                                                        .spaceBetween,
+                                                                children: [
+                                                                  MyText(
+                                                                    text: languages[
+                                                                            choosenLanguage]
+                                                                        [
+                                                                        'text_taxes'],
+                                                                    size: media
+                                                                            .width *
+                                                                        twelve,
+                                                                  ),
+                                                                  MyText(
+                                                                    text: userRequestData['requestBill']['data']
+                                                                            [
+                                                                            'requested_currency_symbol'] +
+                                                                        ' ' +
+                                                                        userRequestData['requestBill']['data']['service_tax']
+                                                                            .toString(),
+                                                                    size: media
+                                                                            .width *
+                                                                        twelve,
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                              Container(
+                                                                margin: EdgeInsets.only(
+                                                                    top: media
+                                                                            .width *
+                                                                        0.03,
+                                                                    bottom: media
+                                                                            .width *
+                                                                        0.03),
+                                                                height: 1.5,
+                                                                color: const Color(
+                                                                    0xffE0E0E0),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                          Column(
+                                                            children: [
+                                                              Row(
+                                                                mainAxisAlignment:
+                                                                    MainAxisAlignment
+                                                                        .center,
+                                                                children: [
+                                                                  MyText(
+                                                                    text: languages[
+                                                                            choosenLanguage]
+                                                                        [
+                                                                        'text_totalfare'],
+                                                                    size: 16.sp,
+                                                                  ),
+                                                                  SizedBox(
+                                                                    width: 10.w,
+                                                                  ),
+                                                                  MyText(
+                                                                    text: userRequestData['requestBill']['data']
+                                                                            [
+                                                                            'requested_currency_symbol'] +
+                                                                        ' ' +
+                                                                        userRequestData['requestBill']['data']['total_amount']
+                                                                            .toString(),
+                                                                    size: 16.sp,
+                                                                    fontweight:
+                                                                        FontWeight
+                                                                            .w700,
+                                                                    color: Colors
+                                                                        .blue,
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                              SizedBox(
+                                                                height: 20.h,
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ],
+                                                      )
+                                                    : Padding(
+                                                        padding: EdgeInsets
+                                                            .symmetric(
+                                                          vertical: 20.h,
+                                                        ),
                                                         child: Row(
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .spaceBetween,
                                                           children: [
                                                             Text(
-                                                              languages[
-                                                                      choosenLanguage]
-                                                                  [
-                                                                  'text_ride_type'],
-                                                              style: GoogleFonts.notoSans(
+                                                              "ادفع للسائق",
+                                                              style: GoogleFonts.cairo(
                                                                   fontSize: media
                                                                           .width *
-                                                                      fourteen,
+                                                                      sixteen,
                                                                   color:
-                                                                      textColor),
+                                                                      textColor,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w600),
+                                                            ),
+                                                            SizedBox(
+                                                              width: 5.w,
                                                             ),
                                                             Text(
-                                                              userRequestData[
-                                                                  'rental_package_name'],
-                                                              style: GoogleFonts.notoSans(
+                                                              (userRequestData[
+                                                                          'payment_opt'] ==
+                                                                      '1')
+                                                                  ? languages[
+                                                                          choosenLanguage][
+                                                                      'text_cash']
+                                                                  : (userRequestData[
+                                                                              'payment_opt'] ==
+                                                                          '2')
+                                                                      ? languages[
+                                                                              choosenLanguage]
+                                                                          [
+                                                                          'text_wallet']
+                                                                      : languages[
+                                                                              choosenLanguage]
+                                                                          [
+                                                                          'text_card'],
+                                                              style: GoogleFonts.cairo(
                                                                   fontSize: media
                                                                           .width *
+                                                                      sixteen,
+                                                                  color: Colors
+                                                                      .blue,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold),
+                                                            ),
+                                                            SizedBox(
+                                                              width: 5.w,
+                                                            ),
+                                                            MyText(
+                                                              text:
+                                                                  ' ${userRequestData['requestBill']['data']['requested_currency_symbol']}',
+                                                              size:
+                                                                  media.width *
                                                                       fourteen,
-                                                                  color:
-                                                                      textColor),
+                                                              color:
+                                                                  Colors.blue,
+                                                            ),
+                                                            SizedBox(
+                                                              width: 5.w,
+                                                            ),
+                                                            MyText(
+                                                              text:
+                                                                  ' ${userRequestData['requestBill']['data']['total_amount']}',
+                                                              size:
+                                                                  media.width *
+                                                                      twenty,
+                                                              fontweight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              color:
+                                                                  Colors.blue,
                                                             ),
                                                           ],
                                                         ),
-                                                      )
-                                                    : Container(),
-                                                Column(
-                                                  children: [
-                                                    Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
-                                                      children: [
-                                                        MyText(
-                                                          text: languages[
-                                                                  choosenLanguage]
-                                                              [
-                                                              'text_baseprice'],
-                                                          size: media.width *
-                                                              twelve,
-                                                        ),
-                                                        MyText(
-                                                          text: (userRequestData
-                                                                      .isNotEmpty &&
-                                                                  userRequestData[
-                                                                          'requestBill'] !=
-                                                                      null)
-                                                              ? userRequestData[
-                                                                              'requestBill']
-                                                                          [
-                                                                          'data']
-                                                                      [
-                                                                      'requested_currency_symbol'] +
-                                                                  ' ' +
-                                                                  userRequestData['requestBill']
-                                                                              [
-                                                                              'data']
-                                                                          [
-                                                                          'base_price']
-                                                                      .toString()
-                                                              : '',
-                                                          size: media.width *
-                                                              twelve,
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    Container(
-                                                      margin: EdgeInsets.only(
-                                                          top: media.width *
-                                                              0.03,
-                                                          bottom: media.width *
-                                                              0.03),
-                                                      height: 1.5,
-                                                      color: const Color(
-                                                          0xffE0E0E0),
-                                                    ),
-                                                  ],
-                                                ),
-                                                Column(
-                                                  children: [
-                                                    Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
-                                                      children: [
-                                                        MyText(
-                                                          text: languages[
-                                                                  choosenLanguage]
-                                                              [
-                                                              'text_distprice'],
-                                                          size: media.width *
-                                                              twelve,
-                                                        ),
-                                                        MyText(
-                                                          text: (userRequestData
-                                                                      .isNotEmpty &&
-                                                                  userRequestData[
-                                                                          'requestBill'] !=
-                                                                      null)
-                                                              ? userRequestData[
-                                                                              'requestBill']
-                                                                          [
-                                                                          'data']
-                                                                      [
-                                                                      'requested_currency_symbol'] +
-                                                                  ' ' +
-                                                                  userRequestData['requestBill']
-                                                                              [
-                                                                              'data']
-                                                                          [
-                                                                          'distance_price']
-                                                                      .toString()
-                                                              : '',
-                                                          size: media.width *
-                                                              twelve,
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    Container(
-                                                      margin: EdgeInsets.only(
-                                                          top: media.width *
-                                                              0.03,
-                                                          bottom: media.width *
-                                                              0.03),
-                                                      height: 1.5,
-                                                      color: const Color(
-                                                          0xffE0E0E0),
-                                                    ),
-                                                  ],
-                                                ),
-                                                Column(
-                                                  children: [
-                                                    Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
-                                                      children: [
-                                                        MyText(
-                                                          text: languages[
-                                                                  choosenLanguage]
-                                                              [
-                                                              'text_timeprice'],
-                                                          size: media.width *
-                                                              twelve,
-                                                        ),
-                                                        MyText(
-                                                          text: (userRequestData
-                                                                      .isNotEmpty &&
-                                                                  userRequestData[
-                                                                          'requestBill'] !=
-                                                                      null)
-                                                              ? userRequestData[
-                                                                              'requestBill']
-                                                                          [
-                                                                          'data']
-                                                                      [
-                                                                      'requested_currency_symbol'] +
-                                                                  ' ' +
-                                                                  userRequestData['requestBill']
-                                                                              [
-                                                                              'data']
-                                                                          [
-                                                                          'time_price']
-                                                                      .toString()
-                                                              : '',
-                                                          size: media.width *
-                                                              twelve,
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    Container(
-                                                      margin: EdgeInsets.only(
-                                                          top: media.width *
-                                                              0.03,
-                                                          bottom: media.width *
-                                                              0.03),
-                                                      height: 1.5,
-                                                      color: const Color(
-                                                          0xffE0E0E0),
-                                                    ),
-                                                  ],
-                                                ),
-                                                (userRequestData[
-                                                                'requestBill'] !=
-                                                            null &&
-                                                        userRequestData['requestBill']
-                                                                    ['data'][
-                                                                'cancellation_fee'] !=
-                                                            0)
-                                                    ? Column(
-                                                        children: [
-                                                          Row(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .spaceBetween,
-                                                            children: [
-                                                              MyText(
-                                                                text: languages[
-                                                                        choosenLanguage]
-                                                                    [
-                                                                    'text_cancelfee'],
-                                                                size: media
-                                                                        .width *
-                                                                    twelve,
-                                                              ),
-                                                              MyText(
-                                                                text: (userRequestData
-                                                                            .isNotEmpty &&
-                                                                        userRequestData['requestBill'] !=
-                                                                            null)
-                                                                    ? userRequestData['requestBill']['data']
-                                                                            [
-                                                                            'requested_currency_symbol'] +
-                                                                        ' ' +
-                                                                        userRequestData['requestBill']['data']['cancellation_fee']
-                                                                            .toString()
-                                                                    : '',
-                                                                size: media
-                                                                        .width *
-                                                                    twelve,
-                                                              ),
-                                                            ],
-                                                          ),
-                                                          Container(
-                                                            margin: EdgeInsets.only(
-                                                                top: media
-                                                                        .width *
-                                                                    0.03,
-                                                                bottom: media
-                                                                        .width *
-                                                                    0.03),
-                                                            height: 1.5,
-                                                            color: const Color(
-                                                                0xffE0E0E0),
-                                                          ),
-                                                        ],
-                                                      )
-                                                    : Container(),
-                                                (userRequestData[
-                                                                'requestBill'] !=
-                                                            null &&
-                                                        userRequestData['requestBill']
-                                                                    ['data'][
-                                                                'airport_surge_fee'] !=
-                                                            0)
-                                                    ? Column(
-                                                        children: [
-                                                          Row(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .spaceBetween,
-                                                            children: [
-                                                              MyText(
-                                                                text: languages[
-                                                                        choosenLanguage]
-                                                                    [
-                                                                    'text_surge_fee'],
-                                                                size: media
-                                                                        .width *
-                                                                    twelve,
-                                                              ),
-                                                              MyText(
-                                                                text: (userRequestData
-                                                                            .isNotEmpty &&
-                                                                        userRequestData['requestBill'] !=
-                                                                            null)
-                                                                    ? userRequestData['requestBill']['data']
-                                                                            [
-                                                                            'requested_currency_symbol'] +
-                                                                        ' ' +
-                                                                        userRequestData['requestBill']['data']['airport_surge_fee']
-                                                                            .toString()
-                                                                    : '',
-                                                                size: media
-                                                                        .width *
-                                                                    twelve,
-                                                              ),
-                                                            ],
-                                                          ),
-                                                          Container(
-                                                            margin: EdgeInsets.only(
-                                                                top: media
-                                                                        .width *
-                                                                    0.03,
-                                                                bottom: media
-                                                                        .width *
-                                                                    0.03),
-                                                            height: 1.5,
-                                                            color: const Color(
-                                                                0xffE0E0E0),
-                                                          ),
-                                                        ],
-                                                      )
-                                                    : Container(),
-                                                Column(
-                                                  children: [
-                                                    Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
-                                                      children: [
-                                                        MyText(
-                                                          text: languages[
-                                                                      choosenLanguage][
-                                                                  'text_waiting_price'] +
-                                                              ' (' +
-                                                              userRequestData['requestBill']
-                                                                      ['data'][
-                                                                  'requested_currency_symbol'] +
-                                                              ' ' +
-                                                              userRequestData['requestBill']
-                                                                          ['data']
-                                                                      [
-                                                                      'waiting_charge_per_min']
-                                                                  .toString() +
-                                                              ' x ' +
-                                                              userRequestData['requestBill']
-                                                                          ['data']
-                                                                      [
-                                                                      'calculated_waiting_time']
-                                                                  .toString() +
-                                                              ' ' +
-                                                              languages[
-                                                                      choosenLanguage]
-                                                                  ['text_mins'] +
-                                                              ')',
-                                                          size: media.width *
-                                                              twelve,
-                                                        ),
-                                                        MyText(
-                                                          text: userRequestData[
-                                                                          'requestBill']
-                                                                      ['data'][
-                                                                  'requested_currency_symbol'] +
-                                                              ' ' +
-                                                              userRequestData['requestBill']
-                                                                          [
-                                                                          'data']
-                                                                      [
-                                                                      'waiting_charge']
-                                                                  .toString(),
-                                                          size: media.width *
-                                                              twelve,
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    Container(
-                                                      margin: EdgeInsets.only(
-                                                          top: media.width *
-                                                              0.03,
-                                                          bottom: media.width *
-                                                              0.03),
-                                                      height: 1.5,
-                                                      color: const Color(
-                                                          0xffE0E0E0),
-                                                    ),
-                                                  ],
-                                                ),
-                                                (userRequestData[
-                                                                'requestBill'] !=
-                                                            null &&
-                                                        userRequestData['requestBill']
-                                                                    ['data'][
-                                                                'admin_commision'] !=
-                                                            0)
-                                                    ? Column(
-                                                        children: [
-                                                          Row(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .spaceBetween,
-                                                            children: [
-                                                              MyText(
-                                                                text: languages[
-                                                                        choosenLanguage]
-                                                                    [
-                                                                    'text_convfee'],
-                                                                size: media
-                                                                        .width *
-                                                                    twelve,
-                                                              ),
-                                                              MyText(
-                                                                text: userRequestData['requestBill']
-                                                                            [
-                                                                            'data']
-                                                                        [
-                                                                        'requested_currency_symbol'] +
-                                                                    ' ' +
-                                                                    userRequestData['requestBill']['data']
-                                                                            [
-                                                                            'admin_commision']
-                                                                        .toString(),
-                                                                size: media
-                                                                        .width *
-                                                                    twelve,
-                                                              ),
-                                                            ],
-                                                          ),
-                                                          Container(
-                                                            margin: EdgeInsets.only(
-                                                                top: media
-                                                                        .width *
-                                                                    0.03,
-                                                                bottom: media
-                                                                        .width *
-                                                                    0.03),
-                                                            height: 1.5,
-                                                            color: const Color(
-                                                                0xffE0E0E0),
-                                                          ),
-                                                        ],
-                                                      )
-                                                    : Container(),
-                                                (userRequestData[
-                                                                'requestBill'] !=
-                                                            null &&
-                                                        userRequestData['requestBill']
-                                                                    ['data'][
-                                                                'promo_discount'] !=
-                                                            null)
-                                                    ? Column(
-                                                        children: [
-                                                          Row(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .spaceBetween,
-                                                            children: [
-                                                              MyText(
-                                                                text: languages[
-                                                                        choosenLanguage]
-                                                                    [
-                                                                    'text_discount'],
-                                                                size: media
-                                                                        .width *
-                                                                    twelve,
-                                                                color:
-                                                                    Colors.red,
-                                                              ),
-                                                              MyText(
-                                                                text: userRequestData['requestBill']
-                                                                            [
-                                                                            'data']
-                                                                        [
-                                                                        'requested_currency_symbol'] +
-                                                                    ' ' +
-                                                                    userRequestData['requestBill']['data']
-                                                                            [
-                                                                            'promo_discount']
-                                                                        .toString(),
-                                                                size: media
-                                                                        .width *
-                                                                    twelve,
-                                                                color:
-                                                                    Colors.red,
-                                                              ),
-                                                            ],
-                                                          ),
-                                                          Container(
-                                                            margin: EdgeInsets.only(
-                                                                top: media
-                                                                        .width *
-                                                                    0.03,
-                                                                bottom: media
-                                                                        .width *
-                                                                    0.03),
-                                                            height: 1.5,
-                                                            color: const Color(
-                                                                0xffE0E0E0),
-                                                          ),
-                                                        ],
-                                                      )
-                                                    : Container(),
-                                                Column(
-                                                  children: [
-                                                    Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
-                                                      children: [
-                                                        MyText(
-                                                          text: languages[
-                                                                  choosenLanguage]
-                                                              ['text_taxes'],
-                                                          size: media.width *
-                                                              twelve,
-                                                        ),
-                                                        MyText(
-                                                          text: userRequestData[
-                                                                          'requestBill']
-                                                                      ['data'][
-                                                                  'requested_currency_symbol'] +
-                                                              ' ' +
-                                                              userRequestData['requestBill']
-                                                                          [
-                                                                          'data']
-                                                                      [
-                                                                      'service_tax']
-                                                                  .toString(),
-                                                          size: media.width *
-                                                              twelve,
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    Container(
-                                                      margin: EdgeInsets.only(
-                                                          top: media.width *
-                                                              0.03,
-                                                          bottom: media.width *
-                                                              0.03),
-                                                      height: 1.5,
-                                                      color: const Color(
-                                                          0xffE0E0E0),
-                                                    ),
-                                                  ],
-                                                ),
-                                                Column(
-                                                  children: [
-                                                    Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
-                                                      children: [
-                                                        MyText(
-                                                          text: languages[
-                                                                  choosenLanguage]
-                                                              [
-                                                              'text_totalfare'],
-                                                          size: media.width *
-                                                              twelve,
-                                                        ),
-                                                        MyText(
-                                                          text: userRequestData[
-                                                                          'requestBill']
-                                                                      ['data'][
-                                                                  'requested_currency_symbol'] +
-                                                              ' ' +
-                                                              userRequestData['requestBill']
-                                                                          [
-                                                                          'data']
-                                                                      [
-                                                                      'total_amount']
-                                                                  .toString(),
-                                                          size: media.width *
-                                                              twelve,
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ],
-                                                ),
+                                                      ),
                                               ],
                                             )
                                           : Container()
@@ -1019,42 +1063,6 @@ class _InvoiceState extends State<Invoice> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              SizedBox(
-                                width: media.width * 0.4,
-                                child: Row(
-                                  children: [
-                                    Text(
-                                      (userRequestData['payment_opt'] == '1')
-                                          ? languages[choosenLanguage]
-                                              ['text_cash']
-                                          : (userRequestData['payment_opt'] ==
-                                                  '2')
-                                              ? languages[choosenLanguage]
-                                                  ['text_wallet']
-                                              : languages[choosenLanguage]
-                                                  ['text_card'],
-                                      style: GoogleFonts.notoSans(
-                                          fontSize: media.width * sixteen,
-                                          color: buttonColor,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                    MyText(
-                                      text:
-                                          ' ${userRequestData['requestBill']['data']['requested_currency_symbol']}',
-                                      size: media.width * fourteen,
-                                    ),
-                                    MyText(
-                                      text:
-                                          ' ${userRequestData['requestBill']['data']['total_amount']}',
-                                      size: media.width * twenty,
-                                      fontweight: FontWeight.bold,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              SizedBox(
-                                width: media.width * 0.02,
-                              ),
                               Expanded(
                                   child: Button(
                                       onTap: () async {

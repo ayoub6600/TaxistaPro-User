@@ -1,5 +1,9 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:taxista/translations/translation.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../functions/functions.dart';
 import '../../styles/styles.dart';
 import '../../widgets/widgets.dart';
@@ -54,6 +58,7 @@ class _HistoryDetailsState extends State<HistoryDetails> {
   var _cancelId = '';
   int? inti;
   int makecomplaint = 0;
+  bool isShow = false;
   bool makecomplaintbool = false;
   bool _isLoading = false;
   TextEditingController complaintText = TextEditingController();
@@ -130,216 +135,481 @@ class _HistoryDetailsState extends State<HistoryDetails> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
+                                        //vehicle_type_image
                                         Row(
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceBetween,
                                           children: [
-                                            MyText(
-                                              text: (myHistory[selectedHistory]
-                                                          ['later_ride'] ==
-                                                      true)
-                                                  ? myHistory[selectedHistory]
-                                                      ['trip_start_time']
-                                                  : (myHistory[selectedHistory][
-                                                              'cancelled_ride'] ==
-                                                          true)
-                                                      ? myHistory[selectedHistory]
-                                                          [
-                                                          'converted_cancelled_at']
-                                                      : (myHistory[selectedHistory]
-                                                                  [
-                                                                  'completed_ride'] ==
-                                                              true)
-                                                          ? myHistory[selectedHistory]
-                                                                  [
-                                                                  'converted_completed_at']
-                                                              .toString()
-                                                          : myHistory[selectedHistory]
-                                                                  ['converted_created_at']
-                                                              .toString(),
-                                              size: media.width * fourteen,
-                                              color: textColor.withOpacity(0.5),
-                                            ),
-                                            Row(
-                                              children: [
-                                                MyText(
-                                                  text: (myHistory[
-                                                                  selectedHistory]
-                                                              ['payment_opt'] ==
-                                                          '1')
-                                                      ? languages[
-                                                              choosenLanguage]
-                                                          ['text_cash']
-                                                      : (myHistory[selectedHistory]
-                                                                  [
-                                                                  'payment_opt'] ==
-                                                              '2')
-                                                          ? languages[
-                                                                  choosenLanguage]
-                                                              ['text_wallet']
-                                                          : (myHistory[selectedHistory]
-                                                                      [
-                                                                      'payment_opt'] ==
-                                                                  '0')
-                                                              ? languages[
-                                                                      choosenLanguage]
-                                                                  ['text_card']
-                                                              : '',
-                                                  size: media.width * fourteen,
-                                                  color: textColor,
-                                                  fontweight: FontWeight.bold,
-                                                ),
-                                                SizedBox(
-                                                  width: media.width * 0.02,
-                                                ),
-                                                MyText(
-                                                    text: (myHistory[selectedHistory][
-                                                                'is_bid_ride'] ==
+                                            Container(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 8.w,
+                                                vertical: 4.h,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                                color: (myHistory[
+                                                                selectedHistory]
+                                                            ['is_completed'] ==
+                                                        1)
+                                                    ? Color(0xFF0ABE75)
+                                                    : (myHistory[selectedHistory]
+                                                                [
+                                                                'is_cancelled'] ==
                                                             1)
-                                                        ? myHistory[selectedHistory][
-                                                                'requested_currency_symbol'] +
-                                                            ' ' +
-                                                            myHistory[selectedHistory]['accepted_ride_fare']
-                                                                .toString()
-                                                        : (myHistory[selectedHistory]['is_completed'] ==
-                                                                1)
-                                                            ? myHistory[selectedHistory]['requestBill']
-                                                                        ['data'][
-                                                                    'requested_currency_symbol'] +
-                                                                ' ' +
-                                                                myHistory[selectedHistory]['requestBill']['data']['total_amount']
-                                                                    .toString()
-                                                            : myHistory[selectedHistory]
-                                                                    ['requested_currency_symbol'] +
-                                                                ' ' +
-                                                                myHistory[selectedHistory]['request_eta_amount'].toString(),
-                                                    fontweight: FontWeight.bold,
-                                                    size: media.width * fourteen),
-                                              ],
-                                            )
-                                          ],
-                                        ),
-                                        SizedBox(
-                                          height: media.width * 0.01,
-                                        ),
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            MyText(
-                                              text: myHistory[selectedHistory]
-                                                  ['request_number'],
-                                              size: media.width * twelve,
-                                              color: hintColor,
+                                                        ? verifyDeclined
+                                                        : textColor,
+                                              ),
+                                              child: MyText(
+                                                  text: (myHistory[selectedHistory][
+                                                              'is_completed'] ==
+                                                          1)
+                                                      ? languages[choosenLanguage]
+                                                          ['text_completed']
+                                                      : (myHistory[selectedHistory][
+                                                                  'is_cancelled'] ==
+                                                              1)
+                                                          ? languages[choosenLanguage]
+                                                              ['text_cancelled']
+                                                          : (myHistory[selectedHistory][
+                                                                      'is_later'] ==
+                                                                  1)
+                                                              ? (myHistory[selectedHistory]['is_rental'] ==
+                                                                      false)
+                                                                  ? languages[choosenLanguage]
+                                                                      [
+                                                                      'text_ridelater']
+                                                                  : (languages[choosenLanguage]
+                                                                          ['text_rental'] +
+                                                                      ' - ' +
+                                                                      myHistory[selectedHistory]['rental_package_name'].toString())
+                                                              : '',
+                                                  fontweight: FontWeight.w600,
+                                                  color: Colors.white,
+                                                  size: media.width * fourteen),
                                             ),
                                             MyText(
-                                              text: (myHistory[selectedHistory]
-                                                          ['is_rental'] ==
-                                                      false)
-                                                  ? (myHistory[selectedHistory]
-                                                              ['is_later'] ==
-                                                          1)
-                                                      ? languages[
-                                                              choosenLanguage]
-                                                          ['text_ridelater']
-                                                      : languages[
-                                                              choosenLanguage]
-                                                          ['text_regular']
-                                                  : (languages[choosenLanguage]
-                                                          ['text_rental'] +
-                                                      ' - ' +
-                                                      myHistory[selectedHistory]
-                                                              [
-                                                              'rental_package_name']
-                                                          .toString()),
-                                              size: media.width * twelve,
-                                              fontweight: FontWeight.w700,
-                                            )
+                                              text:
+                                                  "ID: ${myHistory[selectedHistory]['request_number']}",
+                                              size: 15.sp,
+                                              color: Colors.black,
+                                              fontweight: FontWeight.bold,
+                                            ),
                                           ],
                                         ),
+                                        Row(
+                                          // mainAxisAlignment:
+                                          //     MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Expanded(
+                                              child: Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.start,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment.end,
+                                                    children: [
+                                                      MyText(
+                                                        text: myHistory[selectedHistory][
+                                                                    'later_ride'] ==
+                                                                true
+                                                            ? myHistory[
+                                                                    selectedHistory]
+                                                                [
+                                                                'trip_start_time']
+                                                            : myHistory[selectedHistory]
+                                                                        [
+                                                                        'cancelled_ride'] ==
+                                                                    true
+                                                                ? myHistory[
+                                                                        selectedHistory]
+                                                                    [
+                                                                    'converted_cancelled_at']
+                                                                : myHistory[selectedHistory]
+                                                                            [
+                                                                            'completed_ride'] ==
+                                                                        true
+                                                                    ? myHistory[selectedHistory]
+                                                                            [
+                                                                            'converted_completed_at']
+                                                                        .toString()
+                                                                    : myHistory[selectedHistory]
+                                                                            ['converted_created_at']
+                                                                        .toString(),
+                                                        size: 12.sp,
+                                                        color: Colors.grey,
+                                                        fontweight:
+                                                            FontWeight.w400,
+                                                      ),
+                                                      SizedBox(
+                                                        width: 5.w,
+                                                      ),
+                                                      Icon(
+                                                          Icons
+                                                              .calendar_month_outlined,
+                                                          color: Colors.blue,
+                                                          size: media.width *
+                                                              sixteen),
+                                                    ],
+                                                  ),
+                                                  // Payment Information
+                                                  Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment.end,
+                                                    children: [
+                                                      Row(
+                                                        children: [
+                                                          MyText(
+                                                            text: myHistory[selectedHistory]
+                                                                        [
+                                                                        'payment_opt'] ==
+                                                                    '1'
+                                                                ? languages[
+                                                                        choosenLanguage]
+                                                                    [
+                                                                    'text_cash']
+                                                                : myHistory[selectedHistory]
+                                                                            [
+                                                                            'payment_opt'] ==
+                                                                        '2'
+                                                                    ? languages[
+                                                                            choosenLanguage]
+                                                                        [
+                                                                        'text_wallet']
+                                                                    : myHistory[selectedHistory]['payment_opt'] ==
+                                                                            '0'
+                                                                        ? languages[choosenLanguage]
+                                                                            [
+                                                                            'text_card']
+                                                                        : '',
+                                                            size: 14.sp,
+                                                            color: Colors.black,
+                                                          ),
+                                                          SizedBox(
+                                                              width:
+                                                                  media.width *
+                                                                      0.02),
+                                                          MyText(
+                                                            text: myHistory[selectedHistory]
+                                                                        [
+                                                                        'is_bid_ride'] ==
+                                                                    1
+                                                                ? "${myHistory[selectedHistory]['requested_currency_symbol']} ${myHistory[selectedHistory]['accepted_ride_fare']}"
+                                                                : myHistory[selectedHistory]
+                                                                            [
+                                                                            'is_completed'] ==
+                                                                        1
+                                                                    ? "${myHistory[selectedHistory]['requestBill']['data']['requested_currency_symbol']} ${myHistory[selectedHistory]['requestBill']['data']['total_amount']}"
+                                                                    : "${myHistory[selectedHistory]['requested_currency_symbol']} ${myHistory[selectedHistory]['request_eta_amount']}",
+                                                            size: 14.sp,
+                                                            color: Colors.black,
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      SizedBox(
+                                                        width: 5.w,
+                                                      ),
+                                                      Icon(Icons.attach_money,
+                                                          color: Colors.blue,
+                                                          size: media.width *
+                                                              sixteen),
+                                                    ],
+                                                  ),
+
+                                                  SizedBox(
+                                                      height:
+                                                          media.width * 0.01),
+                                                  // Ride Type
+                                                  Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment.end,
+                                                    children: [
+                                                      MyText(
+                                                        text: myHistory[
+                                                                selectedHistory]
+                                                            [
+                                                            "vehicle_type_name"],
+                                                        size: 14.sp,
+                                                        color: Colors.black,
+                                                      ),
+                                                      SizedBox(width: 5.w),
+                                                      Icon(Icons.directions_car,
+                                                          color: Colors.blue,
+                                                          size: media.width *
+                                                              sixteen),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+
+                                            //image
+                                            if (myHistory[selectedHistory]
+                                                    ['vehicle_type_image'] !=
+                                                null)
+                                              Expanded(
+                                                child: Container(
+                                                  width: media.width *
+                                                      0.3, // Set a fixed width
+                                                  height: media.width *
+                                                      0.3, // Set a fixed height
+                                                  decoration: BoxDecoration(
+                                                    shape: BoxShape
+                                                        .circle, // Makes the image circular
+                                                  ),
+                                                  child: CachedNetworkImage(
+                                                    imageUrl: myHistory[
+                                                            selectedHistory]
+                                                        ['vehicle_type_image'],
+                                                    imageBuilder: (context,
+                                                            imageProvider) =>
+                                                        Container(
+                                                      decoration: BoxDecoration(
+                                                        shape: BoxShape.circle,
+                                                        image: DecorationImage(
+                                                          image: imageProvider,
+                                                          fit: BoxFit.contain,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    placeholder:
+                                                        (context, url) =>
+                                                            Container(
+                                                      width: 50,
+                                                      height: 50,
+                                                      decoration: BoxDecoration(
+                                                        shape: BoxShape.circle,
+                                                        color: Colors.grey
+                                                            .shade300, // Grey placeholder
+                                                      ),
+                                                    ),
+                                                    errorWidget: (context, url,
+                                                            error) =>
+                                                        Icon(Icons.error,
+                                                            color: Colors.red),
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
+                                        )
                                       ],
                                     ),
                                     SizedBox(
-                                      height: media.width * 0.04,
+                                      height: 8.h,
                                     ),
                                     const MySeparator(),
                                     if (myHistory[selectedHistory]
                                             ['driverDetail'] !=
                                         null)
-                                      Column(
-                                        children: [
-                                          SizedBox(
-                                            height: media.width * 0.02,
-                                          ),
-                                          Row(
-                                            children: [
-                                              Expanded(
-                                                child: Row(
-                                                  children: [
-                                                    Container(
-                                                      height:
-                                                          media.width * 0.13,
-                                                      width: media.width * 0.13,
-                                                      decoration: BoxDecoration(
-                                                          shape:
-                                                              BoxShape.circle,
-                                                          image: DecorationImage(
-                                                              image: NetworkImage(
-                                                                  myHistory[selectedHistory]
+                                      GestureDetector(
+                                        onTap: () {
+                                          print(myHistory[selectedHistory]
+                                              ['driverDetail']['data']);
+                                        },
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            SizedBox(
+                                              height: 8.h,
+                                            ),
+                                            Text(
+                                              languages[choosenLanguage]
+                                                  ['text_driver_details'],
+                                              style: GoogleFonts.cairo(
+                                                  fontSize: 16.sp,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Colors.black),
+                                            ),
+                                            SizedBox(
+                                              height: 20.h,
+                                            ),
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Column(
+                                                    children: [
+                                                      Row(
+                                                        children: [
+                                                          Container(
+                                                            height:
+                                                                media.width *
+                                                                    0.13,
+                                                            width: media.width *
+                                                                0.13,
+                                                            decoration: BoxDecoration(
+                                                                shape: BoxShape
+                                                                    .circle,
+                                                                image: DecorationImage(
+                                                                    image: NetworkImage(myHistory[selectedHistory]['driverDetail']
+                                                                            [
+                                                                            'data']
+                                                                        [
+                                                                        'profile_picture']),
+                                                                    fit: BoxFit
+                                                                        .cover)),
+                                                          ),
+                                                          SizedBox(
+                                                            width: media.width *
+                                                                0.02,
+                                                          ),
+                                                          Expanded(
+                                                            child: Column(
+                                                              crossAxisAlignment:
+                                                                  CrossAxisAlignment
+                                                                      .start,
+                                                              children: [
+                                                                MyText(
+                                                                  text: myHistory[selectedHistory]['driverDetail']
                                                                               [
-                                                                              'driverDetail']
+                                                                              'data']
                                                                           [
-                                                                          'data']
-                                                                      [
-                                                                      'profile_picture']),
-                                                              fit: BoxFit
-                                                                  .cover)),
+                                                                          'name']
+                                                                      .toString(),
+                                                                  size: 12.sp,
+                                                                  maxLines: 1,
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          )
+                                                        ],
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                if (myHistory[selectedHistory]
+                                                        ['ride_user_rating'] !=
+                                                    null)
+                                                  Row(
+                                                    children: List.generate(
+                                                      myHistory[selectedHistory]
+                                                              [
+                                                              'ride_user_rating']
+                                                          .toInt(), // Convert rating to integer
+                                                      (index) => Icon(
+                                                        Icons.star,
+                                                        size: media.width *
+                                                            twenty,
+                                                        color:
+                                                            Colors.yellow[600],
+                                                      ),
                                                     ),
-                                                    SizedBox(
-                                                      width: media.width * 0.02,
-                                                    ),
-                                                    Expanded(
-                                                      child: MyText(
-                                                        text: myHistory[selectedHistory]
+                                                  ),
+                                              ],
+                                            ),
+                                            SizedBox(
+                                              height: 8.h,
+                                            ),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                MyText(
+                                                  text:
+                                                      languages[choosenLanguage]
+                                                          ['text_phoneـnumber'],
+                                                  size: 12.sp,
+                                                ),
+                                                GestureDetector(
+                                                  onTap: () async {
+                                                    final String phoneNumber =
+                                                        myHistory[selectedHistory]
                                                                     [
                                                                     'driverDetail']
-                                                                ['data']['name']
-                                                            .toString(),
-                                                        size: media.width *
-                                                            sixteen,
-                                                        maxLines: 1,
-                                                      ),
-                                                    )
-                                                  ],
+                                                                [
+                                                                'data']['mobile']
+                                                            .toString();
+                                                    final Uri phoneUri =
+                                                        Uri.parse(
+                                                            'tel:$phoneNumber');
+
+                                                    if (await canLaunchUrl(
+                                                        phoneUri)) {
+                                                      await launchUrl(phoneUri);
+                                                    } else {
+                                                      debugPrint(
+                                                          "Could not launch $phoneUri");
+                                                    }
+                                                  },
+                                                  child: Text(
+                                                    myHistory[selectedHistory]
+                                                                ['driverDetail']
+                                                            ['data']['mobile']
+                                                        .toString(),
+                                                    textDirection:
+                                                        TextDirection.ltr,
+                                                    style: GoogleFonts.cairo(
+                                                        color: Colors.grey,
+                                                        fontSize: 16.sp),
+                                                  ),
                                                 ),
-                                              ),
-                                              if (myHistory[selectedHistory]
-                                                      ['ride_user_rating'] !=
-                                                  null)
+                                              ],
+                                            ),
+                                            SizedBox(
+                                              height: 8.h,
+                                            ),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
                                                 MyText(
-                                                  text: myHistory[
-                                                              selectedHistory]
-                                                          ['ride_user_rating']
-                                                      .toString(),
-                                                  size: media.width * eighteen,
-                                                  fontweight: FontWeight.w600,
-                                                  color: textColor,
+                                                  text:
+                                                      languages[choosenLanguage]
+                                                          ['car_make_name'],
+                                                  size: 12.sp,
                                                 ),
-                                              if (myHistory[selectedHistory]
-                                                      ['ride_user_rating'] !=
-                                                  null)
-                                                Icon(
-                                                  Icons.star,
-                                                  size: media.width * twenty,
-                                                  color: Colors.yellow[600],
-                                                )
-                                            ],
-                                          ),
-                                          SizedBox(
-                                            height: media.width * 0.02,
-                                          ),
-                                          const MySeparator()
-                                        ],
+                                                Text(
+                                                  myHistory[selectedHistory][
+                                                                  'driverDetail']
+                                                              ['data']
+                                                          ['car_make_name']
+                                                      .toString(),
+                                                  textDirection:
+                                                      TextDirection.ltr,
+                                                  style: GoogleFonts.cairo(
+                                                      color: Colors.grey,
+                                                      fontSize: 16.sp),
+                                                ),
+                                              ],
+                                            ),
+                                            SizedBox(
+                                              height: 8.h,
+                                            ),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                MyText(
+                                                  text:
+                                                      languages[choosenLanguage]
+                                                          ['car_number'],
+                                                  size: 12.sp,
+                                                ),
+                                                Text(
+                                                  myHistory[selectedHistory]
+                                                              ['driverDetail']
+                                                          ['data']['car_number']
+                                                      .toString(),
+                                                  textDirection:
+                                                      TextDirection.ltr,
+                                                  style: GoogleFonts.cairo(
+                                                      color: Colors.grey,
+                                                      fontSize: 16.sp),
+                                                ),
+                                              ],
+                                            ),
+                                            SizedBox(
+                                              height: 8.h,
+                                            ),
+                                            const MySeparator()
+                                          ],
+                                        ),
                                       ),
                                     SizedBox(
                                       height: media.width * 0.04,
@@ -349,21 +619,18 @@ class _HistoryDetailsState extends State<HistoryDetails> {
                                           MainAxisAlignment.start,
                                       children: [
                                         Container(
-                                          height: media.width * 0.05,
-                                          width: media.width * 0.05,
-                                          alignment: Alignment.center,
-                                          decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              color: Colors.green
-                                                  .withOpacity(0.4)),
-                                          child: Container(
-                                            height: media.width * 0.025,
-                                            width: media.width * 0.025,
-                                            decoration: const BoxDecoration(
+                                            height: media.width * 0.08,
+                                            width: media.width * 0.08,
+                                            alignment: Alignment.center,
+                                            decoration: BoxDecoration(
                                                 shape: BoxShape.circle,
-                                                color: Colors.green),
-                                          ),
-                                        ),
+                                                color: Colors.green
+                                                    .withOpacity(0.4)),
+                                            child: const Icon(
+                                              Icons.location_on,
+                                              color: Colors.green,
+                                              size: 16,
+                                            )),
                                         SizedBox(
                                           width: media.width * 0.06,
                                         ),
@@ -455,34 +722,44 @@ class _HistoryDetailsState extends State<HistoryDetails> {
                                     (myHistory[selectedHistory]
                                                 ['drop_address'] !=
                                             null)
-                                        ? Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.start,
-                                            children: [
-                                              Container(
-                                                height: media.width * 0.06,
-                                                width: media.width * 0.06,
-                                                alignment: Alignment.center,
-                                                child: Icon(
-                                                  Icons.location_on,
-                                                  color:
-                                                      const Color(0xFFFF0000),
-                                                  size: media.width * eighteen,
+                                        ? GestureDetector(
+                                            onTap: () {
+                                              print(myHistory[selectedHistory]);
+                                            },
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.start,
+                                              children: [
+                                                Container(
+                                                  height: media.width * 0.08,
+                                                  width: media.width * 0.08,
+                                                  alignment: Alignment.center,
+                                                  decoration: BoxDecoration(
+                                                    shape: BoxShape.circle,
+                                                    color: Colors.red
+                                                        .withOpacity(0.3),
+                                                  ),
+                                                  child: Icon(
+                                                    Icons.location_on,
+                                                    color: Colors.red,
+                                                    size:
+                                                        media.width * eighteen,
+                                                  ),
                                                 ),
-                                              ),
-                                              SizedBox(
-                                                width: media.width * 0.05,
-                                              ),
-                                              Expanded(
-                                                child: MyText(
-                                                  text:
-                                                      myHistory[selectedHistory]
-                                                          ['drop_address'],
-                                                  size: media.width * twelve,
-                                                  // maxLines: 1,
+                                                SizedBox(
+                                                  width: media.width * 0.05,
                                                 ),
-                                              ),
-                                            ],
+                                                Expanded(
+                                                  child: MyText(
+                                                    text: myHistory[
+                                                            selectedHistory]
+                                                        ['drop_address'],
+                                                    size: media.width * twelve,
+                                                    // maxLines: 1,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           )
                                         : Container(),
                                     SizedBox(
@@ -491,80 +768,86 @@ class _HistoryDetailsState extends State<HistoryDetails> {
                                     (myHistory[selectedHistory]
                                                 ['is_completed'] ==
                                             1)
-                                        ? Container(
-                                            height: media.width * 0.2,
-                                            width: media.width * 0.7,
-                                            alignment: Alignment.center,
-                                            padding: EdgeInsets.all(
-                                                media.width * 0.03),
-                                            decoration: BoxDecoration(
-                                                border: Border.all(
-                                                    color: hintColor),
-                                                borderRadius:
-                                                    BorderRadius.circular(
-                                                        media.width * 0.02)),
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.spaceAround,
-                                              children: [
-                                                Column(
-                                                  children: [
-                                                    MyText(
-                                                      text: languages[
-                                                              choosenLanguage]
-                                                          ['text_distance'],
-                                                      size: media.width *
-                                                          fourteen,
-                                                    ),
-                                                    SizedBox(
-                                                      height:
-                                                          media.width * 0.02,
-                                                    ),
-                                                    MyText(
-                                                      text: myHistory[
-                                                                  selectedHistory]
-                                                              [
-                                                              'total_distance'] +
-                                                          ' ' +
-                                                          myHistory[
-                                                                  selectedHistory]
-                                                              ['unit'],
-                                                      size:
-                                                          media.width * twelve,
-                                                      fontweight:
-                                                          FontWeight.w700,
-                                                    )
-                                                  ],
-                                                ),
-                                                Container(
-                                                  width: 1,
-                                                  height: media.width * 0.18,
-                                                  color: hintColor,
-                                                ),
-                                                Column(
-                                                  children: [
-                                                    MyText(
-                                                      text: languages[
-                                                              choosenLanguage]
-                                                          ['text_duration'],
-                                                      size: media.width *
-                                                          fourteen,
-                                                    ),
-                                                    SizedBox(
-                                                      height:
-                                                          media.width * 0.02,
-                                                    ),
-                                                    MyText(
-                                                      text:
-                                                          '${myHistory[selectedHistory]['total_time']} ${languages[choosenLanguage]['text_mins']}',
-                                                      size:
-                                                          media.width * twelve,
-                                                      fontweight:
-                                                          FontWeight.w700,
-                                                    )
-                                                  ],
-                                                ),
-                                              ],
+                                        ? GestureDetector(
+                                            onTap: () {
+                                              print(myHistory[selectedHistory]);
+                                            },
+                                            child: Container(
+                                              height: media.width * 0.2,
+                                              width: media.width * 0.7,
+                                              alignment: Alignment.center,
+                                              padding: EdgeInsets.all(
+                                                  media.width * 0.03),
+                                              decoration: BoxDecoration(
+                                                  border: Border.all(
+                                                      color: hintColor),
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          media.width * 0.02)),
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceAround,
+                                                children: [
+                                                  Column(
+                                                    children: [
+                                                      MyText(
+                                                        text: languages[
+                                                                choosenLanguage]
+                                                            ['text_distance'],
+                                                        size: media.width *
+                                                            fourteen,
+                                                      ),
+                                                      SizedBox(
+                                                        height:
+                                                            media.width * 0.02,
+                                                      ),
+                                                      MyText(
+                                                        text: myHistory[
+                                                                    selectedHistory]
+                                                                [
+                                                                'total_distance'] +
+                                                            ' ' +
+                                                            myHistory[
+                                                                    selectedHistory]
+                                                                ['unit'],
+                                                        size: media.width *
+                                                            twelve,
+                                                        fontweight:
+                                                            FontWeight.w700,
+                                                      )
+                                                    ],
+                                                  ),
+                                                  Container(
+                                                    width: 1,
+                                                    height: media.width * 0.18,
+                                                    color: hintColor,
+                                                  ),
+                                                  Column(
+                                                    children: [
+                                                      MyText(
+                                                        text: languages[
+                                                                choosenLanguage]
+                                                            ['text_duration'],
+                                                        size: media.width *
+                                                            fourteen,
+                                                      ),
+                                                      SizedBox(
+                                                        height:
+                                                            media.width * 0.02,
+                                                      ),
+                                                      MyText(
+                                                        text:
+                                                            '${myHistory[selectedHistory]['total_time']} ${languages[choosenLanguage]['text_mins']}',
+                                                        size: media.width *
+                                                            twelve,
+                                                        fontweight:
+                                                            FontWeight.w700,
+                                                      )
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           )
                                         : Container(),
@@ -663,566 +946,521 @@ class _HistoryDetailsState extends State<HistoryDetails> {
                                                     ['requestBill'] !=
                                                 null)
                                             ? Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
                                                 children: [
                                                   Row(
                                                     mainAxisAlignment:
                                                         MainAxisAlignment
                                                             .center,
                                                     children: [
-                                                      MyText(
-                                                        text: languages[
-                                                                choosenLanguage]
-                                                            ['text_tripfare'],
-                                                        size: media.width *
-                                                            fourteen,
-                                                      )
+                                                      GestureDetector(
+                                                        onTap: () {
+                                                          setState(() {
+                                                            isShow = !isShow;
+                                                          });
+                                                          print(isShow);
+                                                        },
+                                                        child: Container(
+                                                          padding: EdgeInsets
+                                                              .symmetric(
+                                                                  horizontal:
+                                                                      10.w,
+                                                                  vertical:
+                                                                      5.h),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        10.r),
+                                                            color: Colors.blue,
+                                                          ),
+                                                          child: Text(
+                                                            languages[
+                                                                    choosenLanguage]
+                                                                [
+                                                                'text_tripfare'],
+                                                            style: GoogleFonts.cairo(
+                                                                fontSize: 16.sp,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                                color: Colors
+                                                                    .white),
+                                                          ),
+                                                        ),
+                                                      ),
                                                     ],
                                                   ),
+                                                  isShow == false
+                                                      ? Column(
+                                                          children: [
+                                                            (myHistory[selectedHistory]
+                                                                        [
+                                                                        'is_rental'] ==
+                                                                    true)
+                                                                ? Container(
+                                                                    padding: EdgeInsets.only(
+                                                                        bottom: media.width *
+                                                                            0.05),
+                                                                    child: Row(
+                                                                      mainAxisAlignment:
+                                                                          MainAxisAlignment
+                                                                              .spaceBetween,
+                                                                      children: [
+                                                                        MyText(
+                                                                          text: languages[choosenLanguage]
+                                                                              [
+                                                                              'text_ride_type'],
+                                                                          size: media.width *
+                                                                              fourteen,
+                                                                        ),
+                                                                        MyText(
+                                                                          text: myHistory[selectedHistory]
+                                                                              [
+                                                                              'rental_package_name'],
+                                                                          size: media.width *
+                                                                              fourteen,
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                  )
+                                                                : Container(),
+                                                            Column(
+                                                              children: [
+                                                                Row(
+                                                                  mainAxisAlignment:
+                                                                      MainAxisAlignment
+                                                                          .spaceBetween,
+                                                                  children: [
+                                                                    MyText(
+                                                                      text: languages[
+                                                                              choosenLanguage]
+                                                                          [
+                                                                          'text_baseprice'],
+                                                                      size: media
+                                                                              .width *
+                                                                          fourteen,
+                                                                    ),
+                                                                    MyText(
+                                                                      // ignore: prefer_interpolation_to_compose_strings
+                                                                      text: myHistory[selectedHistory]['requestBill']['data']
+                                                                              [
+                                                                              'requested_currency_symbol'] +
+                                                                          ' ' +
+                                                                          myHistory[selectedHistory]['requestBill']['data']['base_price']
+                                                                              .toString(),
+                                                                      size: media
+                                                                              .width *
+                                                                          twelve,
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                                Container(
+                                                                  margin: EdgeInsets.only(
+                                                                      top: media
+                                                                              .width *
+                                                                          0.03,
+                                                                      bottom: media
+                                                                              .width *
+                                                                          0.03),
+                                                                  height: 1.5,
+                                                                  color: const Color(
+                                                                      0xffE0E0E0),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                            Column(
+                                                              children: [
+                                                                Row(
+                                                                  mainAxisAlignment:
+                                                                      MainAxisAlignment
+                                                                          .spaceBetween,
+                                                                  children: [
+                                                                    MyText(
+                                                                      text: languages[
+                                                                              choosenLanguage]
+                                                                          [
+                                                                          'text_distprice'],
+                                                                      size: media
+                                                                              .width *
+                                                                          fourteen,
+                                                                    ),
+                                                                    MyText(
+                                                                      // ignore: prefer_interpolation_to_compose_strings
+                                                                      text: myHistory[selectedHistory]['requestBill']['data']
+                                                                              [
+                                                                              'requested_currency_symbol'] +
+                                                                          ' ' +
+                                                                          myHistory[selectedHistory]['requestBill']['data']['distance_price']
+                                                                              .toString(),
+                                                                      size: media
+                                                                              .width *
+                                                                          twelve,
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                                Container(
+                                                                  margin: EdgeInsets.only(
+                                                                      top: media
+                                                                              .width *
+                                                                          0.03,
+                                                                      bottom: media
+                                                                              .width *
+                                                                          0.03),
+                                                                  height: 1.5,
+                                                                  color: const Color(
+                                                                      0xffE0E0E0),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                            if (myHistory[selectedHistory]
+                                                                            [
+                                                                            'requestBill']
+                                                                        ['data']
+                                                                    [
+                                                                    'time_price'] !=
+                                                                0)
+                                                              //price Time
+                                                              Column(
+                                                                children: [
+                                                                  Row(
+                                                                    mainAxisAlignment:
+                                                                        MainAxisAlignment
+                                                                            .spaceBetween,
+                                                                    children: [
+                                                                      MyText(
+                                                                        text: languages[choosenLanguage]
+                                                                            [
+                                                                            'text_timeprice'],
+                                                                        size: media.width *
+                                                                            fourteen,
+                                                                      ),
+                                                                      MyText(
+                                                                        text: myHistory[selectedHistory]['requestBill']['data']['requested_currency_symbol'] +
+                                                                            ' ' +
+                                                                            myHistory[selectedHistory]['requestBill']['data']['time_price'].toString(),
+                                                                        size: media.width *
+                                                                            twelve,
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                  Container(
+                                                                    margin: EdgeInsets.only(
+                                                                        top: media.width *
+                                                                            0.03,
+                                                                        bottom: media.width *
+                                                                            0.03),
+                                                                    height: 1.5,
+                                                                    color: const Color(
+                                                                        0xffE0E0E0),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            (myHistory[selectedHistory]['requestBill']
+                                                                            [
+                                                                            'data']
+                                                                        [
+                                                                        'cancellation_fee'] !=
+                                                                    0)
+                                                                ? Column(
+                                                                    children: [
+                                                                      Row(
+                                                                        mainAxisAlignment:
+                                                                            MainAxisAlignment.spaceBetween,
+                                                                        children: [
+                                                                          MyText(
+                                                                            text:
+                                                                                languages[choosenLanguage]['text_cancelfee'],
+                                                                            size:
+                                                                                media.width * fourteen,
+                                                                          ),
+                                                                          MyText(
+                                                                            // ignore: prefer_interpolation_to_compose_strings
+                                                                            text: myHistory[selectedHistory]['requestBill']['data']['requested_currency_symbol'] +
+                                                                                ' ' +
+                                                                                myHistory[selectedHistory]['requestBill']['data']['cancellation_fee'].toString(),
+                                                                            size:
+                                                                                media.width * twelve,
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                      Container(
+                                                                        margin: EdgeInsets.only(
+                                                                            top: media.width *
+                                                                                0.03,
+                                                                            bottom:
+                                                                                media.width * 0.03),
+                                                                        height:
+                                                                            1.5,
+                                                                        color: const Color(
+                                                                            0xffE0E0E0),
+                                                                      ),
+                                                                    ],
+                                                                  )
+                                                                : Container(),
+                                                            (myHistory[selectedHistory]['requestBill']
+                                                                            [
+                                                                            'data']
+                                                                        [
+                                                                        'airport_surge_fee'] !=
+                                                                    0)
+                                                                ? Column(
+                                                                    children: [
+                                                                      Row(
+                                                                        mainAxisAlignment:
+                                                                            MainAxisAlignment.spaceBetween,
+                                                                        children: [
+                                                                          MyText(
+                                                                            text:
+                                                                                languages[choosenLanguage]['text_surge_fee'],
+                                                                            size:
+                                                                                media.width * fourteen,
+                                                                          ),
+                                                                          MyText(
+                                                                            // ignore: prefer_interpolation_to_compose_strings
+                                                                            text: myHistory[selectedHistory]['requestBill']['data']['requested_currency_symbol'] +
+                                                                                ' ' +
+                                                                                myHistory[selectedHistory]['requestBill']['data']['airport_surge_fee'].toString(),
+                                                                            size:
+                                                                                media.width * twelve,
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                      Container(
+                                                                        margin: EdgeInsets.only(
+                                                                            top: media.width *
+                                                                                0.03,
+                                                                            bottom:
+                                                                                media.width * 0.03),
+                                                                        height:
+                                                                            1.5,
+                                                                        color: const Color(
+                                                                            0xffE0E0E0),
+                                                                      ),
+                                                                    ],
+                                                                  )
+                                                                : Container(),
+                                                            if (myHistory[selectedHistory]
+                                                                            [
+                                                                            'requestBill']
+                                                                        ['data']
+                                                                    [
+                                                                    'waiting_charge'] !=
+                                                                0)
+                                                              Column(
+                                                                children: [
+                                                                  Row(
+                                                                    mainAxisAlignment:
+                                                                        MainAxisAlignment
+                                                                            .spaceBetween,
+                                                                    children: [
+                                                                      MyText(
+                                                                        text: languages[choosenLanguage]['text_waiting_price'] +
+                                                                            ' (' +
+                                                                            myHistory[selectedHistory]['requestBill']['data']['requested_currency_symbol'] +
+                                                                            ' ' +
+                                                                            myHistory[selectedHistory]['requestBill']['data']['waiting_charge_per_min'].toString() +
+                                                                            ' x ' +
+                                                                            myHistory[selectedHistory]['requestBill']['data']['calculated_waiting_time'].toString() +
+                                                                            ' ' +
+                                                                            languages[choosenLanguage]['text_mins'] +
+                                                                            ')',
+                                                                        size: media.width *
+                                                                            fourteen,
+                                                                      ),
+                                                                      MyText(
+                                                                        text: myHistory[selectedHistory]['requestBill']['data']['requested_currency_symbol'] +
+                                                                            ' ' +
+                                                                            myHistory[selectedHistory]['requestBill']['data']['waiting_charge'].toString(),
+                                                                        size: media.width *
+                                                                            twelve,
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                  Container(
+                                                                    margin: EdgeInsets.only(
+                                                                        top: media.width *
+                                                                            0.03,
+                                                                        bottom: media.width *
+                                                                            0.03),
+                                                                    height: 1.5,
+                                                                    color: const Color(
+                                                                        0xffE0E0E0),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            if (myHistory[selectedHistory]
+                                                                            [
+                                                                            'requestBill']
+                                                                        ['data']
+                                                                    [
+                                                                    'admin_commision'] !=
+                                                                0)
+                                                              Column(
+                                                                children: [
+                                                                  Row(
+                                                                    mainAxisAlignment:
+                                                                        MainAxisAlignment
+                                                                            .spaceBetween,
+                                                                    children: [
+                                                                      MyText(
+                                                                        text: languages[choosenLanguage]
+                                                                            [
+                                                                            'text_convfee'],
+                                                                        size: media.width *
+                                                                            fourteen,
+                                                                      ),
+                                                                      MyText(
+                                                                        // ignore: prefer_interpolation_to_compose_strings
+                                                                        text: myHistory[selectedHistory]['requestBill']['data']['requested_currency_symbol'] +
+                                                                            ' ' +
+                                                                            myHistory[selectedHistory]['requestBill']['data']['admin_commision'].toString(),
+                                                                        size: media.width *
+                                                                            twelve,
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                  Container(
+                                                                    margin: EdgeInsets.only(
+                                                                        top: media.width *
+                                                                            0.03,
+                                                                        bottom: media.width *
+                                                                            0.03),
+                                                                    height: 1.5,
+                                                                    color: const Color(
+                                                                        0xffE0E0E0),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            (myHistory[selectedHistory]['requestBill']
+                                                                            [
+                                                                            'data']
+                                                                        [
+                                                                        'promo_discount'] !=
+                                                                    null)
+                                                                ? Column(
+                                                                    children: [
+                                                                      Row(
+                                                                        mainAxisAlignment:
+                                                                            MainAxisAlignment.spaceBetween,
+                                                                        children: [
+                                                                          MyText(
+                                                                            text:
+                                                                                languages[choosenLanguage]['text_discount'],
+                                                                            size:
+                                                                                media.width * fourteen,
+                                                                            color:
+                                                                                Colors.red,
+                                                                          ),
+                                                                          MyText(
+                                                                            // ignore: prefer_interpolation_to_compose_strings
+                                                                            text: myHistory[selectedHistory]['requestBill']['data']['requested_currency_symbol'] +
+                                                                                ' ' +
+                                                                                myHistory[selectedHistory]['requestBill']['data']['promo_discount'].toString(),
+                                                                            size:
+                                                                                media.width * twelve,
+                                                                            color:
+                                                                                Colors.red,
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                      Container(
+                                                                        margin: EdgeInsets.only(
+                                                                            top: media.width *
+                                                                                0.03,
+                                                                            bottom:
+                                                                                media.width * 0.03),
+                                                                        height:
+                                                                            1.5,
+                                                                        color: const Color(
+                                                                            0xffE0E0E0),
+                                                                      ),
+                                                                    ],
+                                                                  )
+                                                                : Container(),
+                                                            Column(
+                                                              children: [
+                                                                Row(
+                                                                  mainAxisAlignment:
+                                                                      MainAxisAlignment
+                                                                          .spaceBetween,
+                                                                  children: [
+                                                                    MyText(
+                                                                      text: languages[
+                                                                              choosenLanguage]
+                                                                          [
+                                                                          'text_taxes'],
+                                                                      size: media
+                                                                              .width *
+                                                                          fourteen,
+                                                                    ),
+                                                                    MyText(
+                                                                      text:
+                                                                          // ignore: prefer_interpolation_to_compose_strings
+                                                                          myHistory[selectedHistory]['requestBill']['data']['requested_currency_symbol'] +
+                                                                              ' ' +
+                                                                              '${myHistory[selectedHistory]['requestBill']['data']['service_tax']} ',
+                                                                      size: media
+                                                                              .width *
+                                                                          twelve,
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                                Container(
+                                                                  margin: EdgeInsets.only(
+                                                                      top: media
+                                                                              .width *
+                                                                          0.03,
+                                                                      bottom: media
+                                                                              .width *
+                                                                          0.03),
+                                                                  height: 1.5,
+                                                                  color: const Color(
+                                                                      0xffE0E0E0),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                            if (myHistory[selectedHistory]
+                                                                            [
+                                                                            'requestBill']
+                                                                        ['data']
+                                                                    [
+                                                                    'total_amount'] !=
+                                                                0)
+                                                              Column(
+                                                                children: [
+                                                                  Row(
+                                                                    mainAxisAlignment:
+                                                                        MainAxisAlignment
+                                                                            .spaceBetween,
+                                                                    children: [
+                                                                      MyText(
+                                                                        text: languages[choosenLanguage]
+                                                                            [
+                                                                            'text_totalfare'],
+                                                                        size: media.width *
+                                                                            fourteen,
+                                                                      ),
+                                                                      MyText(
+                                                                        text:
+                                                                            // ignore: prefer_interpolation_to_compose_strings
+                                                                            myHistory[selectedHistory]['requestBill']['data']['requested_currency_symbol'] +
+                                                                                ' ' +
+                                                                                '${'${myHistory[selectedHistory]['requestBill']['data']['total_amount']} '} ',
+                                                                        size: media.width *
+                                                                            twelve,
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                          ],
+                                                        )
+                                                      : Container(),
                                                   SizedBox(
-                                                    height: media.height * 0.03,
-                                                  ),
-                                                  (myHistory[selectedHistory]
-                                                              ['is_rental'] ==
-                                                          true)
-                                                      ? Container(
-                                                          padding:
-                                                              EdgeInsets.only(
-                                                                  bottom: media
-                                                                          .width *
-                                                                      0.05),
-                                                          child: Row(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .spaceBetween,
-                                                            children: [
-                                                              MyText(
-                                                                text: languages[
-                                                                        choosenLanguage]
-                                                                    [
-                                                                    'text_ride_type'],
-                                                                size: media
-                                                                        .width *
-                                                                    fourteen,
-                                                              ),
-                                                              MyText(
-                                                                text: myHistory[
-                                                                        selectedHistory]
-                                                                    [
-                                                                    'rental_package_name'],
-                                                                size: media
-                                                                        .width *
-                                                                    fourteen,
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        )
-                                                      : Container(),
-                                                  Column(
-                                                    children: [
-                                                      Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .spaceBetween,
-                                                        children: [
-                                                          MyText(
-                                                            text: languages[
-                                                                    choosenLanguage]
-                                                                [
-                                                                'text_baseprice'],
-                                                            size: media.width *
-                                                                fourteen,
-                                                          ),
-                                                          MyText(
-                                                            // ignore: prefer_interpolation_to_compose_strings
-                                                            text: myHistory[selectedHistory]
-                                                                            [
-                                                                            'requestBill']
-                                                                        ['data']
-                                                                    [
-                                                                    'requested_currency_symbol'] +
-                                                                ' ' +
-                                                                myHistory[selectedHistory]
-                                                                            [
-                                                                            'requestBill']['data']
-                                                                        [
-                                                                        'base_price']
-                                                                    .toString(),
-                                                            size: media.width *
-                                                                twelve,
-                                                          ),
-                                                        ],
-                                                      ),
-                                                      Container(
-                                                        margin: EdgeInsets.only(
-                                                            top: media.width *
-                                                                0.03,
-                                                            bottom:
-                                                                media.width *
-                                                                    0.03),
-                                                        height: 1.5,
-                                                        color: const Color(
-                                                            0xffE0E0E0),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  Column(
-                                                    children: [
-                                                      Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .spaceBetween,
-                                                        children: [
-                                                          MyText(
-                                                            text: languages[
-                                                                    choosenLanguage]
-                                                                [
-                                                                'text_distprice'],
-                                                            size: media.width *
-                                                                fourteen,
-                                                          ),
-                                                          MyText(
-                                                            // ignore: prefer_interpolation_to_compose_strings
-                                                            text: myHistory[selectedHistory]
-                                                                            [
-                                                                            'requestBill']
-                                                                        ['data']
-                                                                    [
-                                                                    'requested_currency_symbol'] +
-                                                                ' ' +
-                                                                myHistory[selectedHistory]
-                                                                            [
-                                                                            'requestBill']['data']
-                                                                        [
-                                                                        'distance_price']
-                                                                    .toString(),
-                                                            size: media.width *
-                                                                twelve,
-                                                          ),
-                                                        ],
-                                                      ),
-                                                      Container(
-                                                        margin: EdgeInsets.only(
-                                                            top: media.width *
-                                                                0.03,
-                                                            bottom:
-                                                                media.width *
-                                                                    0.03),
-                                                        height: 1.5,
-                                                        color: const Color(
-                                                            0xffE0E0E0),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  Column(
-                                                    children: [
-                                                      Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .spaceBetween,
-                                                        children: [
-                                                          MyText(
-                                                            text: languages[
-                                                                    choosenLanguage]
-                                                                [
-                                                                'text_timeprice'],
-                                                            size: media.width *
-                                                                fourteen,
-                                                          ),
-                                                          MyText(
-                                                            // ignore: prefer_interpolation_to_compose_strings
-                                                            text: myHistory[selectedHistory]
-                                                                            [
-                                                                            'requestBill']
-                                                                        ['data']
-                                                                    [
-                                                                    'requested_currency_symbol'] +
-                                                                ' ' +
-                                                                myHistory[selectedHistory]
-                                                                            [
-                                                                            'requestBill']['data']
-                                                                        [
-                                                                        'time_price']
-                                                                    .toString(),
-                                                            size: media.width *
-                                                                twelve,
-                                                          ),
-                                                        ],
-                                                      ),
-                                                      Container(
-                                                        margin: EdgeInsets.only(
-                                                            top: media.width *
-                                                                0.03,
-                                                            bottom:
-                                                                media.width *
-                                                                    0.03),
-                                                        height: 1.5,
-                                                        color: const Color(
-                                                            0xffE0E0E0),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  (myHistory[selectedHistory][
-                                                                      'requestBill']
-                                                                  ['data'][
-                                                              'cancellation_fee'] !=
-                                                          0)
-                                                      ? Column(
-                                                          children: [
-                                                            Row(
-                                                              mainAxisAlignment:
-                                                                  MainAxisAlignment
-                                                                      .spaceBetween,
-                                                              children: [
-                                                                MyText(
-                                                                  text: languages[
-                                                                          choosenLanguage]
-                                                                      [
-                                                                      'text_cancelfee'],
-                                                                  size: media
-                                                                          .width *
-                                                                      fourteen,
-                                                                ),
-                                                                MyText(
-                                                                  // ignore: prefer_interpolation_to_compose_strings
-                                                                  text: myHistory[selectedHistory]['requestBill']
-                                                                              [
-                                                                              'data']
-                                                                          [
-                                                                          'requested_currency_symbol'] +
-                                                                      ' ' +
-                                                                      myHistory[selectedHistory]['requestBill']['data']
-                                                                              [
-                                                                              'cancellation_fee']
-                                                                          .toString(),
-                                                                  size: media
-                                                                          .width *
-                                                                      twelve,
-                                                                ),
-                                                              ],
-                                                            ),
-                                                            Container(
-                                                              margin: EdgeInsets.only(
-                                                                  top: media
-                                                                          .width *
-                                                                      0.03,
-                                                                  bottom: media
-                                                                          .width *
-                                                                      0.03),
-                                                              height: 1.5,
-                                                              color: const Color(
-                                                                  0xffE0E0E0),
-                                                            ),
-                                                          ],
-                                                        )
-                                                      : Container(),
-                                                  (myHistory[selectedHistory][
-                                                                      'requestBill']
-                                                                  ['data'][
-                                                              'airport_surge_fee'] !=
-                                                          0)
-                                                      ? Column(
-                                                          children: [
-                                                            Row(
-                                                              mainAxisAlignment:
-                                                                  MainAxisAlignment
-                                                                      .spaceBetween,
-                                                              children: [
-                                                                MyText(
-                                                                  text: languages[
-                                                                          choosenLanguage]
-                                                                      [
-                                                                      'text_surge_fee'],
-                                                                  size: media
-                                                                          .width *
-                                                                      fourteen,
-                                                                ),
-                                                                MyText(
-                                                                  // ignore: prefer_interpolation_to_compose_strings
-                                                                  text: myHistory[selectedHistory]['requestBill']
-                                                                              [
-                                                                              'data']
-                                                                          [
-                                                                          'requested_currency_symbol'] +
-                                                                      ' ' +
-                                                                      myHistory[selectedHistory]['requestBill']['data']
-                                                                              [
-                                                                              'airport_surge_fee']
-                                                                          .toString(),
-                                                                  size: media
-                                                                          .width *
-                                                                      twelve,
-                                                                ),
-                                                              ],
-                                                            ),
-                                                            Container(
-                                                              margin: EdgeInsets.only(
-                                                                  top: media
-                                                                          .width *
-                                                                      0.03,
-                                                                  bottom: media
-                                                                          .width *
-                                                                      0.03),
-                                                              height: 1.5,
-                                                              color: const Color(
-                                                                  0xffE0E0E0),
-                                                            ),
-                                                          ],
-                                                        )
-                                                      : Container(),
-                                                  Column(
-                                                    children: [
-                                                      Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .spaceBetween,
-                                                        children: [
-                                                          MyText(
-                                                            text: languages[
-                                                                        choosenLanguage][
-                                                                    'text_waiting_price'] +
-                                                                ' (' +
-                                                                myHistory[selectedHistory]['requestBill']
-                                                                        ['data'][
-                                                                    'requested_currency_symbol'] +
-                                                                ' ' +
-                                                                myHistory[selectedHistory]['requestBill']['data']['waiting_charge_per_min']
-                                                                    .toString() +
-                                                                ' x ' +
-                                                                myHistory[selectedHistory]['requestBill']
-                                                                            ['data']
-                                                                        [
-                                                                        'calculated_waiting_time']
-                                                                    .toString() +
-                                                                ' ' +
-                                                                languages[choosenLanguage]
-                                                                    ['text_mins'] +
-                                                                ')',
-                                                            size: media.width *
-                                                                fourteen,
-                                                          ),
-                                                          MyText(
-                                                            // ignore: prefer_interpolation_to_compose_strings
-                                                            text: myHistory[selectedHistory]
-                                                                            [
-                                                                            'requestBill']
-                                                                        ['data']
-                                                                    [
-                                                                    'requested_currency_symbol'] +
-                                                                ' ' +
-                                                                myHistory[selectedHistory]
-                                                                            [
-                                                                            'requestBill']['data']
-                                                                        [
-                                                                        'waiting_charge']
-                                                                    .toString(),
-                                                            size: media.width *
-                                                                twelve,
-                                                          ),
-                                                        ],
-                                                      ),
-                                                      Container(
-                                                        margin: EdgeInsets.only(
-                                                            top: media.width *
-                                                                0.03,
-                                                            bottom:
-                                                                media.width *
-                                                                    0.03),
-                                                        height: 1.5,
-                                                        color: const Color(
-                                                            0xffE0E0E0),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  Column(
-                                                    children: [
-                                                      Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .spaceBetween,
-                                                        children: [
-                                                          MyText(
-                                                            text: languages[
-                                                                    choosenLanguage]
-                                                                [
-                                                                'text_convfee'],
-                                                            size: media.width *
-                                                                fourteen,
-                                                          ),
-                                                          MyText(
-                                                            // ignore: prefer_interpolation_to_compose_strings
-                                                            text: myHistory[selectedHistory]
-                                                                            [
-                                                                            'requestBill']
-                                                                        ['data']
-                                                                    [
-                                                                    'requested_currency_symbol'] +
-                                                                ' ' +
-                                                                myHistory[selectedHistory]
-                                                                            [
-                                                                            'requestBill']['data']
-                                                                        [
-                                                                        'admin_commision']
-                                                                    .toString(),
-                                                            size: media.width *
-                                                                twelve,
-                                                          ),
-                                                        ],
-                                                      ),
-                                                      Container(
-                                                        margin: EdgeInsets.only(
-                                                            top: media.width *
-                                                                0.03,
-                                                            bottom:
-                                                                media.width *
-                                                                    0.03),
-                                                        height: 1.5,
-                                                        color: const Color(
-                                                            0xffE0E0E0),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  (myHistory[selectedHistory][
-                                                                      'requestBill']
-                                                                  ['data'][
-                                                              'promo_discount'] !=
-                                                          null)
-                                                      ? Column(
-                                                          children: [
-                                                            Row(
-                                                              mainAxisAlignment:
-                                                                  MainAxisAlignment
-                                                                      .spaceBetween,
-                                                              children: [
-                                                                MyText(
-                                                                  text: languages[
-                                                                          choosenLanguage]
-                                                                      [
-                                                                      'text_discount'],
-                                                                  size: media
-                                                                          .width *
-                                                                      fourteen,
-                                                                  color: Colors
-                                                                      .red,
-                                                                ),
-                                                                MyText(
-                                                                  // ignore: prefer_interpolation_to_compose_strings
-                                                                  text: myHistory[selectedHistory]['requestBill']
-                                                                              [
-                                                                              'data']
-                                                                          [
-                                                                          'requested_currency_symbol'] +
-                                                                      ' ' +
-                                                                      myHistory[selectedHistory]['requestBill']['data']
-                                                                              [
-                                                                              'promo_discount']
-                                                                          .toString(),
-                                                                  size: media
-                                                                          .width *
-                                                                      twelve,
-                                                                  color: Colors
-                                                                      .red,
-                                                                ),
-                                                              ],
-                                                            ),
-                                                            Container(
-                                                              margin: EdgeInsets.only(
-                                                                  top: media
-                                                                          .width *
-                                                                      0.03,
-                                                                  bottom: media
-                                                                          .width *
-                                                                      0.03),
-                                                              height: 1.5,
-                                                              color: const Color(
-                                                                  0xffE0E0E0),
-                                                            ),
-                                                          ],
-                                                        )
-                                                      : Container(),
-                                                  Column(
-                                                    children: [
-                                                      Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .spaceBetween,
-                                                        children: [
-                                                          MyText(
-                                                            text: languages[
-                                                                    choosenLanguage]
-                                                                ['text_taxes'],
-                                                            size: media.width *
-                                                                fourteen,
-                                                          ),
-                                                          MyText(
-                                                            text:
-                                                                // ignore: prefer_interpolation_to_compose_strings
-                                                                myHistory[selectedHistory]['requestBill']
-                                                                            [
-                                                                            'data']
-                                                                        [
-                                                                        'requested_currency_symbol'] +
-                                                                    ' ' +
-                                                                    '${myHistory[selectedHistory]['requestBill']['data']['service_tax']} ',
-                                                            size: media.width *
-                                                                twelve,
-                                                          ),
-                                                        ],
-                                                      ),
-                                                      Container(
-                                                        margin: EdgeInsets.only(
-                                                            top: media.width *
-                                                                0.03,
-                                                            bottom:
-                                                                media.width *
-                                                                    0.03),
-                                                        height: 1.5,
-                                                        color: const Color(
-                                                            0xffE0E0E0),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  Column(
-                                                    children: [
-                                                      Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .spaceBetween,
-                                                        children: [
-                                                          MyText(
-                                                            text: languages[
-                                                                    choosenLanguage]
-                                                                [
-                                                                'text_totalfare'],
-                                                            size: media.width *
-                                                                fourteen,
-                                                          ),
-                                                          MyText(
-                                                            text:
-                                                                // ignore: prefer_interpolation_to_compose_strings
-                                                                myHistory[selectedHistory]['requestBill']
-                                                                            [
-                                                                            'data']
-                                                                        [
-                                                                        'requested_currency_symbol'] +
-                                                                    ' ' +
-                                                                    '${'${myHistory[selectedHistory]['requestBill']['data']['total_amount']} '} ',
-                                                            size: media.width *
-                                                                twelve,
-                                                          ),
-                                                        ],
-                                                      ),
-                                                      Container(
-                                                        margin: EdgeInsets.only(
-                                                            top: media.width *
-                                                                0.03,
-                                                            bottom:
-                                                                media.width *
-                                                                    0.03),
-                                                        height: 1.5,
-                                                        color: const Color(
-                                                            0xffE0E0E0),
-                                                      ),
-                                                    ],
+                                                    height: 20.h,
                                                   ),
                                                 ],
                                               )
@@ -1383,370 +1621,395 @@ class _HistoryDetailsState extends State<HistoryDetails> {
                 : Container(),
             (makecomplaintbool == true)
                 ? Positioned(
+                    bottom: 0,
                     child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    height: media.height * 1,
-                    width: media.width * 1,
-                    color: Colors.transparent.withOpacity(0.6),
-                    child: Column(
-                      children: [
-                        SizedBox(
-                          height: media.height * 0.1,
-                        ),
-                        Container(
-                          padding: EdgeInsets.all(media.width * 0.03),
-                          height: media.width * 0.12,
-                          width: media.width * 1,
-                          decoration: BoxDecoration(color: topBar, boxShadow: [
-                            BoxShadow(
-                                blurRadius: 1,
-                                spreadRadius: 1,
-                                color: Colors.grey.withOpacity(0.2))
-                          ]),
-                          // color: topBar,
-                          child: Row(
-                            children: [
-                              InkWell(
-                                onTap: () {
-                                  setState(() {
-                                    makecomplaintbool = false;
-                                    makecomplaint = 1;
-                                  });
-                                },
-                                child: (makecomplaint == 1)
-                                    ? MyText(
-                                        text: 'Cancel',
-                                        size: media.width * fourteen,
-                                        color: const Color(0xffFF0000),
-                                      )
-                                    : SizedBox(
-                                        height: media.width * 0.06,
-                                        width: media.width * 0.06,
-                                        child: const Icon(
-                                          Icons.close,
-                                          // size: media.width * twentyfour,
-                                        ),
-                                      ),
-                              ),
-                              SizedBox(
-                                width: media.width * 0.25,
-                              ),
-                              MyText(
-                                text: languages[choosenLanguage]
-                                    ['text_make_complaints'],
-                                size: media.width * sixteen,
-                                color: (isDarkTheme == true)
-                                    ? Colors.black
-                                    : textColor,
-                              ),
-                            ],
+                      duration: const Duration(milliseconds: 200),
+                      height: media.height * 0.8,
+                      width: media.width * 1,
+                      //  color: Colors.transparent.withOpacity(0.6),
+                      child: Column(
+                        children: [
+                          SizedBox(
+                            height: media.height * 0.1,
                           ),
-                        ),
-                        Expanded(
-                          child: Container(
-                              width: media.width * 1,
-                              padding: EdgeInsets.all(media.width * 0.04),
-                              color: page,
-                              child: Column(
-                                children: [
-                                  Expanded(
-                                    child: (makecomplaint == 1)
-                                        ? Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              SizedBox(
-                                                height: media.width * 0.05,
-                                              ),
-                                              MyText(
-                                                text: languages[choosenLanguage]
-                                                    ['text_why_report'],
-                                                size: media.width * sixteen,
-                                                fontweight: FontWeight.w700,
-                                              ),
-                                              SizedBox(
-                                                height: media.width * 0.03,
-                                              ),
-                                              MyText(
-                                                text: languages[choosenLanguage]
-                                                    ['text_we_apriciate'],
-                                                size: media.width * fourteen,
-                                                color:
-                                                    textColor.withOpacity(0.3),
-                                              ),
-                                              SizedBox(
-                                                height: media.width * 0.03,
-                                              ),
-                                              InkWell(
-                                                onTap: () {
-                                                  setState(() {
-                                                    if (_showOptions == false) {
-                                                      _showOptions = true;
-                                                    } else {
-                                                      _showOptions = false;
-                                                    }
-                                                  });
-                                                },
-                                                child: Container(
-                                                  padding: EdgeInsets.only(
-                                                      left: media.width * 0.05,
-                                                      right:
-                                                          media.width * 0.05),
-                                                  height: media.width * 0.12,
+                          Container(
+                            padding: EdgeInsets.all(media.width * 0.03),
+                            height: media.width * 0.12,
+                            width: media.width * 1,
+                            decoration: BoxDecoration(
+                                color: topBar,
+                                boxShadow: [
+                                  BoxShadow(
+                                      blurRadius: 1,
+                                      spreadRadius: 1,
+                                      color: Colors.grey.withOpacity(0.2))
+                                ]),
+                            // color: topBar,
+                            child: Row(
+                              children: [
+                                InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      makecomplaintbool = false;
+                                      makecomplaint = 1;
+                                    });
+                                  },
+                                  child: (makecomplaint == 1)
+                                      ? const CircleAvatar(
+                                          backgroundColor: Colors.red,
+                                          child: Icon(
+                                            Icons.close,
+                                            color: Colors.white,
+                                            size: 20,
+                                          ),
+                                        )
+                                      : SizedBox(
+                                          height: media.width * 0.06,
+                                          width: media.width * 0.06,
+                                          child: const Icon(
+                                            Icons.close,
+                                          ),
+                                        ),
+                                ),
+                                SizedBox(
+                                  width: media.width * 0.25,
+                                ),
+                                MyText(
+                                  text: languages[choosenLanguage]
+                                      ['text_make_complaints'],
+                                  size: media.width * sixteen,
+                                  color: (isDarkTheme == true)
+                                      ? Colors.black
+                                      : textColor,
+                                ),
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            child: Container(
+                                width: media.width * 1,
+                                padding: EdgeInsets.all(media.width * 0.04),
+                                color: page,
+                                child: Column(
+                                  children: [
+                                    Expanded(
+                                      child: (makecomplaint == 1)
+                                          ? Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                SizedBox(
+                                                  height: media.width * 0.05,
+                                                ),
+                                                MyText(
+                                                  text:
+                                                      languages[choosenLanguage]
+                                                          ['text_why_report'],
+                                                  size: media.width * sixteen,
+                                                  fontweight: FontWeight.w700,
+                                                ),
+                                                SizedBox(
+                                                  height: media.width * 0.03,
+                                                ),
+                                                MyText(
+                                                  text:
+                                                      languages[choosenLanguage]
+                                                          ['text_we_apriciate'],
+                                                  size: media.width * fourteen,
+                                                  color: textColor
+                                                      .withOpacity(0.3),
+                                                ),
+                                                SizedBox(
+                                                  height: media.width * 0.03,
+                                                ),
+                                                InkWell(
+                                                  onTap: () {
+                                                    setState(() {
+                                                      if (_showOptions ==
+                                                          false) {
+                                                        _showOptions = true;
+                                                      } else {
+                                                        _showOptions = false;
+                                                      }
+                                                    });
+                                                  },
+                                                  child: Container(
+                                                    padding: EdgeInsets.only(
+                                                        left:
+                                                            media.width * 0.05,
+                                                        right:
+                                                            media.width * 0.05),
+                                                    height: media.width * 0.12,
+                                                    width: media.width * 0.9,
+                                                    decoration: BoxDecoration(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(12),
+                                                        border: Border.all(
+                                                            color: borderLines,
+                                                            width: 1.2)),
+                                                    child: Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
+                                                      children: [
+                                                        MyText(
+                                                          text: generalComplaintList[
+                                                                  complaintType]
+                                                              ['title'],
+                                                          size: media.width *
+                                                              fourteen,
+                                                        ),
+                                                        RotatedBox(
+                                                          quarterTurns:
+                                                              (_showOptions ==
+                                                                      true)
+                                                                  ? 2
+                                                                  : 0,
+                                                          child: Container(
+                                                            height:
+                                                                media.width *
+                                                                    0.07,
+                                                            width: media.width *
+                                                                0.07,
+                                                            decoration: const BoxDecoration(
+                                                                image: DecorationImage(
+                                                                    image: AssetImage(
+                                                                        'assets/images/chevron-down.png'),
+                                                                    fit: BoxFit
+                                                                        .contain)),
+                                                          ),
+                                                        )
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                                SizedBox(
+                                                  height: media.width * 0.05,
+                                                ),
+                                                (_showOptions == true)
+                                                    ? Container(
+                                                        padding: EdgeInsets.all(
+                                                            media.width * 0.02),
+                                                        margin: EdgeInsets.only(
+                                                            bottom:
+                                                                media.width *
+                                                                    0.05),
+                                                        height:
+                                                            media.width * 0.3,
+                                                        width:
+                                                            media.width * 0.9,
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(12),
+                                                          border: Border.all(
+                                                              width: 1.2,
+                                                              color:
+                                                                  borderLines),
+                                                          color: page,
+                                                        ),
+                                                        child:
+                                                            SingleChildScrollView(
+                                                          physics:
+                                                              const BouncingScrollPhysics(),
+                                                          child: Column(
+                                                            children:
+                                                                generalComplaintList
+                                                                    .asMap()
+                                                                    .map((i,
+                                                                        value) {
+                                                                      return MapEntry(
+                                                                          i,
+                                                                          InkWell(
+                                                                            onTap:
+                                                                                () {
+                                                                              setState(() {
+                                                                                complaintType = i;
+                                                                                _showOptions = false;
+                                                                              });
+                                                                            },
+                                                                            child:
+                                                                                Container(
+                                                                              width: media.width * 0.7,
+                                                                              padding: EdgeInsets.only(top: media.width * 0.025, bottom: media.width * 0.025),
+                                                                              decoration: BoxDecoration(border: Border(bottom: BorderSide(width: 1.1, color: (i == generalComplaintList.length - 1) ? Colors.transparent : borderLines))),
+                                                                              child: MyText(
+                                                                                text: generalComplaintList[i]['title'],
+                                                                                size: media.width * fourteen,
+                                                                              ),
+                                                                            ),
+                                                                          ));
+                                                                    })
+                                                                    .values
+                                                                    .toList(),
+                                                          ),
+                                                        ),
+                                                      )
+                                                    : Container(),
+                                                Container(
+                                                  padding: EdgeInsets.all(
+                                                      media.width * 0.025),
                                                   width: media.width * 0.9,
                                                   decoration: BoxDecoration(
                                                       borderRadius:
                                                           BorderRadius.circular(
                                                               12),
                                                       border: Border.all(
-                                                          color: borderLines,
+                                                          color: (_error == '')
+                                                              ? borderLines
+                                                              : Colors.red,
                                                           width: 1.2)),
-                                                  child: Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .spaceBetween,
-                                                    children: [
-                                                      MyText(
-                                                        text: generalComplaintList[
-                                                                complaintType]
-                                                            ['title'],
-                                                        size: media.width *
-                                                            fourteen,
-                                                      ),
-                                                      RotatedBox(
-                                                        quarterTurns:
-                                                            (_showOptions ==
-                                                                    true)
-                                                                ? 2
-                                                                : 0,
-                                                        child: Container(
-                                                          height: media.width *
-                                                              0.07,
-                                                          width: media.width *
-                                                              0.07,
-                                                          decoration: const BoxDecoration(
-                                                              image: DecorationImage(
-                                                                  image: AssetImage(
-                                                                      'assets/images/chevron-down.png'),
-                                                                  fit: BoxFit
-                                                                      .contain)),
-                                                        ),
-                                                      )
-                                                    ],
+                                                  child: MyTextField(
+                                                    textController:
+                                                        complaintText,
+                                                    hinttext: languages[
+                                                                choosenLanguage]
+                                                            [
+                                                            'text_complaint_2'] +
+                                                        ' (' +
+                                                        languages[
+                                                                choosenLanguage]
+                                                            [
+                                                            'text_complaint_3'] +
+                                                        ')',
+                                                    maxline: 5,
+                                                    onTap: (val) {
+                                                      if (val.length >= 10 &&
+                                                          _error != '') {
+                                                        setState(() {
+                                                          _error = '';
+                                                        });
+                                                      }
+                                                    },
                                                   ),
                                                 ),
-                                              ),
-                                              SizedBox(
-                                                height: media.width * 0.05,
-                                              ),
-                                              (_showOptions == true)
-                                                  ? Container(
-                                                      padding: EdgeInsets.all(
-                                                          media.width * 0.02),
-                                                      margin: EdgeInsets.only(
-                                                          bottom: media.width *
-                                                              0.05),
-                                                      height: media.width * 0.3,
-                                                      width: media.width * 0.9,
-                                                      decoration: BoxDecoration(
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(12),
-                                                        border: Border.all(
-                                                            width: 1.2,
-                                                            color: borderLines),
-                                                        color: page,
-                                                      ),
-                                                      child:
-                                                          SingleChildScrollView(
-                                                        physics:
-                                                            const BouncingScrollPhysics(),
-                                                        child: Column(
-                                                          children:
-                                                              generalComplaintList
-                                                                  .asMap()
-                                                                  .map((i,
-                                                                      value) {
-                                                                    return MapEntry(
-                                                                        i,
-                                                                        InkWell(
-                                                                          onTap:
-                                                                              () {
-                                                                            setState(() {
-                                                                              complaintType = i;
-                                                                              _showOptions = false;
-                                                                            });
-                                                                          },
-                                                                          child:
-                                                                              Container(
-                                                                            width:
-                                                                                media.width * 0.7,
-                                                                            padding:
-                                                                                EdgeInsets.only(top: media.width * 0.025, bottom: media.width * 0.025),
-                                                                            decoration:
-                                                                                BoxDecoration(border: Border(bottom: BorderSide(width: 1.1, color: (i == generalComplaintList.length - 1) ? Colors.transparent : borderLines))),
-                                                                            child:
-                                                                                MyText(
-                                                                              text: generalComplaintList[i]['title'],
-                                                                              size: media.width * fourteen,
-                                                                            ),
-                                                                          ),
-                                                                        ));
-                                                                  })
-                                                                  .values
-                                                                  .toList(),
-                                                        ),
-                                                      ),
-                                                    )
-                                                  : Container(),
-                                              Container(
-                                                padding: EdgeInsets.all(
-                                                    media.width * 0.025),
-                                                width: media.width * 0.9,
-                                                decoration: BoxDecoration(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            12),
-                                                    border: Border.all(
-                                                        color: (_error == '')
-                                                            ? borderLines
-                                                            : Colors.red,
-                                                        width: 1.2)),
-                                                child: MyTextField(
-                                                  textController: complaintText,
-                                                  hinttext: languages[
-                                                              choosenLanguage]
-                                                          ['text_complaint_2'] +
-                                                      ' (' +
-                                                      languages[choosenLanguage]
-                                                          ['text_complaint_3'] +
-                                                      ')',
-                                                  maxline: 5,
-                                                  onTap: (val) {
-                                                    if (val.length >= 10 &&
-                                                        _error != '') {
-                                                      setState(() {
-                                                        _error = '';
-                                                      });
-                                                    }
-                                                  },
-                                                ),
-                                              ),
-                                              if (_error != '')
-                                                Container(
-                                                  width: media.width * 0.9,
-                                                  padding: EdgeInsets.only(
-                                                      top: media.width * 0.025,
-                                                      bottom:
-                                                          media.width * 0.025),
-                                                  child: MyText(
-                                                    text: _error,
-                                                    size:
-                                                        media.width * fourteen,
-                                                    color: Colors.red,
-                                                  ),
-                                                ),
-                                            ],
-                                          )
-                                        : (makecomplaint == 2)
-                                            ? Column(
-                                                children: [
-                                                  SizedBox(
-                                                    height: media.width * 0.3,
-                                                  ),
+                                                if (_error != '')
                                                   Container(
-                                                    alignment: Alignment.center,
-                                                    height: media.width * 0.13,
-                                                    width: media.width * 0.13,
-                                                    decoration: BoxDecoration(
-                                                      shape: BoxShape.circle,
-                                                      color: const Color(
-                                                          0xffFF0000),
-                                                      gradient: LinearGradient(
-                                                          colors: <Color>[
-                                                            const Color(
-                                                                0xffFF0000),
-                                                            Colors.black
-                                                                .withOpacity(
-                                                                    0.2),
-                                                          ],
-                                                          begin:
-                                                              FractionalOffset
-                                                                  .topCenter,
-                                                          end: FractionalOffset
-                                                              .bottomCenter),
-                                                    ),
-                                                    child: Icon(
-                                                      Icons.done,
-                                                      size: media.width * 0.09,
-                                                      color: Colors.white,
+                                                    width: media.width * 0.9,
+                                                    padding: EdgeInsets.only(
+                                                        top:
+                                                            media.width * 0.025,
+                                                        bottom: media.width *
+                                                            0.025),
+                                                    child: MyText(
+                                                      text: _error,
+                                                      size: media.width *
+                                                          fourteen,
+                                                      color: Colors.red,
                                                     ),
                                                   ),
-                                                  SizedBox(
-                                                    height: media.width * 0.03,
-                                                  ),
-                                                  MyText(
-                                                    text: languages[
-                                                            choosenLanguage]
-                                                        ['text_thanks_let'],
-                                                    size: media.width * sixteen,
-                                                    fontweight: FontWeight.w700,
-                                                  ),
-                                                  SizedBox(
-                                                    height: media.width * 0.03,
-                                                  ),
-                                                  MyText(
-                                                    text: languages[
-                                                            choosenLanguage][
-                                                        'text_thanks_feedback'],
-                                                    size:
-                                                        media.width * fourteen,
-                                                    color: textColor
-                                                        .withOpacity(0.4),
-                                                  )
-                                                ],
-                                              )
-                                            : Container(),
-                                  ),
-                                  Button(
-                                      onTap: () async {
-                                        if (makecomplaint == 1) {
-                                          if (complaintText.text.length >= 10) {
-                                            setState(() {
-                                              _isLoading = true;
-                                            });
-                                            complaintDesc = complaintText.text;
-                                            dynamic result;
-                                            result =
-                                                await makeRequestComplaint();
-                                            if (result == 'success') {
+                                              ],
+                                            )
+                                          : (makecomplaint == 2)
+                                              ? Column(
+                                                  children: [
+                                                    SizedBox(
+                                                      height: media.width * 0.3,
+                                                    ),
+                                                    Container(
+                                                      alignment:
+                                                          Alignment.center,
+                                                      height:
+                                                          media.width * 0.13,
+                                                      width: media.width * 0.13,
+                                                      decoration: BoxDecoration(
+                                                        shape: BoxShape.circle,
+                                                        color: const Color(
+                                                            0xffFF0000),
+                                                        gradient: LinearGradient(
+                                                            colors: <Color>[
+                                                              const Color(
+                                                                  0xffFF0000),
+                                                              Colors.black
+                                                                  .withOpacity(
+                                                                      0.2),
+                                                            ],
+                                                            begin:
+                                                                FractionalOffset
+                                                                    .topCenter,
+                                                            end: FractionalOffset
+                                                                .bottomCenter),
+                                                      ),
+                                                      child: Icon(
+                                                        Icons.done,
+                                                        size:
+                                                            media.width * 0.09,
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                    SizedBox(
+                                                      height:
+                                                          media.width * 0.03,
+                                                    ),
+                                                    MyText(
+                                                      text: languages[
+                                                              choosenLanguage]
+                                                          ['text_thanks_let'],
+                                                      size:
+                                                          media.width * sixteen,
+                                                      fontweight:
+                                                          FontWeight.w700,
+                                                    ),
+                                                    SizedBox(
+                                                      height:
+                                                          media.width * 0.03,
+                                                    ),
+                                                    MyText(
+                                                      text: languages[
+                                                              choosenLanguage][
+                                                          'text_thanks_feedback'],
+                                                      size: media.width *
+                                                          fourteen,
+                                                      color: textColor
+                                                          .withOpacity(0.4),
+                                                    )
+                                                  ],
+                                                )
+                                              : Container(),
+                                    ),
+                                    Button(
+                                        onTap: () async {
+                                          if (makecomplaint == 1) {
+                                            if (complaintText.text.length >=
+                                                10) {
                                               setState(() {
-                                                makecomplaint = 2;
-                                                _isLoading = false;
+                                                _isLoading = true;
+                                              });
+                                              complaintDesc =
+                                                  complaintText.text;
+                                              dynamic result;
+                                              result =
+                                                  await makeRequestComplaint();
+                                              if (result == 'success') {
+                                                setState(() {
+                                                  makecomplaint = 2;
+                                                  _isLoading = false;
+                                                });
+                                              }
+                                            } else {
+                                              setState(() {
+                                                _error = languages[
+                                                        choosenLanguage][
+                                                    'text_complaint_text_error'];
                                               });
                                             }
                                           } else {
                                             setState(() {
-                                              _error = languages[
-                                                      choosenLanguage]
-                                                  ['text_complaint_text_error'];
+                                              makecomplaintbool = false;
+                                              makecomplaint = 1;
                                             });
                                           }
-                                        } else {
-                                          setState(() {
-                                            makecomplaintbool = false;
-                                            makecomplaint = 1;
-                                          });
-                                        }
-                                      },
-                                      text: languages[choosenLanguage]
-                                          ['text_continue'])
-                                ],
-                              )),
-                        )
-                      ],
-                    ),
-                  ))
+                                        },
+                                        text: languages[choosenLanguage]
+                                            ['text_continue'])
+                                  ],
+                                )),
+                          )
+                        ],
+                      ),
+                    ))
                 : Container(),
             (_isLoading == true)
                 ? const Positioned(top: 0, child: Loading())

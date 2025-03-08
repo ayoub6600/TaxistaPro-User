@@ -10,6 +10,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart' as fm;
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geolocator/geolocator.dart' as geolocs;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -17,6 +18,8 @@ import 'package:latlong2/latlong.dart' as fmlt;
 import 'package:location/location.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart' as perm;
+import 'package:taxista/pages/onTripPage/banner_image.dart';
+import 'package:taxista/pages/onTripPage/debouncer.dart';
 import 'package:uuid/uuid.dart';
 import 'package:vector_math/vector_math.dart' as vector;
 
@@ -516,7 +519,6 @@ class _MapsState extends State<Maps>
                                   : (state == '2')
                                       ? Expanded(
                                           child: Container(
-                                            // height: media.height * 0.96,
                                             width: media.width * 1,
                                             alignment: Alignment.center,
                                             child: Column(
@@ -528,18 +530,12 @@ class _MapsState extends State<Maps>
                                                   mainAxisAlignment:
                                                       MainAxisAlignment.center,
                                                   children: [
-                                                    SizedBox(
-                                                      height:
-                                                          media.height * 0.31,
-                                                      width: media.width * 0.8,
-                                                      child: Image.asset(
-                                                        'assets/images/allow_location_permission.png',
-                                                        fit: BoxFit.contain,
-                                                      ),
+                                                    Image.asset(
+                                                      "assets/images/2005.jpg",
+                                                      fit: BoxFit.cover,
                                                     ),
                                                     SizedBox(
-                                                      height:
-                                                          media.width * 0.02,
+                                                      height: 20.h,
                                                     ),
                                                     MyText(
                                                       text: languages[
@@ -551,23 +547,24 @@ class _MapsState extends State<Maps>
                                                           TextAlign.center,
                                                       fontweight:
                                                           FontWeight.bold,
+                                                      color: Colors.blue,
                                                     ),
                                                     SizedBox(
-                                                      height:
-                                                          media.width * 0.04,
+                                                      height: 12.h,
                                                     ),
                                                     MyText(
                                                       text: languages[
                                                               choosenLanguage][
                                                           'text_allowpermission2'],
-                                                      size:
-                                                          media.width * sixteen,
+                                                      size: 16.sp,
                                                       textAlign:
                                                           TextAlign.center,
+                                                      color: Colors.black,
+                                                      fontweight:
+                                                          FontWeight.w600,
                                                     ),
                                                     SizedBox(
-                                                      height:
-                                                          media.width * 0.04,
+                                                      height: 20.h,
                                                     ),
                                                     Row(
                                                       mainAxisAlignment:
@@ -581,18 +578,18 @@ class _MapsState extends State<Maps>
                                                               0.07,
                                                           alignment:
                                                               Alignment.center,
-                                                          decoration: BoxDecoration(
-                                                              shape: BoxShape
-                                                                  .circle,
-                                                              color: Colors.red
-                                                                  .withOpacity(
-                                                                      0.1)),
-                                                          child: const Icon(
-                                                            Icons
-                                                                .location_on_outlined,
-                                                            color: Color(
-                                                                0xFFFF0000),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            shape:
+                                                                BoxShape.circle,
+                                                            color: Colors
+                                                                .green[200],
                                                           ),
+                                                          child: const Icon(
+                                                              Icons
+                                                                  .location_on_outlined,
+                                                              color:
+                                                                  Colors.white),
                                                         ),
                                                         SizedBox(
                                                             width: media.width *
@@ -602,10 +599,10 @@ class _MapsState extends State<Maps>
                                                                   choosenLanguage]
                                                               [
                                                               'text_loc_permission_user'],
-                                                          size: media.width *
-                                                              sixteen,
+                                                          size: 16.sp,
                                                           fontweight:
-                                                              FontWeight.bold,
+                                                              FontWeight.w500,
+                                                          color: Colors.grey,
                                                         )
                                                       ],
                                                     ),
@@ -1264,13 +1261,11 @@ class _MapsState extends State<Maps>
                                                                               0.08,
                                                                     ),
                                                                     Image.asset(
-                                                                      'assets/images/pick_icon.png',
-                                                                      width: media
-                                                                              .width *
-                                                                          0.07,
-                                                                      height: media
-                                                                              .width *
-                                                                          0.08,
+                                                                      "assets/images/gps.png",
+                                                                      width:
+                                                                          38.w,
+                                                                      height:
+                                                                          38.h,
                                                                     ),
                                                                     if (userDetails[
                                                                             'enable_map_location_icon_drag_and_drop_feature'] ==
@@ -1556,16 +1551,16 @@ class _MapsState extends State<Maps>
                                                                   .all(media
                                                                           .width *
                                                                       0.03),
-                                                              height:
-                                                                  media.width *
-                                                                      0.2,
+                                                              // height:
+                                                              //     media.width *
+                                                              //         0.2,
                                                               width:
                                                                   media.width *
                                                                       1,
                                                               decoration: BoxDecoration(
-                                                                  image: const DecorationImage(
-                                                                      image: AssetImage(
-                                                                          'assets/images/Rectangle.png')),
+                                                                  color: Colors
+                                                                          .blue[
+                                                                      200],
                                                                   borderRadius:
                                                                       BorderRadius.circular(
                                                                           media.width *
@@ -1588,14 +1583,34 @@ class _MapsState extends State<Maps>
                                                                         color: Colors
                                                                             .black,
                                                                       ),
-                                                                      MyText(
-                                                                        text: languages[choosenLanguage]
-                                                                            [
-                                                                            'text_view_rides'],
-                                                                        size: media.width *
-                                                                            fourteen,
-                                                                        color:
-                                                                            verifyDeclined,
+                                                                      SizedBox(
+                                                                        height:
+                                                                            10.h,
+                                                                      ),
+                                                                      Container(
+                                                                        padding:
+                                                                            EdgeInsets.symmetric(
+                                                                          horizontal:
+                                                                              10.w,
+                                                                        ),
+                                                                        decoration:
+                                                                            BoxDecoration(
+                                                                          // shape: BoxShape.circle,
+                                                                          color:
+                                                                              Colors.grey,
+                                                                          borderRadius:
+                                                                              BorderRadius.circular(10),
+                                                                        ),
+                                                                        child:
+                                                                            MyText(
+                                                                          text: languages[choosenLanguage]
+                                                                              [
+                                                                              'text_view_rides'],
+                                                                          size:
+                                                                              14.sp,
+                                                                          color:
+                                                                              Colors.white,
+                                                                        ),
                                                                       ),
                                                                     ],
                                                                   ),
@@ -1807,7 +1822,7 @@ class _MapsState extends State<Maps>
                                                               media.width * 1,
                                                           height: _height == 0
                                                               ? media.width *
-                                                                  0.4
+                                                                  0.49
                                                               : _height,
                                                           constraints: BoxConstraints(
                                                               minHeight: (userDetails[
@@ -1874,37 +1889,53 @@ class _MapsState extends State<Maps>
                                                                         ),
                                                                         SizedBox(
                                                                             height:
-                                                                                media.width * 0.05),
+                                                                                4.h),
                                                                         Stack(
                                                                           children: [
-                                                                            Container(
-                                                                              padding: EdgeInsets.fromLTRB(media.width * 0.03, media.width * 0.02, media.width * 0.03, media.width * 0.02),
-                                                                              decoration: BoxDecoration(color: const Color.fromARGB(255, 177, 174, 174).withOpacity(0.1), borderRadius: BorderRadius.circular(media.width * 0.02)),
-                                                                              height: media.width * 0.1,
-                                                                              width: media.width * 0.9,
-                                                                              child: Row(
-                                                                                children: [
-                                                                                  Icon(
-                                                                                    Icons.search,
-                                                                                    color: textColor,
-                                                                                    size: media.width * 0.07,
-                                                                                  ),
-                                                                                  SizedBox(width: media.width * 0.02),
-                                                                                  SizedBox(
-                                                                                    width: media.width * 0.7,
-                                                                                    child: AnimatedTextKit(
-                                                                                      repeatForever: true,
-                                                                                      animatedTexts: [
-                                                                                        TyperAnimatedText(languages[choosenLanguage]['text_4lettersforautofill'],
-                                                                                            textStyle: GoogleFonts.notoSans(
-                                                                                              fontSize: media.width * fourteen,
-                                                                                              color: textColor,
-                                                                                              fontWeight: FontWeight.w700,
-                                                                                            ))
-                                                                                      ],
+                                                                            Material(
+                                                                              elevation: 3,
+                                                                              borderRadius: BorderRadius.circular(media.width * 0.02),
+                                                                              child: Container(
+                                                                                width: media.width * 0.9,
+                                                                                padding: EdgeInsets.symmetric(
+                                                                                  horizontal: media.width * 0.03,
+                                                                                  vertical: media.width * 0.02,
+                                                                                ),
+                                                                                decoration: BoxDecoration(
+                                                                                  color: const Color(0xFFF5F5F5).withOpacity(0.9), // لون خلفية أكثر أناقة
+                                                                                  borderRadius: BorderRadius.circular(media.width * 0.02),
+                                                                                  boxShadow: [
+                                                                                    BoxShadow(
+                                                                                      color: Colors.black.withOpacity(0.1),
+                                                                                      blurRadius: 5,
+                                                                                      offset: const Offset(0, 2),
                                                                                     ),
-                                                                                  ),
-                                                                                ],
+                                                                                  ],
+                                                                                ),
+                                                                                child: Row(
+                                                                                  children: [
+                                                                                    Icon(
+                                                                                      Icons.search,
+                                                                                      color: textColor,
+                                                                                      size: media.width * 0.07,
+                                                                                    ),
+                                                                                    SizedBox(width: media.width * 0.02),
+                                                                                    SizedBox(
+                                                                                      width: media.width * 0.7,
+                                                                                      child: AnimatedTextKit(
+                                                                                        repeatForever: true,
+                                                                                        animatedTexts: [
+                                                                                          TyperAnimatedText(languages[choosenLanguage]['text_4lettersforautofill'],
+                                                                                              textStyle: GoogleFonts.notoSans(
+                                                                                                fontSize: media.width * fourteen,
+                                                                                                color: textColor,
+                                                                                                fontWeight: FontWeight.w700,
+                                                                                              ))
+                                                                                        ],
+                                                                                      ),
+                                                                                    ),
+                                                                                  ],
+                                                                                ),
                                                                               ),
                                                                             ),
                                                                             Positioned(
@@ -1918,10 +1949,12 @@ class _MapsState extends State<Maps>
                                                                                     _height = media.height * 1;
                                                                                   });
 
-                                                                                  Future.delayed(const Duration(milliseconds: 200), () {
-                                                                                    setState(() {
-                                                                                      _bottom = 1;
-                                                                                    });
+                                                                                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                                                                                    if (mounted) {
+                                                                                      setState(() {
+                                                                                        _bottom = 1;
+                                                                                      });
+                                                                                    }
                                                                                   });
                                                                                 }
                                                                               },
@@ -1938,8 +1971,8 @@ class _MapsState extends State<Maps>
                                                                                 // media.width * 0.02,
                                                                                 media.width * 0.05),
 
-                                                                                ////////
-                                                                        
+                                                                        ////////
+
                                                                         //////////
                                                                         (userDetails['show_ride_without_destination'].toString() == '1' &&
                                                                                 choosenTransportType == 0 &&
@@ -1950,10 +1983,11 @@ class _MapsState extends State<Maps>
                                                                                     height: media.width * 0.01,
                                                                                   ),
                                                                                   Container(
-                                                                                    width: media.width * 0.9,
-                                                                                    height: media.width * 0.1,
+                                                                                    margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+                                                                                    padding: EdgeInsets.symmetric(vertical: 6.h),
                                                                                     decoration: BoxDecoration(
-                                                                                      borderRadius: BorderRadius.circular(media.width * 0.02),
+                                                                                      color: Colors.blue,
+                                                                                      borderRadius: BorderRadius.circular(20.r),
                                                                                     ),
                                                                                     child: Row(
                                                                                       mainAxisAlignment: MainAxisAlignment.center,
@@ -1962,13 +1996,6 @@ class _MapsState extends State<Maps>
                                                                                           onTap: () {
                                                                                             ismulitipleride = false;
                                                                                             setState(() {
-                                                                                              // Navigator.pushAndRemoveUntil(
-                                                                                              //     context,
-                                                                                              //     MaterialPageRoute(
-                                                                                              //         builder: (context) => BookingConfirmation(
-                                                                                              //               type: 2,
-                                                                                              //             )),
-                                                                                              //     (route) => false);
                                                                                               rideWithoutDestination = true;
                                                                                               rentalRide = false;
                                                                                               Navigator.push(context, MaterialPageRoute(builder: (context) => PickupLocation()));
@@ -1983,7 +2010,7 @@ class _MapsState extends State<Maps>
                                                                                                   quarterTurns: 3,
                                                                                                   child: Icon(
                                                                                                     Icons.route_sharp,
-                                                                                                    color: textColor,
+                                                                                                    color: Colors.white,
                                                                                                     size: media.width * sixteen,
                                                                                                   ),
                                                                                                 ),
@@ -1991,15 +2018,7 @@ class _MapsState extends State<Maps>
                                                                                               SizedBox(
                                                                                                 width: media.width * 0.02,
                                                                                               ),
-                                                                                              MyText(
-                                                                                                  text: languages[choosenLanguage]['text_ridewithout_destination'],
-                                                                                                  size: media.width * sixteen,
-                                                                                                  fontweight: FontWeight.w600,
-                                                                                                  color: (isDarkTheme == true)
-                                                                                                      ? Colors.white
-                                                                                                      :
-                                                                                                      // buttonColor
-                                                                                                      theme),
+                                                                                              MyText(text: languages[choosenLanguage]['text_ridewithout_destination'], size: media.width * sixteen, fontweight: FontWeight.w600, color: Colors.white),
                                                                                             ],
                                                                                           ),
                                                                                         )
@@ -2068,13 +2087,33 @@ class _MapsState extends State<Maps>
                                                                                                   },
                                                                                                   child: Icon(Icons.arrow_back_ios, color: textColor),
                                                                                                 ),
+                                                                                                Expanded(
+                                                                                                  child: Center(
+                                                                                                    child: Text(
+                                                                                                      "تحديد الرحلة",
+                                                                                                      style: GoogleFonts.cairo(
+                                                                                                        fontSize: 16.sp,
+                                                                                                        color: Colors.blue,
+                                                                                                        fontWeight: FontWeight.w600,
+                                                                                                      ),
+                                                                                                    ),
+                                                                                                  ),
+                                                                                                ),
                                                                                               ],
                                                                                             ),
-                                                                                            SizedBox(
-                                                                                              height: media.width * 0.02,
-                                                                                            ),
+                                                                                            SizedBox(height: 20.h),
                                                                                             Column(
+                                                                                              crossAxisAlignment: CrossAxisAlignment.start,
                                                                                               children: [
+                                                                                                MyText(
+                                                                                                  text: languages[choosenLanguage]['text_start_trip'],
+                                                                                                  size: 12.sp,
+                                                                                                  fontweight: FontWeight.w600,
+                                                                                                  color: Colors.black,
+                                                                                                ),
+                                                                                                SizedBox(
+                                                                                                  height: 6.h,
+                                                                                                ),
                                                                                                 Container(
                                                                                                   // height: media.width * 0.1,
                                                                                                   height: media.width * 0.12,
@@ -2245,8 +2284,8 @@ class _MapsState extends State<Maps>
                                                                                                             },
                                                                                                             child: Icon(
                                                                                                               Icons.cancel_outlined,
-                                                                                                              size: 20,
-                                                                                                              color: textColor,
+                                                                                                              size: 20.sp,
+                                                                                                              color: Colors.red,
                                                                                                             ),
                                                                                                           ),
                                                                                                         Container(
@@ -2271,12 +2310,13 @@ class _MapsState extends State<Maps>
                                                                                                           child: Row(
                                                                                                             children: [
                                                                                                               SizedBox(
-                                                                                                                width: media.width * 0.03,
-                                                                                                                height: media.width * 0.08,
-                                                                                                                child: Image.asset(
-                                                                                                                  'assets/images/pickupmarker.png',
-                                                                                                                ),
-                                                                                                              ),
+                                                                                                                  width: media.width * 0.03,
+                                                                                                                  height: media.width * 0.08,
+                                                                                                                  child: Icon(
+                                                                                                                    Icons.location_on_outlined,
+                                                                                                                    size: media.width * 0.05,
+                                                                                                                    color: Colors.green,
+                                                                                                                  )),
                                                                                                               SizedBox(
                                                                                                                 width: media.width * 0.01,
                                                                                                               ),
@@ -2306,8 +2346,8 @@ class _MapsState extends State<Maps>
                                                                                                                 height: media.width * 0.08,
                                                                                                                 child: Icon(
                                                                                                                   Icons.cancel_outlined,
-                                                                                                                  size: 20,
-                                                                                                                  color: textColor,
+                                                                                                                  size: 20.dg,
+                                                                                                                  color: Colors.red,
                                                                                                                 ),
                                                                                                               ),
                                                                                                               SizedBox(
@@ -2322,203 +2362,218 @@ class _MapsState extends State<Maps>
                                                                                                 SizedBox(
                                                                                                   height: media.width * 0.03,
                                                                                                 ),
-                                                                                                Container(
-                                                                                                  // height: media.width * 0.1,
-                                                                                                  height: media.width * 0.12,
-                                                                                                  width: media.width * 0.9,
-                                                                                                  alignment: Alignment.center,
-                                                                                                  padding: EdgeInsets.all(media.width * 0.01),
-                                                                                                  decoration: BoxDecoration(
-                                                                                                    color: hintColor.withOpacity(0.1),
-                                                                                                    borderRadius: BorderRadius.circular(media.width * 0.02),
-                                                                                                    border: Border.all(color: textColor.withOpacity(0.3)),
-                                                                                                  ),
-                                                                                                  child: Row(
-                                                                                                    children: [
-                                                                                                      Expanded(
-                                                                                                        child: Row(
-                                                                                                          children: [
-                                                                                                            (_dropaddress)
-                                                                                                                ? Expanded(
-                                                                                                                    child: Column(
-                                                                                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                                                                                      children: [
-                                                                                                                        // if (dropOnchange)
-                                                                                                                        Text(
-                                                                                                                          languages[choosenLanguage]['text_drop_loc'],
-                                                                                                                          style: GoogleFonts.notoSans(
-                                                                                                                            fontSize: media.width * ten,
-                                                                                                                            textBaseline: TextBaseline.alphabetic,
-                                                                                                                            color: dropColor,
-                                                                                                                          ),
-                                                                                                                        ),
-                                                                                                                        Expanded(
-                                                                                                                          child: SizedBox(
-                                                                                                                            height: media.width * 0.1,
-                                                                                                                            child: TextField(
-                                                                                                                                controller: dropAddressController,
-                                                                                                                                autofocus: (_dropaddress) ? true : false,
-                                                                                                                                minLines: 1,
-                                                                                                                                // textAlign: TextAlign.start,
-                                                                                                                                textAlignVertical: TextAlignVertical.center,
-                                                                                                                                decoration: InputDecoration(
-                                                                                                                                  // contentPadding: EdgeInsets.only(top: media.width * 0.01, bottom: media.width * 0.025),
-                                                                                                                                  floatingLabelBehavior: FloatingLabelBehavior.always,
-                                                                                                                                  border: InputBorder.none,
-                                                                                                                                  isDense: true,
-                                                                                                                                  isCollapsed: true,
-                                                                                                                                  hintText: languages[choosenLanguage]['text_4lettersforautofill'],
-                                                                                                                                  hintStyle: GoogleFonts.notoSans(
-                                                                                                                                    fontSize: media.width * twelve,
-                                                                                                                                    textBaseline: TextBaseline.alphabetic,
-                                                                                                                                    color: textColor.withOpacity(0.4),
-                                                                                                                                  ),
-                                                                                                                                  alignLabelWithHint: true,
-                                                                                                                                  label: const Text(''),
-                                                                                                                                  // labelText: languages[choosenLanguage]['text_drop_loc'],
-                                                                                                                                  labelStyle: GoogleFonts.notoSans(
-                                                                                                                                    fontSize: media.width * fourteen,
-                                                                                                                                    textBaseline: TextBaseline.alphabetic,
-                                                                                                                                    color: dropColor,
-                                                                                                                                  ),
-                                                                                                                                ),
-                                                                                                                                style: GoogleFonts.notoSans(fontSize: media.width * fourteen, color: (isDarkTheme == true) ? Colors.white : textColor),
-                                                                                                                                maxLines: 1,
-                                                                                                                                onChanged: (val) {
-                                                                                                                                  if (val.isEmpty) {
-                                                                                                                                    _sessionToken = null;
-                                                                                                                                  }
-                                                                                                                                  _debouncer.run(() {
-                                                                                                                                    if (val.length >= 4) {
-                                                                                                                                      if (storedAutoAddress.where((element) => element['description'].toString().toLowerCase().contains(val.toLowerCase()) || element['display_name'].toString().toLowerCase().contains(val.toLowerCase())).isNotEmpty) {
-                                                                                                                                        addAutoFill.removeWhere((element) => element['description'].toString().toLowerCase().contains(val.toLowerCase()) == false || element['display_name'].toString().toLowerCase().contains(val.toLowerCase()) == false);
-                                                                                                                                        storedAutoAddress.where((element) => element['description'].toString().toLowerCase().contains(val.toLowerCase()) || element['display_name'].toString().toLowerCase().contains(val.toLowerCase())).forEach((element) {
-                                                                                                                                          addAutoFill.add(element);
-                                                                                                                                        });
-                                                                                                                                        infoMessage = languages[choosenLanguage]["text_search_results"].toString();
-
-                                                                                                                                        valueNotifierHome.incrementNotifier();
-                                                                                                                                      } else {
-                                                                                                                                        // latlngbound(addressList[0].latlng.latitude, addressList[0].latlng.longitude, 'drop');
-                                                                                                                                        setState(() {
-                                                                                                                                          infoMessage = languages[choosenLanguage]["text_searching"].toString();
-                                                                                                                                        });
-                                                                                                                                        _sessionToken ??= const Uuid().v4();
-                                                                                                                                        getAutocomplete(val, _sessionToken, center.latitude, center.longitude).then((_) {
-                                                                                                                                          if (addAutoFill.isEmpty) {
-                                                                                                                                            setState(() {
-                                                                                                                                              infoMessage = languages[choosenLanguage]["text_search_no_results"].toString();
+                                                                                                Column(
+                                                                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                                                                  children: [
+                                                                                                    MyText(
+                                                                                                      text: languages[choosenLanguage]['text_end_trip'],
+                                                                                                      size: 12.sp,
+                                                                                                      fontweight: FontWeight.w600,
+                                                                                                      color: Colors.black,
+                                                                                                    ),
+                                                                                                    SizedBox(
+                                                                                                      height: 6.h,
+                                                                                                    ),
+                                                                                                    Container(
+                                                                                                      // height: media.width * 0.1,
+                                                                                                      height: media.width * 0.12,
+                                                                                                      width: media.width * 0.9,
+                                                                                                      alignment: Alignment.center,
+                                                                                                      padding: EdgeInsets.all(media.width * 0.01),
+                                                                                                      decoration: BoxDecoration(
+                                                                                                        color: hintColor.withOpacity(0.1),
+                                                                                                        borderRadius: BorderRadius.circular(media.width * 0.02),
+                                                                                                        border: Border.all(color: textColor.withOpacity(0.3)),
+                                                                                                      ),
+                                                                                                      child: Row(
+                                                                                                        children: [
+                                                                                                          Expanded(
+                                                                                                            child: Row(
+                                                                                                              children: [
+                                                                                                                (_dropaddress)
+                                                                                                                    ? Expanded(
+                                                                                                                        child: Column(
+                                                                                                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                                                                                                          children: [
+                                                                                                                            // if (dropOnchange)
+                                                                                                                            Text(
+                                                                                                                              languages[choosenLanguage]['text_drop_loc'],
+                                                                                                                              style: GoogleFonts.notoSans(
+                                                                                                                                fontSize: media.width * ten,
+                                                                                                                                textBaseline: TextBaseline.alphabetic,
+                                                                                                                                color: dropColor,
+                                                                                                                              ),
+                                                                                                                            ),
+                                                                                                                            Expanded(
+                                                                                                                              child: SizedBox(
+                                                                                                                                height: media.width * 0.1,
+                                                                                                                                child: TextField(
+                                                                                                                                    controller: dropAddressController,
+                                                                                                                                    autofocus: (_dropaddress) ? true : false,
+                                                                                                                                    minLines: 1,
+                                                                                                                                    // textAlign: TextAlign.start,
+                                                                                                                                    textAlignVertical: TextAlignVertical.center,
+                                                                                                                                    decoration: InputDecoration(
+                                                                                                                                      // contentPadding: EdgeInsets.only(top: media.width * 0.01, bottom: media.width * 0.025),
+                                                                                                                                      floatingLabelBehavior: FloatingLabelBehavior.always,
+                                                                                                                                      border: InputBorder.none,
+                                                                                                                                      isDense: true,
+                                                                                                                                      isCollapsed: true,
+                                                                                                                                      hintText: languages[choosenLanguage]['text_4lettersforautofill'],
+                                                                                                                                      hintStyle: GoogleFonts.notoSans(
+                                                                                                                                        fontSize: media.width * twelve,
+                                                                                                                                        textBaseline: TextBaseline.alphabetic,
+                                                                                                                                        color: textColor.withOpacity(0.4),
+                                                                                                                                      ),
+                                                                                                                                      alignLabelWithHint: true,
+                                                                                                                                      label: const Text(''),
+                                                                                                                                      // labelText: languages[choosenLanguage]['text_drop_loc'],
+                                                                                                                                      labelStyle: GoogleFonts.notoSans(
+                                                                                                                                        fontSize: media.width * fourteen,
+                                                                                                                                        textBaseline: TextBaseline.alphabetic,
+                                                                                                                                        color: dropColor,
+                                                                                                                                      ),
+                                                                                                                                    ),
+                                                                                                                                    style: GoogleFonts.notoSans(fontSize: media.width * fourteen, color: (isDarkTheme == true) ? Colors.white : textColor),
+                                                                                                                                    maxLines: 1,
+                                                                                                                                    onChanged: (val) {
+                                                                                                                                      if (val.isEmpty) {
+                                                                                                                                        _sessionToken = null;
+                                                                                                                                      }
+                                                                                                                                      _debouncer.run(() {
+                                                                                                                                        if (val.length >= 4) {
+                                                                                                                                          if (storedAutoAddress.where((element) => element['description'].toString().toLowerCase().contains(val.toLowerCase()) || element['display_name'].toString().toLowerCase().contains(val.toLowerCase())).isNotEmpty) {
+                                                                                                                                            addAutoFill.removeWhere((element) => element['description'].toString().toLowerCase().contains(val.toLowerCase()) == false || element['display_name'].toString().toLowerCase().contains(val.toLowerCase()) == false);
+                                                                                                                                            storedAutoAddress.where((element) => element['description'].toString().toLowerCase().contains(val.toLowerCase()) || element['display_name'].toString().toLowerCase().contains(val.toLowerCase())).forEach((element) {
+                                                                                                                                              addAutoFill.add(element);
                                                                                                                                             });
+                                                                                                                                            infoMessage = languages[choosenLanguage]["text_search_results"].toString();
+
+                                                                                                                                            valueNotifierHome.incrementNotifier();
                                                                                                                                           } else {
+                                                                                                                                            // latlngbound(addressList[0].latlng.latitude, addressList[0].latlng.longitude, 'drop');
                                                                                                                                             setState(() {
-                                                                                                                                              infoMessage = languages[choosenLanguage]["text_search_results"].toString();
+                                                                                                                                              infoMessage = languages[choosenLanguage]["text_searching"].toString();
+                                                                                                                                            });
+                                                                                                                                            _sessionToken ??= const Uuid().v4();
+                                                                                                                                            getAutocomplete(val, _sessionToken, center.latitude, center.longitude).then((_) {
+                                                                                                                                              if (addAutoFill.isEmpty) {
+                                                                                                                                                setState(() {
+                                                                                                                                                  infoMessage = languages[choosenLanguage]["text_search_no_results"].toString();
+                                                                                                                                                });
+                                                                                                                                              } else {
+                                                                                                                                                setState(() {
+                                                                                                                                                  infoMessage = languages[choosenLanguage]["text_search_results"].toString();
+                                                                                                                                                });
+                                                                                                                                              }
                                                                                                                                             });
                                                                                                                                           }
-                                                                                                                                        });
-                                                                                                                                      }
-                                                                                                                                    } else if (val.isNotEmpty && val.length < 4) {
-                                                                                                                                      setState(() {
-                                                                                                                                        infoMessage = languages[choosenLanguage]["text_min4_letters"].toString();
-                                                                                                                                        addAutoFill.clear();
+                                                                                                                                        } else if (val.isNotEmpty && val.length < 4) {
+                                                                                                                                          setState(() {
+                                                                                                                                            infoMessage = languages[choosenLanguage]["text_min4_letters"].toString();
+                                                                                                                                            addAutoFill.clear();
+                                                                                                                                          });
+                                                                                                                                        } else if (val.isEmpty) {
+                                                                                                                                          setState(() {
+                                                                                                                                            infoMessage = '';
+                                                                                                                                          });
+                                                                                                                                        } else {
+                                                                                                                                          setState(() {
+                                                                                                                                            addAutoFill.clear();
+                                                                                                                                          });
+                                                                                                                                        }
                                                                                                                                       });
-                                                                                                                                    } else if (val.isEmpty) {
-                                                                                                                                      setState(() {
-                                                                                                                                        infoMessage = '';
-                                                                                                                                      });
-                                                                                                                                    } else {
-                                                                                                                                      setState(() {
-                                                                                                                                        addAutoFill.clear();
-                                                                                                                                      });
-                                                                                                                                    }
-                                                                                                                                  });
-                                                                                                                                }),
+                                                                                                                                    }),
+                                                                                                                              ),
+                                                                                                                            ),
+                                                                                                                          ],
+                                                                                                                        ),
+                                                                                                                      )
+                                                                                                                    : Expanded(
+                                                                                                                        child: InkWell(
+                                                                                                                          onTap: () {
+                                                                                                                            setState(() {
+                                                                                                                              _dropaddress = true;
+                                                                                                                              _pickaddress = false;
+                                                                                                                            });
+                                                                                                                          },
+                                                                                                                          child: Row(
+                                                                                                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                                                                            children: [
+                                                                                                                              Expanded(
+                                                                                                                                child: MyText(
+                                                                                                                                  text: languages[choosenLanguage]['text_4lettersforautofill'],
+                                                                                                                                  size: media.width * fourteen,
+                                                                                                                                  color: textColor,
+                                                                                                                                  maxLines: 1,
+                                                                                                                                  overflow: TextOverflow.ellipsis,
+                                                                                                                                ),
+                                                                                                                              ),
+                                                                                                                            ],
                                                                                                                           ),
                                                                                                                         ),
-                                                                                                                      ],
-                                                                                                                    ),
-                                                                                                                  )
-                                                                                                                : Expanded(
-                                                                                                                    child: InkWell(
-                                                                                                                      onTap: () {
-                                                                                                                        setState(() {
-                                                                                                                          _dropaddress = true;
-                                                                                                                          _pickaddress = false;
-                                                                                                                        });
-                                                                                                                      },
-                                                                                                                      child: Row(
-                                                                                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                                                                                        children: [
-                                                                                                                          Expanded(
-                                                                                                                            child: MyText(
-                                                                                                                              text: languages[choosenLanguage]['text_4lettersforautofill'],
-                                                                                                                              size: media.width * fourteen,
-                                                                                                                              color: textColor,
-                                                                                                                              maxLines: 1,
-                                                                                                                              overflow: TextOverflow.ellipsis,
-                                                                                                                            ),
-                                                                                                                          ),
-                                                                                                                        ],
                                                                                                                       ),
-                                                                                                                    ),
-                                                                                                                  ),
-                                                                                                          ],
-                                                                                                        ),
-                                                                                                      ),
-                                                                                                      if (_dropaddress) ...[
-                                                                                                        if (dropAddressController.text.isNotEmpty)
-                                                                                                          InkWell(
-                                                                                                            onTap: () {
-                                                                                                              setState(() {
-                                                                                                                dropAddressController.text = '';
-                                                                                                                infoMessage = '';
-                                                                                                              });
-                                                                                                            },
-                                                                                                            child: const Icon(Icons.cancel_outlined, size: 20),
+                                                                                                              ],
+                                                                                                            ),
                                                                                                           ),
-                                                                                                        Container(
-                                                                                                          height: media.width * 0.1,
-                                                                                                          margin: EdgeInsets.only(left: media.width * 0.02, right: media.width * 0.02),
-                                                                                                          width: 2,
-                                                                                                          color: hintColor.withOpacity(0.2),
-                                                                                                        ),
-                                                                                                        InkWell(
-                                                                                                          onTap: () async {
-                                                                                                            addAutoFill.clear();
-                                                                                                            if (_dropaddress == true && addressList.where((element) => element.type == 'pickup').isNotEmpty) {
-                                                                                                              var navigate = await Navigator.push(context, MaterialPageRoute(builder: (context) => DropLocation()));
-                                                                                                              if (navigate != null) {
-                                                                                                                if (navigate) {
+                                                                                                          if (_dropaddress) ...[
+                                                                                                            if (dropAddressController.text.isNotEmpty)
+                                                                                                              InkWell(
+                                                                                                                onTap: () {
                                                                                                                   setState(() {
-                                                                                                                    addressList.removeWhere((element) => element.type == 'drop');
+                                                                                                                    dropAddressController.text = '';
+                                                                                                                    infoMessage = '';
                                                                                                                   });
+                                                                                                                },
+                                                                                                                child: const Icon(Icons.cancel_outlined, size: 20),
+                                                                                                              ),
+                                                                                                            Container(
+                                                                                                              height: media.width * 0.1,
+                                                                                                              margin: EdgeInsets.only(left: media.width * 0.02, right: media.width * 0.02),
+                                                                                                              width: 2,
+                                                                                                              color: hintColor.withOpacity(0.2),
+                                                                                                            ),
+                                                                                                            InkWell(
+                                                                                                              onTap: () async {
+                                                                                                                addAutoFill.clear();
+                                                                                                                if (_dropaddress == true && addressList.where((element) => element.type == 'pickup').isNotEmpty) {
+                                                                                                                  var navigate = await Navigator.push(context, MaterialPageRoute(builder: (context) => DropLocation()));
+                                                                                                                  if (navigate != null) {
+                                                                                                                    if (navigate) {
+                                                                                                                      setState(() {
+                                                                                                                        addressList.removeWhere((element) => element.type == 'drop');
+                                                                                                                      });
+                                                                                                                    }
+                                                                                                                  }
                                                                                                                 }
-                                                                                                              }
-                                                                                                            }
-                                                                                                          },
-                                                                                                          child: Row(
-                                                                                                            children: [
-                                                                                                              SizedBox(
-                                                                                                                width: media.width * 0.03,
-                                                                                                                height: media.width * 0.08,
-                                                                                                                child: Image.asset(
-                                                                                                                  'assets/images/dropmarker.png',
-                                                                                                                ),
+                                                                                                              },
+                                                                                                              child: Row(
+                                                                                                                children: [
+                                                                                                                  SizedBox(
+                                                                                                                      width: media.width * 0.03,
+                                                                                                                      height: media.width * 0.08,
+                                                                                                                      child: Icon(
+                                                                                                                        Icons.location_on_outlined,
+                                                                                                                        size: media.width * 0.05,
+                                                                                                                        color: Colors.red,
+                                                                                                                      )),
+                                                                                                                  SizedBox(
+                                                                                                                    width: media.width * 0.01,
+                                                                                                                  ),
+                                                                                                                  MyText(
+                                                                                                                    text: languages[choosenLanguage]['text_map'],
+                                                                                                                    size: media.width * twelve,
+                                                                                                                    maxLines: 1,
+                                                                                                                    overflow: TextOverflow.ellipsis,
+                                                                                                                  ),
+                                                                                                                ],
                                                                                                               ),
-                                                                                                              SizedBox(
-                                                                                                                width: media.width * 0.01,
-                                                                                                              ),
-                                                                                                              MyText(
-                                                                                                                text: languages[choosenLanguage]['text_map'],
-                                                                                                                size: media.width * twelve,
-                                                                                                                maxLines: 1,
-                                                                                                                overflow: TextOverflow.ellipsis,
-                                                                                                              ),
-                                                                                                            ],
-                                                                                                          ),
-                                                                                                        ),
-                                                                                                      ],
-                                                                                                    ],
-                                                                                                  ),
+                                                                                                            ),
+                                                                                                          ],
+                                                                                                        ],
+                                                                                                      ),
+                                                                                                    ),
+                                                                                                  ],
                                                                                                 ),
                                                                                               ],
                                                                                             ),
@@ -2530,29 +2585,26 @@ class _MapsState extends State<Maps>
                                                                                         SizedBox(
                                                                                           height: media.width * 0.025,
                                                                                         ),
-                                                                                        SizedBox(
-                                                                                          width: media.width * 1,
-                                                                                          // color: topBar,
+                                                                                        Container(
+                                                                                          //   width: media.width * 1,
+                                                                                          margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+                                                                                          padding: EdgeInsets.symmetric(vertical: 6.h),
+                                                                                          decoration: BoxDecoration(
+                                                                                            color: Colors.blue,
+                                                                                            borderRadius: BorderRadius.circular(20.r),
+                                                                                          ),
                                                                                           child: Row(
                                                                                             mainAxisAlignment: MainAxisAlignment.center,
                                                                                             children: [
                                                                                               InkWell(
                                                                                                 onTap: () {
                                                                                                   ismulitipleride = false;
-                                                                                                  // if (_dropaddress == true) {
                                                                                                   setState(() {
                                                                                                     rideWithoutDestination = true;
                                                                                                     rentalRide = false;
-                                                                                                    // Navigator.pushAndRemoveUntil(
-                                                                                                    //     context,
-                                                                                                    //     MaterialPageRoute(
-                                                                                                    //         builder: (context) => BookingConfirmation(
-                                                                                                    //               type: 2,
-                                                                                                    //             )),
-                                                                                                    //     (route) => false);
+
                                                                                                     Navigator.push(context, MaterialPageRoute(builder: (context) => PickupLocation()));
                                                                                                   });
-                                                                                                  // }
                                                                                                 },
                                                                                                 child: Row(
                                                                                                   children: [
@@ -2563,7 +2615,7 @@ class _MapsState extends State<Maps>
                                                                                                         quarterTurns: 3,
                                                                                                         child: Icon(
                                                                                                           Icons.route_sharp,
-                                                                                                          color: (isDarkTheme == true) ? Colors.white : textColor,
+                                                                                                          color: Colors.white,
                                                                                                           size: media.width * sixteen,
                                                                                                         ),
                                                                                                       ),
@@ -2571,15 +2623,7 @@ class _MapsState extends State<Maps>
                                                                                                     SizedBox(
                                                                                                       width: media.width * 0.02,
                                                                                                     ),
-                                                                                                    MyText(
-                                                                                                        text: languages[choosenLanguage]['text_ridewithout_destination'],
-                                                                                                        size: media.width * sixteen,
-                                                                                                        fontweight: FontWeight.w600,
-                                                                                                        color: (isDarkTheme == true)
-                                                                                                            ? Colors.white
-                                                                                                            :
-                                                                                                            // buttonColor
-                                                                                                            theme),
+                                                                                                    MyText(text: languages[choosenLanguage]['text_ridewithout_destination'], size: 16.sp, fontweight: FontWeight.w600, color: Colors.white),
                                                                                                   ],
                                                                                                 ),
                                                                                               )
@@ -2773,6 +2817,9 @@ class _MapsState extends State<Maps>
                                                                                   ],
                                                                                 )),
                                                                               ),
+                                                                              SizedBox(
+                                                                                height: 10.h,
+                                                                              ),
                                                                               (recentSearchesList.isNotEmpty)
                                                                                   ? Column(
                                                                                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2781,8 +2828,9 @@ class _MapsState extends State<Maps>
                                                                                           padding: EdgeInsets.only(left: media.width * 0.03, right: media.width * 0.03, top: media.width * 0.01, bottom: media.width * 0.01),
                                                                                           child: MyText(
                                                                                             text: languages[choosenLanguage]['text_recent_searches'],
-                                                                                            size: media.width * fourteen,
-                                                                                            fontweight: FontWeight.bold,
+                                                                                            size: 14.sp,
+                                                                                            fontweight: FontWeight.w600,
+                                                                                            color: Colors.blue,
                                                                                           ),
                                                                                         ),
                                                                                         for (var i = recentSearchesList.length - 1; i >= 0; i--)
@@ -2792,14 +2840,19 @@ class _MapsState extends State<Maps>
                                                                                                 onTap: () {
                                                                                                   setState(() {
                                                                                                     if (addressList.where((element) => element.type == 'drop').isEmpty) {
-                                                                                                      print('drops is : ${recentSearchesList[i]['latlng'][0]} ${recentSearchesList[i]['latlng'][1]}');
+                                                                                                      //Ahmed
+                                                                                                      polyList.clear();
+                                                                                                      print('-------->drops is : ${recentSearchesList[i]['latlng'][0]} ${recentSearchesList[i]['latlng'][1]}');
                                                                                                       addressList.add(AddressList(id: '2', type: 'drop', address: recentSearchesList[i]['address'], pickup: false, latlng: LatLng(recentSearchesList[i]['latlng'][0], recentSearchesList[i]['latlng'][1])));
                                                                                                     } else {
+                                                                                                      polyList.clear();
                                                                                                       addressList.firstWhere((element) => element.type == 'drop').address = recentSearchesList[i]['address'];
                                                                                                       addressList.firstWhere((element) => element.type == 'drop').latlng = LatLng(recentSearchesList[i]['latlng'][0], recentSearchesList[i]['latlng'][1]);
+                                                                                                      print('-------->drops is 2 : ${recentSearchesList[i]['latlng'][0]} ${recentSearchesList[i]['latlng'][1]}');
                                                                                                     }
                                                                                                   });
                                                                                                   if (addressList.length == 2) {
+                                                                                                    polyList.clear();
                                                                                                     navigate();
                                                                                                   }
                                                                                                 },
@@ -2808,10 +2861,13 @@ class _MapsState extends State<Maps>
                                                                                                   color: page,
                                                                                                   child: Row(
                                                                                                     children: [
-                                                                                                      Icon(
-                                                                                                        Icons.location_on,
-                                                                                                        color: verifyDeclined,
-                                                                                                        size: media.width * 0.05,
+                                                                                                      CircleAvatar(
+                                                                                                        backgroundColor: Colors.blue[200],
+                                                                                                        child: Icon(
+                                                                                                          Icons.location_on,
+                                                                                                          color: Colors.white,
+                                                                                                          size: media.width * 0.05,
+                                                                                                        ),
                                                                                                       ),
                                                                                                       SizedBox(
                                                                                                         width: media.width * 0.03,
@@ -2853,8 +2909,9 @@ class _MapsState extends State<Maps>
                                                                                             children: [
                                                                                               MyText(
                                                                                                 text: languages[choosenLanguage]['text_fav_address'],
-                                                                                                size: media.width * fourteen,
-                                                                                                fontweight: FontWeight.w700,
+                                                                                                size: 14.sp,
+                                                                                                fontweight: FontWeight.w600,
+                                                                                                color: Colors.blue,
                                                                                               ),
                                                                                             ],
                                                                                           ),
@@ -2930,7 +2987,7 @@ class _MapsState extends State<Maps>
                                                                                                                                       padding: EdgeInsets.all(media.width * 0.01),
                                                                                                                                       decoration: BoxDecoration(
                                                                                                                                         shape: BoxShape.circle,
-                                                                                                                                        color: hintColor.withOpacity(0.7),
+                                                                                                                                        color: Colors.blue[200],
                                                                                                                                       ),
                                                                                                                                       child: (favAddress[i]['address_name'] == 'Home')
                                                                                                                                           ? Image.asset(
@@ -4389,87 +4446,5 @@ class _MapsState extends State<Maps>
 //Starting the animation
 
     animationController.forward();
-  }
-}
-
-class Debouncer {
-  final int milliseconds;
-  dynamic action;
-  dynamic _timer;
-
-  Debouncer({required this.milliseconds});
-
-  run(VoidCallback action) {
-    if (null != _timer) {
-      _timer.cancel();
-    }
-    _timer = Timer(Duration(milliseconds: milliseconds), action);
-  }
-}
-
-class BannerImage extends StatefulWidget {
-  const BannerImage({super.key});
-
-  @override
-  State<BannerImage> createState() => _BannerImageState();
-}
-
-class _BannerImageState extends State<BannerImage> {
-  final PageController _pageController = PageController(initialPage: 0);
-  int _currentPage = 0;
-  Timer? timer;
-  bool end = false;
-  @override
-  void initState() {
-    super.initState();
-    if (banners.length != 1) {
-      timer = Timer.periodic(const Duration(seconds: 3), (Timer timer) {
-        if (_currentPage == banners.length - 1) {
-          end = true;
-        } else if (_currentPage == 0) {
-          end = false;
-        }
-
-        if (end == false) {
-          _currentPage++;
-        } else {
-          _currentPage--;
-        }
-
-        _pageController.animateToPage(
-          _currentPage,
-          duration: const Duration(milliseconds: 1000),
-          curve: Curves.easeInOut,
-        );
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    timer!.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: (banners.length == 1)
-          ? Image.network(
-              banners[0]['image'],
-              fit: BoxFit.fitWidth,
-            )
-          : PageView.builder(
-              controller: _pageController,
-              itemCount: banners.length,
-              itemBuilder: (context, index) {
-                return Image.network(
-                  banners[index]['image'],
-                  fit: BoxFit.fitWidth,
-                );
-              },
-            ),
-    );
   }
 }

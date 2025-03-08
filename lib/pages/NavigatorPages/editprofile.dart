@@ -1,5 +1,6 @@
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:taxista/translations/translation.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
@@ -169,468 +170,475 @@ class _EditProfileState extends State<EditProfile> {
               : TextDirection.ltr,
           child: Stack(
             children: [
-              Column(
-                children: [
-                  SizedBox(
-                    height: MediaQuery.of(context).padding.top,
-                  ),
-                  Container(
-                    padding: EdgeInsets.fromLTRB(
-                        media.width * 0.05,
-                        media.width * 0.05,
-                        media.width * 0.05,
-                        media.width * 0.05),
-                    decoration: BoxDecoration(color: page, boxShadow: [
-                      BoxShadow(
-                          color: Colors.black.withOpacity(0.20),
-                          offset: const Offset(0, 1),
-                          blurRadius: 8)
-                    ]),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        InkWell(
-                            onTap: () {
-                              Navigator.pop(context, true);
-                            },
-                            child:
-                                Icon(Icons.arrow_back_ios, color: textColor)),
-                        SizedBox(
-                          width: media.width * 0.6,
-                          child: MyText(
-                            textAlign: TextAlign.center,
-                            text: (!isEdit)
-                                ? languages[choosenLanguage]
-                                    ['text_personal_info']
-                                : languages[choosenLanguage]
-                                    ['text_editprofile'],
-                            size: media.width * twenty,
-                            maxLines: 1,
-                            fontweight: FontWeight.w600,
-                          ),
-                        ),
-                        (isEdit)
-                            ? Container()
-                            : Tapper(
-                                onTap: () {
-                                  Future.delayed(
-                                      const Duration(milliseconds: 500), () {
-                                    setState(() {
-                                      isEdit = true;
-                                    });
-                                  });
-                                },
-                                rippleColor: hintColor.withOpacity(0.1),
-                                child: Container(
-                                  alignment: Alignment.center,
-                                  width: media.width * 0.15,
-                                  child: MyText(
-                                    textAlign: TextAlign.end,
-                                    maxLines: 1,
-                                    text: languages[choosenLanguage]
-                                        ['text_edit'],
-                                    // color: buttonColor,
-                                    color: theme,
-                                    size: media.width * sixteen,
-                                    fontweight: FontWeight.w500,
-                                  ),
-                                ),
-                              )
-                      ],
+              SafeArea(
+                child: Column(
+                  children: [
+                    SizedBox(
+                      height: MediaQuery.of(context).padding.top,
                     ),
-                  ),
-                  SizedBox(
-                    height: media.width * 0.02,
-                  ),
-                  Expanded(
-                    child: Container(
-                      padding: EdgeInsets.all(media.width * 0.05),
-                      width: media.width * 1,
-                      color: page,
-                      child: Column(
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 20.w,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
+                          InkWell(
+                              onTap: () {
+                                Navigator.pop(context, true);
+                              },
+                              child:
+                                  Icon(Icons.arrow_back_ios, color: textColor)),
                           Expanded(
-                            child: SingleChildScrollView(
-                              child: Column(
-                                children: [
-                                  SizedBox(height: media.width * 0.05),
-                                  InkWell(
-                                    onTap: () {
-                                      if (isEdit) {
-                                        setState(() {
-                                          _pickImage = true;
-                                        });
-                                      }
-                                    },
-                                    child: Stack(
+                            child: MyText(
+                              textAlign: TextAlign.center,
+                              text: (!isEdit)
+                                  ? languages[choosenLanguage]
+                                      ['text_personal_info']
+                                  : languages[choosenLanguage]
+                                      ['text_editprofile'],
+                              size: 16.sp,
+                              maxLines: 1,
+                              //  fontweight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(
+                      height: media.width * 0.02,
+                    ),
+                    Expanded(
+                      child: Container(
+                        padding: EdgeInsets.all(media.width * 0.05),
+                        width: media.width * 1,
+                        color: page,
+                        child: Column(
+                          children: [
+                            Expanded(
+                              child: SingleChildScrollView(
+                                child: Column(
+                                  children: [
+                                    SizedBox(height: media.width * 0.05),
+                                    InkWell(
+                                      onTap: () {
+                                        if (isEdit) {
+                                          setState(() {
+                                            _pickImage = true;
+                                          });
+                                        }
+                                      },
+                                      child: Stack(
+                                        children: [
+                                          Container(
+                                            height: media.width * 0.25,
+                                            width: media.width * 0.25,
+                                            decoration: BoxDecoration(
+                                                shape: BoxShape.circle,
+                                                color: page,
+                                                image: (profileImageFile ==
+                                                        null)
+                                                    ? DecorationImage(
+                                                        image: NetworkImage(
+                                                          userDetails[
+                                                              'profile_picture'],
+                                                        ),
+                                                        fit: BoxFit.cover)
+                                                    : DecorationImage(
+                                                        image: FileImage(File(
+                                                            profileImageFile)),
+                                                        fit: BoxFit.cover)),
+                                          ),
+                                          if (isEdit)
+                                            Positioned(
+                                                right: media.width * 0.02,
+                                                bottom: media.width * 0.02,
+                                                child: Container(
+                                                  height: media.width * 0.05,
+                                                  width: media.width * 0.05,
+                                                  decoration:
+                                                      const BoxDecoration(
+                                                          shape:
+                                                              BoxShape.circle,
+                                                          color: Color(
+                                                              0xff898989)),
+                                                  child: Icon(
+                                                    Icons.edit,
+                                                    color: topBar,
+                                                    size: media.width * 0.04,
+                                                  ),
+                                                ))
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      height: media.width * 0.04,
+                                    ),
+                                    Row(
                                       children: [
-                                        Container(
-                                          height: media.width * 0.25,
-                                          width: media.width * 0.25,
-                                          decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              color: page,
-                                              image: (profileImageFile == null)
-                                                  ? DecorationImage(
-                                                      image: NetworkImage(
-                                                        userDetails[
-                                                            'profile_picture'],
-                                                      ),
-                                                      fit: BoxFit.cover)
-                                                  : DecorationImage(
-                                                      image: FileImage(File(
-                                                          profileImageFile)),
-                                                      fit: BoxFit.cover)),
+                                        ProfileDetails(
+                                          heading: languages[choosenLanguage]
+                                              ['text_name'],
+                                          controller: name,
+                                          width: media.width * 0.9,
+                                          readyonly: (isEdit) ? false : true,
                                         ),
-                                        if (isEdit)
-                                          Positioned(
-                                              right: media.width * 0.02,
-                                              bottom: media.width * 0.02,
-                                              child: Container(
-                                                height: media.width * 0.05,
-                                                width: media.width * 0.05,
-                                                decoration: const BoxDecoration(
-                                                    shape: BoxShape.circle,
-                                                    color: Color(0xff898989)),
-                                                child: Icon(
-                                                  Icons.edit,
-                                                  color: topBar,
-                                                  size: media.width * 0.04,
-                                                ),
-                                              ))
                                       ],
                                     ),
-                                  ),
-                                  SizedBox(
-                                    height: media.width * 0.04,
-                                  ),
-                                  Row(
-                                    children: [
+                                    SizedBox(
+                                      height: media.height * 0.02,
+                                    ),
+                                    if (!isEdit)
                                       ProfileDetails(
                                         heading: languages[choosenLanguage]
-                                            ['text_name'],
-                                        controller: name,
-                                        width: media.width * 0.9,
-                                        readyonly: (isEdit) ? false : true,
+                                            ['text_mob_num'],
+                                        controller: mobilenum,
+                                        readyonly: true,
                                       ),
-                                    ],
-                                  ),
-                                  SizedBox(
-                                    height: media.height * 0.02,
-                                  ),
-                                  if (!isEdit)
+                                    SizedBox(
+                                      height: media.height * 0.02,
+                                    ),
                                     ProfileDetails(
                                       heading: languages[choosenLanguage]
-                                          ['text_mob_num'],
-                                      controller: mobilenum,
-                                      readyonly: true,
+                                          ['text_email'],
+                                      controller: email,
+                                      readyonly: (isEdit) ? false : true,
                                     ),
-                                  SizedBox(
-                                    height: media.height * 0.02,
-                                  ),
-                                  ProfileDetails(
-                                    heading: languages[choosenLanguage]
-                                        ['text_email'],
-                                    controller: email,
-                                    readyonly: (isEdit) ? false : true,
-                                  ),
-                                  SizedBox(
-                                    height: media.width * 0.05,
-                                  ),
-                                  SizedBox(
-                                    height: media.width * 0.05,
-                                  ),
-                                  (!isEdit)
-                                      ? ProfileDetails(
-                                          heading: languages[choosenLanguage]
-                                              ['text_gender'],
-                                          controller: usergender,
-                                          readyonly: (isEdit) ? false : true,
-                                        )
-                                      : SizedBox(
-                                          width: media.width * 0.9,
-                                          child: Column(
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  Text(
-                                                    languages[choosenLanguage]
-                                                        ['text_gender'],
-                                                    // 'Gender',
-                                                    style: GoogleFonts.roboto(
-                                                        fontSize: media.width *
-                                                            fourteen,
-                                                        color: underline,
-                                                        fontWeight:
-                                                            FontWeight.w600),
-                                                    maxLines: 1,
-                                                  ),
-                                                ],
-                                              ),
-                                              SizedBox(
-                                                height: media.width * 0.025,
-                                              ),
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
-                                                children: [
-                                                  InkWell(
-                                                    onTap: () {
-                                                      setState(() {
-                                                        usergender.text =
-                                                            'male';
-                                                      });
-                                                    },
-                                                    child: Row(
-                                                      children: [
-                                                        Container(
-                                                          height: media.width *
-                                                              0.05,
-                                                          width: media.width *
-                                                              0.05,
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            shape:
-                                                                BoxShape.circle,
-                                                            border: Border.all(
-                                                                width: 1.2,
-                                                                color: Colors
-                                                                    .black),
-                                                          ),
-                                                          alignment:
-                                                              Alignment.center,
-                                                          child: (usergender
-                                                                      .text ==
-                                                                  'male')
-                                                              ? Container(
-                                                                  height: media
-                                                                          .width *
-                                                                      0.03,
-                                                                  width: media
-                                                                          .width *
-                                                                      0.03,
-                                                                  decoration: const BoxDecoration(
-                                                                      shape: BoxShape
-                                                                          .circle,
-                                                                      color: Colors
-                                                                          .black),
-                                                                )
-                                                              : Container(),
-                                                        ),
-                                                        SizedBox(
-                                                          width: media.width *
-                                                              0.015,
-                                                        ),
-                                                        SizedBox(
-                                                          width: media.width *
-                                                              0.15,
-                                                          child: Text(
-                                                            languages[
-                                                                    choosenLanguage]
-                                                                ['text_male'],
-                                                            // 'Male',
-                                                            style: GoogleFonts.roboto(
-                                                                fontSize: media
-                                                                        .width *
-                                                                    fourteen,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w600),
-                                                            maxLines: 1,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                  InkWell(
-                                                    onTap: () {
-                                                      setState(() {
-                                                        usergender.text =
-                                                            'female';
-                                                      });
-                                                    },
-                                                    child: Row(
-                                                      children: [
-                                                        Container(
-                                                          height: media.width *
-                                                              0.05,
-                                                          width: media.width *
-                                                              0.05,
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            shape:
-                                                                BoxShape.circle,
-                                                            border: Border.all(
-                                                                width: 1.2,
-                                                                color: Colors
-                                                                    .black),
-                                                          ),
-                                                          alignment:
-                                                              Alignment.center,
-                                                          child: (usergender
-                                                                      .text ==
-                                                                  'female')
-                                                              ? Container(
-                                                                  height: media
-                                                                          .width *
-                                                                      0.03,
-                                                                  width: media
-                                                                          .width *
-                                                                      0.03,
-                                                                  decoration: const BoxDecoration(
-                                                                      shape: BoxShape
-                                                                          .circle,
-                                                                      color: Colors
-                                                                          .black),
-                                                                )
-                                                              : Container(),
-                                                        ),
-                                                        SizedBox(
-                                                          width: media.width *
-                                                              0.015,
-                                                        ),
-                                                        SizedBox(
-                                                          width: media.width *
-                                                              0.15,
-                                                          child: Text(
-                                                            languages[
-                                                                    choosenLanguage]
-                                                                ['text_female'],
-                                                            // 'Female',
-                                                            style: GoogleFonts.roboto(
-                                                                fontSize: media
-                                                                        .width *
-                                                                    fourteen,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w600),
-                                                            maxLines: 1,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                  InkWell(
-                                                    onTap: () {
-                                                      setState(() {
-                                                        usergender.text =
-                                                            'others';
-                                                      });
-                                                    },
-                                                    child: Row(
-                                                      children: [
-                                                        Container(
-                                                          height: media.width *
-                                                              0.05,
-                                                          width: media.width *
-                                                              0.05,
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            shape:
-                                                                BoxShape.circle,
-                                                            border: Border.all(
-                                                                width: 1.2,
-                                                                color: Colors
-                                                                    .black),
-                                                          ),
-                                                          alignment:
-                                                              Alignment.center,
-                                                          child: (usergender
-                                                                      .text ==
-                                                                  'others')
-                                                              ? Container(
-                                                                  height: media
-                                                                          .width *
-                                                                      0.03,
-                                                                  width: media
-                                                                          .width *
-                                                                      0.03,
-                                                                  decoration: const BoxDecoration(
-                                                                      shape: BoxShape
-                                                                          .circle,
-                                                                      color: Colors
-                                                                          .black),
-                                                                )
-                                                              : Container(),
-                                                        ),
-                                                        SizedBox(
-                                                          width: media.width *
-                                                              0.015,
-                                                        ),
-                                                        SizedBox(
-                                                          width: media.width *
-                                                              0.25,
-                                                          child: Text(
-                                                            languages[
-                                                                    choosenLanguage]
-                                                                ['text_others'],
-                                                            // 'Neutral/Unknown',
-                                                            // 'text_other_gender',
-                                                            style: GoogleFonts.roboto(
-                                                                fontSize: media
-                                                                        .width *
-                                                                    fourteen,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w600),
-                                                            maxLines: 1,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ],
-                                              )
-                                            ],
+                                    SizedBox(
+                                      height: media.width * 0.02,
+                                    ),
+
+                                    if (!isEdit)
+                                      Column(
+                                        children: [
+                                          SizedBox(
+                                              width: media.width * 0.9,
+                                              child: MyText(
+                                                text: languages[choosenLanguage]
+                                                    ['text_gender'],
+                                                size: media.width * fourteen,
+                                                color: (isDarkTheme)
+                                                    ? Colors.white
+                                                    : Colors.black,
+                                                maxLines: 1,
+                                              )),
+                                          SizedBox(
+                                            height: 6.h,
                                           ),
-                                        )
-                                ],
+                                          Container(
+                                            alignment: Alignment.centerLeft,
+                                            decoration: BoxDecoration(
+                                                border: Border.all(
+                                                  color: hintColor,
+                                                  width: 1,
+                                                ),
+                                                borderRadius:
+                                                    const BorderRadius.all(
+                                                  Radius.circular(15),
+                                                )),
+                                            padding: EdgeInsets.symmetric(
+                                                horizontal: 10.w,
+                                                vertical: 10.h),
+                                            //  width: media.width * 0.9,
+                                            child: Row(
+                                              children: [
+                                                Text(
+                                                  usergender.text == "male"
+                                                      ? languages[
+                                                              choosenLanguage]
+                                                          ['text_male']
+                                                      : languages[
+                                                              choosenLanguage]
+                                                          ['text_female'],
+                                                  textAlign: TextAlign.start,
+                                                  textDirection:
+                                                      TextDirection.rtl,
+                                                  style: GoogleFonts.cairo(
+                                                      fontSize: media.width *
+                                                          fourteen,
+                                                      color: Colors.grey),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+
+                                    // SizedBox(
+                                    //     width: media.width * 0.9,
+                                    //     child: Column(
+                                    //       children: [
+                                    //         Row(
+                                    //           children: [
+                                    //             Text(
+                                    //               languages[choosenLanguage]
+                                    //                   ['text_gender'],
+                                    //               // 'Gender',
+                                    //               style: GoogleFonts.roboto(
+                                    //                   fontSize:
+                                    //                       media.width *
+                                    //                           fourteen,
+                                    //                   color: underline,
+                                    //                   fontWeight:
+                                    //                       FontWeight.w600),
+                                    //               maxLines: 1,
+                                    //             ),
+                                    //           ],
+                                    //         ),
+                                    //         SizedBox(
+                                    //           height: media.width * 0.025,
+                                    //         ),
+                                    //         Row(
+                                    //           mainAxisAlignment:
+                                    //               MainAxisAlignment
+                                    //                   .spaceBetween,
+                                    //           children: [
+                                    //             InkWell(
+                                    //               onTap: () {
+                                    //                 setState(() {
+                                    //                   usergender.text =
+                                    //                       'male';
+                                    //                 });
+                                    //               },
+                                    //               child: Row(
+                                    //                 children: [
+                                    //                   Container(
+                                    //                     height:
+                                    //                         media.width *
+                                    //                             0.05,
+                                    //                     width: media.width *
+                                    //                         0.05,
+                                    //                     decoration:
+                                    //                         BoxDecoration(
+                                    //                       shape: BoxShape
+                                    //                           .circle,
+                                    //                       border: Border.all(
+                                    //                           width: 1.2,
+                                    //                           color: Colors
+                                    //                               .black),
+                                    //                     ),
+                                    //                     alignment: Alignment
+                                    //                         .center,
+                                    //                     child: (usergender
+                                    //                                 .text ==
+                                    //                             'male')
+                                    //                         ? Container(
+                                    //                             height: media
+                                    //                                     .width *
+                                    //                                 0.03,
+                                    //                             width: media
+                                    //                                     .width *
+                                    //                                 0.03,
+                                    //                             decoration: const BoxDecoration(
+                                    //                                 shape: BoxShape
+                                    //                                     .circle,
+                                    //                                 color: Colors
+                                    //                                     .black),
+                                    //                           )
+                                    //                         : Container(),
+                                    //                   ),
+                                    //                   SizedBox(
+                                    //                     width: media.width *
+                                    //                         0.015,
+                                    //                   ),
+                                    //                   SizedBox(
+                                    //                     width: media.width *
+                                    //                         0.15,
+                                    //                     child: Text(
+                                    //                       languages[
+                                    //                               choosenLanguage]
+                                    //                           ['text_male'],
+                                    //                       // 'Male',
+                                    //                       style: GoogleFonts.roboto(
+                                    //                           fontSize: media
+                                    //                                   .width *
+                                    //                               fourteen,
+                                    //                           fontWeight:
+                                    //                               FontWeight
+                                    //                                   .w600),
+                                    //                       maxLines: 1,
+                                    //                     ),
+                                    //                   ),
+                                    //                 ],
+                                    //               ),
+                                    //             ),
+                                    //             InkWell(
+                                    //               onTap: () {
+                                    //                 setState(() {
+                                    //                   usergender.text =
+                                    //                       'female';
+                                    //                 });
+                                    //               },
+                                    //               child: Row(
+                                    //                 children: [
+                                    //                   Container(
+                                    //                     height:
+                                    //                         media.width *
+                                    //                             0.05,
+                                    //                     width: media.width *
+                                    //                         0.05,
+                                    //                     decoration:
+                                    //                         BoxDecoration(
+                                    //                       shape: BoxShape
+                                    //                           .circle,
+                                    //                       border: Border.all(
+                                    //                           width: 1.2,
+                                    //                           color: Colors
+                                    //                               .black),
+                                    //                     ),
+                                    //                     alignment: Alignment
+                                    //                         .center,
+                                    //                     child: (usergender
+                                    //                                 .text ==
+                                    //                             'female')
+                                    //                         ? Container(
+                                    //                             height: media
+                                    //                                     .width *
+                                    //                                 0.03,
+                                    //                             width: media
+                                    //                                     .width *
+                                    //                                 0.03,
+                                    //                             decoration: const BoxDecoration(
+                                    //                                 shape: BoxShape
+                                    //                                     .circle,
+                                    //                                 color: Colors
+                                    //                                     .black),
+                                    //                           )
+                                    //                         : Container(),
+                                    //                   ),
+                                    //                   SizedBox(
+                                    //                     width: media.width *
+                                    //                         0.015,
+                                    //                   ),
+                                    //                   SizedBox(
+                                    //                     width: media.width *
+                                    //                         0.15,
+                                    //                     child: Text(
+                                    //                       languages[
+                                    //                               choosenLanguage]
+                                    //                           [
+                                    //                           'text_female'],
+                                    //                       // 'Female',
+                                    //                       style: GoogleFonts.roboto(
+                                    //                           fontSize: media
+                                    //                                   .width *
+                                    //                               fourteen,
+                                    //                           fontWeight:
+                                    //                               FontWeight
+                                    //                                   .w600),
+                                    //                       maxLines: 1,
+                                    //                     ),
+                                    //                   ),
+                                    //                 ],
+                                    //               ),
+                                    //             ),
+                                    //             InkWell(
+                                    //               onTap: () {
+                                    //                 setState(() {
+                                    //                   usergender.text =
+                                    //                       'others';
+                                    //                 });
+                                    //               },
+                                    //               child: Row(
+                                    //                 children: [
+                                    //                   Container(
+                                    //                     height:
+                                    //                         media.width *
+                                    //                             0.05,
+                                    //                     width: media.width *
+                                    //                         0.05,
+                                    //                     decoration:
+                                    //                         BoxDecoration(
+                                    //                       shape: BoxShape
+                                    //                           .circle,
+                                    //                       border: Border.all(
+                                    //                           width: 1.2,
+                                    //                           color: Colors
+                                    //                               .black),
+                                    //                     ),
+                                    //                     alignment: Alignment
+                                    //                         .center,
+                                    //                     child: (usergender
+                                    //                                 .text ==
+                                    //                             'others')
+                                    //                         ? Container(
+                                    //                             height: media
+                                    //                                     .width *
+                                    //                                 0.03,
+                                    //                             width: media
+                                    //                                     .width *
+                                    //                                 0.03,
+                                    //                             decoration: const BoxDecoration(
+                                    //                                 shape: BoxShape
+                                    //                                     .circle,
+                                    //                                 color: Colors
+                                    //                                     .black),
+                                    //                           )
+                                    //                         : Container(),
+                                    //                   ),
+                                    //                   SizedBox(
+                                    //                     width: media.width *
+                                    //                         0.015,
+                                    //                   ),
+                                    //                   SizedBox(
+                                    //                     width: media.width *
+                                    //                         0.25,
+                                    //                     child: Text(
+                                    //                       languages[
+                                    //                               choosenLanguage]
+                                    //                           [
+                                    //                           'text_others'],
+                                    //                       // 'Neutral/Unknown',
+                                    //                       // 'text_other_gender',
+                                    //                       style: GoogleFonts.roboto(
+                                    //                           fontSize: media
+                                    //                                   .width *
+                                    //                               fourteen,
+                                    //                           fontWeight:
+                                    //                               FontWeight
+                                    //                                   .w600),
+                                    //                       maxLines: 1,
+                                    //                     ),
+                                    //                   ),
+                                    //                 ],
+                                    //               ),
+                                    //             ),
+                                    //           ],
+                                    //         )
+                                    //       ],
+                                    //     ),
+                                    //   )
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                          if (_error != '')
-                            Container(
-                              padding: EdgeInsets.only(top: media.width * 0.02),
-                              child: MyText(
-                                text: _error,
-                                size: media.width * twelve,
-                                color: Colors.red,
+                            if (_error != '')
+                              Container(
+                                padding:
+                                    EdgeInsets.only(top: media.width * 0.02),
+                                child: MyText(
+                                  text: _error,
+                                  size: media.width * twelve,
+                                  color: Colors.red,
+                                ),
                               ),
-                            ),
-                          if (isEdit)
-                            Button(
-                                onTap: () async {
-                                  setState(() {
-                                    _error = '';
-                                  });
-                                  String pattern =
-                                      r"^[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])*$";
-                                  var remail = email.text.replaceAll(' ', '');
-                                  RegExp regex = RegExp(pattern);
-                                  if (regex.hasMatch(remail)) {
+                            if (isEdit)
+                              Button(
+                                  onTap: () async {
                                     setState(() {
-                                      _isLoading = true;
+                                      _error = '';
                                     });
-                                    // ignore: prefer_typing_uninitialized_variables
-                                    var nav;
-                                    if (userDetails['email'] == remail) {
-                                      nav = await updateProfile(
-                                          '${name.text} ${lastname.text}',
-                                          remail,
-                                          usergender.text
-                                          // userDetails['mobile']
-                                          );
-                                      if (nav != 'success') {
-                                        _error = nav.toString();
-                                      } else {
-                                        isEdit = false;
-                                        _isLoading = false;
-                                        showToastFunc();
-                                      }
-                                    } else {
-                                      var result = await validateEmail(remail);
-                                      if (result == 'success') {
+                                    String pattern =
+                                        r"^[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])*$";
+                                    var remail = email.text.replaceAll(' ', '');
+                                    RegExp regex = RegExp(pattern);
+                                    if (regex.hasMatch(remail)) {
+                                      setState(() {
+                                        _isLoading = true;
+                                      });
+                                      // ignore: prefer_typing_uninitialized_variables
+                                      var nav;
+                                      if (userDetails['email'] == remail) {
                                         nav = await updateProfile(
                                             '${name.text} ${lastname.text}',
                                             remail,
@@ -640,33 +648,67 @@ class _EditProfileState extends State<EditProfile> {
                                         if (nav != 'success') {
                                           _error = nav.toString();
                                         } else {
+                                          isEdit = false;
+                                          _isLoading = false;
                                           showToastFunc();
                                         }
                                       } else {
+                                        var result =
+                                            await validateEmail(remail);
+                                        if (result == 'success') {
+                                          nav = await updateProfile(
+                                              '${name.text} ${lastname.text}',
+                                              remail,
+                                              usergender.text
+                                              // userDetails['mobile']
+                                              );
+                                          if (nav != 'success') {
+                                            _error = nav.toString();
+                                          } else {
+                                            showToastFunc();
+                                          }
+                                        } else {
+                                          setState(() {
+                                            _isLoading = false;
+                                            _error = result;
+                                          });
+                                        }
+
                                         setState(() {
                                           _isLoading = false;
-                                          _error = result;
                                         });
                                       }
-
+                                    } else {
                                       setState(() {
-                                        _isLoading = false;
+                                        _error = languages[choosenLanguage]
+                                            ['text_email_validation'];
                                       });
                                     }
-                                  } else {
-                                    setState(() {
-                                      _error = languages[choosenLanguage]
-                                          ['text_email_validation'];
-                                    });
-                                  }
-                                },
-                                text: languages[choosenLanguage]
-                                    ['text_confirm']),
-                        ],
+                                  },
+                                  text: languages[choosenLanguage]
+                                      ['text_confirm']),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                    (isEdit)
+                        ? Container()
+                        : Button(
+                            onTap: () {
+                              Future.delayed(const Duration(milliseconds: 500),
+                                  () {
+                                setState(() {
+                                  isEdit = true;
+                                });
+                              });
+                            },
+                            text: languages[choosenLanguage]['text_edit'],
+                          ),
+                    SizedBox(
+                      height: 20.h,
+                    ),
+                  ],
+                ),
               ),
 
               if (showToast == true)
@@ -678,14 +720,15 @@ class _EditProfileState extends State<EditProfile> {
                       width: media.width * 0.9,
                       padding: EdgeInsets.all(media.width * 0.03),
                       decoration: BoxDecoration(
-                          color: page,
+                          color: Colors.green,
                           boxShadow: [boxshadow],
                           borderRadius: BorderRadius.circular(8)),
                       alignment: Alignment.center,
                       child: MyText(
-                        text: 'Profile Updated Successfully',
+                        text: languages[choosenLanguage]
+                            ['profile_updated_success'],
                         size: media.width * fourteen,
-                        color: Colors.green,
+                        color: Colors.white,
                         fontweight: FontWeight.w500,
                       ),
                     )),

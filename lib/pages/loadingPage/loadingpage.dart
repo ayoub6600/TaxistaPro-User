@@ -256,11 +256,11 @@ class _LoadingPageState extends State<LoadingPage> {
                   Container(
                     padding: EdgeInsets.all(media.width * 0.01),
                     width: media.width * 0.6,
-                    height: media.width * 0.5,
+                    height: media.width * 0.8,
                     decoration: const BoxDecoration(
                         image: DecorationImage(
-                            image: AssetImage('assets/images/logo.png'),
-                            fit: BoxFit.contain)),
+                            image: AssetImage("assets/images/new_logo.jpeg"),
+                            fit: BoxFit.cover)),
                   ),
                 ],
               ),

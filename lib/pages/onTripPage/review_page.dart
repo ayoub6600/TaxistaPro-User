@@ -117,7 +117,7 @@ class _ReviewState extends State<Review> {
                                           size: media.width * 0.08,
                                           color: (review >= 1)
                                               // ? buttonColor
-                                              ? theme
+                                              ? Colors.amber
                                               : Colors.grey,
                                         )),
                                     SizedBox(
@@ -134,7 +134,7 @@ class _ReviewState extends State<Review> {
                                           size: media.width * 0.08,
                                           color: (review >= 2)
                                               // ? buttonColor
-                                              ? theme
+                                              ? Colors.amber
                                               : Colors.grey,
                                         )),
                                     SizedBox(
@@ -151,7 +151,7 @@ class _ReviewState extends State<Review> {
                                           size: media.width * 0.08,
                                           color: (review >= 3)
                                               // ? buttonColor
-                                              ? theme
+                                              ? Colors.amber
                                               : Colors.grey,
                                         )),
                                     SizedBox(
@@ -168,7 +168,7 @@ class _ReviewState extends State<Review> {
                                           size: media.width * 0.08,
                                           color: (review >= 4)
                                               // ? buttonColor
-                                              ? theme
+                                              ? Colors.amber
                                               : Colors.grey,
                                         )),
                                     SizedBox(
@@ -185,7 +185,7 @@ class _ReviewState extends State<Review> {
                                           size: media.width * 0.08,
                                           color: (review == 5)
                                               // ? buttonColor
-                                              ? theme
+                                              ? Colors.amber
                                               : Colors.grey,
                                         ))
                                   ],
@@ -194,38 +194,57 @@ class _ReviewState extends State<Review> {
                                   height: media.height * 0.05,
                                 ),
 
-                                //feedback text
-                                Container(
-                                  padding: EdgeInsets.all(media.width * 0.05),
-                                  width: media.width * 0.9,
-                                  decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(
-                                          width: 1.5,
-                                          color: isDarkTheme == true
-                                              ? Colors.grey
-                                              : Colors.grey.withOpacity(0.1))),
-                                  child: TextField(
-                                    maxLines: 4,
-                                    onChanged: (val) {
-                                      setState(() {
-                                        feedback = val;
-                                      });
-                                    },
-                                    style:
-                                        GoogleFonts.notoSans(color: textColor),
-                                    decoration: InputDecoration(
-                                        hintText: languages[choosenLanguage]
-                                            ['text_feedback'],
-                                        hintStyle: GoogleFonts.notoSans(
-                                            color: isDarkTheme == true
-                                                ? textColor.withOpacity(0.4)
-                                                : Colors.grey.withOpacity(0.6)),
-                                        border: InputBorder.none),
-                                  ),
-                                ),
-                                SizedBox(
-                                  height: media.height * 0.05,
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "${languages[choosenLanguage]['text_feedback']}",
+                                      style: GoogleFonts.cairo(
+                                        color: textColor,
+                                        fontSize: media.width * sixteen,
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      height: media.height * 0.02,
+                                    ),
+                                    Container(
+                                      padding:
+                                          EdgeInsets.all(media.width * 0.05),
+                                      width: media.width * 0.9,
+                                      decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                          border: Border.all(
+                                              width: 1.5,
+                                              color: isDarkTheme == true
+                                                  ? Colors.grey
+                                                  : Colors.grey
+                                                      .withOpacity(0.1))),
+                                      child: TextField(
+                                        maxLines: 4,
+                                        onChanged: (val) {
+                                          setState(() {
+                                            feedback = val;
+                                          });
+                                        },
+                                        style: GoogleFonts.notoSans(
+                                            color: textColor),
+                                        decoration: InputDecoration(
+                                            hintText: languages[choosenLanguage]
+                                                ['text_feedback'],
+                                            hintStyle: GoogleFonts.notoSans(
+                                                color: isDarkTheme == true
+                                                    ? textColor.withOpacity(0.4)
+                                                    : Colors.grey
+                                                        .withOpacity(0.6)),
+                                            border: InputBorder.none),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      height: media.height * 0.05,
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -254,7 +273,7 @@ class _ReviewState extends State<Review> {
                             color: (review >= 1.0)
                                 ? (isDarkTheme)
                                     ? Colors.white
-                                    : Colors.black
+                                    : Colors.blue
                                 : Colors.grey,
                           )
                         ],

@@ -1,16 +1,18 @@
-
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:taxista/functions/notifications.dart';
+import 'package:taxista/pages/login/onboarding_pages.dart';
 import 'package:taxista/pages/onTripPage/invoice.dart';
 import 'package:taxista/pages/onTripPage/map_page.dart';
 import 'package:taxista/translations/translation.dart';
@@ -268,9 +270,11 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
   ];
 
   var verifyEmailError = '';
+  final PageController _pageController = PageController();
   @override
   Widget build(BuildContext context) {
     var media = MediaQuery.of(context).size;
+    final onboardingPages = OnboardingPages.getPages(context);
 
     return Material(
       child: Directionality(
@@ -285,82 +289,94 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                     SizedBox(
                       height: media.height,
                       child: (images.isNotEmpty)
-                          ? Column(
-                              children: [
-                                SizedBox(
-                                  height: media.height * 0.6,
-                                  width: media.width,
-                                  child: ClipPath(
-                                      clipper: ShapePainter(),
-                                      child: images[currentPage]),
-                                ),
-                                SizedBox(
-                                  height: media.height * 0.18,
-                                  child: PageView(
-                                    onPageChanged: (v) {
-                                      setState(() {
-                                        currentPage = v;
-                                      });
-                                    },
-                                    children: loginImages
-                                        .asMap()
-                                        .map((k, value) => MapEntry(
-                                              k,
-                                              Column(
-                                                children: [
-                                                  MyText(
-                                                    text: loginImages[k]
-                                                        ['title'],
-                                                    size: media.height * 0.02,
-                                                    fontweight: FontWeight.w600,
-                                                  ),
-                                                  SizedBox(
-                                                    height: media.height * 0.02,
-                                                  ),
-                                                  SizedBox(
-                                                      width: media.width * 0.6,
-                                                      child: MyText(
-                                                        text: loginImages[k]
-                                                            ['description'],
-                                                        size: media.height *
-                                                            0.015,
-                                                        maxLines: 4,
-                                                        textAlign:
-                                                            TextAlign.center,
-                                                      )),
-                                                ],
-                                              ),
-                                            ))
-                                        .values
-                                        .toList(),
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: media.width,
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: loginImages
-                                        .asMap()
-                                        .map((k, value) => MapEntry(
-                                              k,
-                                              Container(
-                                                margin: EdgeInsets.only(
-                                                  right: media.width * 0.025,
+                          ? SafeArea(
+                              child: Column(
+                                children: [
+                                  SizedBox(
+                                    height: media.height * 0.65,
+                                    child: PageView.builder(
+                                      controller: _pageController,
+                                      itemCount: onboardingPages.length,
+                                      onPageChanged: (index) {
+                                        setState(() {
+                                          currentPage = index;
+                                        });
+                                      },
+                                      itemBuilder: (context, index) {
+                                        final onboarding =
+                                            onboardingPages[index];
+                                        return Column(
+                                          children: [
+                                            Expanded(
+                                              child: ClipPath(
+                                                clipper: ShapePainter(),
+                                                child: Image.asset(
+                                                  onboarding.image,
+                                                  width: media.width,
+                                                  fit: BoxFit.cover,
                                                 ),
-                                                height: media.height * 0.01,
-                                                width: media.height * 0.01,
-                                                decoration: BoxDecoration(
-                                                    shape: BoxShape.circle,
-                                                    color: (currentPage == k)
-                                                        ? theme
-                                                        : Colors.grey),
                                               ),
-                                            ))
-                                        .values
-                                        .toList(),
+                                            ),
+                                            SizedBox(
+                                                height: media.height * 0.02),
+                                            MyText(
+                                              text: onboarding.title,
+                                              size: 18.sp,
+                                              fontweight: FontWeight.bold,
+                                              color: (isDarkTheme)
+                                                  ? Colors.white
+                                                  : Colors.black,
+                                            ),
+                                            SizedBox(height: 20.h),
+                                            Padding(
+                                              padding: EdgeInsets.symmetric(
+                                                  horizontal: 16.w),
+                                              child: SizedBox(
+                                                child: MyText(
+                                                  text: onboarding.subtitle,
+                                                  size: 14.sp,
+                                                  maxLines: 4,
+                                                  textAlign: TextAlign.center,
+                                                  color: (isDarkTheme)
+                                                      ? Colors.white
+                                                      : Colors.grey,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    ),
                                   ),
-                                )
-                              ],
+                                  SizedBox(
+                                    height: 40.h,
+                                  ),
+
+                                  /// **Dot Indicator Section**
+                                  SizedBox(
+                                    width: media.width,
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: List.generate(
+                                        onboardingPages.length,
+                                        (index) => Container(
+                                          margin: EdgeInsets.symmetric(
+                                              horizontal: media.width * 0.0125),
+                                          height: media.height * 0.01,
+                                          width: media.height * 0.01,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: (currentPage == index)
+                                                ? theme
+                                                : Colors.grey,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             )
                           : Container(),
                     ),
@@ -627,7 +643,15 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                     AnimatedCrossFade(
                                         firstChild: Container(),
                                         secondChild: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
+                                            MyText(
+                                              text: languages[choosenLanguage]
+                                                  ['text_name'],
+                                              size: media.width * 0.04,
+                                              color: Colors.white,
+                                            ),
                                             Container(
                                               height: media.width * 0.12,
                                               width: media.width * 0.8,
@@ -657,6 +681,25 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                             : CrossFadeState.showSecond,
                                         duration:
                                             const Duration(milliseconds: 200)),
+                                    Padding(
+                                      padding: EdgeInsets.only(
+                                          right: 40.w,
+                                          left: media.width * 0.025,
+                                          bottom: 6.h),
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          MyText(
+                                            text: (signIn == 0)
+                                                ? "${languages[choosenLanguage]['text_phoneـnumber']}"
+                                                : "${languages[choosenLanguage]['text_enter_email']}",
+                                            size: 12.sp,
+                                            color: Colors.white,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
 
                                     Container(
                                       height: media.width * 0.12,
@@ -695,63 +738,16 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                                                         .ltr,
                                                             child: Column(
                                                               children: [
-                                                                Container(
-                                                                  padding:
-                                                                      const EdgeInsets
-                                                                          .only(
-                                                                          left:
-                                                                              20,
-                                                                          right:
-                                                                              20),
-                                                                  height: 40,
-                                                                  width: media
-                                                                          .width *
-                                                                      0.9,
-                                                                  decoration: BoxDecoration(
-                                                                      borderRadius:
-                                                                          BorderRadius.circular(
-                                                                              20),
-                                                                      border: Border.all(
-                                                                          color: Colors
-                                                                              .grey,
-                                                                          width:
-                                                                              1.5)),
-                                                                  child:
-                                                                      TextField(
-                                                                    decoration: InputDecoration(
-                                                                        contentPadding: (languageDirection ==
-                                                                                'rtl')
-                                                                            ? EdgeInsets.only(
-                                                                                bottom: media.width *
-                                                                                    0.035)
-                                                                            : EdgeInsets.only(
-                                                                                bottom: media.width *
-                                                                                    0.04),
-                                                                        border: InputBorder
-                                                                            .none,
-                                                                        hintText:
-                                                                            languages[choosenLanguage][
-                                                                                'text_search'],
-                                                                        hintStyle: GoogleFonts.notoSans(
-                                                                            fontSize: media.width *
-                                                                                sixteen,
-                                                                            color:
-                                                                                hintColor)),
-                                                                    style: GoogleFonts.notoSans(
-                                                                        fontSize:
-                                                                            media.width *
-                                                                                sixteen,
-                                                                        color:
-                                                                            textColor),
-                                                                    onChanged:
-                                                                        (val) {
-                                                                      setState(
-                                                                          () {
-                                                                        searchVal =
-                                                                            val;
-                                                                      });
-                                                                    },
-                                                                  ),
+                                                                Text(
+                                                                  languages[
+                                                                          choosenLanguage]
+                                                                      [
+                                                                      'text_select_country'],
+                                                                  style: GoogleFonts.cairo(
+                                                                      fontSize:
+                                                                          16.sp,
+                                                                      color:
+                                                                          textColor),
                                                                 ),
                                                                 const SizedBox(
                                                                     height: 20),
@@ -784,7 +780,12 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                                                                               children: [
                                                                                                 Row(
                                                                                                   children: [
-                                                                                                    Image.network(countries[i]['flag']),
+                                                                                                    Image.network(
+                                                                                                      countries[i]['flag'],
+                                                                                                      width: media.width * 0.08,
+                                                                                                      height: media.width * 0.08,
+                                                                                                      fit: BoxFit.contain,
+                                                                                                    ),
                                                                                                     SizedBox(
                                                                                                       width: media.width * 0.02,
                                                                                                     ),
@@ -792,12 +793,21 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                                                                                       width: media.width * 0.4,
                                                                                                       child: MyText(
                                                                                                         text: countries[i]['name'],
-                                                                                                        size: media.width * sixteen,
+                                                                                                        size: 16.sp,
+                                                                                                        fontweight: FontWeight.w600,
                                                                                                       ),
                                                                                                     ),
                                                                                                   ],
                                                                                                 ),
-                                                                                                MyText(text: countries[i]['dial_code'], size: media.width * sixteen)
+                                                                                                Text(
+                                                                                                  countries[i]['dial_code'],
+                                                                                                  textDirection: TextDirection.ltr,
+                                                                                                  style: GoogleFonts.notoSans(
+                                                                                                    fontSize: 12.sp,
+                                                                                                    fontWeight: FontWeight.w600,
+                                                                                                    color: Colors.grey,
+                                                                                                  ),
+                                                                                                ),
                                                                                               ],
                                                                                             ),
                                                                                           ))
@@ -872,7 +882,7 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                               height: media.width * 0.12,
                                               child: TextField(
                                                 keyboardType:
-                                                    TextInputType.emailAddress,
+                                                    TextInputType.number,
                                                 enabled: (otpSent == true &&
                                                         signIn == 0)
                                                     ? false
@@ -905,7 +915,7 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                                         ? languages[
                                                                 choosenLanguage]
                                                             [
-                                                            'text_email_mobile']
+                                                            'text_phoneـnumber']
                                                         : languages[
                                                                 choosenLanguage]
                                                             ['text_email'],
@@ -929,14 +939,25 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                         ],
                                       ),
                                     ),
+                                    SizedBox(
+                                      height: 20.h,
+                                    ),
                                     if ((withOtp == false ||
                                             otpSent == true ||
                                             signIn == 1) &&
                                         newPassword == false)
                                       Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
+                                          MyText(
+                                            text: languages[choosenLanguage]
+                                                ['text_enter_password'],
+                                            size: 16.sp,
+                                            color: Colors.white,
+                                          ),
                                           SizedBox(
-                                            height: media.width * 0.05,
+                                            height: 6.h,
                                           ),
                                           Container(
                                             height: media.width * 0.12,
@@ -994,13 +1015,11 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                                         });
                                                       },
                                                       icon: Icon(
-                                                        Icons
-                                                            .remove_red_eye_sharp,
-                                                        color: (showPassword ==
-                                                                true)
-                                                            ? const Color(
-                                                                0xffFFD302)
-                                                            : null,
+                                                        showPassword == true
+                                                            ? Icons.visibility
+                                                            : Icons
+                                                                .visibility_off,
+                                                        color: Colors.grey,
                                                       ))
                                               ],
                                             ),
@@ -1084,9 +1103,20 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                     AnimatedCrossFade(
                                         firstChild: Container(),
                                         secondChild: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             SizedBox(
-                                              height: media.width * 0.05,
+                                              height: 12.h,
+                                            ),
+                                            MyText(
+                                              text: languages[choosenLanguage]
+                                                  ['confirm'],
+                                              size: 12.sp,
+                                              color: Colors.white,
+                                            ),
+                                            SizedBox(
+                                              height: 6.h,
                                             ),
                                             Container(
                                               height: media.width * 0.12,
@@ -1130,14 +1160,12 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                                         });
                                                       },
                                                       icon: Icon(
-                                                        Icons
-                                                            .remove_red_eye_sharp,
-                                                        color: (showConfirm ==
-                                                                true)
-                                                            ? const Color(
-                                                                0xffFFD302)
-                                                            : null,
-                                                      ))
+                                                          (showConfirm == true)
+                                                              ? Icons
+                                                                  .remove_red_eye_sharp
+                                                              : Icons
+                                                                  .remove_red_eye_outlined,
+                                                          color: Colors.grey))
                                                 ],
                                               ),
                                             ),
@@ -1151,9 +1179,20 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                     AnimatedCrossFade(
                                         firstChild: Container(),
                                         secondChild: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             SizedBox(
-                                              height: media.width * 0.05,
+                                              height: 12.h,
+                                            ),
+                                            MyText(
+                                              text: languages[choosenLanguage]
+                                                  ['text_phone_number'],
+                                              size: 12.sp,
+                                              color: Colors.white,
+                                            ),
+                                            SizedBox(
+                                              height: 6.h,
                                             ),
                                             Container(
                                               height: media.width * 0.12,
@@ -1356,8 +1395,8 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                                       controller: _mobile,
                                                       decoration: InputDecoration(
                                                           hintText: countries[
-                                                                      phcode]
-                                                                  ['dial_code'] ??
+                                                                      phcode][
+                                                                  'dial_code'] ??
                                                               "",
                                                           border:
                                                               InputBorder.none),
@@ -1399,9 +1438,20 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                       AnimatedCrossFade(
                                           firstChild: Container(),
                                           secondChild: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               SizedBox(
-                                                height: media.width * 0.05,
+                                                height: 12.h,
+                                              ),
+                                              MyText(
+                                                text: languages[choosenLanguage]
+                                                    ['text_phone_number'],
+                                                size: 12.sp,
+                                                color: Colors.white,
+                                              ),
+                                              SizedBox(
+                                                height: 6.h,
                                               ),
                                               Container(
                                                 height: media.width * 0.12,
@@ -1441,7 +1491,7 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                       Column(
                                         children: [
                                           SizedBox(
-                                            height: media.width * 0.01,
+                                            height: 6.h,
                                           ),
                                           SizedBox(
                                             width: media.width * 0.8,
@@ -1700,10 +1750,14 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                                 fontweight: FontWeight.w500,
                                               )),
                                           SizedBox(
-                                            height: media.width * 0.025,
+                                            height: 30.h,
                                           ),
                                         ],
                                       ),
+
+                                    SizedBox(
+                                      height: 30.h,
+                                    ),
                                     Button(
                                         width: media.width * 0.5,
                                         borcolor: Colors.black,
@@ -2482,7 +2536,9 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                                       // });
                                                     } else {
                                                       //  setState(() {
-                                                      _error = languages[choosenLanguage]['Please enter valid mobile number'];
+                                                      _error = languages[
+                                                              choosenLanguage][
+                                                          'Please enter valid mobile number'];
                                                       // });
                                                     }
                                                   } else {

@@ -188,16 +188,13 @@ class _MakeComplaintsDetailsState extends State<MakeComplaintsDetails> {
                               child: Row(
                                 children: [
                                   InkWell(
-                                    onTap: () {
-                                      Navigator.pop(context, true);
-                                    },
-                                    child: MyText(
-                                      text: languages[choosenLanguage]
-                                          ['text_cancel'],
-                                      size: media.width * fourteen,
-                                      color: const Color(0xffFF0000),
-                                    ),
-                                  ),
+                                      onTap: () {
+                                        Navigator.pop(context, true);
+                                      },
+                                      child: Icon(
+                                        Icons.close,
+                                        color: Colors.red,
+                                      )),
                                 ],
                               ),
                             ),

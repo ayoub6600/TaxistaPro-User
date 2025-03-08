@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart' as geolocs;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
+import 'package:taxista/pages/onTripPage/debouncer.dart';
 import 'package:uuid/uuid.dart';
 import 'package:permission_handler/permission_handler.dart' as perm;
 import 'choosegoods.dart';
