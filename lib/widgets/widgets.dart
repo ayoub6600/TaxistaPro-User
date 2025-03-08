@@ -6,6 +6,7 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../functions/functions.dart';
@@ -52,18 +53,7 @@ class _ButtonState extends State<Button> {
       child: Container(
         width: (widget.width != null) ? widget.width : media.width * 0.9,
         decoration: BoxDecoration(
-            color: (widget.color != null)
-                ? widget.color
-                : (isDarkTheme)
-                    ? buttonColor
-                    : Colors.black,
-            border: Border.all(
-                color: (widget.borcolor != null)
-                    ? widget.borcolor
-                    : (isDarkTheme)
-                        ? buttonColor
-                        : Colors.black),
-            borderRadius: BorderRadius.circular(media.width * 0.02)),
+            color: Colors.blue, borderRadius: BorderRadius.circular(20.r)),
         child: Container(
           height: widget.height ?? media.width * 0.12,
           // width: (widget.width != null) ? widget.width : media.width * 0.9,
@@ -74,11 +64,13 @@ class _ButtonState extends State<Button> {
             fit: BoxFit.contain,
             child: Text(
               widget.text,
-              style: GoogleFonts.notoSans(
-                  fontSize: media.width * sixteen,
+              style: GoogleFonts.cairo(
+                  fontSize: 14.sp,
                   color: (widget.textcolor != null)
                       ? widget.textcolor
-                      : !isDarkTheme? const Color.fromARGB(255, 255, 255, 255):Colors.black,
+                      : !isDarkTheme
+                          ? const Color.fromARGB(255, 255, 255, 255)
+                          : Colors.black,
                   fontWeight: widget.fontweight ?? FontWeight.bold,
                   letterSpacing: 1),
             ),
@@ -184,7 +176,7 @@ class MyText extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text == null ? '' : text.toString(),
-      style: GoogleFonts.notoSans(
+      style: GoogleFonts.cairo(
           fontSize: size,
           fontWeight: fontweight ?? FontWeight.normal,
           color: color ?? textColor),
@@ -235,8 +227,9 @@ class _NavMenuState extends State<NavMenu> {
                     ? Image.asset(
                         widget.image.toString(),
                         fit: BoxFit.contain,
-                        width: media.width * 0.04,
-                        color: widget.textcolor ?? textColor,
+                        width: media.width * 0.06,
+                        height: media.width * 0.06,
+                        //  color: widget.textcolor ?? textColor,
                       )
                     : Icon(
                         widget.icon,
@@ -534,12 +527,12 @@ class SubMenu extends StatelessWidget {
                         image.toString(),
                         fit: BoxFit.contain,
                         width: media.width * 0.075,
-                        color: textColor.withOpacity(0.5),
+                        color: Colors.blue,
                       )
                     : Icon(
                         icon,
                         size: media.width * 0.075,
-                        color: textColor.withOpacity(0.5),
+                        color: Colors.blue,
                       ),
                 SizedBox(
                   width: media.width * 0.025,
@@ -716,27 +709,32 @@ class ProfileDetails extends StatelessWidget {
             child: MyText(
               text: heading,
               size: media.width * fourteen,
-              color: hintColor,
+              color: (isDarkTheme) ? Colors.white : Colors.black,
               maxLines: 1,
             )),
+        SizedBox(
+          height: 6.h,
+        ),
         Container(
-          height: media.width * 0.1,
+          //  height: media.width * 0.1,
           width: width ?? media.width * 0.9,
           alignment: Alignment.centerLeft,
           decoration: BoxDecoration(
-              border: Border(
-                  bottom: BorderSide(
-                      color: (isDarkTheme == true)
-                          ? textColor.withOpacity(0.4)
-                          : underline)),
-              color: page),
+              border: Border.all(
+                color: hintColor,
+                width: 1,
+              ),
+              borderRadius: const BorderRadius.all(
+                Radius.circular(15),
+              )),
           padding: const EdgeInsets.only(right: 5, bottom: 5),
           child: (controller == null)
-              ? MyText(
-                  text: value,
-                  size: media.width * sixteen,
-                  color: textColor,
-                )
+              ? Text(value ?? '',
+                  style: GoogleFonts.cairo(
+                    color: textColor,
+                    fontSize: media.width * fourteen,
+                    fontWeight: FontWeight.normal,
+                  ))
               : TextField(
                   controller: controller,
                   readOnly: readyonly!,
@@ -753,11 +751,11 @@ class ProfileDetails extends StatelessWidget {
                     hintStyle: GoogleFonts.notoSans(
                       fontSize: media.width * fourteen,
                       fontWeight: FontWeight.normal,
-                      color: textColor.withOpacity(0.3),
+                      color: hintColor,
                     ),
                   ),
                   style: GoogleFonts.notoSans(
-                    color: textColor,
+                    color: hintColor,
                     fontSize: media.width * fourteen,
                     fontWeight: FontWeight.normal,
                   ),

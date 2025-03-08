@@ -1,11 +1,13 @@
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:taxista/firebase_options.dart';
 import 'functions/functions.dart';
 import 'functions/notifications.dart';
 import 'pages/loadingPage/loadingpage.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,36 +29,52 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     platform = Theme.of(context).platform;
-    return GestureDetector(
-        onTap: () {
-          //remove keyboard on touching anywhere on the screen.
-          FocusScopeNode currentFocus = FocusScope.of(context);
+    return ScreenUtilInit(
+      designSize: const Size(360, 690),
+      minTextAdapt: true,
+      splitScreenMode: true,
+      child: GestureDetector(
+          onTap: () {
+            //remove keyboard on touching anywhere on the screen.
+            FocusScopeNode currentFocus = FocusScope.of(context);
 
-          if (!currentFocus.hasPrimaryFocus) {
-            currentFocus.unfocus();
-            FocusManager.instance.primaryFocus?.unfocus();
-          }
-        },
-        child: ValueListenableBuilder(
-            valueListenable: valueNotifierBook.value,
-            builder: (context, value, child) {
-              return MaterialApp(
-                debugShowCheckedModeBanner: false,
-                title: 'Taxista',
-                theme: ThemeData(),
-                home: const LoadingPage(),
-                navigatorObservers: [BotToastNavigatorObserver()],
-                builder: (context, widget) {
-                  Function botToast = BotToastInit();
-                  Widget mWidget = botToast(context, widget);
-                  return MediaQuery(
-                    //Setting font does not change with system font size
-                    data: MediaQuery.of(context)
-                        .copyWith(textScaler: const TextScaler.linear(1.0)),
-                    child: mWidget,
-                  );
-                },
-              );
-            }));
+            if (!currentFocus.hasPrimaryFocus) {
+              currentFocus.unfocus();
+              FocusManager.instance.primaryFocus?.unfocus();
+            }
+          },
+          child: ValueListenableBuilder(
+              valueListenable: valueNotifierBook.value,
+              builder: (context, value, child) {
+                return MaterialApp(
+                  debugShowCheckedModeBanner: false,
+                  title: 'Taxista',
+                  theme: ThemeData(),
+                  locale: Locale('ar'),
+                  supportedLocales: [
+                    Locale('en', 'US'), // English
+                    Locale('ar', ''), // Arabic
+                  ],
+                  localizationsDelegates: [
+                    GlobalMaterialLocalizations.delegate,
+                    GlobalWidgetsLocalizations.delegate,
+                    GlobalCupertinoLocalizations
+                        .delegate, // Needed for Arabic Cupertino support
+                  ],
+                  home: const LoadingPage(),
+                  navigatorObservers: [BotToastNavigatorObserver()],
+                  builder: (context, widget) {
+                    Function botToast = BotToastInit();
+                    Widget mWidget = botToast(context, widget);
+                    return MediaQuery(
+                      //Setting font does not change with system font size
+                      data: MediaQuery.of(context)
+                          .copyWith(textScaler: const TextScaler.linear(1.0)),
+                      child: mWidget,
+                    );
+                  },
+                );
+              })),
+    );
   }
 }
