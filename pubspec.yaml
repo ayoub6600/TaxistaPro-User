@@ -46,10 +46,13 @@ dependencies:
   shared_preferences: ^2.2.1
   image_picker: ^1.0.4
   google_maps_flutter: ^2.5.0
+  cached_network_image: ^3.4.1
   geolocator: ^12.0.0
   location: ^7.0.0
   audioplayers: ^6.0.0
+  flutter_localization: ^0.3.1
   url_launcher: ^6.1.14
+  flutter_screenutil: ^5.9.3
   flutter_local_notifications: ^17.2.2
   permission_handler: ^11.0.0
   contacts_service: ^0.6.3
@@ -92,6 +95,7 @@ flutter:
     - assets/audio/
     - assets/map_style_black.json
     - assets/dark.json
+    - assets/images/no-location.png
 
   
 flutter_launcher_icons:
