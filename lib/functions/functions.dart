@@ -454,18 +454,13 @@ addBalance(String code) async {
     print('drops ${response.statusCode}');
     print('drops ${response.body}');
     if (response.statusCode == 200) {
-      //  if (jsonDecode(response.body)['message'] == 'Money added successfully') {
       result = jsonDecode(response.body)['message'];
-      // } else {
-      //   debugPrint(response.body);
-      //   result = jsonDecode(response.body)['message'];
-      // }
     } else if (response.statusCode == 401) {
       result = 'logout';
     } else if (response.statusCode == 400) {
-      result = 'Card not found or has already been charged';
+      result = languages[choosenLanguage]['card_not_found_text'];
     } else if (response.statusCode == 422) {
-      result = 'The selected card code is invalid.';
+      result = languages[choosenLanguage]['card_not_valid'];
     } else {
       debugPrint(response.body);
       result = 'false';
@@ -3202,6 +3197,7 @@ Map<String, dynamic> walletPages = {};
 getWalletHistory() async {
   dynamic result;
   try {
+    print('${url}api/v1/payment/wallet/history');
     var response = await http.get(
         Uri.parse('${url}api/v1/payment/wallet/history'),
         headers: {'Authorization': 'Bearer ${bearerToken[0].token}'});
