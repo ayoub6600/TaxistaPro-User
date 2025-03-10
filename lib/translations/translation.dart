@@ -170,7 +170,7 @@ Map<String, dynamic> languages = {
         "رح نلغلي الرحلة ونرجعك للقائمة الرئيسية, هاد الشي رح يترتب عليه غرامة إلغاء",
     "tex_dontcancel": "لا تلغي",
     "text_cancelRideReason": "خبرنا عن سبب إلغاء الرحلة",
-    "text_nodriver": "للأسف ما في كابتن قريب",
+    "text_nodriver": "لايوجد سائق قريب الأن",
     "text_tryagain": "جرب كمان مرة",
     "text_tryanother": "جرب نوع آخر",
     "text_ridelater": "اركب بعدين",

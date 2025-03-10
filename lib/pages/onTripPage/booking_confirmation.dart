@@ -636,7 +636,7 @@ class _BookingConfirmationState extends State<BookingConfirmation>
     final Uint8List markerIcon;
     final Uint8List markerIcon2;
     if (choosenTransportType == 0) {
-      markerIcon = await getBytesFromAsset('assets/images/top-taxi.png', 40);
+      markerIcon = await getBytesFromAsset('assets/images/top-taxi.png', 80);
       pinLocationIcon = BitmapDescriptor.fromBytes(markerIcon);
       markerIcon2 = await getBytesFromAsset('assets/images/bike.png', 40);
       pinLocationIcon2 = BitmapDescriptor.fromBytes(markerIcon2);
@@ -6970,13 +6970,17 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                                     ),
                                                                     Row(
                                                                       children: [
-                                                                        MyText(
-                                                                            text: userRequestData['driverDetail']['data'][
-                                                                                'name'],
-                                                                            size: media.width *
-                                                                                fourteen,
-                                                                            fontweight:
-                                                                                FontWeight.w500),
+                                                                        Expanded(
+                                                                          child: MyText(
+                                                                              text: userRequestData['driverDetail']['data'][
+                                                                                  'name'],
+                                                                              size: media.width *
+                                                                                  fourteen,
+                                                                              maxLines:1,
+                                                                              overflow: TextOverflow.ellipsis,
+                                                                              fontweight:
+                                                                                  FontWeight.w500),
+                                                                        ),
                                                                       ],
                                                                     ),
                                                                     Row(
@@ -7964,10 +7968,10 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                             .spaceBetween,
                                                     children: [
                                                       Button(
-                                                          color: page,
+                                                      
                                                           textcolor:
-                                                              buttonColor,
-                                                          borcolor: buttonColor,
+                                                              Colors.white,
+                                                          borcolor: Colors.red,
                                                           width: media.width *
                                                               0.39,
                                                           onTap: () async {
@@ -8021,6 +8025,7 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                               isLoading = false;
                                                             });
                                                           },
+                                                  
                                                           text: languages[
                                                                   choosenLanguage]
                                                               ['text_cancel']),
