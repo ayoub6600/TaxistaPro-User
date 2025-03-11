@@ -3064,6 +3064,7 @@ getReferral() async {
       'Content-Type': 'application/json'
     });
     if (response.statusCode == 200) {
+      print(jsonDecode(response.body));
       result = 'success';
       myReferralCode = jsonDecode(response.body)['data'];
       valueNotifierBook.incrementNotifier();

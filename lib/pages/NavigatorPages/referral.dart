@@ -19,33 +19,32 @@ class ReferralPage extends StatefulWidget {
 class _ReferralPageState extends State<ReferralPage> {
   bool _isLoading = true;
   bool _showToast = false;
-  dynamic _package;
-  // ignore: prefer_typing_uninitialized_variables
-  var androidUrl;
-  // ignore: prefer_typing_uninitialized_variables
-  var iosUrl;
+  PackageInfo? _package;
+  String? androidUrl;
+  String? iosUrl;
 
   @override
   void initState() {
-    _getReferral();
     super.initState();
+    _getReferral();
   }
 
-//get referral code
-  _getReferral() async {
-    await getReferral();
+  // get referral code
+  Future<void> _getReferral() async {
+    await getReferral(); // تأكد أن getReferral() لا تحتوي على أخطاء
     _package = await PackageInfo.fromPlatform();
-    androidUrl = 'android - '
-        'https://play.google.com/store/apps/details?id=${_package.packageName}';
-    iosUrl = 'ios - '
-        'http://itunes.apple.com/lookup?bundleId=${_package.packageName}';
+
     setState(() {
+      androidUrl =
+          'https://play.google.com/store/apps/details?id=${_package?.packageName}';
+      iosUrl =
+          'https://itunes.apple.com/lookup?bundleId=${_package?.packageName}';
       _isLoading = false;
     });
   }
 
-//show toast for copied
-  showToast() {
+  // show toast for copied
+  void showToast() {
     setState(() {
       _showToast = true;
     });
@@ -201,17 +200,17 @@ class _ReferralPageState extends State<ReferralPage> {
                                           languages[choosenLanguage]
                                                       ['text_invitation_1']
                                                   .toString()
-                                                  .replaceAll(
-                                                      '55', _package.appName) +
+                                                  .replaceAll('55',
+                                                      _package!.packageName) +
                                               ' ' +
                                               myReferralCode['refferal_code'] +
                                               ' ' +
                                               languages[choosenLanguage]
                                                   ['text_invitation_2'] +
                                               ' \n \n ' +
-                                              androidUrl +
+                                              "https://play.google.com/store/apps/details?id=com.taxista.user&pcampaignid=web_share" +
                                               '\n \n  ' +
-                                              iosUrl);
+                                              "https://apps.apple.com/us/app/taxista/id6739538467");
                                     },
                                     text: languages[choosenLanguage]
                                         ['text_invite']),
