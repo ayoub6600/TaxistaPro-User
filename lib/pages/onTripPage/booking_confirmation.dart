@@ -1952,73 +1952,57 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                 borderRadius:
                                                     BorderRadius.circular(
                                                         media.width * 0.05),
-                                                onTap: () {
-                                                  noDriverFound = false;
-                                                  tripReqError = false;
-                                                  serviceNotAvailable = false;
-                                                  if (userRequestData
-                                                          .isNotEmpty &&
-                                                      userRequestData[
-                                                              'accepted_at'] ==
-                                                          null) {
-                                                  } else {
-                                                    if (widget.type == null) {
-                                                      if (dropConfirmed) {
-                                                        setState(() {
-                                                          dropConfirmed = false;
-                                                          promoStatus = false;
-                                                          addCoupon = false;
-                                                          promoKey.clear();
-                                                        });
-                                                      } else {
-                                                        Navigator.pushAndRemoveUntil(
-                                                            context,
-                                                            MaterialPageRoute(
-                                                                builder:
-                                                                    (context) =>
-                                                                        const Maps()),
-                                                            (route) => false);
-                                                        ismulitipleride = false;
-                                                        isOutStation = false;
-                                                        etaDetails.clear();
-                                                        promoKey.clear();
-                                                        promoStatus = null;
-                                                        promoStatus = false;
-                                                        addCoupon = false;
+                                               
+                                               
+                                               
+                                             
+                                              
+                                              onTap: () {
+  // Reset flags
+  noDriverFound = false;
+  tripReqError = false;
+  serviceNotAvailable = false;
 
-                                                        rentalOption.clear();
-                                                        myMarker.clear();
-                                                        dropStopList.clear();
-                                                        addressList.removeWhere(
-                                                            (element) =>
-                                                                element.id ==
-                                                                'drop');
-                                                      }
-                                                    } else {
-                                                      Navigator.pushAndRemoveUntil(
-                                                          context,
-                                                          MaterialPageRoute(
-                                                              builder: (context) =>
-                                                                  const Maps()),
-                                                          (route) => false);
-                                                      isRentalRide = false;
-                                                      ismulitipleride = false;
-                                                      isOutStation = false;
-                                                      etaDetails.clear();
-                                                      promoKey.clear();
-                                                      promoStatus = null;
-                                                      promoStatus = false;
-                                                      addCoupon = false;
-                                                      rentalOption.clear();
-                                                      myMarker.clear();
-                                                      dropStopList.clear();
-                                                      addressList.removeWhere(
-                                                          (element) =>
-                                                              element.id ==
-                                                              'drop');
-                                                    }
-                                                  }
-                                                },
+  // Check if there is a user request that has not been accepted
+  if (userRequestData.isNotEmpty && userRequestData['accepted_at'] == null) {
+    return; // Exit early if a trip is in progress
+  }
+
+  // Handle navigation and state updates
+  bool shouldResetDropConfirmed = widget.type == null && dropConfirmed;
+
+  if (shouldResetDropConfirmed) {
+    setState(() {
+      dropConfirmed = false;
+       promoStatus = false;
+  addCoupon = false;
+  promoKey.clear();
+    });
+  } else {
+     Navigator.pushAndRemoveUntil(
+    context,
+    MaterialPageRoute(builder: (context) => const Maps()),
+    (route) => false,
+  );
+  isRentalRide = false;
+  ismulitipleride = false;
+  isOutStation = false;
+  etaDetails.clear();
+  promoKey.clear();
+  promoStatus = false;
+  addCoupon = false;
+  rentalOption.clear();
+  myMarker.clear();
+  dropStopList.clear();
+  addressList.removeWhere((element) => element.id == 'drop');
+  }
+},
+
+
+
+
+
+
                                                 child: SizedBox(
                                                   height: media.width * 0.1,
                                                   width: media.width * 0.1,
@@ -6972,14 +6956,11 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                                       children: [
                                                                         Expanded(
                                                                           child: MyText(
-                                                                              text: userRequestData['driverDetail']['data'][
-                                                                                  'name'],
-                                                                              size: media.width *
-                                                                                  fourteen,
-                                                                              maxLines:1,
+                                                                              text: userRequestData['driverDetail']['data']['name'],
+                                                                              size: media.width * fourteen,
+                                                                              maxLines: 1,
                                                                               overflow: TextOverflow.ellipsis,
-                                                                              fontweight:
-                                                                                  FontWeight.w500),
+                                                                              fontweight: FontWeight.w500),
                                                                         ),
                                                                       ],
                                                                     ),
@@ -7968,7 +7949,6 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                             .spaceBetween,
                                                     children: [
                                                       Button(
-                                                      
                                                           textcolor:
                                                               Colors.white,
                                                           borcolor: Colors.red,
@@ -8025,7 +8005,6 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                               isLoading = false;
                                                             });
                                                           },
-                                                  
                                                           text: languages[
                                                                   choosenLanguage]
                                                               ['text_cancel']),

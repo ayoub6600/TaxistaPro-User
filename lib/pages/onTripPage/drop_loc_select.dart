@@ -1032,6 +1032,7 @@ class _DropLocationState extends State<DropLocation>
                                                                 .address
                                                                 .toString())) {
                                                     } else {
+                                                      polyline.clear();
                                                       print("---------->10");
                                                       recentSearchesList.add({
                                                         'address':

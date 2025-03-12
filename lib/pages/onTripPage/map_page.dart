@@ -530,9 +530,15 @@ class _MapsState extends State<Maps>
                                                   mainAxisAlignment:
                                                       MainAxisAlignment.center,
                                                   children: [
-                                                    Image.asset(
-                                                      "assets/images/2005.jpg",
-                                                      fit: BoxFit.cover,
+                                                    Expanded(
+                                                      child: ClipPath(
+                                                        clipper: ShapePainter(),
+                                                        child: Image.asset(
+                                                          "assets/images/2005.jpg",
+                                                          width: media.width,
+                                                          fit: BoxFit.cover,
+                                                        ),
+                                                      ),
                                                     ),
                                                     SizedBox(
                                                       height: 20.h,

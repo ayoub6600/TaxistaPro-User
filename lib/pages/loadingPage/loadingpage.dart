@@ -147,7 +147,6 @@ class _LoadingPageState extends State<LoadingPage> {
     }
   }
 
-//get language json and data saved in local (bearer token , choosen language) and find users current status
   getLanguageDone() async {
     _package = await PackageInfo.fromPlatform();
     try {
