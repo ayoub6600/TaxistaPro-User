@@ -789,13 +789,10 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                                                                                     SizedBox(
                                                                                                       width: media.width * 0.02,
                                                                                                     ),
-                                                                                                    SizedBox(
-                                                                                                      width: media.width * 0.4,
-                                                                                                      child: MyText(
-                                                                                                        text: countries[i]['name'],
-                                                                                                        size: 16.sp,
-                                                                                                        fontweight: FontWeight.w600,
-                                                                                                      ),
+                                                                                                    MyText(
+                                                                                                      text: countries[i]['name'],
+                                                                                                      size: 16.sp,
+                                                                                                      fontweight: FontWeight.w600,
                                                                                                     ),
                                                                                                   ],
                                                                                                 ),

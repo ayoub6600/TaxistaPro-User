@@ -309,61 +309,71 @@ class _SosState extends State<Sos> {
                                               height: media.width * 0.02,
                                             ),
                                             SizedBox(
-                                              height: media.height * 0.6,
-                                              child: Column(
-                                                children: [
-                                                  SizedBox(
-                                                    height: media.width * 0.2,
-                                                  ),
-                                                  Container(
-                                                    alignment: Alignment.center,
-                                                    height: media.width * 0.6,
-                                                    width: media.width * 0.6,
-                                                    decoration: BoxDecoration(
-                                                        image: DecorationImage(
-                                                            image: AssetImage(
-                                                                (isDarkTheme)
-                                                                    ? 'assets/images/sosdark.gif'
-                                                                    : 'assets/images/sos.gif'),
-                                                            fit: BoxFit
-                                                                .contain)),
-                                                  ),
-                                                  SizedBox(
-                                                    width: media.width * 0.9,
-                                                    child: Column(
-                                                      children: [
-                                                        MyText(
-                                                            text: languages[
-                                                                    choosenLanguage]
-                                                                [
-                                                                'text_no_contact'],
-                                                            textAlign: TextAlign
-                                                                .center,
-                                                            fontweight:
-                                                                FontWeight.w600,
-                                                            color: isDarkTheme
-                                                                ? Colors.white
-                                                                : Colors.black,
-                                                            size: media.width *
-                                                                sixteen),
-                                                        MyText(
-                                                            text: languages[
-                                                                    choosenLanguage]
-                                                                [
-                                                                'text_add_contact_safety'],
-                                                            textAlign: TextAlign
-                                                                .center,
-                                                            fontweight:
-                                                                FontWeight.w500,
-                                                            color: isDarkTheme
-                                                                ? Colors.white
-                                                                : Colors.grey,
-                                                            size: media.width *
-                                                                fourteen),
-                                                      ],
+                                              // height: media.height * 0.6,
+                                              child: SingleChildScrollView(
+                                                child: Column(
+                                                  children: [
+                                                    SizedBox(
+                                                      height: media.width * 0.2,
                                                     ),
-                                                  ),
-                                                ],
+                                                    Container(
+                                                      alignment:
+                                                          Alignment.center,
+                                                      height: media.width * 0.6,
+                                                      width: media.width * 0.6,
+                                                      decoration: BoxDecoration(
+                                                          image: DecorationImage(
+                                                              image: AssetImage(
+                                                                  (isDarkTheme)
+                                                                      ? 'assets/images/sosdark.gif'
+                                                                      : 'assets/images/sos.gif'),
+                                                              fit: BoxFit
+                                                                  .contain)),
+                                                    ),
+                                                    SizedBox(
+                                                      width: media.width * 0.9,
+                                                      child: Column(
+                                                        children: [
+                                                          MyText(
+                                                              text: languages[
+                                                                      choosenLanguage]
+                                                                  [
+                                                                  'text_no_contact'],
+                                                              textAlign:
+                                                                  TextAlign
+                                                                      .center,
+                                                              fontweight:
+                                                                  FontWeight
+                                                                      .w600,
+                                                              color: isDarkTheme
+                                                                  ? Colors.white
+                                                                  : Colors
+                                                                      .black,
+                                                              size:
+                                                                  media.width *
+                                                                      sixteen),
+                                                          MyText(
+                                                              text: languages[
+                                                                      choosenLanguage]
+                                                                  [
+                                                                  'text_add_contact_safety'],
+                                                              textAlign:
+                                                                  TextAlign
+                                                                      .center,
+                                                              fontweight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                              color: isDarkTheme
+                                                                  ? Colors.white
+                                                                  : Colors.grey,
+                                                              size:
+                                                                  media.width *
+                                                                      fourteen),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
                                             ),
                                           ],

@@ -1577,93 +1577,6 @@ class _BookingConfirmationState extends State<BookingConfirmation>
 
                                                 vsync: this, //From the widget
                                               );
-                                              // if (mapType == 'google') {
-                                              //   List polys = [];
-                                              //   dynamic nearestLat;
-                                              //   dynamic pol;
-                                              //   for (var e in polyList) {
-                                              //     var dist = calculateDistance(
-                                              //         driverData['l'][0],
-                                              //         driverData['l'][1],
-                                              //         e.latitude,
-                                              //         e.longitude);
-                                              //     if (pol == null) {
-                                              //       polys.add(dist);
-                                              //       pol = dist;
-                                              //       nearestLat = e;
-                                              //     } else {
-                                              //       if (dist < pol) {
-                                              //         polys.add(dist);
-                                              //         pol = dist;
-                                              //         nearestLat = e;
-                                              //       }
-                                              //     }
-                                              //   }
-                                              //   int currentNumber = polyList
-                                              //       .indexWhere((element) =>
-                                              //           element == nearestLat);
-                                              //   for (var i = 0;
-                                              //       i < currentNumber;
-                                              //       i++) {
-                                              //     polyList.removeAt(0);
-                                              //   }
-                                              //   polyline.clear();
-                                              //   // polyline.add(
-                                              //   //   Polyline(
-                                              //   //       polylineId:
-                                              //   //           const PolylineId('1'),
-                                              //   //       color: Colors.blue,
-                                              //   //       visible: true,
-                                              //   //       width: 4,
-                                              //   //       points: polyList),
-                                              //   // );
-                                              // } else {
-                                              //   if (fmpoly.isNotEmpty) {
-                                              //     List polys = [];
-                                              //     dynamic nearestLat;
-                                              //     dynamic pol;
-                                              //     for (var e in fmpoly) {
-                                              //       var dist =
-                                              //           calculateDistance(
-                                              //               driverData['l'][0],
-                                              //               driverData['l'][1],
-                                              //               e.latitude,
-                                              //               e.longitude);
-                                              //       if (pol == null) {
-                                              //         polys.add(dist);
-                                              //         pol = dist;
-                                              //         nearestLat = e;
-                                              //       } else {
-                                              //         if (dist < pol) {
-                                              //           polys.add(dist);
-                                              //           pol = dist;
-                                              //           nearestLat = e;
-                                              //         }
-                                              //       }
-                                              //     }
-                                              //     int currentNumber = fmpoly
-                                              //         .indexWhere((element) =>
-                                              //             element ==
-                                              //             nearestLat);
-                                              //     for (var i = 0;
-                                              //         i < currentNumber;
-                                              //         i++) {
-                                              //       fmpoly.removeAt(0);
-                                              //     }
-                                              //   } else {
-                                              //     if (userRequestData
-                                              //             .isNotEmpty &&
-                                              //         mapType != 'google' &&
-                                              //         fmpoly.isEmpty &&
-                                              //         fmPolyGot == false) {
-                                              //       fmPolyGot = true;
-                                              //       getPoly(
-                                              //           false,
-                                              //           driverData['l'][0],
-                                              //           driverData['l'][1]);
-                                              //     }
-                                              //   }
-                                              // }
 
                                               animateCar(
                                                   myMarker
@@ -1910,6 +1823,7 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                   ),
                                                 );
                                               })),
+
                                   Positioned(
                                     top: MediaQuery.of(context).padding.top +
                                         12.5,
@@ -1952,57 +1866,59 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                 borderRadius:
                                                     BorderRadius.circular(
                                                         media.width * 0.05),
-                                               
-                                               
-                                               
-                                             
-                                              
-                                              onTap: () {
-  // Reset flags
-  noDriverFound = false;
-  tripReqError = false;
-  serviceNotAvailable = false;
+                                                onTap: () {
+                                                  // Reset flags
+                                                  noDriverFound = false;
+                                                  tripReqError = false;
+                                                  serviceNotAvailable = false;
 
-  // Check if there is a user request that has not been accepted
-  if (userRequestData.isNotEmpty && userRequestData['accepted_at'] == null) {
-    return; // Exit early if a trip is in progress
-  }
+                                                  // Check if there is a user request that has not been accepted
+                                                  if (userRequestData
+                                                          .isNotEmpty &&
+                                                      userRequestData[
+                                                              'accepted_at'] ==
+                                                          null) {
+                                                    return; // Exit early if a trip is in progress
+                                                  }
 
-  // Handle navigation and state updates
-  bool shouldResetDropConfirmed = widget.type == null && dropConfirmed;
+                                                  // Handle navigation and state updates
+                                                  bool
+                                                      shouldResetDropConfirmed =
+                                                      widget.type == null &&
+                                                          dropConfirmed;
 
-  if (shouldResetDropConfirmed) {
-    setState(() {
-      dropConfirmed = false;
-       promoStatus = false;
-  addCoupon = false;
-  promoKey.clear();
-    });
-  } else {
-     Navigator.pushAndRemoveUntil(
-    context,
-    MaterialPageRoute(builder: (context) => const Maps()),
-    (route) => false,
-  );
-  isRentalRide = false;
-  ismulitipleride = false;
-  isOutStation = false;
-  etaDetails.clear();
-  promoKey.clear();
-  promoStatus = false;
-  addCoupon = false;
-  rentalOption.clear();
-  myMarker.clear();
-  dropStopList.clear();
-  addressList.removeWhere((element) => element.id == 'drop');
-  }
-},
-
-
-
-
-
-
+                                                  if (shouldResetDropConfirmed) {
+                                                    setState(() {
+                                                      dropConfirmed = false;
+                                                      promoStatus = false;
+                                                      addCoupon = false;
+                                                      promoKey.clear();
+                                                    });
+                                                  } else {
+                                                    Navigator
+                                                        .pushAndRemoveUntil(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                          builder: (context) =>
+                                                              const Maps()),
+                                                      (route) => false,
+                                                    );
+                                                    isRentalRide = false;
+                                                    ismulitipleride = false;
+                                                    isOutStation = false;
+                                                    etaDetails.clear();
+                                                    promoKey.clear();
+                                                    promoStatus = false;
+                                                    addCoupon = false;
+                                                    rentalOption.clear();
+                                                    myMarker.clear();
+                                                    dropStopList.clear();
+                                                    addressList.removeWhere(
+                                                        (element) =>
+                                                            element.id ==
+                                                            'drop');
+                                                  }
+                                                },
                                                 child: SizedBox(
                                                   height: media.width * 0.1,
                                                   width: media.width * 0.1,
@@ -5167,6 +5083,7 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                       ? Positioned(
                                           bottom: 0,
                                           child: Container(
+                                            // height:200.h,
                                             width: media.width * 1,
                                             padding: EdgeInsets.all(
                                                 media.width * 0.05),
@@ -5181,6 +5098,33 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                                 12))),
                                             child: Column(
                                               children: [
+                                                   Button(
+                                                    onTap: () async {
+                                                      setState(() {
+                                                        serviceNotAvailable =
+                                                            false;
+                                                      });
+                                                      if (widget.type != 1) {
+                                                        var val =
+                                                            await etaRequest(
+                                                                outstation:
+                                                                    isOutStation);
+                                                        if (val == 'logout') {
+                                                          navigateLogout();
+                                                        }
+                                                      } else {
+                                                        var val =
+                                                            await rentalEta();
+                                                        if (val == 'logout') {
+                                                          navigateLogout();
+                                                        }
+                                                      }
+                                                      setState(() {});
+                                                    },
+                                                    text: languages[
+                                                            choosenLanguage]
+                                                        ['text_tryagain']),
+                                             
                                                 Container(
                                                   height: media.width * 0.18,
                                                   width: media.width * 0.18,
@@ -5226,32 +5170,7 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                 SizedBox(
                                                   height: media.width * 0.05,
                                                 ),
-                                                Button(
-                                                    onTap: () async {
-                                                      setState(() {
-                                                        serviceNotAvailable =
-                                                            false;
-                                                      });
-                                                      if (widget.type != 1) {
-                                                        var val =
-                                                            await etaRequest(
-                                                                outstation:
-                                                                    isOutStation);
-                                                        if (val == 'logout') {
-                                                          navigateLogout();
-                                                        }
-                                                      } else {
-                                                        var val =
-                                                            await rentalEta();
-                                                        if (val == 'logout') {
-                                                          navigateLogout();
-                                                        }
-                                                      }
-                                                      setState(() {});
-                                                    },
-                                                    text: languages[
-                                                            choosenLanguage]
-                                                        ['text_tryagain'])
+                                             
                                               ],
                                             ),
                                           ))

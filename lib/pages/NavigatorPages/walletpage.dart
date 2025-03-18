@@ -637,8 +637,12 @@ class _WalletPageState extends State<WalletPage> {
                                             isScrollControlled: true,
                                             builder: (context) {
                                               return Container(
-                                                padding: MediaQuery.of(context)
-                                                    .viewInsets,
+                                                width: MediaQuery.of(context)
+                                                    .size
+                                                    .width,
+                                                // width: media.width * 1,
+                                                // padding: MediaQuery.of(context)
+                                                //     .viewInsets,
                                                 decoration: BoxDecoration(
                                                     color: page,
                                                     borderRadius: BorderRadius
@@ -654,6 +658,7 @@ class _WalletPageState extends State<WalletPage> {
                                                 // padding:
                                                 //     EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
                                                 child: Container(
+                                                  //  width: media.width * 1,
                                                   padding: EdgeInsets.all(
                                                       media.width * 0.05),
                                                   child: Column(
@@ -703,103 +708,108 @@ class _WalletPageState extends State<WalletPage> {
                                                                 width: 1.2),
                                                           ),
                                                           child: Row(children: [
-                                                            Container(
-                                                                width: media
-                                                                        .width *
-                                                                    0.1,
-                                                                height: media
-                                                                        .width *
-                                                                    0.128,
-                                                                decoration:
-                                                                    const BoxDecoration(
-                                                                        borderRadius:
-                                                                            BorderRadius
-                                                                                .only(
-                                                                          topLeft:
-                                                                              Radius.circular(12),
-                                                                          bottomLeft:
-                                                                              Radius.circular(12),
-                                                                        ),
-                                                                        color: Color(
-                                                                            0xffF0F0F0)),
-                                                                alignment:
-                                                                    Alignment
-                                                                        .center,
-                                                                child: MyText(
-                                                                  text: walletBalance[
-                                                                      'currency_symbol'],
-                                                                  size: media
+                                                            Expanded(
+                                                              child: Container(
+                                                                  width: media
                                                                           .width *
-                                                                      twelve,
-                                                                  fontweight:
-                                                                      FontWeight
-                                                                          .w600,
-                                                                  color: (isDarkTheme ==
-                                                                          true)
-                                                                      ? Colors
-                                                                          .black
-                                                                      : textColor,
-                                                                )),
+                                                                      0.1,
+                                                                  height: media
+                                                                          .width *
+                                                                      0.128,
+                                                                  decoration:
+                                                                      const BoxDecoration(
+                                                                          borderRadius: BorderRadius
+                                                                              .only(
+                                                                            topLeft:
+                                                                                Radius.circular(12),
+                                                                            bottomLeft:
+                                                                                Radius.circular(12),
+                                                                          ),
+                                                                          color: Color(
+                                                                              0xffF0F0F0)),
+                                                                  alignment:
+                                                                      Alignment
+                                                                          .center,
+                                                                  child: MyText(
+                                                                    text: walletBalance[
+                                                                        'currency_symbol'],
+                                                                    size: media
+                                                                            .width *
+                                                                        twelve,
+                                                                    fontweight:
+                                                                        FontWeight
+                                                                            .w600,
+                                                                    color: (isDarkTheme ==
+                                                                            true)
+                                                                        ? Colors
+                                                                            .black
+                                                                        : textColor,
+                                                                  )),
+                                                            ),
                                                             SizedBox(
                                                               width:
                                                                   media.width *
                                                                       0.05,
                                                             ),
-                                                            Container(
-                                                              height:
-                                                                  media.width *
-                                                                      0.128,
-                                                              width:
-                                                                  media.width *
-                                                                      0.6,
-                                                              alignment:
-                                                                  Alignment
-                                                                      .center,
-                                                              child: TextField(
-                                                                controller:
-                                                                    addMoneyController,
-                                                                onChanged:
-                                                                    (val) {
-                                                                  setState(() {
-                                                                    addMoney =
-                                                                        int.parse(
-                                                                            val);
-                                                                  });
-                                                                },
-                                                                keyboardType:
-                                                                    TextInputType
-                                                                        .number,
-                                                                decoration:
-                                                                    InputDecoration(
-                                                                  border:
-                                                                      InputBorder
-                                                                          .none,
-                                                                  hintText:
-                                                                      'Enter Code here',
-                                                                  hintStyle:
-                                                                      GoogleFonts
-                                                                          .notoSans(
-                                                                    fontSize: media
-                                                                            .width *
-                                                                        fourteen,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .normal,
-                                                                    color: textColor
-                                                                        .withOpacity(
-                                                                            0.4),
+                                                            Expanded(
+                                                              child: Container(
+                                                                height: media
+                                                                        .width *
+                                                                    0.128,
+                                                                width: media
+                                                                        .width *
+                                                                    0.6,
+                                                                alignment:
+                                                                    Alignment
+                                                                        .center,
+                                                                child:
+                                                                    TextField(
+                                                                  controller:
+                                                                      addMoneyController,
+                                                                  onChanged:
+                                                                      (val) {
+                                                                    setState(
+                                                                        () {
+                                                                      addMoney =
+                                                                          int.parse(
+                                                                              val);
+                                                                    });
+                                                                  },
+                                                                  keyboardType:
+                                                                      TextInputType
+                                                                          .number,
+                                                                  decoration:
+                                                                      InputDecoration(
+                                                                    border:
+                                                                        InputBorder
+                                                                            .none,
+                                                                    hintText:
+                                                                        'Enter Code here',
+                                                                    hintStyle:
+                                                                        GoogleFonts
+                                                                            .notoSans(
+                                                                      fontSize:
+                                                                          media.width *
+                                                                              fourteen,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .normal,
+                                                                      color: textColor
+                                                                          .withOpacity(
+                                                                              0.4),
+                                                                    ),
                                                                   ),
+                                                                  style: GoogleFonts.notoSans(
+                                                                      fontSize:
+                                                                          media.width *
+                                                                              fourteen,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .normal,
+                                                                      color:
+                                                                          textColor),
+                                                                  maxLines: 1,
                                                                 ),
-                                                                style: GoogleFonts.notoSans(
-                                                                    fontSize: media
-                                                                            .width *
-                                                                        fourteen,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .normal,
-                                                                    color:
-                                                                        textColor),
-                                                                maxLines: 1,
                                                               ),
                                                             ),
                                                           ]),
@@ -808,152 +818,6 @@ class _WalletPageState extends State<WalletPage> {
                                                           height: media.width *
                                                               0.05,
                                                         ),
-                                                        // Row(
-                                                        //   mainAxisAlignment:
-                                                        //       MainAxisAlignment
-                                                        //           .center,
-                                                        //   children: [
-                                                        //     InkWell(
-                                                        //       onTap: () {
-                                                        //         setState(() {
-                                                        //           addMoneyController
-                                                        //                   .text =
-                                                        //               '100';
-                                                        //           addMoney =
-                                                        //               100;
-                                                        //         });
-                                                        //       },
-                                                        //       child: Container(
-                                                        //         height: media
-                                                        //                 .width *
-                                                        //             0.11,
-                                                        //         width: media
-                                                        //                 .width *
-                                                        //             0.17,
-                                                        //         decoration: BoxDecoration(
-                                                        //             border: Border.all(
-                                                        //                 color:
-                                                        //                     borderLines,
-                                                        //                 width:
-                                                        //                     1.2),
-                                                        //             color: page,
-                                                        //             borderRadius:
-                                                        //                 BorderRadius.circular(
-                                                        //                     6)),
-                                                        //         alignment:
-                                                        //             Alignment
-                                                        //                 .center,
-                                                        //         child: MyText(
-                                                        //           text: walletBalance[
-                                                        //                   'currency_symbol'] +
-                                                        //               '100',
-                                                        //           size: media
-                                                        //                   .width *
-                                                        //               twelve,
-                                                        //           fontweight:
-                                                        //               FontWeight
-                                                        //                   .w600,
-                                                        //         ),
-                                                        //       ),
-                                                        //     ),
-                                                        //     SizedBox(
-                                                        //       width:
-                                                        //           media.width *
-                                                        //               0.05,
-                                                        //     ),
-                                                        //     InkWell(
-                                                        //       onTap: () {
-                                                        //         setState(() {
-                                                        //           addMoneyController
-                                                        //                   .text =
-                                                        //               '500';
-                                                        //           addMoney =
-                                                        //               500;
-                                                        //         });
-                                                        //       },
-                                                        //       child: Container(
-                                                        //         height: media
-                                                        //                 .width *
-                                                        //             0.11,
-                                                        //         width: media
-                                                        //                 .width *
-                                                        //             0.17,
-                                                        //         decoration: BoxDecoration(
-                                                        //             border: Border.all(
-                                                        //                 color:
-                                                        //                     borderLines,
-                                                        //                 width:
-                                                        //                     1.2),
-                                                        //             color: page,
-                                                        //             borderRadius:
-                                                        //                 BorderRadius.circular(
-                                                        //                     6)),
-                                                        //         alignment:
-                                                        //             Alignment
-                                                        //                 .center,
-                                                        //         child: MyText(
-                                                        //           text: walletBalance[
-                                                        //                   'currency_symbol'] +
-                                                        //               '500',
-                                                        //           size: media
-                                                        //                   .width *
-                                                        //               twelve,
-                                                        //           fontweight:
-                                                        //               FontWeight
-                                                        //                   .w600,
-                                                        //         ),
-                                                        //       ),
-                                                        //     ),
-                                                        //     SizedBox(
-                                                        //       width:
-                                                        //           media.width *
-                                                        //               0.05,
-                                                        //     ),
-                                                        //     InkWell(
-                                                        //       onTap: () {
-                                                        //         setState(() {
-                                                        //           addMoneyController
-                                                        //                   .text =
-                                                        //               '1000';
-                                                        //           addMoney =
-                                                        //               1000;
-                                                        //         });
-                                                        //       },
-                                                        //       child: Container(
-                                                        //         height: media
-                                                        //                 .width *
-                                                        //             0.11,
-                                                        //         width: media
-                                                        //                 .width *
-                                                        //             0.17,
-                                                        //         decoration: BoxDecoration(
-                                                        //             border: Border.all(
-                                                        //                 color:
-                                                        //                     borderLines,
-                                                        //                 width:
-                                                        //                     1.2),
-                                                        //             color: page,
-                                                        //             borderRadius:
-                                                        //                 BorderRadius.circular(
-                                                        //                     6)),
-                                                        //         alignment:
-                                                        //             Alignment
-                                                        //                 .center,
-                                                        //         child: MyText(
-                                                        //           text: walletBalance[
-                                                        //                   'currency_symbol'] +
-                                                        //               '1000',
-                                                        //           size: media
-                                                        //                   .width *
-                                                        //               twelve,
-                                                        //           fontweight:
-                                                        //               FontWeight
-                                                        //                   .w600,
-                                                        //         ),
-                                                        //       ),
-                                                        //     )
-                                                        //   ],
-                                                        // ),
                                                         SizedBox(
                                                           height:
                                                               media.width * 0.1,
@@ -1036,45 +900,6 @@ class _WalletPageState extends State<WalletPage> {
                                         ],
                                       ),
                                     ),
-                                    // if (userDetails[
-                                    //         'show_wallet_money_transfer_feature_on_mobile_app'] ==
-                                    //     '1')
-                                    //   Container(
-                                    //     height: media.width * 0.1,
-                                    //     width: 1,
-                                    //     color: textColor.withOpacity(0.3),
-                                    //   ),
-                                    // if (userDetails[
-                                    //         'show_wallet_money_transfer_feature_on_mobile_app'] ==
-                                    //     '1')
-                                    //   InkWell(
-                                    //     onTap: () {
-                                    //       showModalBottomSheet(
-                                    //           context: context,
-                                    //           isScrollControlled: true,
-                                    //           backgroundColor: page,
-                                    //           builder: (context) {
-                                    //             return const MonetTransferBottomSheet();
-                                    //           });
-                                    //     },
-                                    //     child: Row(
-                                    //       children: [
-                                    //         Icon(Icons.swap_horiz_outlined,
-                                    //             color: (ischeckmoneytransfer ==
-                                    //                     2)
-                                    //                 ? const Color(0xFFFF0000)
-                                    //                 : textColor),
-                                    //         MyText(
-                                    //             text: languages[choosenLanguage]
-                                    //                 ['text_credit_trans'],
-                                    //             size: media.width * sixteen,
-                                    //             color: (ischeckmoneytransfer ==
-                                    //                     2)
-                                    //                 ? const Color(0xFFFF0000)
-                                    //                 : textColor)
-                                    //       ],
-                                    //     ),
-                                    //   ),
                                   ],
                                 ),
                               ),

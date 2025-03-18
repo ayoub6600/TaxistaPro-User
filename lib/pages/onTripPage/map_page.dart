@@ -466,13 +466,13 @@ class _MapsState extends State<Maps>
                                           height: media.width * 0.3,
                                           decoration: BoxDecoration(
                                               color: page,
-                                              boxShadow: [
-                                                BoxShadow(
-                                                    blurRadius: 5,
-                                                    color: Colors.black
-                                                        .withOpacity(0.1),
-                                                    spreadRadius: 2)
-                                              ],
+                                              // boxShadow: [
+                                              //   BoxShadow(
+                                              //       blurRadius: 5,
+                                              //       color: Colors.black
+                                              //           .withOpacity(0.1),
+                                              //       spreadRadius: 2)
+                                              // ],
                                               borderRadius:
                                                   BorderRadius.circular(10)),
                                           child: Column(
@@ -612,18 +612,18 @@ class _MapsState extends State<Maps>
                                                         )
                                                       ],
                                                     ),
+                                                    Container(
+                                                        padding: EdgeInsets.all(
+                                                            media.width * 0.05),
+                                                        child: Button(
+                                                            onTap: () async {
+                                                              getLocationPermission();
+                                                            },
+                                                            text: languages[
+                                                                    choosenLanguage]
+                                                                ['text_next'])),
                                                   ],
                                                 )),
-                                                Container(
-                                                    padding: EdgeInsets.all(
-                                                        media.width * 0.05),
-                                                    child: Button(
-                                                        onTap: () async {
-                                                          getLocationPermission();
-                                                        },
-                                                        text: languages[
-                                                                choosenLanguage]
-                                                            ['text_next']))
                                               ],
                                             ),
                                           ),
@@ -4081,7 +4081,7 @@ class _MapsState extends State<Maps>
                             setState(() {});
                           },
                           child: Container(
-                            height: media.height * 1,
+                            // height: media.height * 1.6,
                             width: media.width * 1,
                             color: Colors.black.withOpacity(0.3),
                             alignment: Alignment.bottomCenter,

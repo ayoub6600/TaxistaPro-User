@@ -269,7 +269,7 @@ class _FavAddressPageState extends State<FavAddressPage> {
                                                 },
                                                 child: CircleAvatar(
                                                   backgroundColor: Colors.red,
-                                                  radius: 8.r,
+                                                  radius: 12.r,
                                                   child: Icon(Icons.close,
                                                       color: Colors.white,
                                                       size: 16.sp),
@@ -456,7 +456,7 @@ class _FavAddressPageState extends State<FavAddressPage> {
                                                 },
                                                 child: CircleAvatar(
                                                   backgroundColor: Colors.red,
-                                                  radius: 8.r,
+                                                  radius: 12.r,
                                                   child: Icon(
                                                     Icons.close,
                                                     color: Colors.white,
@@ -566,7 +566,7 @@ class _FavAddressPageState extends State<FavAddressPage> {
                                                     child: CircleAvatar(
                                                       backgroundColor:
                                                           Colors.red,
-                                                      radius: 8.r,
+                                                      radius: 12.r,
                                                       child: Icon(
                                                         Icons.close,
                                                         color: Colors.white,

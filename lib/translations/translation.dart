@@ -892,6 +892,7 @@ Map<String, dynamic> languages = {
     "text_payingvia": "Paying via",
     "text_enterpromo": "Enter Promo Code",
     "text_remove": "Remove",
+    "text_phoneـnumber": "Phone Number",
     "text_edit": "Edit",
     "text_promoaccepted": " Coupon Applied",
     "text_promorejected": "Invalid Coupon Code",
