@@ -152,7 +152,7 @@ class _SupportPageState extends State<SupportPage> {
 
                       SubMenu(
                         onTap: () {
-                          openBrowser('privacy policy url');
+                          openBrowser("https://www.taxistapro.com/privacy");
                         },
                         text: languages[choosenLanguage]['text_privacy'],
                         icon: Icons.privacy_tip_outlined,
