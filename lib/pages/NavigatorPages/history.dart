@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:taxista/pages/login/login.dart';
 import 'package:taxista/translations/translation.dart';
+
 import '../../functions/functions.dart';
 import '../../styles/styles.dart';
 import '../../widgets/widgets.dart';
@@ -577,8 +578,9 @@ class _HistoryState extends State<History> {
                                                                 children: [
                                                                   Container(
                                                                     padding:
-                                                                        EdgeInsets
-                                                                            .all(5),
+                                                                        const EdgeInsets
+                                                                            .all(
+                                                                            5),
                                                                     decoration:
                                                                         BoxDecoration(
                                                                       borderRadius:
@@ -668,7 +670,7 @@ class _HistoryState extends State<History> {
                                                                             Row(
                                                                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                                               children: [
-                                                                                Icon(
+                                                                                const Icon(
                                                                                   Icons.watch_later,
                                                                                   color: Colors.blue,
                                                                                 ),
@@ -692,7 +694,7 @@ class _HistoryState extends State<History> {
                                                                             Row(
                                                                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                                               children: [
-                                                                                Icon(
+                                                                                const Icon(
                                                                                   Icons.directions_car,
                                                                                   color: Colors.blue,
                                                                                 ),
@@ -722,7 +724,7 @@ class _HistoryState extends State<History> {
                                                                         CrossAxisAlignment
                                                                             .center,
                                                                     children: [
-                                                                      Icon(
+                                                                      const Icon(
                                                                         Icons
                                                                             .payment,
                                                                         color: Colors
@@ -811,7 +813,8 @@ class _HistoryState extends State<History> {
                                                                         color: Colors
                                                                             .green
                                                                             .withOpacity(0.4)),
-                                                                    child: Icon(
+                                                                    child:
+                                                                        const Icon(
                                                                       Icons
                                                                           .location_on_outlined,
                                                                       color: Colors
@@ -863,10 +866,10 @@ class _HistoryState extends State<History> {
                                                                           Alignment
                                                                               .center,
                                                                       decoration:
-                                                                          BoxDecoration(
+                                                                          const BoxDecoration(
                                                                         shape: BoxShape
                                                                             .circle,
-                                                                        color: const Color(
+                                                                        color: Color(
                                                                             0xFFFF0000),
                                                                       ),
                                                                       child:

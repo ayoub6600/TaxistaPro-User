@@ -8,11 +8,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   file_selector_windows
   firebase_auth
   firebase_core
-<<<<<<< HEAD
-  flutter_inappwebview_windows
   flutter_localization
-=======
->>>>>>> 1da16fe2bf157aedd26e92c3b97478512c454fbd
   geolocator_windows
   permission_handler_windows
   share_plus

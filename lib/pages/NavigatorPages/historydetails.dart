@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:taxista/translations/translation.dart';
 import 'package:url_launcher/url_launcher.dart';
+
 import '../../functions/functions.dart';
 import '../../styles/styles.dart';
 import '../../widgets/widgets.dart';
@@ -152,7 +153,7 @@ class _HistoryDetailsState extends State<HistoryDetails> {
                                                                 selectedHistory]
                                                             ['is_completed'] ==
                                                         1)
-                                                    ? Color(0xFF0ABE75)
+                                                    ? const Color(0xFF0ABE75)
                                                     : (myHistory[selectedHistory]
                                                                 [
                                                                 'is_cancelled'] ==
@@ -356,7 +357,7 @@ class _HistoryDetailsState extends State<HistoryDetails> {
                                                       0.3, // Set a fixed width
                                                   height: media.width *
                                                       0.3, // Set a fixed height
-                                                  decoration: BoxDecoration(
+                                                  decoration: const BoxDecoration(
                                                     shape: BoxShape
                                                         .circle, // Makes the image circular
                                                   ),
@@ -388,7 +389,7 @@ class _HistoryDetailsState extends State<HistoryDetails> {
                                                     ),
                                                     errorWidget: (context, url,
                                                             error) =>
-                                                        Icon(Icons.error,
+                                                        const Icon(Icons.error,
                                                             color: Colors.red),
                                                   ),
                                                 ),
@@ -406,7 +407,7 @@ class _HistoryDetailsState extends State<HistoryDetails> {
                                         null)
                                       GestureDetector(
                                         onTap: () {
-                                          print(myHistory[selectedHistory]
+                                          debugPrint(myHistory[selectedHistory]
                                               ['driverDetail']['data']);
                                         },
                                         child: Column(
@@ -724,7 +725,7 @@ class _HistoryDetailsState extends State<HistoryDetails> {
                                             null)
                                         ? GestureDetector(
                                             onTap: () {
-                                              print(myHistory[selectedHistory]);
+                                              debugPrint(myHistory[selectedHistory]);
                                             },
                                             child: Row(
                                               mainAxisAlignment:
@@ -770,7 +771,7 @@ class _HistoryDetailsState extends State<HistoryDetails> {
                                             1)
                                         ? GestureDetector(
                                             onTap: () {
-                                              print(myHistory[selectedHistory]);
+                                              debugPrint(myHistory[selectedHistory]);
                                             },
                                             child: Container(
                                               height: media.width * 0.2,
@@ -959,7 +960,7 @@ class _HistoryDetailsState extends State<HistoryDetails> {
                                                           setState(() {
                                                             isShow = !isShow;
                                                           });
-                                                          print(isShow);
+                                                          debugPrint(isShow.toString());
                                                         },
                                                         child: Container(
                                                           padding: EdgeInsets

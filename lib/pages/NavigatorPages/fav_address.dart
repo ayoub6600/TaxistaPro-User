@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:location/location.dart';
 import 'package:taxista/functions/functions.dart';
 import 'package:taxista/pages/loadingPage/loading.dart';
 import 'package:taxista/pages/onTripPage/drop_loc_select.dart';
 import 'package:taxista/styles/styles.dart';
 import 'package:taxista/translations/translation.dart';
 import 'package:taxista/widgets/widgets.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:location/location.dart';
 
 class FavAddressPage extends StatefulWidget {
   const FavAddressPage({super.key});
@@ -320,7 +320,7 @@ class _FavAddressPageState extends State<FavAddressPage> {
                                               horizontal: 10),
                                           child: Row(
                                             children: [
-                                              CircleAvatar(
+                                              const CircleAvatar(
                                                 backgroundColor: Colors.blue,
                                                 child: Icon(
                                                   Icons.home_work_outlined,

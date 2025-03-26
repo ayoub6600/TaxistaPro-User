@@ -279,7 +279,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                                                       GestureDetector(
                                                                         onTap:
                                                                             () {
-                                                                          print(
+                                                                          debugPrint(
                                                                               "notification-------->${notificationHistory[i]}");
                                                                         },
                                                                         child:

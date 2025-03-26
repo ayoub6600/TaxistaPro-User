@@ -132,7 +132,7 @@ class _AdminChatPageState extends State<AdminChatPage> {
                                           // height: media.width * 0.1,
                                           // width: media.width,
                                           // alignment: Alignment.centerLeft,
-                                          child: Icon(
+                                          child: const Icon(
                                             Icons.call,
                                             color: Colors.white,
                                           ),

@@ -309,7 +309,7 @@ class _MapsState extends State<Maps>
   //   if (permission == geolocs.LocationPermission.denied ||
   //       permission == geolocs.LocationPermission.deniedForever) {
   //     //  var _lpermission = await perm.Permission.location.shouldShowRequestRationale;
-  //     //  print(_lpermission);
+  //     //  debugPrint(_lpermission);
   //     if (permission != geolocs.LocationPermission.deniedForever) {
   //       await perm.Permission.location.request();
   //     }
@@ -327,7 +327,7 @@ class _MapsState extends State<Maps>
   //   });
   //   getLocs();
   //   // else if(permission == geolocator.LocationPermission.deniedForever){
-  //   //   print('denied forver');
+  //   //   debugPrint('denied forver');
   //   //   setState(() {
   //   //     _locationDenied = true;
   //   //   });
@@ -1064,7 +1064,7 @@ class _MapsState extends State<Maps>
                                                                   //     setState(
                                                                   //         () {});
                                                                   //   // } else {
-                                                                  //   //   print(
+                                                                  //   //   debugPrint(
                                                                   //   //       'fvkjnskdnvklsdnvklsdv');
                                                                   //   //   // addToast();
                                                                   //   // }
@@ -2848,13 +2848,13 @@ class _MapsState extends State<Maps>
                                                                                                     if (addressList.where((element) => element.type == 'drop').isEmpty) {
                                                                                                       //Ahmed
                                                                                                       polyList.clear();
-                                                                                                      print('-------->drops is : ${recentSearchesList[i]['latlng'][0]} ${recentSearchesList[i]['latlng'][1]}');
+                                                                                                      debugPrint('-------->drops is : ${recentSearchesList[i]['latlng'][0]} ${recentSearchesList[i]['latlng'][1]}');
                                                                                                       addressList.add(AddressList(id: '2', type: 'drop', address: recentSearchesList[i]['address'], pickup: false, latlng: LatLng(recentSearchesList[i]['latlng'][0], recentSearchesList[i]['latlng'][1])));
                                                                                                     } else {
                                                                                                       polyList.clear();
                                                                                                       addressList.firstWhere((element) => element.type == 'drop').address = recentSearchesList[i]['address'];
                                                                                                       addressList.firstWhere((element) => element.type == 'drop').latlng = LatLng(recentSearchesList[i]['latlng'][0], recentSearchesList[i]['latlng'][1]);
-                                                                                                      print('-------->drops is 2 : ${recentSearchesList[i]['latlng'][0]} ${recentSearchesList[i]['latlng'][1]}');
+                                                                                                      debugPrint('-------->drops is 2 : ${recentSearchesList[i]['latlng'][0]} ${recentSearchesList[i]['latlng'][1]}');
                                                                                                     }
                                                                                                   });
                                                                                                   if (addressList.length == 2) {

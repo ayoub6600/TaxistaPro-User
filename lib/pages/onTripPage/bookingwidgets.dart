@@ -2861,7 +2861,7 @@ class _RideLaterBottomSheetState extends State<RideLaterBottomSheet> {
                           DateFormat.yMMMMd('ar');
                       String formattedDate =
                           arabicDateFormat.format(choosenDateTime);
-                      print(formattedDate); // Display this in your UI
+                      debugPrint(formattedDate); // Display this in your UI
                     });
                   },
                 ),
@@ -3042,7 +3042,6 @@ class VehicleInfoBottomSheet extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             if (type != 2)
-                            
                               MyText(text: 'Fare', size: width * fourteen),
                             if (type != 2)
                               (etaDetails[i]['has_discount'] != true)

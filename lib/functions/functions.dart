@@ -443,7 +443,7 @@ registerUser() async {
 ///// Add Balance //////
 addBalance(String code) async {
   dynamic result;
-  print('${url}api/v1/user/card-recharge');
+  debugPrint('${url}api/v1/user/card-recharge');
   try {
     var response = await http.post(Uri.parse('${url}api/v1/user/card-recharge'),
         headers: {
@@ -451,8 +451,8 @@ addBalance(String code) async {
           'Content-Type': 'application/json'
         },
         body: jsonEncode({"card_code": code}));
-    print('drops ${response.statusCode}');
-    print('drops ${response.body}');
+    debugPrint('drops ${response.statusCode}');
+    debugPrint('drops ${response.body}');
     if (response.statusCode == 200) {
       result = jsonDecode(response.body)['message'];
     } else if (response.statusCode == 401) {
@@ -528,7 +528,7 @@ otpCall() async {
 verifyUser(String number, int login, String password, String email, isOtp,
     forgot) async {
   dynamic val;
-  print('drops1 ${url}api/v1/user/validate-mobile-for-login');
+  debugPrint('drops1 ${url}api/v1/user/validate-mobile-for-login');
   try {
     var response = await http.post(
         Uri.parse('${url}api/v1/user/validate-mobile-for-login'),
@@ -543,11 +543,11 @@ verifyUser(String number, int login, String password, String email, isOtp,
                   });
 
     if (response.statusCode == 200) {
-      print('drops2 ');
+      debugPrint('drops2 ');
       val = jsonDecode(response.body)['success'];
       if (val == true) {
         if ((number != '' && email != '') || forgot == true) {
-          print('drops33 ');
+          debugPrint('drops33 ');
 
           if (forgot == true) {
             val = true;
@@ -559,7 +559,7 @@ verifyUser(String number, int login, String password, String email, isOtp,
             val = 'Email and Mobile Already Exists';
           }
         } else {
-          print('drops4 ');
+          debugPrint('drops4 ');
           var check = await userLogin(number, login, password, isOtp);
           if (check == true) {
             var uCheck = await getUserDetails();
@@ -569,11 +569,11 @@ verifyUser(String number, int login, String password, String email, isOtp,
           }
         }
       } else {
-        print('drops5 ');
+        debugPrint('drops5 ');
         val = false;
       }
     } else if (response.statusCode == 422) {
-      print('drops ${response.body}');
+      debugPrint('drops ${response.body}');
       var error = jsonDecode(response.body)['errors'];
       val = error[error.keys.toList()[0]]
           .toString()
@@ -581,11 +581,11 @@ verifyUser(String number, int login, String password, String email, isOtp,
           .replaceAll(']', '')
           .toString();
     } else {
-      print('drops ${response.body}');
+      debugPrint('drops ${response.body}');
       val = jsonDecode(response.body)['message'];
     }
   } catch (e) {
-    print('drops $e');
+    debugPrint('drops $e');
     if (e is SocketException) {
       val = 'no internet';
       internet = false;
@@ -661,7 +661,7 @@ userLogin(number, login, password, isOtp) async {
   bearerToken.clear();
   dynamic result;
   try {
-    print('drops-login ${url}api/v1/user/login');
+    debugPrint('drops-login ${url}api/v1/user/login');
     String? token;
     if (Platform.isIOS) {
       String? apnsToken = await FirebaseMessaging.instance.getAPNSToken();
@@ -712,9 +712,9 @@ userLogin(number, login, password, isOtp) async {
                         ? 'android'
                         : 'ios',
                   }));
-    print('drops-login2 ${response.statusCode}');
+    debugPrint('drops-login2 ${response.statusCode}');
     if (response.statusCode == 200) {
-      print('drops-login3');
+      debugPrint('drops-login3');
 
       var jsonVal = jsonDecode(response.body);
       bearerToken.add(BearerClass(
@@ -733,7 +733,7 @@ userLogin(number, login, password, isOtp) async {
             .update({'user_bundle_id': package.packageName.toString()});
       }
     } else if (response.statusCode == 422) {
-      print('drops-login4');
+      debugPrint('drops-login4');
 
       debugPrint(response.body);
       var error = jsonDecode(response.body)['errors'];
@@ -743,12 +743,12 @@ userLogin(number, login, password, isOtp) async {
           .replaceAll(']', '')
           .toString();
     } else {
-      print('drops-login5');
+      debugPrint('drops-login5');
       debugPrint(response.body);
       result = false;
     }
   } catch (e) {
-    print('drops-login6 $e');
+    debugPrint('drops-login6 $e');
 
     if (e is SocketException) {
       internet = false;
@@ -782,7 +782,7 @@ getUserDetails({id}) async {
     if (response.statusCode == 200) {
       userDetails =
           Map<String, dynamic>.from(jsonDecode(response.body)['data']);
-      // printWrapped(response.body);
+      // debugPrintWrapped(response.body);
 
       favAddress = userDetails['favouriteLocations']['data'];
       sosData = userDetails['sos']['data'];
@@ -1327,10 +1327,10 @@ getPolylines(plat, plng, dlat, dlng) async {
           }
 
           if (value.statusCode == 200) {
-            print('stepsoto ${value.body}');
+            debugPrint('stepsoto ${value.body}');
             var steps = jsonDecode(value.body)['routes'][0]['overview_polyline']
                 ['points'];
-            print('stepsoto $steps');
+            debugPrint('stepsoto $steps');
             if (i == 1) {
               polyString = steps;
             } else {
@@ -1372,7 +1372,7 @@ getPolylines(plat, plng, dlat, dlng) async {
         var steps =
             jsonDecode(value.body)['routes'][0]['overview_polyline']['points'];
 
-        // printWrapped(steps.toString());
+        // debugPrintWrapped(steps.toString());
         polyString = steps;
         decodeEncodedPolyline(steps);
       } else {}
@@ -1798,7 +1798,7 @@ rentalEta() async {
       choosenVehicle = 0;
       result = true;
       valueNotifierBook.incrementNotifier();
-      // printWrapped('rental eta ' + response.body);
+      // debugPrintWrapped('rental eta ' + response.body);
     } else if (response.statusCode == 401) {
       result = 'logout';
     } else {
@@ -1878,7 +1878,7 @@ String tripError = '';
 createRequest(value, api) async {
   waitingTime = 0;
   dynamic result;
-  print('drops1 $url$api');
+  debugPrint('drops1 $url$api');
   try {
     var response = await http.post(Uri.parse('$url$api'),
         headers: {
@@ -1920,7 +1920,7 @@ createRequest(value, api) async {
 createRequestLater(val, api) async {
   dynamic result;
   waitingTime = 0;
-  print('drop $url$api');
+  debugPrint('drop $url$api');
   try {
     var response = await http.post(Uri.parse('$url$api'),
         headers: {
@@ -1958,7 +1958,7 @@ createRequestLater(val, api) async {
 //create request with promo code
 
 createRequestLaterPromo() async {
-  print('drop2x ${url}api/v1/request/create');
+  debugPrint('drop2x ${url}api/v1/request/create');
   dynamic result;
   waitingTime = 0;
   try {
@@ -2031,7 +2031,7 @@ createRequestLaterPromo() async {
 
 createRentalRequest() async {
   dynamic result;
-  print('drops2 ${url}api/v1/request/create');
+  debugPrint('drops2 ${url}api/v1/request/create');
 
   try {
     var response = await http.post(Uri.parse('${url}api/v1/request/create'),
@@ -2095,7 +2095,7 @@ createRentalRequest() async {
 
 RentalRequestWithPromo() async {
   dynamic result;
-  print('drops3x ${url}api/v1/request/create');
+  debugPrint('drops3x ${url}api/v1/request/create');
   try {
     var response = await http.post(Uri.parse('${url}api/v1/request/create'),
         headers: {
@@ -2326,7 +2326,7 @@ class RequestCreate {
 
 cancelRequest() async {
   dynamic result;
-  print('drops1 ${url}api/v1/request/cancel');
+  debugPrint('drops1 ${url}api/v1/request/cancel');
   try {
     var response = await http.post(Uri.parse('${url}api/v1/request/cancel'),
         headers: {
@@ -2334,7 +2334,7 @@ cancelRequest() async {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({'request_id': userRequestData['id']}));
-    print('drops1 ${response.statusCode}');
+    debugPrint('drops1 ${response.statusCode}');
 
     if (response.statusCode == 200) {
       userCancelled = true;
@@ -2373,7 +2373,7 @@ cancelRequest() async {
 
 cancelLaterRequest(val) async {
   dynamic result;
-  print('drops2 ${url}api/v1/request/cancel');
+  debugPrint('drops2 ${url}api/v1/request/cancel');
   try {
     var response = await http.post(Uri.parse('${url}api/v1/request/cancel'),
         headers: {
@@ -2381,7 +2381,7 @@ cancelLaterRequest(val) async {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({'request_id': val}));
-    print('drops2 ${response.statusCode}');
+    debugPrint('drops2 ${response.statusCode}');
 
     if (response.statusCode == 200) {
       userRequestData = {};
@@ -2412,7 +2412,7 @@ cancelLaterRequest(val) async {
 
 cancelRequestWithReason(reason) async {
   dynamic result;
-  print('drops3 ${url}api/v1/request/cancel');
+  debugPrint('drops3 ${url}api/v1/request/cancel');
   try {
     var response = await http.post(Uri.parse('${url}api/v1/request/cancel'),
         headers: {
@@ -2421,7 +2421,7 @@ cancelRequestWithReason(reason) async {
         },
         body: jsonEncode(
             {'request_id': userRequestData['id'], 'reason': reason}));
-    print('drops3 ${response.statusCode}');
+    debugPrint('drops3 ${response.statusCode}');
 
     if (response.statusCode == 200) {
       cancelRequestByUser = true;
@@ -2863,8 +2863,8 @@ sendadminMessage(chat) async {
 
 adminmessageseen() async {
   dynamic result;
-  print('chatid ---------> adminmessageseen$chatid');
-  
+  debugPrint('chatid ---------> adminmessageseen$chatid');
+
   try {
     var response = await http.get(
       Uri.parse(
@@ -3066,7 +3066,7 @@ getReferral() async {
       'Content-Type': 'application/json'
     });
     if (response.statusCode == 200) {
-      print(jsonDecode(response.body));
+      debugPrint(jsonDecode(response.body));
       result = 'success';
       myReferralCode = jsonDecode(response.body)['data'];
       valueNotifierBook.incrementNotifier();
@@ -3200,7 +3200,7 @@ Map<String, dynamic> walletPages = {};
 getWalletHistory() async {
   dynamic result;
   try {
-    print('${url}api/v1/payment/wallet/history');
+    debugPrint('${url}api/v1/payment/wallet/history');
     var response = await http.get(
         Uri.parse('${url}api/v1/payment/wallet/history'),
         headers: {'Authorization': 'Bearer ${bearerToken[0].token}'});
@@ -3707,28 +3707,28 @@ List generalComplaintList = [];
 getGeneralComplaint(type) async {
   dynamic result;
   try {
-    print('Drops URl Comp');
+    debugPrint('Drops URl Comp');
     var response = await http.get(
       Uri.parse('${url}api/v1/common/complaint-titles?complaint_type=$type'),
       headers: {'Authorization': 'Bearer ${bearerToken[0].token}'},
     );
     if (response.statusCode == 200) {
       generalComplaintList = jsonDecode(response.body)['data'];
-      print('Drops URl Comp 200 ${generalComplaintList}');
+      debugPrint('Drops URl Comp 200 $generalComplaintList');
       result = 'success';
     } else if (response.statusCode == 401) {
-      print('Drops URl Comp 401 ${response.body}');
-      print('Drops URl Comp 401 ${response.request}');
-      print('Drops URl Comp 401 ${response.reasonPhrase}');
+      debugPrint('Drops URl Comp 401 ${response.body}');
+      debugPrint('Drops URl Comp 401 ${response.request}');
+      debugPrint('Drops URl Comp 401 ${response.reasonPhrase}');
       result = 'logout';
     } else {
-      print('Drops URl Comp 500');
+      debugPrint('Drops URl Comp 500');
 
       debugPrint(response.body);
       result = 'failed';
     }
   } catch (e) {
-    print('Drops URl Comp $e');
+    debugPrint('Drops URl Comp $e');
 
     if (e is SocketException) {
       internet = false;

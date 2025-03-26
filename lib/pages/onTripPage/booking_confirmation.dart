@@ -2495,7 +2495,7 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                                                                       height: media.width * 0.04,
                                                                                                       width: media.width * 0.04,
                                                                                                       alignment: Alignment.center,
-                                                                                                      decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.orange),
+                                                                                                      decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.orange),
                                                                                                       child: Icon(
                                                                                                         Icons.done,
                                                                                                         size: media.width * 0.03,
@@ -2543,7 +2543,7 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                                                                       height: media.width * 0.04,
                                                                                                       width: media.width * 0.04,
                                                                                                       alignment: Alignment.center,
-                                                                                                      decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.orange),
+                                                                                                      decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.orange),
                                                                                                       child: Icon(
                                                                                                         Icons.done,
                                                                                                         size: media.width * 0.03,
@@ -2669,10 +2669,9 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                                     height:
                                                                         20.h,
                                                                   ),
-                                                                  (etaDetails.isNotEmpty &&
+                                                                  if (etaDetails.isNotEmpty &&
                                                                           widget.type !=
-                                                                              1)
-                                                                      ? Expanded(
+                                                                              1) Expanded(
                                                                           child: SizedBox(
                                                                               width: media.width * 1,
                                                                               child: SingleChildScrollView(
@@ -2943,8 +2942,7 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                                                       )
                                                                                     ],
                                                                                   ))),
-                                                                        )
-                                                                      : (etaDetails.isNotEmpty &&
+                                                                        ) else (etaDetails.isNotEmpty &&
                                                                               widget.type == 1)
                                                                           ? Expanded(
                                                                               child: SizedBox(
@@ -3878,152 +3876,150 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                                                   children: [
                                                                                     (userDetails['show_ride_later_feature'] == true && ((widget.type == null) ? (etaDetails[choosenVehicle]['enable_bidding'] == null || etaDetails[choosenVehicle]['enable_bidding'] == false) : true) && isOutStation == false)
-                                                                                        ? Container(
-                                                                                            child: Row(
-                                                                                              mainAxisAlignment: MainAxisAlignment.center,
-                                                                                              crossAxisAlignment: CrossAxisAlignment.center,
-                                                                                              children: [
-                                                                                                Expanded(
-                                                                                                  child: InkWell(
-                                                                                                    onTap: () async {
-                                                                                                      if (((rentalOption.isEmpty && (etaDetails[choosenVehicle]['user_wallet_balance'] >= etaDetails[choosenVehicle]['total'] && etaDetails[choosenVehicle]['has_discount'] == false) || (rentalOption.isEmpty && etaDetails[choosenVehicle]['has_discount'] == true && etaDetails[choosenVehicle]['user_wallet_balance'] >= etaDetails[choosenVehicle]['discounted_totel'])) || (rentalOption.isEmpty && etaDetails[choosenVehicle]['payment_type'].toString().split(',').toList()[payingVia] != 'wallet')) || ((rentalOption.isNotEmpty && (etaDetails[0]['user_wallet_balance'] >= rentalOption[choosenVehicle]['fare_amount']) && rentalOption[choosenVehicle]['has_discount'] == false) || (rentalOption.isNotEmpty && rentalOption[choosenVehicle]['has_discount'] == true && etaDetails[0]['user_wallet_balance'] >= rentalOption[choosenVehicle]['discounted_totel']) || rentalOption.isNotEmpty && rentalOption[choosenVehicle]['payment_type'].toString().split(',').toList()[payingVia] != 'wallet')) {
-                                                                                                        if (choosenVehicle != null) {
-                                                                                                          setState(() {
-                                                                                                            choosenDateTime = DateTime.now().add(Duration(minutes: int.parse(userDetails['user_can_make_a_ride_after_x_miniutes'])));
-                                                                                                            // _dateTimePicker = true;
-                                                                                                          });
-
-                                                                                                          showModalBottomSheet(
-                                                                                                              context: context,
-                                                                                                              isScrollControlled: true,
-                                                                                                              // isDismissible: false,
-                                                                                                              builder: (context) {
-                                                                                                                return RideLaterBottomSheet(
-                                                                                                                  type: widget.type,
-                                                                                                                );
-                                                                                                              });
-                                                                                                        }
-                                                                                                      } else {
+                                                                                        ? Row(
+                                                                                            mainAxisAlignment: MainAxisAlignment.center,
+                                                                                            crossAxisAlignment: CrossAxisAlignment.center,
+                                                                                            children: [
+                                                                                              Expanded(
+                                                                                                child: InkWell(
+                                                                                                  onTap: () async {
+                                                                                                    if (((rentalOption.isEmpty && (etaDetails[choosenVehicle]['user_wallet_balance'] >= etaDetails[choosenVehicle]['total'] && etaDetails[choosenVehicle]['has_discount'] == false) || (rentalOption.isEmpty && etaDetails[choosenVehicle]['has_discount'] == true && etaDetails[choosenVehicle]['user_wallet_balance'] >= etaDetails[choosenVehicle]['discounted_totel'])) || (rentalOption.isEmpty && etaDetails[choosenVehicle]['payment_type'].toString().split(',').toList()[payingVia] != 'wallet')) || ((rentalOption.isNotEmpty && (etaDetails[0]['user_wallet_balance'] >= rentalOption[choosenVehicle]['fare_amount']) && rentalOption[choosenVehicle]['has_discount'] == false) || (rentalOption.isNotEmpty && rentalOption[choosenVehicle]['has_discount'] == true && etaDetails[0]['user_wallet_balance'] >= rentalOption[choosenVehicle]['discounted_totel']) || rentalOption.isNotEmpty && rentalOption[choosenVehicle]['payment_type'].toString().split(',').toList()[payingVia] != 'wallet')) {
+                                                                                                      if (choosenVehicle != null) {
                                                                                                         setState(() {
-                                                                                                          islowwalletbalance = true;
+                                                                                                          choosenDateTime = DateTime.now().add(Duration(minutes: int.parse(userDetails['user_can_make_a_ride_after_x_miniutes'])));
+                                                                                                          // _dateTimePicker = true;
                                                                                                         });
+
+                                                                                                        showModalBottomSheet(
+                                                                                                            context: context,
+                                                                                                            isScrollControlled: true,
+                                                                                                            // isDismissible: false,
+                                                                                                            builder: (context) {
+                                                                                                              return RideLaterBottomSheet(
+                                                                                                                type: widget.type,
+                                                                                                              );
+                                                                                                            });
                                                                                                       }
-                                                                                                    },
-                                                                                                    child: (!confirmRideLater)
-                                                                                                        ? Container(
+                                                                                                    } else {
+                                                                                                      setState(() {
+                                                                                                        islowwalletbalance = true;
+                                                                                                      });
+                                                                                                    }
+                                                                                                  },
+                                                                                                  child: (!confirmRideLater)
+                                                                                                      ? Container(
+                                                                                                          decoration: BoxDecoration(
+                                                                                                            color: Colors.blue[200],
+                                                                                                            borderRadius: BorderRadius.circular(20.r),
+                                                                                                          ),
+                                                                                                          //   backgroundColor: Colors.blue[200],
+                                                                                                          //    height: media.width * 0.12,
+                                                                                                          //  width: media.width * 0.12,
+                                                                                                          //   decoration: BoxDecoration(color: page, borderRadius: BorderRadius.circular(media.width * 0.02), border: Border.all(color: textColor)),
+                                                                                                          padding: EdgeInsets.symmetric(
+                                                                                                            vertical: 10.h,
+                                                                                                            //horizontal: media.width * 0.01,
+                                                                                                          ),
+                                                                                                          child: (confirmRideLater == false)
+                                                                                                              ? Row(
+                                                                                                                  mainAxisAlignment: MainAxisAlignment.center,
+                                                                                                                  children: [
+                                                                                                                    Icon(
+                                                                                                                      Icons.access_time,
+                                                                                                                      size: media.width * sixteen,
+                                                                                                                      color: Colors.white,
+                                                                                                                    ),
+                                                                                                                    MyText(
+                                                                                                                      text: languages[choosenLanguage]['text_ride_later'],
+                                                                                                                      size: media.width * twelve,
+                                                                                                                      color: Colors.white,
+                                                                                                                    ),
+                                                                                                                  ],
+                                                                                                                )
+                                                                                                              : MyText(
+                                                                                                                  text: DateFormat().format(choosenDateTime).toString(),
+                                                                                                                  size: media.width * twelve,
+                                                                                                                ),
+                                                                                                        )
+                                                                                                      : Container(
+                                                                                                          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+                                                                                                          decoration: BoxDecoration(
+                                                                                                            borderRadius: BorderRadius.circular(20.r),
+                                                                                                            color: Colors.blue[200],
+                                                                                                          ),
+                                                                                                          alignment: Alignment.center,
+                                                                                                          child: Row(
+                                                                                                            mainAxisAlignment: MainAxisAlignment.center,
+                                                                                                            crossAxisAlignment: CrossAxisAlignment.center,
+                                                                                                            children: [
+                                                                                                              Text(DateFormat().format(choosenDateTime).toString().split(" ")[1] + DateFormat().format(choosenDateTime).toString().split(" ")[2],
+                                                                                                                  style: GoogleFonts.cairo(
+                                                                                                                    fontSize: 12.sp,
+                                                                                                                    fontWeight: FontWeight.w400,
+                                                                                                                    color: Colors.white,
+                                                                                                                  )),
+                                                                                                              SizedBox(
+                                                                                                                width: 10.w,
+                                                                                                              ),
+                                                                                                              Text(DateFormat().format(choosenDateTime).toString().split(" ")[3],
+                                                                                                                  style: GoogleFonts.cairo(
+                                                                                                                    fontSize: 12.sp,
+                                                                                                                    fontWeight: FontWeight.w400,
+                                                                                                                    color: Colors.white,
+                                                                                                                  )),
+                                                                                                            ],
+                                                                                                          ),
+                                                                                                        ),
+                                                                                                ),
+                                                                                              ),
+                                                                                              (choosenVehicle != null && (widget.type == 1 || etaDetails[choosenVehicle]['enable_bidding'] == null || etaDetails[choosenVehicle]['enable_bidding'] == false) && widget.type != 2 && isOneWayTrip == true)
+                                                                                                  ? Row(
+                                                                                                      children: [
+                                                                                                        InkWell(
+                                                                                                          onTap: () {
+                                                                                                            // setState(() {
+                                                                                                            //   addCoupon =
+                                                                                                            //       true;
+                                                                                                            // });
+
+                                                                                                            showModalBottomSheet(
+                                                                                                                context: context,
+                                                                                                                isScrollControlled: true,
+                                                                                                                builder: (context) {
+                                                                                                                  return ApplyCouponsContainer(
+                                                                                                                    type: widget.type,
+                                                                                                                  );
+                                                                                                                });
+                                                                                                          },
+                                                                                                          child: Container(
+                                                                                                            padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 10.w),
+                                                                                                            margin: EdgeInsets.symmetric(horizontal: media.width * 0.05),
+                                                                                                            //  height: media.width * 0.106,
+                                                                                                            //width: media.width * 0.4,
                                                                                                             decoration: BoxDecoration(
                                                                                                               color: Colors.blue[200],
                                                                                                               borderRadius: BorderRadius.circular(20.r),
                                                                                                             ),
-                                                                                                            //   backgroundColor: Colors.blue[200],
-                                                                                                            //    height: media.width * 0.12,
-                                                                                                            //  width: media.width * 0.12,
-                                                                                                            //   decoration: BoxDecoration(color: page, borderRadius: BorderRadius.circular(media.width * 0.02), border: Border.all(color: textColor)),
-                                                                                                            padding: EdgeInsets.symmetric(
-                                                                                                              vertical: 10.h,
-                                                                                                              //horizontal: media.width * 0.01,
-                                                                                                            ),
-                                                                                                            child: (confirmRideLater == false)
-                                                                                                                ? Row(
-                                                                                                                    mainAxisAlignment: MainAxisAlignment.center,
-                                                                                                                    children: [
-                                                                                                                      Icon(
-                                                                                                                        Icons.access_time,
-                                                                                                                        size: media.width * sixteen,
-                                                                                                                        color: Colors.white,
-                                                                                                                      ),
-                                                                                                                      MyText(
-                                                                                                                        text: languages[choosenLanguage]['text_ride_later'],
-                                                                                                                        size: media.width * twelve,
-                                                                                                                        color: Colors.white,
-                                                                                                                      ),
-                                                                                                                    ],
-                                                                                                                  )
-                                                                                                                : MyText(
-                                                                                                                    text: DateFormat().format(choosenDateTime).toString(),
-                                                                                                                    size: media.width * twelve,
-                                                                                                                  ),
-                                                                                                          )
-                                                                                                        : Container(
-                                                                                                            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
-                                                                                                            decoration: BoxDecoration(
-                                                                                                              borderRadius: BorderRadius.circular(20.r),
-                                                                                                              color: Colors.blue[200],
-                                                                                                            ),
-                                                                                                            alignment: Alignment.center,
                                                                                                             child: Row(
                                                                                                               mainAxisAlignment: MainAxisAlignment.center,
                                                                                                               crossAxisAlignment: CrossAxisAlignment.center,
                                                                                                               children: [
-                                                                                                                Text(DateFormat().format(choosenDateTime).toString().split(" ")[1] + DateFormat().format(choosenDateTime).toString().split(" ")[2],
-                                                                                                                    style: GoogleFonts.cairo(
-                                                                                                                      fontSize: 12.sp,
-                                                                                                                      fontWeight: FontWeight.w400,
-                                                                                                                      color: Colors.white,
-                                                                                                                    )),
-                                                                                                                SizedBox(
-                                                                                                                  width: 10.w,
+                                                                                                                MyText(
+                                                                                                                  text: languages[choosenLanguage]['text_coupons'],
+                                                                                                                  size: media.width * fourteen,
+                                                                                                                  fontweight: FontWeight.w600,
+                                                                                                                  color: Colors.white,
                                                                                                                 ),
-                                                                                                                Text(DateFormat().format(choosenDateTime).toString().split(" ")[3],
-                                                                                                                    style: GoogleFonts.cairo(
-                                                                                                                      fontSize: 12.sp,
-                                                                                                                      fontWeight: FontWeight.w400,
-                                                                                                                      color: Colors.white,
-                                                                                                                    )),
                                                                                                               ],
                                                                                                             ),
                                                                                                           ),
-                                                                                                  ),
-                                                                                                ),
-                                                                                                (choosenVehicle != null && (widget.type == 1 || etaDetails[choosenVehicle]['enable_bidding'] == null || etaDetails[choosenVehicle]['enable_bidding'] == false) && widget.type != 2 && isOneWayTrip == true)
-                                                                                                    ? Row(
-                                                                                                        children: [
-                                                                                                          InkWell(
-                                                                                                            onTap: () {
-                                                                                                              // setState(() {
-                                                                                                              //   addCoupon =
-                                                                                                              //       true;
-                                                                                                              // });
+                                                                                                        ),
 
-                                                                                                              showModalBottomSheet(
-                                                                                                                  context: context,
-                                                                                                                  isScrollControlled: true,
-                                                                                                                  builder: (context) {
-                                                                                                                    return ApplyCouponsContainer(
-                                                                                                                      type: widget.type,
-                                                                                                                    );
-                                                                                                                  });
-                                                                                                            },
-                                                                                                            child: Container(
-                                                                                                              padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 10.w),
-                                                                                                              margin: EdgeInsets.symmetric(horizontal: media.width * 0.05),
-                                                                                                              //  height: media.width * 0.106,
-                                                                                                              //width: media.width * 0.4,
-                                                                                                              decoration: BoxDecoration(
-                                                                                                                color: Colors.blue[200],
-                                                                                                                borderRadius: BorderRadius.circular(20.r),
-                                                                                                              ),
-                                                                                                              child: Row(
-                                                                                                                mainAxisAlignment: MainAxisAlignment.center,
-                                                                                                                crossAxisAlignment: CrossAxisAlignment.center,
-                                                                                                                children: [
-                                                                                                                  MyText(
-                                                                                                                    text: languages[choosenLanguage]['text_coupons'],
-                                                                                                                    size: media.width * fourteen,
-                                                                                                                    fontweight: FontWeight.w600,
-                                                                                                                    color: Colors.white,
-                                                                                                                  ),
-                                                                                                                ],
-                                                                                                              ),
-                                                                                                            ),
-                                                                                                          ),
-
-                                                                                                          //choses data
-                                                                                                        ],
-                                                                                                      )
-                                                                                                    : Container(),
-                                                                                              ],
-                                                                                            ),
+                                                                                                        //choses data
+                                                                                                      ],
+                                                                                                    )
+                                                                                                  : Container(),
+                                                                                            ],
                                                                                           )
                                                                                         : Container(),
                                                                                     SizedBox(
@@ -5098,7 +5094,7 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                                 12))),
                                             child: Column(
                                               children: [
-                                                   Button(
+                                                Button(
                                                     onTap: () async {
                                                       setState(() {
                                                         serviceNotAvailable =
@@ -5124,7 +5120,6 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                     text: languages[
                                                             choosenLanguage]
                                                         ['text_tryagain']),
-                                             
                                                 Container(
                                                   height: media.width * 0.18,
                                                   width: media.width * 0.18,
@@ -5170,7 +5165,6 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                 SizedBox(
                                                   height: media.width * 0.05,
                                                 ),
-                                             
                                               ],
                                             ),
                                           ))

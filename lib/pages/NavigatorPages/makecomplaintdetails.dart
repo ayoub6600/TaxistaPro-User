@@ -191,7 +191,7 @@ class _MakeComplaintsDetailsState extends State<MakeComplaintsDetails> {
                                       onTap: () {
                                         Navigator.pop(context, true);
                                       },
-                                      child: Icon(
+                                      child: const Icon(
                                         Icons.close,
                                         color: Colors.red,
                                       )),

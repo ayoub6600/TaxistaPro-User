@@ -400,7 +400,7 @@ class _WalletPageState extends State<WalletPage> {
                                                             children: [
                                                               GestureDetector(
                                                                 onTap: () {
-                                                                  print(
+                                                                  debugPrint(
                                                                       walletHistory[
                                                                           i]);
                                                                 },
@@ -842,7 +842,7 @@ class _WalletPageState extends State<WalletPage> {
                                                                     msg:
                                                                         result);
                                                             await getWallet();
-                                                            print(
+                                                            debugPrint(
                                                                 'drops $result');
                                                           },
                                                           text: languages[

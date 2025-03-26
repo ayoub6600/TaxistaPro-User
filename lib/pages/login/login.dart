@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -502,7 +501,7 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                                     InkWell(
                                                         onTap: () {
                                                           if (signIn == 0) {
-                                                            print('dshfj');
+                                                            debugPrint('dshfj');
                                                             setState(() {
                                                               forgotPassword =
                                                                   false;
@@ -1865,13 +1864,6 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                                               .instance
                                                               .signInWithCredential(
                                                                   credential);
-
-                                                          String? bearerrrrr =
-                                                              await FirebaseAuth
-                                                                  .instance
-                                                                  .currentUser!
-                                                                  .getIdToken();
-
                                                           var verify =
                                                               await verifyUser(
                                                                   _email.text,
@@ -2365,12 +2357,6 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                                             .instance
                                                             .signInWithCredential(
                                                                 credential);
-
-                                                        String? bearerrrrr =
-                                                            await FirebaseAuth
-                                                                .instance
-                                                                .currentUser!
-                                                                .getIdToken();
 
                                                         mobileVerified = true;
                                                         Navigator.push(
