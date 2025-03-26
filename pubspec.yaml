@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 5.0.0+2
 
 environment:
-  sdk: '>=3.3.1 <4.0.0'
+  sdk: '>=3.3.0 <4.0.0'
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -28,64 +28,49 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
-  flutter:
-    sdk: flutter
-
-
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.6
-  google_fonts: ^6.2.1
+  animated_text_kit: ^4.2.2
+  audioplayers: ^6.0.0
   bot_toast: ^4.1.3
-  http: ^1.1.0
+  carousel_slider: ^5.0.0
+  connectivity_plus: ^6.0.5
+  contacts_service: ^0.6.3
+  cupertino_icons: ^1.0.6
+  device_info_plus: any
   firebase_auth: ^5.1.4
   firebase_core: ^3.3.0
   firebase_database: ^11.0.4
-  flutter_launcher_icons:
   firebase_messaging: ^15.0.4
-  shared_preferences: ^2.2.1
-  image_picker: ^1.0.4
+  flutter:
+    sdk: flutter
+  flutter_inappwebview: ^6.0.0
+  flutter_launcher_icons: null
+  flutter_local_notifications: any
+  flutter_map: any
+  geolocator: any
+  google_fonts: any
   google_maps_flutter: ^2.5.0
-  cached_network_image: ^3.4.1
-  geolocator: ^12.0.0
-  location: ^7.0.0
-  audioplayers: ^6.0.0
-  flutter_localization: ^0.3.1
-  url_launcher: ^6.1.14
-  flutter_screenutil: ^5.9.3
-  flutter_local_notifications: ^17.2.2
+  http: ^1.1.0
+  image_picker: ^1.0.4
+  intl: ^0.20.2
+  latlong2: any
+  location: any
+  package_info_plus: any
+  path_provider: ^2.1.1
   permission_handler: ^11.0.0
-  contacts_service: ^0.6.3
+  pinput: ^5.0.0
   share_plus: ^10.0.0
-  connectivity_plus: ^6.0.5
-  package_info_plus: ^4.1.0
+  shared_preferences: ^2.2.1
+  url_launcher: ^6.1.14
+  uuid: ^4.4.2
   vector_math: ^2.1.4
   webview_flutter: ^4.2.4
-  path_provider: ^2.1.1
-  flutter_inappwebview: ^6.0.0
-  uuid: ^4.4.2
-  device_info_plus: ^10.1.2
-  pinput: ^5.0.0
-  intl: ^0.19.0
-  animated_text_kit: ^4.2.2
-  flutter_map: ^7.0.2
-  carousel_slider: ^5.0.0
-
-  latlong2: any
 dev_dependencies:
+  flutter_lints: ^4.0.0
   flutter_test:
     sdk: flutter
 
-  # The "flutter_lints" package below contains a set of recommended lints to
-  # encourage good coding practices. The lint set provided by the package is
-  # activated in the `analysis_options.yaml` file located at the root of your
-  # package. See that file for information about deactivating specific lint
-  # rules and activating additional ones.
-  flutter_lints: ^4.0.0
-
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
-
 # The following section is specific to Flutter packages.
 flutter:
   uses-material-design: true
@@ -97,7 +82,6 @@ flutter:
     - assets/dark.json
     - assets/images/no-location.png
 
-  
 flutter_launcher_icons:
   android: "ic_launcher"
   ios: true
