@@ -1,13 +1,86 @@
 {
   "project_info": {
     "project_number": "1066498192256",
+    "firebase_url": "https://taxista-ee27d-default-rtdb.firebaseio.com",
     "project_id": "taxista-ee27d",
     "storage_bucket": "taxista-ee27d.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1066498192256:android:612d08f233ca51051f8765",
+        "mobilesdk_app_id": "1:1066498192256:android:f9157fbf685b02a41f8765",
+        "android_client_info": {
+          "package_name": "com.taxista.driver"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1066498192256-muudbucbgf41pl5dhv4mvoe1nofs60dg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDvXGdmQyi4cLNF6cTn-zu-8qJcDStIf2E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1066498192256-muudbucbgf41pl5dhv4mvoe1nofs60dg.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1066498192256-0cntt2vt8f6nfk0mlu329rqfis7426ik.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.user.taxista.ios"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1066498192256:android:bdcc9d3040ac339c1f8765",
+        "android_client_info": {
+          "package_name": "com.taxistapro.driver"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1066498192256-muudbucbgf41pl5dhv4mvoe1nofs60dg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDvXGdmQyi4cLNF6cTn-zu-8qJcDStIf2E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1066498192256-muudbucbgf41pl5dhv4mvoe1nofs60dg.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1066498192256-0cntt2vt8f6nfk0mlu329rqfis7426ik.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.user.taxista.ios"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1066498192256:android:119a6234a593e60c1f8765",
         "android_client_info": {
           "package_name": "com.user.taxista"
         }
