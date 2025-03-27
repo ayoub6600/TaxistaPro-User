@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:share_plus/share_plus.dart';
+
 import '../../functions/functions.dart';
 import '../../styles/styles.dart';
 import '../../translations/translation.dart';
@@ -208,7 +209,7 @@ class _ReferralPageState extends State<ReferralPage> {
                                               languages[choosenLanguage]
                                                   ['text_invitation_2'] +
                                               ' \n \n ' +
-                                              "https://play.google.com/store/apps/details?id=com.taxista.user&pcampaignid=web_share" +
+                                              "https://play.google.com/store/apps/details?id=com.user.taxista&pcampaignid=web_share" +
                                               '\n \n  ' +
                                               "https://apps.apple.com/us/app/taxista/id6739538467");
                                     },

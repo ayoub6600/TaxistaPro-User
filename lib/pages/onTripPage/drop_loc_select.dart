@@ -390,7 +390,7 @@ class _DropLocationState extends State<DropLocation>
                                         urlTemplate:
                                             'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                                         userAgentPackageName:
-                                            'com.taxista.user',
+                                            'com.user.taxista',
                                       ),
                                       const fm.RichAttributionWidget(
                                         attributions: [],

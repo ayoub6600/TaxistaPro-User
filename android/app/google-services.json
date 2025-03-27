@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:1066498192256:android:612d08f233ca51051f8765",
         "android_client_info": {
-          "package_name": "com.taxista.user"
+          "package_name": "com.user.taxista"
         }
       },
       "oauth_client": [
