@@ -209,7 +209,7 @@ class _ReferralPageState extends State<ReferralPage> {
                                               languages[choosenLanguage]
                                                   ['text_invitation_2'] +
                                               ' \n \n ' +
-                                              "https://play.google.com/store/apps/details?id=com.user.taxista&pcampaignid=web_share" +
+                                              "https://play.google.com/store/apps/details?id=com.Ayoub.taxista&pcampaignid=web_share" +
                                               '\n \n  ' +
                                               "https://apps.apple.com/us/app/taxista/id6739538467");
                                     },
