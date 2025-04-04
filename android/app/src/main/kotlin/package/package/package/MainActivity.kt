@@ -1,4 +1,4 @@
-package com.Ayoub.taxista
+package com.Ayoub.Usertaxista
 
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.android.FlutterFragmentActivity

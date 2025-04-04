@@ -8,9 +8,45 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1066498192256:android:d541bb9a5207dd9f1f8765",
+        "mobilesdk_app_id": "1:1066498192256:android:3f1873f2396311ba1f8765",
         "android_client_info": {
-          "package_name": "com.Ayoub.taxista"
+          "package_name": "Ayoub.Usertaxista"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1066498192256-muudbucbgf41pl5dhv4mvoe1nofs60dg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDvXGdmQyi4cLNF6cTn-zu-8qJcDStIf2E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1066498192256-muudbucbgf41pl5dhv4mvoe1nofs60dg.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1066498192256-0cntt2vt8f6nfk0mlu329rqfis7426ik.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.user.taxista.ios"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1066498192256:android:8aae96a46249f3591f8765",
+        "android_client_info": {
+          "package_name": "com.Ayoub.driver"
         }
       },
       "oauth_client": [
