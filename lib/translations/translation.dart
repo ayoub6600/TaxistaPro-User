@@ -9,6 +9,7 @@ Map<String, dynamic> languages = {
     "text_your_ride": "رحلتك، عند الطلب",
     "text_login": "تسجيل الدخول",
     "text_phone_number": "اكتب رقم موبايلك",
+    "send_otp": "تم إرسال otp عبر الواتساب",
     "text_get_started": "يلا نبدأ !",
     "text_fill_form": "عبي النموذج للمتابعة",
     "text_signup_social":

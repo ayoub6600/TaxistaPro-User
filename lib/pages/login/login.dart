@@ -1442,7 +1442,7 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                               ),
                                               MyText(
                                                 text: languages[choosenLanguage]
-                                                    ['text_phone_number'],
+                                                    ['send_otp'],
                                                 size: 12.sp,
                                                 color: Colors.white,
                                               ),

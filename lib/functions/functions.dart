@@ -3065,21 +3065,25 @@ getReferral() async {
       'Authorization': 'Bearer ${bearerToken[0].token}',
       'Content-Type': 'application/json'
     });
+
     if (response.statusCode == 200) {
-      debugPrint(jsonDecode(response.body));
+      final decoded = jsonDecode(response.body);
+      debugPrint('Response Body: ${jsonEncode(decoded)}'); // كل البيانات
       result = 'success';
-      myReferralCode = jsonDecode(response.body)['data'];
+      myReferralCode = decoded['data'];
       valueNotifierBook.incrementNotifier();
     } else if (response.statusCode == 401) {
       result = 'logout';
     } else {
-      debugPrint(response.body);
+      debugPrint('Error Body: ${response.body}');
       result = 'failure';
     }
   } catch (e) {
     if (e is SocketException) {
       result = 'no internet';
       internet = false;
+    } else {
+      debugPrint('Unexpected error: $e');
     }
   }
   return result;

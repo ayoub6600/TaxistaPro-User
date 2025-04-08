@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../functions/functions.dart';
 import '../../styles/styles.dart';
 import '../../translations/translation.dart';
@@ -53,14 +54,18 @@ class _ReferralState extends State<Referral> {
               width: media.width * 1,
               // color: theme,
 
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Button(
-                          width: media.width * 0.4,
+              child: SafeArea(
+                child: Column(
+                  children: [
+                    // SizedBox(
+                    //   height: media.height * 0.05 +
+                    //       MediaQuery.of(context).padding.top,
+                    // ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        GestureDetector(
                           onTap: () async {
                             setState(() {
                               _loading = true;
@@ -77,92 +82,133 @@ class _ReferralState extends State<Referral> {
                               _loading = false;
                             });
                           },
-                          text: languages[choosenLanguage]['text_skip']),
-                    ],
-                  ),
-                  SizedBox(
-                    height: media.height * 0.05 +
-                        MediaQuery.of(context).padding.top,
-                  ),
-                  SizedBox(
-                      width: media.width * 1,
-                      child: MyText(
-                        text: languages[choosenLanguage]['text_apply_referral'],
-                        size: media.width * twenty,
-                        fontweight: FontWeight.bold,
-                      )),
-                  const SizedBox(height: 10),
-                  Container(
-                    height: media.width * 0.12,
-                    width: media.width * 0.8,
-                    decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        color: Colors.grey.shade200),
-                    padding: EdgeInsets.only(
-                        right: media.width * 0.025, left: media.width * 0.025),
-                    child: TextField(
-                      controller: referalController,
-                      decoration: InputDecoration(
-                          hintText: languages[choosenLanguage]
-                              ['text_enter_referral'],
-                          border: InputBorder.none),
-                    ),
-                  ),
-                  (_error != '' && referalController.text.isNotEmpty)
-                      ? Container(
-                          margin: EdgeInsets.only(top: media.height * 0.02),
-                          child: MyText(
-                            text: _error,
-                            size: media.width * sixteen,
-                            color: Colors.red,
+                          child: Text(
+                            languages[choosenLanguage]['text_skip'],
+                            style: GoogleFonts.notoSans(
+                                fontSize: media.width * twenty,
+                                color: textColor,
+                                fontWeight: FontWeight.bold),
                           ),
-                        )
-                      : Container(),
-                  const SizedBox(
-                    height: 40,
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      //apply code
-                      Button(
-                        width: media.width * 0.4,
-                        onTap: () async {
-                          if (referalController.text.isNotEmpty) {
-                            FocusManager.instance.primaryFocus?.unfocus();
-                            setState(() {
-                              _error = '';
-                              _loading = true;
-                            });
+                        ),
+                        SizedBox(
+                          width: media.width * 0.02,
+                        ),
+                        Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          color: Colors.blue,
+                          size: media.width * 0.05,
+                        ),
+                        // Button(
+                        //     width: media.width * 0.4,
+                        //     onTap: () async {
+                        //       setState(() {
+                        //         _loading = true;
+                        //       });
+                        //       // var val = await registerUser();
+                        //       FocusManager.instance.primaryFocus?.unfocus();
+                        //       _error = '';
+                        //       Navigator.pushReplacement(
+                        //           context,
+                        //           MaterialPageRoute(
+                        //               builder: (context) => const Maps()));
 
-                            var result = await updateReferral();
-                            if (result == 'true') {
-                              navigate();
-                            } else {
+                        //       setState(() {
+                        //         _loading = false;
+                        //       });
+                        //     },
+                        //     text: languages[choosenLanguage]['text_skip']),
+                      ],
+                    ),
+                    SizedBox(
+                      height: media.height * 0.05 +
+                          MediaQuery.of(context).padding.top,
+                    ),
+                    SizedBox(
+                        width: media.width * 1,
+                        child: MyText(
+                          text: languages[choosenLanguage]
+                              ['text_apply_referral'],
+                          size: media.width * twenty,
+                          fontweight: FontWeight.bold,
+                        )),
+                    const SizedBox(height: 10),
+                    Container(
+                      height: media.width * 0.12,
+                      width: media.width * 0.8,
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          color: Colors.grey.shade200),
+                      padding: EdgeInsets.only(
+                          right: media.width * 0.025,
+                          left: media.width * 0.025),
+                      child: TextField(
+                        controller: referalController,
+                        decoration: InputDecoration(
+                            hintText: languages[choosenLanguage]
+                                ['text_enter_referral'],
+                            border: InputBorder.none),
+                      ),
+                    ),
+                    (_error != '' && referalController.text.isNotEmpty)
+                        ? Container(
+                            margin: EdgeInsets.only(top: media.height * 0.02),
+                            child: MyText(
+                              text: _error,
+                              size: media.width * sixteen,
+                              color: Colors.red,
+                            ),
+                          )
+                        : Container(),
+                    const SizedBox(
+                      height: 40,
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        //apply code
+                        Button(
+                          width: media.width * 0.4,
+                          onTap: () async {
+                            if (referalController.text.isNotEmpty) {
+                              FocusManager.instance.primaryFocus?.unfocus();
                               setState(() {
-                                _error = languages[choosenLanguage]
-                                    ['text_referral_code'];
+                                _error = '';
+                                _loading = true;
                               });
-                            }
-                            setState(() {
-                              _loading = false;
-                            });
-                          } else {}
-                        },
-                        text: languages[choosenLanguage]['text_apply'],
-                        color: (referalController.text.isNotEmpty)
-                            ? buttonColor
-                            : Colors.grey,
-                      )
-                    ],
-                  )
-                ],
+
+                              var result = await updateReferral();
+                              if (result == 'true') {
+                                navigate();
+                              } else {
+                                setState(() {
+                                  _error = languages[choosenLanguage]
+                                      ['text_referral_code'];
+                                });
+                              }
+                              setState(() {
+                                _loading = false;
+                              });
+                            } else {}
+                          },
+                          text: languages[choosenLanguage]['text_apply'],
+                          color: (referalController.text.isNotEmpty)
+                              ? buttonColor
+                              : Colors.grey,
+                        )
+                      ],
+                    )
+                  ],
+                ),
               ),
             ),
             //loader
             (_loading == true)
                 ? const Positioned(top: 0, child: Loading())
-                : Container()
+                : Center(
+                    child: Text(
+                      '',
+                    ),
+                  )
           ],
         ),
       ),

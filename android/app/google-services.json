@@ -8,9 +8,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1066498192256:android:3f1873f2396311ba1f8765",
+        "mobilesdk_app_id": "1:1066498192256:android:8aae96a46249f3591f8765",
         "android_client_info": {
-          "package_name": "Ayoub.Usertaxista"
+          "package_name": "com.Ayoub.driver"
         }
       },
       "oauth_client": [
@@ -44,9 +44,9 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1066498192256:android:8aae96a46249f3591f8765",
+        "mobilesdk_app_id": "1:1066498192256:android:6e6520387c5ecade1f8765",
         "android_client_info": {
-          "package_name": "com.Ayoub.driver"
+          "package_name": "com.ayoub.usertaxista"
         }
       },
       "oauth_client": [
