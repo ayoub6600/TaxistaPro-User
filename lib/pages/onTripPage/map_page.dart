@@ -1022,54 +1022,6 @@ class _MapsState extends State<Maps>
                                                                           () {});
                                                                     }
                                                                   },
-                                                                  //     {
-                                                                  //       if(userDetails['enable_map_location_icon_drag_and_drop_feature']=='1'){
-                                                                  //   // if (addressList
-                                                                  //   //     .isEmpty) {
-                                                                  //     var val = await geoCoding(
-                                                                  //         _centerLocation
-                                                                  //             .latitude,
-                                                                  //         _centerLocation
-                                                                  //             .longitude);
-                                                                  //     setState(
-                                                                  //         () {
-                                                                  //       if (addressList
-                                                                  //           .where((element) =>
-                                                                  //               element.type ==
-                                                                  //               'pickup')
-                                                                  //           .isNotEmpty) {
-                                                                  //         var add = addressList.firstWhere((element) =>
-                                                                  //             element.type ==
-                                                                  //             'pickup');
-                                                                  //         add.address =
-                                                                  //             val;
-                                                                  //         add.latlng = LatLng(
-                                                                  //             _centerLocation.latitude,
-                                                                  //             _centerLocation.longitude);
-                                                                  //       } else {
-                                                                  //         addressList.add(AddressList(
-                                                                  //             id: '1',
-                                                                  //             type: 'pickup',
-                                                                  //             address: val,
-                                                                  //             pickup: true,
-                                                                  //             latlng: LatLng(_centerLocation.latitude, _centerLocation.longitude),
-                                                                  //             name: userDetails['name'],
-                                                                  //             number: userDetails['mobile']));
-                                                                  //       }
-                                                                  //     });
-                                                                  //     _lastCenter =
-                                                                  //         _centerLocation;
-                                                                  //     ischanged =
-                                                                  //         false;
-                                                                  //     setState(
-                                                                  //         () {});
-                                                                  //   // } else {
-                                                                  //   //   debugPrint(
-                                                                  //   //       'fvkjnskdnvklsdnvklsdv');
-                                                                  //   //   // addToast();
-                                                                  //   // }
-                                                                  //       }
-                                                                  // },
                                                                   minMaxZoomPreference:
                                                                       const MinMaxZoomPreference(
                                                                           8.0,
