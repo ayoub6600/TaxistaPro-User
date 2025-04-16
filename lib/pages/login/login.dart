@@ -877,8 +877,9 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                             child: SizedBox(
                                               height: media.width * 0.12,
                                               child: TextField(
-                                                keyboardType:
-                                                    TextInputType.number,
+                                               keyboardType: (signIn == 0)
+    ? TextInputType.number
+    : TextInputType.emailAddress,
                                                 enabled: (otpSent == true &&
                                                         signIn == 0)
                                                     ? false
