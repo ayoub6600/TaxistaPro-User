@@ -64,6 +64,7 @@ dependencies:
   share_plus: ^10.0.0
   shared_preferences: ^2.2.1
   url_launcher: ^6.1.14
+  font_awesome_flutter: ^10.8.0
   uuid: ^4.4.2
   vector_math: ^2.1.4
   webview_flutter: ^4.2.4

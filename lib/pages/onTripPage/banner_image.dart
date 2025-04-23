@@ -51,7 +51,7 @@ class _BannerImageState extends State<BannerImage> {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(12),
       child: (banners.length == 1)
           ? Image.network(
               banners[0]['image'],

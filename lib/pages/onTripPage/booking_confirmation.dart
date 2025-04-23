@@ -25,6 +25,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart' as perm;
 import 'package:share_plus/share_plus.dart';
 import 'package:taxista/pages/onTripPage/bookingwidgets.dart';
+import 'package:taxista/pages/onTripPage/call_wats.dart';
 import 'package:vector_math/vector_math.dart' as vector;
 
 import '../../functions/functions.dart';
@@ -7053,6 +7054,18 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                                           .width *
                                                                       0.05,
                                                                 ),
+                                                                CallWhatsAppButton(
+                                                                  phoneNumber:
+                                                                      userRequestData[
+                                                                              'driverDetail']
+                                                                          [
+                                                                          'data']
+                                                                      [
+                                                                      'mobile'],
+                                                                ),
+                                                                const  SizedBox(
+                                                                  width: 12,
+                                                                ), 
                                                                 InkWell(
                                                                   onTap: () {
                                                                     makingPhoneCall(userRequestData['driverDetail']
@@ -7101,7 +7114,6 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                         ],
                                                       ),
                                                     ),
-                                                   
 
                                                     // (userRequestData[
                                                     //             'is_trip_start'] !=
@@ -7591,39 +7603,39 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                                   ],
                                                                 ),
                                                               ),
-                                                           
-                                                           
-                                                            
-                                                  SizedBox(
-                                                      height: media.width * 0.05,
-                                                    ),
-                                                     Row(
-                                                       mainAxisAlignment: MainAxisAlignment.start,
-                                                       children: [
-                                                         Text(
-                                                           "للإلغاء تواصل مع السائق",
-                                                          
-                                                           style: GoogleFonts.notoSans(
-                                                               fontSize: media.width * sixteen,
-                                                               color: Colors.grey,
-                                                               fontWeight:
-                                                                   FontWeight.bold),
-                                                         ),
-                                                       ],
-                                                     ),
+                                                            SizedBox(
+                                                              height:
+                                                                  media.width *
+                                                                      0.05,
+                                                            ),
+                                                            Row(
+                                                              mainAxisAlignment:
+                                                                  MainAxisAlignment
+                                                                      .start,
+                                                              children: [
+                                                                Text(
+                                                                  "للإلغاء تواصل مع السائق",
+                                                                  style: GoogleFonts.notoSans(
+                                                                      fontSize:
+                                                                          media.width *
+                                                                              sixteen,
+                                                                      color: Colors
+                                                                          .grey,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .bold),
+                                                                ),
+                                                              ],
+                                                            ),
                                                             SizedBox(
                                                               height:
                                                                   media.height *
                                                                       0.25,
                                                             ),
-
                                                           ],
                                                         ),
                                                       ),
                                                     ),
-                                                 
-                                                 
-                                                
                                                   ],
                                                 )),
                                           ))

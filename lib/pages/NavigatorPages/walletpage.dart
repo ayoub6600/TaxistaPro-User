@@ -640,6 +640,10 @@ class _WalletPageState extends State<WalletPage> {
                                                 width: MediaQuery.of(context)
                                                     .size
                                                     .width,
+                                                height: MediaQuery.of(context)
+                                                        .size
+                                                        .height *
+                                                    0.8,
                                                 // width: media.width * 1,
                                                 // padding: MediaQuery.of(context)
                                                 //     .viewInsets,
@@ -784,7 +788,7 @@ class _WalletPageState extends State<WalletPage> {
                                                                         InputBorder
                                                                             .none,
                                                                     hintText:
-                                                                        'Enter Code here',
+                                                                        "ادخل رقم الكود",
                                                                     hintStyle:
                                                                         GoogleFonts
                                                                             .notoSans(
