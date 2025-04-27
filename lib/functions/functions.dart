@@ -635,6 +635,9 @@ updatePassword(email, password, loginby) async {
       if (loginby == false) 'mobile': email,
       'password': password
     });
+
+    print("------>url ${url}api/v1/user/update-password");
+    print("------>response ${response.body}");
     if (response.statusCode == 200) {
       if (jsonDecode(response.body)['success'] == true) {
         result = true;
@@ -2334,6 +2337,7 @@ cancelRequest() async {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({'request_id': userRequestData['id']}));
+    print("------>url ${url}api/v1/request/cancel");
     debugPrint('drops1 ${response.statusCode}');
 
     if (response.statusCode == 200) {

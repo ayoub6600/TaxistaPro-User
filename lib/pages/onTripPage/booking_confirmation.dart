@@ -7115,73 +7115,12 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                       ),
                                                     ),
 
-                                                    // (userRequestData[
-                                                    //             'is_trip_start'] !=
-                                                    //         1)
-                                                    //     ? Column(
-                                                    //         children: [
-                                                    //           SizedBox(
-                                                    //             height: media
-                                                    //                     .width *
-                                                    //                 0.05,
-                                                    //           ),
-                                                    //           Row(
-                                                    //             mainAxisAlignment:
-                                                    //                 MainAxisAlignment
-                                                    //                     .center,
-                                                    //             children: [
-                                                    //               (userRequestData[
-                                                    //                           'is_trip_start'] !=
-                                                    //                       1)
-                                                    //                   ? InkWell(
-                                                    //                       onTap:
-                                                    //                           () async {
-                                                    //                         setState(() {
-                                                    //                           isLoading = true;
-                                                    //                         });
-                                                    //                         var reason = await cancelReason((userRequestData['is_driver_arrived'] == 0)
-                                                    //                             ? 'before'
-                                                    //                             : 'after');
-                                                    //                         if (reason ==
-                                                    //                             true) {
-                                                    //                           setState(() {
-                                                    //                             _cancellingError = '';
-                                                    //                             _cancelReason = '';
-                                                    //                             _cancelling = true;
-                                                    //                           });
-                                                    //                         }
-                                                    //                         setState(() {
-                                                    //                           isLoading = false;
-                                                    //                         });
-                                                    //                       },
-                                                    //                       child:
-                                                    //                           Row(
-                                                    //                         children: [
-                                                    //                           Image.asset(
-                                                    //                             'assets/images/cancelimage.png',
-                                                    //                             height: media.width * 0.064,
-                                                    //                             width: media.width * 0.064,
-                                                    //                             fit: BoxFit.contain,
-                                                    //                             color: verifyDeclined,
-                                                    //                           ),
-                                                    //                           SizedBox(
-                                                    //                             width: media.width * 0.025,
-                                                    //                           ),
-                                                    //                           MyText(
-                                                    //                             text: languages[choosenLanguage]['text_cancel_booking'],
-                                                    //                             size: media.width * twelve,
-                                                    //                             fontweight: FontWeight.w400,
-                                                    //                             color: verifyDeclined,
-                                                    //                           ),
-                                                    //                         ],
-                                                    //                       ),
-                                                    //                     )
-                                                    //                   : Container(),
-                                                    //             ],
-                                                    //           ),
-                                                    //         ],
-                                                    //       )
-                                                    //     : Container(),
+                                                   
+                                                   
+                                                   
+                                                   
+                                                   
+                                                   
                                                     SizedBox(
                                                       height:
                                                           media.width * 0.05,
@@ -7614,7 +7553,7 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                                       .start,
                                                               children: [
                                                                 Text(
-                                                                  "للإلغاء تواصل مع السائق",
+                                                                  'عند إلغاء الطلب سيتم خصم 2.5 دل',
                                                                   style: GoogleFonts.notoSans(
                                                                       fontSize:
                                                                           media.width *
@@ -7627,6 +7566,74 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                                 ),
                                                               ],
                                                             ),
+                                                             (userRequestData[
+                                                                'is_trip_start'] !=
+                                                            1)
+                                                        ? Column(
+                                                            children: [
+                                                              SizedBox(
+                                                                height: media
+                                                                        .width *
+                                                                    0.05,
+                                                              ),
+                                                              Row(
+                                                                mainAxisAlignment:
+                                                                    MainAxisAlignment
+                                                                        .center,
+                                                                children: [
+                                                                  (userRequestData[
+                                                                              'is_trip_start'] !=
+                                                                          1)
+                                                                      ? InkWell(
+                                                                          onTap:
+                                                                              () async {
+                                                                            setState(() {
+                                                                              isLoading = true;
+                                                                            });
+                                                                            var reason = await cancelReason((userRequestData['is_driver_arrived'] == 0)
+                                                                                ? 'before'
+                                                                                : 'after');
+                                                                            if (reason ==
+                                                                                true) {
+                                                                              setState(() {
+                                                                                _cancellingError = '';
+                                                                                _cancelReason = '';
+                                                                                _cancelling = true;
+                                                                              });
+                                                                            }
+                                                                            setState(() {
+                                                                              isLoading = false;
+                                                                            });
+                                                                          },
+                                                                          child:
+                                                                              Row(
+                                                                            children: [
+                                                                              Image.asset(
+                                                                                'assets/images/cancelimage.png',
+                                                                                height: media.width * 0.064,
+                                                                                width: media.width * 0.064,
+                                                                                fit: BoxFit.contain,
+                                                                                color: verifyDeclined,
+                                                                              ),
+                                                                              SizedBox(
+                                                                                width: media.width * 0.025,
+                                                                              ),
+                                                                              MyText(
+                                                                                text: languages[choosenLanguage]['text_cancel_booking'],
+                                                                                size: media.width * twelve,
+                                                                                fontweight: FontWeight.w400,
+                                                                                color: verifyDeclined,
+                                                                              ),
+                                                                            ],
+                                                                          ),
+                                                                        )
+                                                                      : Container(),
+                                                                ],
+                                                              ),
+                                                            ],
+                                                          )
+                                                        : Container(),
+                                                   
                                                             SizedBox(
                                                               height:
                                                                   media.height *
@@ -7686,7 +7693,7 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                                   0xffFF0000)),
                                                       child: const Center(
                                                         child: Icon(
-                                                          Icons.cancel_outlined,
+                                                          Icons.close,
                                                           color: Colors.white,
                                                         ),
                                                       ),
@@ -7904,6 +7911,21 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                         MainAxisAlignment
                                                             .spaceBetween,
                                                     children: [
+                                                       Button(
+                                                        backgroundcolor: Colors.red,
+                                                          width: media.width *
+                                                              0.39,
+                                                          onTap: () {
+                                                            setState(() {
+                                                              _cancelling =
+                                                                  false;
+                                                            });
+                                                          },
+                                                          text: languages[
+                                                                  choosenLanguage]
+                                                              [
+                                                              'tex_dontcancel'])
+                                                   ,
                                                       Button(
                                                           textcolor:
                                                               Colors.white,
@@ -7963,20 +7985,9 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                           },
                                                           text: languages[
                                                                   choosenLanguage]
-                                                              ['text_cancel']),
-                                                      Button(
-                                                          width: media.width *
-                                                              0.39,
-                                                          onTap: () {
-                                                            setState(() {
-                                                              _cancelling =
-                                                                  false;
-                                                            });
-                                                          },
-                                                          text: languages[
-                                                                  choosenLanguage]
-                                                              [
-                                                              'tex_dontcancel'])
+                                                              ['text_cancel'] , 
+                                                              ),
+                                                     
                                                     ],
                                                   )
                                                 ]),

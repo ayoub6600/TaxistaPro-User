@@ -877,9 +877,10 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                             child: SizedBox(
                                               height: media.width * 0.12,
                                               child: TextField(
-                                               keyboardType: (signIn == 0)
-    ? TextInputType.number
-    : TextInputType.emailAddress,
+                                                keyboardType: (signIn == 0)
+                                                    ? TextInputType.number
+                                                    : TextInputType
+                                                        .emailAddress,
                                                 enabled: (otpSent == true &&
                                                         signIn == 0)
                                                     ? false
@@ -948,8 +949,11 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                             CrossAxisAlignment.start,
                                         children: [
                                           MyText(
-                                            text: languages[choosenLanguage]
-                                                ['text_enter_password'],
+                                            text: (otpSent == true)
+                                                ? languages[choosenLanguage]
+                                                    ['text_driver_otp']
+                                                : languages[choosenLanguage]
+                                                    ['text_enter_password'],
                                             size: 16.sp,
                                             color: Colors.white,
                                           ),
@@ -1023,156 +1027,172 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                           ),
                                         ],
                                       ),
-
-                                    AnimatedCrossFade(
-                                        firstChild: Container(),
-                                        secondChild: Column(
-                                          children: [
-                                            SizedBox(
-                                              height: media.width * 0.05,
-                                            ),
-                                            Container(
-                                              height: media.width * 0.12,
-                                              width: media.width * 0.8,
-                                              decoration: BoxDecoration(
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                  color: Colors.white),
-                                              padding: EdgeInsets.only(
-                                                  right: media.width * 0.025,
-                                                  left: media.width * 0.025),
-                                              child: Row(
-                                                children: [
-                                                  Expanded(
-                                                    child: TextField(
-                                                      controller: _newPassword,
-                                                      decoration: InputDecoration(
-                                                          hintText: languages[
-                                                                  choosenLanguage]
-                                                              [
-                                                              'Enter New Password'],
-                                                          border:
-                                                              InputBorder.none),
-                                                      keyboardType:
-                                                          TextInputType
-                                                              .emailAddress,
-                                                      obscureText:
-                                                          (showNewPassword ==
-                                                                  false)
-                                                              ? true
-                                                              : false,
-                                                    ),
-                                                  ),
-                                                  // if(withOtp == false || signIn == 1)
-                                                  IconButton(
-                                                      onPressed: () {
-                                                        setState(() {
-                                                          if (showNewPassword) {
-                                                            showNewPassword =
-                                                                false;
-                                                          } else {
-                                                            showNewPassword =
-                                                                true;
-                                                          }
-                                                        });
-                                                      },
-                                                      icon: Icon(
-                                                        Icons
-                                                            .remove_red_eye_sharp,
-                                                        color:
+                                    if (withOtp == true)
+                                      AnimatedCrossFade(
+                                          firstChild: Container(),
+                                          secondChild: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              MyText(
+                                                text: languages[choosenLanguage]
+                                                    ['text_enter_new_password'],
+                                                size: 12.sp,
+                                                color: Colors.white,
+                                              ),
+                                              SizedBox(
+                                                height: 6.h,
+                                              ),
+                                              Container(
+                                                height: media.width * 0.12,
+                                                width: media.width * 0.8,
+                                                decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            8),
+                                                    color: Colors.white),
+                                                padding: EdgeInsets.only(
+                                                    right: media.width * 0.025,
+                                                    left: media.width * 0.025),
+                                                child: Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: TextField(
+                                                        controller:
+                                                            _newPassword,
+                                                        decoration: InputDecoration(
+                                                            hintText: languages[
+                                                                    choosenLanguage]
+                                                                [
+                                                                'text_enter_new_password'],
+                                                            border: InputBorder
+                                                                .none),
+                                                        keyboardType:
+                                                            TextInputType
+                                                                .emailAddress,
+                                                        obscureText:
                                                             (showNewPassword ==
-                                                                    true)
-                                                                ? const Color(
-                                                                    0xffFFD302)
-                                                                : null,
-                                                      ))
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        crossFadeState: (newPassword == false)
-                                            ? CrossFadeState.showFirst
-                                            : CrossFadeState.showSecond,
-                                        duration:
-                                            const Duration(milliseconds: 200)),
-
-                                    AnimatedCrossFade(
-                                        firstChild: Container(),
-                                        secondChild: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            SizedBox(
-                                              height: 12.h,
-                                            ),
-                                            MyText(
-                                              text: languages[choosenLanguage]
-                                                  ['confirm'],
-                                              size: 12.sp,
-                                              color: Colors.white,
-                                            ),
-                                            SizedBox(
-                                              height: 6.h,
-                                            ),
-                                            Container(
-                                              height: media.width * 0.12,
-                                              width: media.width * 0.8,
-                                              decoration: BoxDecoration(
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                  color: Colors.white),
-                                              padding: EdgeInsets.only(
-                                                  right: media.width * 0.025,
-                                                  left: media.width * 0.025),
-                                              child: Row(
-                                                children: [
-                                                  Expanded(
-                                                    child: TextField(
-                                                      controller: _confirm,
-                                                      decoration: InputDecoration(
-                                                          hintText: languages[
-                                                                  choosenLanguage]
-                                                              ['confirm'],
-                                                          border:
-                                                              InputBorder.none),
-                                                      keyboardType:
-                                                          TextInputType
-                                                              .emailAddress,
-                                                      obscureText:
-                                                          (showConfirm == false)
-                                                              ? true
-                                                              : false,
+                                                                    false)
+                                                                ? true
+                                                                : false,
+                                                      ),
                                                     ),
-                                                  ),
-                                                  // if(withOtp == false || signIn == 1)
-                                                  IconButton(
-                                                      onPressed: () {
-                                                        setState(() {
-                                                          if (showConfirm) {
-                                                            showConfirm = false;
-                                                          } else {
-                                                            showConfirm = true;
-                                                          }
-                                                        });
-                                                      },
-                                                      icon: Icon(
-                                                          (showConfirm == true)
-                                                              ? Icons
-                                                                  .remove_red_eye_sharp
-                                                              : Icons
-                                                                  .remove_red_eye_outlined,
-                                                          color: Colors.grey))
-                                                ],
+                                                    // if(withOtp == false || signIn == 1)
+                                                    IconButton(
+                                                        onPressed: () {
+                                                          setState(() {
+                                                            if (showNewPassword) {
+                                                              showNewPassword =
+                                                                  false;
+                                                            } else {
+                                                              showNewPassword =
+                                                                  true;
+                                                            }
+                                                          });
+                                                        },
+                                                        icon: Icon(
+                                                          Icons
+                                                              .remove_red_eye_sharp,
+                                                          color:
+                                                              (showNewPassword ==
+                                                                      true)
+                                                                  ? const Color(
+                                                                      0xffFFD302)
+                                                                  : null,
+                                                        ))
+                                                  ],
+                                                ),
                                               ),
-                                            ),
-                                          ],
-                                        ),
-                                        crossFadeState: (confirm == false)
-                                            ? CrossFadeState.showFirst
-                                            : CrossFadeState.showSecond,
-                                        duration:
-                                            const Duration(milliseconds: 200)),
+                                            ],
+                                          ),
+                                          crossFadeState: (newPassword == false)
+                                              ? CrossFadeState.showFirst
+                                              : CrossFadeState.showSecond,
+                                          duration: const Duration(
+                                              milliseconds: 200)),
+
+                                    if (withOtp == true)
+                                      AnimatedCrossFade(
+                                          firstChild: Container(),
+                                          secondChild: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              SizedBox(
+                                                height: 12.h,
+                                              ),
+                                              MyText(
+                                                text: languages[choosenLanguage]
+                                                    ['confirm'],
+                                                size: 12.sp,
+                                                color: Colors.white,
+                                              ),
+                                              SizedBox(
+                                                height: 6.h,
+                                              ),
+                                              Container(
+                                                height: media.width * 0.12,
+                                                width: media.width * 0.8,
+                                                decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            8),
+                                                    color: Colors.white),
+                                                padding: EdgeInsets.only(
+                                                    right: media.width * 0.025,
+                                                    left: media.width * 0.025),
+                                                child: Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: TextField(
+                                                        controller: _confirm,
+                                                        decoration: InputDecoration(
+                                                            hintText: languages[
+                                                                    choosenLanguage]
+                                                                ['confirm'],
+                                                            border: InputBorder
+                                                                .none),
+                                                        keyboardType:
+                                                            TextInputType
+                                                                .emailAddress,
+                                                        obscureText:
+                                                            (showConfirm ==
+                                                                    false)
+                                                                ? true
+                                                                : false,
+                                                      ),
+                                                    ),
+                                                    // if(withOtp == false || signIn == 1)
+                                                    IconButton(
+                                                        onPressed: () {
+                                                          setState(() {
+                                                            if (showConfirm) {
+                                                              showConfirm =
+                                                                  false;
+                                                            } else {
+                                                              showConfirm =
+                                                                  true;
+                                                            }
+                                                          });
+                                                        },
+                                                        icon: Icon(
+                                                            (showConfirm ==
+                                                                    true)
+                                                                ? Icons
+                                                                    .remove_red_eye_sharp
+                                                                : Icons
+                                                                    .remove_red_eye_outlined,
+                                                            color: Colors.grey))
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          crossFadeState: (confirm == false)
+                                              ? CrossFadeState.showFirst
+                                              : CrossFadeState.showSecond,
+                                          duration: const Duration(
+                                              milliseconds: 200)),
                                     AnimatedCrossFade(
                                         firstChild: Container(),
                                         secondChild: Column(

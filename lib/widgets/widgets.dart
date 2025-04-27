@@ -19,6 +19,7 @@ import '../translations/translation.dart';
 class Button extends StatefulWidget {
   dynamic onTap;
   final String text;
+  Color? backgroundcolor;
   dynamic color;
   dynamic borcolor;
   dynamic textcolor;
@@ -27,16 +28,18 @@ class Button extends StatefulWidget {
   dynamic borderRadius;
   dynamic fontweight;
   // ignore: use_key_in_widget_constructors
-  Button(
-      {required this.onTap,
-      required this.text,
-      this.color,
-      this.borcolor,
-      this.textcolor,
-      this.width,
-      this.height,
-      this.fontweight,
-      this.borderRadius});
+  Button({
+    required this.onTap,
+    required this.text,
+    this.color,
+    this.borcolor,
+    this.textcolor,
+    this.width,
+    this.height,
+    this.fontweight,
+    this.borderRadius,
+    this.backgroundcolor,
+  });
 
   @override
   State<Button> createState() => _ButtonState();
@@ -53,7 +56,8 @@ class _ButtonState extends State<Button> {
       child: Container(
         width: (widget.width != null) ? widget.width : media.width * 0.9,
         decoration: BoxDecoration(
-            color: Colors.blue, borderRadius: BorderRadius.circular(20.r)),
+            color: widget.backgroundcolor ?? Colors.blue,
+            borderRadius: BorderRadius.circular(20.r)),
         child: Container(
           height: widget.height ?? media.width * 0.12,
           // width: (widget.width != null) ? widget.width : media.width * 0.9,

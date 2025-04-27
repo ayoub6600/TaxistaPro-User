@@ -102,7 +102,7 @@ Map<String, dynamic> languages = {
     "text_onride": "بالطريق للتوصيل",
     "text_startride": "بلش الرحلة",
     "text_endtrip": "انهي الرحلة",
-    "text_driver_otp": "ادخل OTP",
+    "text_driver_otp": "أدخل كود التحقق عبر الواتس",
     "text_enterdriverotp": "ادخل OTP الموجود على تطبيق الراكب لتبلش الرحلة",
     "text_enable_history": "السجل",
     "text_enable_wallet": "المحفظة",
@@ -169,7 +169,7 @@ Map<String, dynamic> languages = {
     "text_ridecancel": "إنت متأكد إنك بدك تلغي الرحلة",
     "text_ridecancel_desc":
         "رح نلغلي الرحلة ونرجعك للقائمة الرئيسية, هاد الشي رح يترتب عليه غرامة إلغاء",
-    "tex_dontcancel": "لا تلغي",
+    "tex_dontcancel": "لا تلغي الرحلة",
     "text_cancelRideReason": "خبرنا عن سبب إلغاء الرحلة",
     "text_nodriver": "لايوجد سائق قريب الأن",
     "text_tryagain": "جرب كمان مرة",

@@ -1,5 +1,6 @@
 import 'package:bot_toast/bot_toast.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -12,20 +13,64 @@ import 'pages/loadingPage/loadingpage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setPreferredOrientations(
-      [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
+
+  // قفل دوران الشاشة
+  await SystemChrome.setPreferredOrientations(
+    [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown],
+  );
+
+  // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // اطلب صلاحيات الإشعارات
+  NotificationSettings settings =
+      await FirebaseMessaging.instance.requestPermission(
+    alert: true,
+    announcement: false,
+    badge: true,
+    carPlay: false,
+    criticalAlert: false,
+    provisional: false,
+    sound: true,
+  );
+
+  if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+    print('✅ User granted permission');
+
+    // استمع لأي تغيير في الـ token
+    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
+      print("🔥 FCM Token after refresh: $newToken");
+      // هنا تقدر تخزن التوكن الجديد في قاعدة البيانات أو API
+    });
+
+    // خد التوكن الحالي
+    try {
+      String? token = await FirebaseMessaging.instance.getToken();
+      if (token != null) {
+        print('🔥 Current FCM Token: $token');
+      }
+    } catch (e) {
+      print('❗ Error getting FCM token: $e');
+    }
+  } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
+    print('⚠️ User granted provisional permission');
+  } else {
+    print('❌ User declined or has not accepted permission');
+  }
+
+  // اتأكد من الإتصال بالإنترنت
   checkInternetConnection();
+
+  // ابدأ الاستماع للإشعارات
   initMessaging();
+
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
-  // This widget is the root of your application.
 
   @override
   Widget build(BuildContext context) {
@@ -35,47 +80,45 @@ class MyApp extends StatelessWidget {
       minTextAdapt: true,
       splitScreenMode: true,
       child: GestureDetector(
-          onTap: () {
-            //remove keyboard on touching anywhere on the screen.
-            FocusScopeNode currentFocus = FocusScope.of(context);
-
-            if (!currentFocus.hasPrimaryFocus) {
-              currentFocus.unfocus();
-              FocusManager.instance.primaryFocus?.unfocus();
-            }
-          },
-          child: ValueListenableBuilder(
-              valueListenable: valueNotifierBook.value,
-              builder: (context, value, child) {
-                return MaterialApp(
-                  debugShowCheckedModeBanner: false,
-                  title: 'Taxista',
-                  theme: ThemeData(),
-                  locale: const Locale('ar'),
-                  supportedLocales: const [
-                    Locale('en', 'US'), // English
-                    Locale('ar', ''), // Arabic
-                  ],
-                  localizationsDelegates: const [
-                    GlobalMaterialLocalizations.delegate,
-                    GlobalWidgetsLocalizations.delegate,
-                    GlobalCupertinoLocalizations
-                        .delegate, // Needed for Arabic Cupertino support
-                  ],
-                  home: const LoadingPage(),
-                  navigatorObservers: [BotToastNavigatorObserver()],
-                  builder: (context, widget) {
-                    Function botToast = BotToastInit();
-                    Widget mWidget = botToast(context, widget);
-                    return MediaQuery(
-                      //Setting font does not change with system font size
-                      data: MediaQuery.of(context)
-                          .copyWith(textScaler: const TextScaler.linear(1.0)),
-                      child: mWidget,
-                    );
-                  },
+        onTap: () {
+          FocusScopeNode currentFocus = FocusScope.of(context);
+          if (!currentFocus.hasPrimaryFocus) {
+            currentFocus.unfocus();
+          }
+        },
+        child: ValueListenableBuilder(
+          valueListenable: valueNotifierBook.value,
+          builder: (context, value, child) {
+            return MaterialApp(
+              debugShowCheckedModeBanner: false,
+              title: 'Taxista',
+              theme: ThemeData(),
+              locale: const Locale('ar'),
+              supportedLocales: const [
+                Locale('en', 'US'),
+                Locale('ar', ''),
+              ],
+              localizationsDelegates: const [
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              home: const LoadingPage(),
+              navigatorObservers: [BotToastNavigatorObserver()],
+              builder: (context, widget) {
+                Function botToast = BotToastInit();
+                Widget mWidget = botToast(context, widget);
+                return MediaQuery(
+                  data: MediaQuery.of(context).copyWith(
+                    textScaler: const TextScaler.linear(1.0),
+                  ),
+                  child: mWidget,
                 );
-              })),
+              },
+            );
+          },
+        ),
+      ),
     );
   }
 }

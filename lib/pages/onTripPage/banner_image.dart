@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use, prefer_typing_uninitialized_variables
 
 import 'dart:async';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:taxista/functions/functions.dart';
 
@@ -53,19 +54,21 @@ class _BannerImageState extends State<BannerImage> {
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: (banners.length == 1)
-          ? Image.network(
-              banners[0]['image'],
+          ? CachedNetworkImage(
+              imageUrl: banners[0]['image'],
               fit: BoxFit.fitWidth,
+              placeholder: (context, url) => const Center(
+                child: CircularProgressIndicator(),
+              ),
+              errorWidget: (context, url, error) => const Icon(Icons.error),
             )
-          : PageView.builder(
-              controller: _pageController,
-              itemCount: banners.length,
-              itemBuilder: (context, index) {
-                return Image.network(
-                  banners[index]['image'],
-                  fit: BoxFit.fitWidth,
-                );
-              },
+          : CachedNetworkImage(
+              imageUrl: banners[0]['image'],
+              fit: BoxFit.fitWidth,
+              placeholder: (context, url) => const Center(
+                child: CircularProgressIndicator(),
+              ),
+              errorWidget: (context, url, error) => const Icon(Icons.error),
             ),
     );
   }
