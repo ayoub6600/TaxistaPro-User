@@ -949,11 +949,12 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                             CrossAxisAlignment.start,
                                         children: [
                                           MyText(
-                                            text: (otpSent == true)
-                                                ? languages[choosenLanguage]
-                                                    ['text_driver_otp']
-                                                : languages[choosenLanguage]
-                                                    ['text_enter_password'],
+                                            text:
+                                                (otpSent == true && signIn == 0)
+                                                    ? languages[choosenLanguage]
+                                                        ['text_driver_otp']
+                                                    : languages[choosenLanguage]
+                                                        ['text_enter_password'],
                                             size: 16.sp,
                                             color: Colors.white,
                                           ),
