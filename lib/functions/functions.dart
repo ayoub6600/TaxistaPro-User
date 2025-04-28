@@ -1896,6 +1896,10 @@ createRequest(value, api) async {
     if (response.statusCode == 200) {
       print(
           "---->drivername ${jsonDecode(response.body)['data']['driver_name']}");
+      print(
+          "---11111-> response ${jsonDecode(response.body)["driver_completed_rides_count"]}");
+      print(
+          "---11111-> response ${jsonDecode(response.body)["user_completed_rides_count"]}");
       userRequestData = jsonDecode(response.body)['data'];
       streamRequest();
       result = 'success';

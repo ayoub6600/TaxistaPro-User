@@ -4143,61 +4143,57 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                                                                         isLoading = true;
                                                                                                       });
                                                                                                       if (choosenTransportType == 0) {
-                                                                                                       print('createRequestLater 1234');
+                                                                                                        print('createRequestLater 1234');
 
 // Debug print: Print the JSON payload being sent
-var jsonPayload = (addressList.where((element) => element.type == 'drop').isNotEmpty)
-    ? {
-        'pick_lat': addressList.firstWhere((e) => e.type == 'pickup').latlng.latitude,
-        'pick_lng': addressList.firstWhere((e) => e.type == 'pickup').latlng.longitude,
-        'drop_lat': addressList.firstWhere((e) => e.type == 'drop').latlng.latitude,
-        'drop_lng': addressList.firstWhere((e) => e.type == 'drop').latlng.longitude,
-        'poly_line': polyString,
-        'vehicle_type': etaDetails[choosenVehicle]['zone_type_id'],
-        'ride_type': 1,
-        'payment_opt': (etaDetails[choosenVehicle]['payment_type'].toString().split(',').toList()[payingVia] == 'card')
-            ? 0
-            : (etaDetails[choosenVehicle]['payment_type'].toString().split(',').toList()[payingVia] == 'cash')
-                ? 1
-                : 2,
-        'pick_address': addressList.firstWhere((e) => e.type == 'pickup').address,
-        'drop_address': addressList.firstWhere((e) => e.type == 'drop').address,
-        'trip_start_time': choosenDateTime.toString().substring(0, 19),
-        'is_later': 1,
-        'stops': jsonEncode(dropStopList),
-        'request_eta_amount': etaDetails[choosenVehicle]['total'],
-        'is_pet_available': (addPetPreferences == false) ? false : true,
-       // "rental_pack_id" : etaDetails[rentalChoosenOption]['id'],
-        'is_luggage_available': (addLuggagePreferences == false) ? false : true
-      }
-    : {
-        'pick_lat': addressList.firstWhere((e) => e.type == 'pickup').latlng.latitude,
-        'pick_lng': addressList.firstWhere((e) => e.type == 'pickup').latlng.longitude,
-        'vehicle_type': etaDetails[choosenVehicle]['zone_type_id'],
-        'ride_type': 1,
-        'payment_opt': (etaDetails[choosenVehicle]['payment_type'].toString().split(',').toList()[payingVia] == 'card')
-            ? 0
-            : (etaDetails[choosenVehicle]['payment_type'].toString().split(',').toList()[payingVia] == 'cash')
-                ? 1
-                : 2,
-        'pick_address': addressList.firstWhere((e) => e.type == 'pickup').address,
-        'trip_start_time': choosenDateTime.toString().substring(0, 19),
-        'is_later': 1,
-        'request_eta_amount': etaDetails[choosenVehicle]['total'],
-        'is_pet_available': (addPetPreferences == false) ? false : true,
-        // "rental_pack_id" : etaDetails[rentalChoosenOption]['id'],
-        'is_luggage_available': (addLuggagePreferences == false) ? false : true
-      };
+                                                                                                        var jsonPayload = (addressList.where((element) => element.type == 'drop').isNotEmpty)
+                                                                                                            ? {
+                                                                                                                'pick_lat': addressList.firstWhere((e) => e.type == 'pickup').latlng.latitude,
+                                                                                                                'pick_lng': addressList.firstWhere((e) => e.type == 'pickup').latlng.longitude,
+                                                                                                                'drop_lat': addressList.firstWhere((e) => e.type == 'drop').latlng.latitude,
+                                                                                                                'drop_lng': addressList.firstWhere((e) => e.type == 'drop').latlng.longitude,
+                                                                                                                'poly_line': polyString,
+                                                                                                                'vehicle_type': etaDetails[choosenVehicle]['zone_type_id'],
+                                                                                                                'ride_type': 1,
+                                                                                                                'payment_opt': (etaDetails[choosenVehicle]['payment_type'].toString().split(',').toList()[payingVia] == 'card')
+                                                                                                                    ? 0
+                                                                                                                    : (etaDetails[choosenVehicle]['payment_type'].toString().split(',').toList()[payingVia] == 'cash')
+                                                                                                                        ? 1
+                                                                                                                        : 2,
+                                                                                                                'pick_address': addressList.firstWhere((e) => e.type == 'pickup').address,
+                                                                                                                'drop_address': addressList.firstWhere((e) => e.type == 'drop').address,
+                                                                                                                'trip_start_time': choosenDateTime.toString().substring(0, 19),
+                                                                                                                'is_later': 1,
+                                                                                                                'stops': jsonEncode(dropStopList),
+                                                                                                                'request_eta_amount': etaDetails[choosenVehicle]['total'],
+                                                                                                                'is_pet_available': (addPetPreferences == false) ? false : true,
+                                                                                                                // "rental_pack_id" : etaDetails[rentalChoosenOption]['id'],
+                                                                                                                'is_luggage_available': (addLuggagePreferences == false) ? false : true
+                                                                                                              }
+                                                                                                            : {
+                                                                                                                'pick_lat': addressList.firstWhere((e) => e.type == 'pickup').latlng.latitude,
+                                                                                                                'pick_lng': addressList.firstWhere((e) => e.type == 'pickup').latlng.longitude,
+                                                                                                                'vehicle_type': etaDetails[choosenVehicle]['zone_type_id'],
+                                                                                                                'ride_type': 1,
+                                                                                                                'payment_opt': (etaDetails[choosenVehicle]['payment_type'].toString().split(',').toList()[payingVia] == 'card')
+                                                                                                                    ? 0
+                                                                                                                    : (etaDetails[choosenVehicle]['payment_type'].toString().split(',').toList()[payingVia] == 'cash')
+                                                                                                                        ? 1
+                                                                                                                        : 2,
+                                                                                                                'pick_address': addressList.firstWhere((e) => e.type == 'pickup').address,
+                                                                                                                'trip_start_time': choosenDateTime.toString().substring(0, 19),
+                                                                                                                'is_later': 1,
+                                                                                                                'request_eta_amount': etaDetails[choosenVehicle]['total'],
+                                                                                                                'is_pet_available': (addPetPreferences == false) ? false : true,
+                                                                                                                // "rental_pack_id" : etaDetails[rentalChoosenOption]['id'],
+                                                                                                                'is_luggage_available': (addLuggagePreferences == false) ? false : true
+                                                                                                              };
 
-print('JSON Payload: $jsonPayload');
+                                                                                                        print('JSON Payload: $jsonPayload');
 
-val = await createRequestLater(
-    jsonEncode(jsonPayload),
-    'api/v1/request/create'
-);
+                                                                                                        val = await createRequestLater(jsonEncode(jsonPayload), 'api/v1/request/create');
 
-print("------------>11111");
-                                                                                                        
+                                                                                                        print("------------>11111");
                                                                                                       } else {
                                                                                                         print("------------>22222");
                                                                                                         if (dropStopList.isNotEmpty) {
@@ -4545,8 +4541,8 @@ print("------------>11111");
                                                                                                     }
                                                                                                   }
                                                                                                 } else {
-                                                                                                    print('isOutStation16');
-                                                                                              
+                                                                                                  print('isOutStation16');
+
                                                                                                   print("------>url ${url}api/v1/request/delivery/create");
                                                                                                   if (widget.type != 1) {
                                                                                                     if (etaDetails[choosenVehicle]['has_discount'] == false) {
@@ -4829,7 +4825,7 @@ print("------------>11111");
                                                                                                       }
                                                                                                     }
                                                                                                   } else {
-                                                                                                            print('isOutStation17');
+                                                                                                    print('isOutStation17');
                                                                                                     if (rentalOption[choosenVehicle]['has_discount'] == false) {
                                                                                                       if (choosenTransportType == 0) {
                                                                                                         result = await createRequest(
@@ -4874,7 +4870,7 @@ print("------------>11111");
                                                                                                             'api/v1/request/delivery/create');
                                                                                                       }
                                                                                                     } else {
-                                                                                                           print('isOutStation18');
+                                                                                                      print('isOutStation18');
                                                                                                       print("------>url ${url}api/v1/request/create");
                                                                                                       if (choosenTransportType == 0) {
                                                                                                         result = await createRequest(
@@ -4898,7 +4894,7 @@ print("------------>11111");
                                                                                                             }),
                                                                                                             'api/v1/request/create');
                                                                                                       } else {
-                                                                                                            print('isOutStation19');
+                                                                                                        print('isOutStation19');
                                                                                                         result = await createRequest(
                                                                                                             jsonEncode({
                                                                                                               'pick_lat': addressList.firstWhere((e) => e.type == 'pickup').latlng.latitude,
@@ -6902,7 +6898,7 @@ print("------------>11111");
                                                                       children: [
                                                                         Expanded(
                                                                           child: MyText(
-                                                                              text: userRequestData['driverDetail']['data']['name'],
+                                                                              text: userRequestData['driverDetail']['data']['name'].toString(),
                                                                               size: media.width * fourteen,
                                                                               maxLines: 1,
                                                                               overflow: TextOverflow.ellipsis,
@@ -6910,6 +6906,7 @@ print("------------>11111");
                                                                         ),
                                                                       ],
                                                                     ),
+                                                                  
                                                                     Row(
                                                                       children: [
                                                                         Expanded(
@@ -6924,6 +6921,14 @@ print("------------>11111");
                                                                         )),
                                                                       ],
                                                                     ),
+//                                                                     Text(
+//   userRequestData['data']['user_completed_rides_count'].toString(),
+//   style: GoogleFonts.notoSans(
+//     fontSize: media.width * fourteen,
+//     fontWeight: FontWeight.w500,
+//     color: Colors.black,
+//   ),
+// ),
                                                                   ],
                                                                 ),
                                                               ),
@@ -6985,6 +6990,52 @@ print("------------>11111");
                                                             ],
                                                           ),
                                                           SizedBox(
+                                                            height:
+                                                                media.width *
+                                                                    0.03,
+                                                          ),
+                                                            Container(
+
+                                                              child: Row(
+                                                                        children: [
+                                                                          Text(
+                                                                            "عدد الطلبات المكتملة للسائق",
+                                                                            style:
+                                                                                GoogleFonts.notoSans(
+                                                                              fontSize:
+                                                                                  media.width * fourteen,
+                                                                              fontWeight:
+                                                                                  FontWeight.w500,
+                                                                              color:
+                                                                                  Colors.black,
+                                                                            ),
+                                                                          ),
+                                                                          SizedBox(
+                                                                            width:
+                                                                                media.width *
+                                                                                    0.04,
+                                                                          ),
+                                                                          CircleAvatar(
+                                                                            backgroundColor: Colors.blue,
+                                                                            radius: media.width * 0.04,
+                                                                            child: Text(
+                                                                              (userRequestData['driver_completed_rides_count'] ?? 0)
+                                                                                  .toString(),
+                                                                              style:
+                                                                                  GoogleFonts.notoSans(
+                                                                                fontSize:
+                                                                                    media.width * fourteen,
+                                                                                fontWeight:
+                                                                                    FontWeight.w500,
+                                                                                color:
+                                                                                    Colors.white,
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                            ),
+                                                              SizedBox(
                                                             height:
                                                                 media.width *
                                                                     0.03,
