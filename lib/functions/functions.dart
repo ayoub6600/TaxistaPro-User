@@ -1885,6 +1885,7 @@ createRequest(value, api) async {
   waitingTime = 0;
   dynamic result;
   debugPrint('drops1 $url$api');
+  print("----------->url11 $url$api");
   try {
     var response = await http.post(Uri.parse('$url$api'),
         headers: {
@@ -1893,6 +1894,8 @@ createRequest(value, api) async {
         },
         body: value);
     if (response.statusCode == 200) {
+      print(
+          "---->drivername ${jsonDecode(response.body)['data']['driver_name']}");
       userRequestData = jsonDecode(response.body)['data'];
       streamRequest();
       result = 'success';
