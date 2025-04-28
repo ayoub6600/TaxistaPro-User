@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:taxista/functions/functions.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class BannerImage extends StatefulWidget {
   const BannerImage({super.key});
@@ -51,25 +52,39 @@ class _BannerImageState extends State<BannerImage> {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: (banners.length == 1)
-          ? CachedNetworkImage(
-              imageUrl: banners[0]['image'],
-              fit: BoxFit.fitWidth,
-              placeholder: (context, url) => const Center(
-                child: CircularProgressIndicator(),
+    return GestureDetector(
+      onTap: () {
+        if (banners[0]['url'] == null) return;
+        openUrl(banners[0]['url']);
+      },
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: (banners.length == 1)
+            ? CachedNetworkImage(
+                imageUrl: banners[0]['image'],
+                fit: BoxFit.fitWidth,
+                placeholder: (context, url) => const Center(
+                  child: CircularProgressIndicator(),
+                ),
+                errorWidget: (context, url, error) => const Icon(Icons.error),
+              )
+            : CachedNetworkImage(
+                imageUrl: banners[0]['image'],
+                fit: BoxFit.fitWidth,
+                placeholder: (context, url) => const Center(
+                  child: CircularProgressIndicator(),
+                ),
+                errorWidget: (context, url, error) => const Icon(Icons.error),
               ),
-              errorWidget: (context, url, error) => const Icon(Icons.error),
-            )
-          : CachedNetworkImage(
-              imageUrl: banners[0]['image'],
-              fit: BoxFit.fitWidth,
-              placeholder: (context, url) => const Center(
-                child: CircularProgressIndicator(),
-              ),
-              errorWidget: (context, url, error) => const Icon(Icons.error),
-            ),
+      ),
     );
+  }
+}
+
+void openUrl(String url) async {
+  if (await canLaunch(url)) {
+    await launch(url);
+  } else {
+    throw 'Could not launch $url';
   }
 }

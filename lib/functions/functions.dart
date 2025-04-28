@@ -785,7 +785,9 @@ getUserDetails({id}) async {
     if (response.statusCode == 200) {
       userDetails =
           Map<String, dynamic>.from(jsonDecode(response.body)['data']);
-      // debugPrintWrapped(response.body);
+      print("----->token ${bearerToken[0].token}");
+      print("------>url ${url}api/v1/user?current_ride=$id");
+      print("------>banners ${userDetails['bannerImage']['data']}");
 
       favAddress = userDetails['favouriteLocations']['data'];
       sosData = userDetails['sos']['data'];
@@ -798,6 +800,7 @@ getUserDetails({id}) async {
       if (userDetails['bannerImage']['data'].toString().startsWith('{')) {
         banners.clear();
         banners.add(userDetails['bannerImage']['data']);
+        print("------>banners ${banners}");
       } else {
         banners = userDetails['bannerImage']['data'];
       }
@@ -1931,6 +1934,7 @@ createRequestLater(val, api) async {
           'Content-Type': 'application/json',
         },
         body: val);
+    print("------>response ${response.body}");
     if (response.statusCode == 200) {
       result = 'success';
       userRequestData = jsonDecode(response.body)['data'];

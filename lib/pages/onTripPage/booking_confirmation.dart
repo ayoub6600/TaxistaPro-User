@@ -4167,6 +4167,7 @@ var jsonPayload = (addressList.where((element) => element.type == 'drop').isNotE
         'stops': jsonEncode(dropStopList),
         'request_eta_amount': etaDetails[choosenVehicle]['total'],
         'is_pet_available': (addPetPreferences == false) ? false : true,
+       // "rental_pack_id" : etaDetails[rentalChoosenOption]['id'],
         'is_luggage_available': (addLuggagePreferences == false) ? false : true
       }
     : {
@@ -4184,6 +4185,7 @@ var jsonPayload = (addressList.where((element) => element.type == 'drop').isNotE
         'is_later': 1,
         'request_eta_amount': etaDetails[choosenVehicle]['total'],
         'is_pet_available': (addPetPreferences == false) ? false : true,
+        // "rental_pack_id" : etaDetails[rentalChoosenOption]['id'],
         'is_luggage_available': (addLuggagePreferences == false) ? false : true
       };
 
