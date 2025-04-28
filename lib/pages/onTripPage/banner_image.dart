@@ -1,81 +1,53 @@
 // ignore_for_file: deprecated_member_use, prefer_typing_uninitialized_variables
 
-import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:taxista/functions/functions.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class BannerImage extends StatefulWidget {
+class BannerImage extends StatelessWidget {
   const BannerImage({super.key});
 
   @override
-  State<BannerImage> createState() => _BannerImageState();
-}
-
-class _BannerImageState extends State<BannerImage> {
-  final PageController _pageController = PageController(initialPage: 0);
-  int _currentPage = 0;
-  Timer? timer;
-  bool end = false;
-  @override
-  void initState() {
-    super.initState();
-    if (banners.length != 1) {
-      timer = Timer.periodic(const Duration(seconds: 3), (Timer timer) {
-        if (_currentPage == banners.length - 1) {
-          end = true;
-        } else if (_currentPage == 0) {
-          end = false;
-        }
-
-        if (end == false) {
-          _currentPage++;
-        } else {
-          _currentPage--;
-        }
-
-        _pageController.animateToPage(
-          _currentPage,
-          duration: const Duration(milliseconds: 1000),
-          curve: Curves.easeInOut,
-        );
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    timer!.cancel();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        if (banners[0]['url'] == null) return;
-        openUrl(banners[0]['url']);
-      },
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: (banners.length == 1)
-            ? CachedNetworkImage(
-                imageUrl: banners[0]['image'],
-                fit: BoxFit.fitWidth,
-                placeholder: (context, url) => const Center(
-                  child: CircularProgressIndicator(),
-                ),
-                errorWidget: (context, url, error) => const Icon(Icons.error),
-              )
-            : CachedNetworkImage(
-                imageUrl: banners[0]['image'],
-                fit: BoxFit.fitWidth,
-                placeholder: (context, url) => const Center(
-                  child: CircularProgressIndicator(),
-                ),
-                errorWidget: (context, url, error) => const Icon(Icons.error),
+    if (banners.isEmpty) {
+      return const SizedBox(); // لو مافي بنرات
+    }
+
+    return CarouselSlider.builder(
+      itemCount: banners.length,
+      itemBuilder: (context, index, realIndex) {
+        final banner = banners[index];
+        return GestureDetector(
+          onTap: () {
+            if (banner['url'] != null) {
+              openUrl(banner['url']);
+            }
+          },
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: CachedNetworkImage(
+              imageUrl: banner['image'],
+              fit: BoxFit.cover,
+              width: double.infinity,
+              placeholder: (context, url) => const Center(
+                child: CircularProgressIndicator(),
               ),
+              errorWidget: (context, url, error) => const Icon(Icons.error),
+            ),
+          ),
+        );
+      },
+      options: CarouselOptions(
+        height: 180, // غيره حسب ارتفاع البنر اللي تبيه
+        autoPlay: true,
+        enlargeCenterPage: true,
+        viewportFraction: 0.9,
+        autoPlayInterval: const Duration(seconds: 3),
+        autoPlayAnimationDuration: const Duration(milliseconds: 800),
+        autoPlayCurve: Curves.fastOutSlowIn,
+        pauseAutoPlayOnTouch: true,
       ),
     );
   }
