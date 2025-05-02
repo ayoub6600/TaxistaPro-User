@@ -5,13 +5,13 @@
 	<key>ANDROID_CLIENT_ID</key>
 	<string>1066498192256-0s8qle9uqvprpad59c2gnis4f4dvb8um.apps.googleusercontent.com</string>
 	<key>API_KEY</key>
-	<string>AIzaSyA8owqYHGfrEMlpGC-Awkwi8lL4hZcRrAU</string>
+	<string>AIzaSyCFL4Gk3U2IfCqTpGLH_IiAXwxOcCIQcTc</string>
 	<key>GCM_SENDER_ID</key>
 	<string>1066498192256</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.user.taxista</string>
+	<string>com.taxistapro.driver</string>
 	<key>PROJECT_ID</key>
 	<string>taxista-ee27d</string>
 	<key>STORAGE_BUCKET</key>
@@ -27,6 +27,8 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:1066498192256:ios:6332888cfda7b2141f8765</string>
+	<string>1:1066498192256:ios:f43c416f82b76ebb1f8765</string>
+	<key>DATABASE_URL</key>
+	<string>https://taxista-ee27d-default-rtdb.firebaseio.com</string>
 </dict>
 </plist>
