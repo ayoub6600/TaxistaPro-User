@@ -27,11 +27,7 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-<<<<<<< HEAD
 	<string>1:1066498192256:ios:717df0b6737598561f8765</string>
-=======
-	<string>1:1066498192256:ios:f43c416f82b76ebb1f8765</string>
->>>>>>> d9c8d8f4b07a361d6c55f028ef42dfb61525d2d6
 	<key>DATABASE_URL</key>
 	<string>https://taxista-ee27d-default-rtdb.firebaseio.com</string>
 </dict>
