@@ -11,20 +11,27 @@ import 'functions/functions.dart';
 import 'functions/notifications.dart';
 import 'pages/loadingPage/loadingpage.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // قفل دوران الشاشة
   await SystemChrome.setPreferredOrientations(
     [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown],
   );
 
-  // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  // ✅ الحل النهائي لمنع تكرار التهيئة
+  try {
+    Firebase.app(); // إذا التطبيق مهيأ مسبقًا، كمل
+  } on FirebaseException catch (e) {
+    if (e.code == 'no-app') {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    } else {
+      rethrow;
+    }
+  }
 
-  // اطلب صلاحيات الإشعارات
+  // 🔔 صلاحيات الإشعارات
   NotificationSettings settings =
       await FirebaseMessaging.instance.requestPermission(
     alert: true,
@@ -39,13 +46,10 @@ void main() async {
   if (settings.authorizationStatus == AuthorizationStatus.authorized) {
     print('✅ User granted permission');
 
-    // استمع لأي تغيير في الـ token
     FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
       print("🔥 FCM Token after refresh: $newToken");
-      // هنا تقدر تخزن التوكن الجديد في قاعدة البيانات أو API
     });
 
-    // خد التوكن الحالي
     try {
       String? token = await FirebaseMessaging.instance.getToken();
       if (token != null) {
@@ -60,11 +64,8 @@ void main() async {
     print('❌ User declined or has not accepted permission');
   }
 
-  // اتأكد من الإتصال بالإنترنت
   checkInternetConnection();
-
-  // ابدأ الاستماع للإشعارات
-  initMessaging();
+  await initMessaging();
 
   runApp(const MyApp());
 }
