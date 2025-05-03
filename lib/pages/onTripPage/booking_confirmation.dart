@@ -6540,17 +6540,46 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                       height:
                                                           media.height * 0.02,
                                                     ),
-                                                    Button(
-                                                        onTap: () async {
-                                                          var val =
-                                                              await cancelRequest();
-                                                          if (val == 'logout') {
-                                                            navigateLogout();
-                                                          }
-                                                        },
-                                                        text: languages[
-                                                                choosenLanguage]
-                                                            ['text_cancel'])
+                                                  Button(
+  onTap: () async {
+    bool confirm = await showDialog(
+      
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'تأكيد',
+          style: GoogleFonts.cairo(fontSize: 12.sp, color: Colors.black),
+        ),
+        content: Text(
+          "متأكد أنك تريد الإلغاء ",
+          style: GoogleFonts.cairo(fontSize: 14.sp, color: Colors.grey),
+        ),
+        actions: [
+          Button(
+            text: '✅ نعم',
+            backgroundcolor: Colors.red,
+            onTap: () => Navigator.of(context).pop(true),
+          ),
+          const SizedBox(height: 10),
+          Button(
+            text: '❌ لا',
+            
+            onTap: () => Navigator.of(context).pop(false),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm) {
+      var val = await cancelRequest();
+      if (val == 'logout') {
+        navigateLogout();
+      }
+    }
+  },
+  text: languages[choosenLanguage]['text_cancel'],
+)
+
                                                   ],
                                                 ),
                                               ),
@@ -6906,7 +6935,7 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                                         ),
                                                                       ],
                                                                     ),
-                                                                  
+
                                                                     Row(
                                                                       children: [
                                                                         Expanded(
@@ -6994,48 +7023,56 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                                 media.width *
                                                                     0.03,
                                                           ),
-                                                            Container(
-
-                                                              child: Row(
-                                                                        children: [
-                                                                          Text(
-                                                                            "عدد الطلبات المكتملة للسائق",
-                                                                            style:
-                                                                                GoogleFonts.notoSans(
-                                                                              fontSize:
-                                                                                  media.width * fourteen,
-                                                                              fontWeight:
-                                                                                  FontWeight.w500,
-                                                                              color:
-                                                                                  Colors.black,
-                                                                            ),
-                                                                          ),
-                                                                          SizedBox(
-                                                                            width:
-                                                                                media.width *
-                                                                                    0.04,
-                                                                          ),
-                                                                          CircleAvatar(
-                                                                            backgroundColor: Colors.blue,
-                                                                            radius: media.width * 0.04,
-                                                                            child: Text(
-                                                                              (userRequestData['driver_completed_rides_count'] ?? 0)
-                                                                                  .toString(),
-                                                                              style:
-                                                                                  GoogleFonts.notoSans(
-                                                                                fontSize:
-                                                                                    media.width * fourteen,
-                                                                                fontWeight:
-                                                                                    FontWeight.w500,
-                                                                                color:
-                                                                                    Colors.white,
-                                                                              ),
-                                                                            ),
-                                                                          ),
-                                                                        ],
-                                                                      ),
+                                                          Container(
+                                                            child: Row(
+                                                              children: [
+                                                                Text(
+                                                                  "عدد الطلبات المكتملة للسائق",
+                                                                  style: GoogleFonts
+                                                                      .notoSans(
+                                                                    fontSize: media
+                                                                            .width *
+                                                                        fourteen,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w500,
+                                                                    color: Colors
+                                                                        .black,
+                                                                  ),
+                                                                ),
+                                                                SizedBox(
+                                                                  width: media
+                                                                          .width *
+                                                                      0.04,
+                                                                ),
+                                                                CircleAvatar(
+                                                                  backgroundColor:
+                                                                      Colors
+                                                                          .blue,
+                                                                  radius: media
+                                                                          .width *
+                                                                      0.04,
+                                                                  child: Text(
+                                                                    (userRequestData['driver_completed_rides_count'] ??
+                                                                            0)
+                                                                        .toString(),
+                                                                    style: GoogleFonts
+                                                                        .notoSans(
+                                                                      fontSize:
+                                                                          media.width *
+                                                                              fourteen,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .w500,
+                                                                      color: Colors
+                                                                          .white,
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              ],
                                                             ),
-                                                              SizedBox(
+                                                          ),
+                                                          SizedBox(
                                                             height:
                                                                 media.width *
                                                                     0.03,
