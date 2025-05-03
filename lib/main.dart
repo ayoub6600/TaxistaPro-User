@@ -14,32 +14,33 @@ import 'pages/loadingPage/loadingpage.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await SystemChrome.setPreferredOrientations(
-    [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown],
-  );
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
 
-  // ✅ الحل النهائي لمنع تكرار التهيئة
-  try {
-    Firebase.app(); // إذا التطبيق مهيأ مسبقًا، كمل
-  } on FirebaseException catch (e) {
-    if (e.code == 'no-app') {
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
-    } else {
-      rethrow;
-    }
+  // ✅ تأكد من تهيئة Firebase لمرة واحدة فقط
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
   }
 
-  // 🔔 صلاحيات الإشعارات
+  // 🔔 طلب صلاحيات الإشعارات
+  await _initFirebaseMessaging();
+
+  checkInternetConnection();
+  await initMessaging();
+
+  runApp(const MyApp());
+}
+
+/// 🔧 إعداد إشعارات FCM
+Future<void> _initFirebaseMessaging() async {
   NotificationSettings settings =
       await FirebaseMessaging.instance.requestPermission(
     alert: true,
-    announcement: false,
     badge: true,
-    carPlay: false,
-    criticalAlert: false,
-    provisional: false,
     sound: true,
   );
 
@@ -63,11 +64,6 @@ Future<void> main() async {
   } else {
     print('❌ User declined or has not accepted permission');
   }
-
-  checkInternetConnection();
-  await initMessaging();
-
-  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -76,6 +72,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     platform = Theme.of(context).platform;
+
     return ScreenUtilInit(
       designSize: const Size(360, 690),
       minTextAdapt: true,
@@ -107,13 +104,12 @@ class MyApp extends StatelessWidget {
               home: const LoadingPage(),
               navigatorObservers: [BotToastNavigatorObserver()],
               builder: (context, widget) {
-                Function botToast = BotToastInit();
-                Widget mWidget = botToast(context, widget);
+                final botToast = BotToastInit();
                 return MediaQuery(
                   data: MediaQuery.of(context).copyWith(
                     textScaler: const TextScaler.linear(1.0),
                   ),
-                  child: mWidget,
+                  child: botToast(context, widget),
                 );
               },
             );
