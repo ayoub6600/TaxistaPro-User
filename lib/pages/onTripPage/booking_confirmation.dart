@@ -6540,10 +6540,10 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                       height:
                                                           media.height * 0.02,
                                                     ),
-                                                  Button(
+
+                                          Button(
   onTap: () async {
     bool confirm = await showDialog(
-      
       context: context,
       builder: (context) => AlertDialog(
         title: Text(
@@ -6551,7 +6551,7 @@ class _BookingConfirmationState extends State<BookingConfirmation>
           style: GoogleFonts.cairo(fontSize: 12.sp, color: Colors.black),
         ),
         content: Text(
-          "متأكد أنك تريد الإلغاء ",
+          "متأكد أنك تريد الإلغاء \u{1F97A}", // Unicode للإيموجي 🥹
           style: GoogleFonts.cairo(fontSize: 14.sp, color: Colors.grey),
         ),
         actions: [
@@ -6563,7 +6563,6 @@ class _BookingConfirmationState extends State<BookingConfirmation>
           const SizedBox(height: 10),
           Button(
             text: '❌ لا',
-            
             onTap: () => Navigator.of(context).pop(false),
           ),
         ],
@@ -6579,7 +6578,6 @@ class _BookingConfirmationState extends State<BookingConfirmation>
   },
   text: languages[choosenLanguage]['text_cancel'],
 )
-
                                                   ],
                                                 ),
                                               ),
