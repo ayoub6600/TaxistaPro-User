@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -47,8 +48,7 @@ String signKey = '';
 
 //base url
 //base url
-String url =
-    'https://www.taxistapro.com/'; //add '/' at the end of the url as 'https://url.com/'
+String url = 'https://www.taxistapro.com/';
 String mapkey = (platform == TargetPlatform.android)
     ? 'AIzaSyCLVX-Jnqqo89cZ2xQ6CJflSueG-laba7g'
     : 'AIzaSyCLVX-Jnqqo89cZ2xQ6CJflSueG-laba7g';
@@ -1089,7 +1089,25 @@ AudioPlayer audioPlayers = AudioPlayer();
 var pickupAddress = '';
 var dropAddress = '';
 
-geoCoding(double lat, double lng) async {
+Future<String?> geoCoding(double lat, double lng) async {
+  final String cacheKey = '$lat,$lng';
+  final Box cacheBox = Hive.box('geocoding_cache');
+
+  // التحقق من الكاش
+  final cachedData = cacheBox.get(cacheKey);
+  if (cachedData != null) {
+    final int cachedTimestamp = cachedData['timestamp'];
+    final DateTime cachedTime =
+        DateTime.fromMillisecondsSinceEpoch(cachedTimestamp);
+    final Duration difference = DateTime.now().difference(cachedTime);
+
+    if (difference.inDays < 7) {
+      return cachedData['address'];
+    } else {
+      cacheBox.delete(cacheKey); // حذف الكاش المنتهي
+    }
+  }
+
   dynamic result;
   try {
     http.Response val;
@@ -1097,17 +1115,19 @@ geoCoding(double lat, double lng) async {
     if (mapType == 'google') {
       if (Platform.isAndroid) {
         val = await http.get(
-            Uri.parse(
-                'https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lng&key=$mapkey'),
-            headers: {
-              'X-Android-Package': packageName,
-              'X-Android-Cert': signKey
-            });
+          Uri.parse(
+              'https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lng&key=$mapkey'),
+          headers: {
+            'X-Android-Package': packageName,
+            'X-Android-Cert': signKey
+          },
+        );
       } else {
         val = await http.get(
-            Uri.parse(
-                'https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lng&key=$mapkey'),
-            headers: {'X-IOS-Bundle-Identifier': packageName});
+          Uri.parse(
+              'https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lng&key=$mapkey'),
+          headers: {'X-IOS-Bundle-Identifier': packageName},
+        );
       }
     } else {
       val = await http.get(
@@ -1115,12 +1135,20 @@ geoCoding(double lat, double lng) async {
             'https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lng&format=json'),
       );
     }
+
     if (val.statusCode == 200) {
       if (mapType == 'google') {
         result = jsonDecode(val.body)['results'][0]['formatted_address'];
       } else {
         result = jsonDecode(val.body)['display_name'].toString();
       }
+
+      // حفظ العنوان في الكاش مع التوقيت
+      cacheBox.put(cacheKey, {
+        'address': result,
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+      });
+
       return result;
     }
   } catch (e) {
@@ -1129,8 +1157,52 @@ geoCoding(double lat, double lng) async {
       result = 'no internet';
     }
   }
+
   return result;
 }
+
+// geoCoding(double lat, double lng) async {
+//   dynamic result;
+//   try {
+//     http.Response val;
+
+//     if (mapType == 'google') {
+//       if (Platform.isAndroid) {
+//         val = await http.get(
+//             Uri.parse(
+//                 'https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lng&key=$mapkey'),
+//             headers: {
+//               'X-Android-Package': packageName,
+//               'X-Android-Cert': signKey
+//             });
+//       } else {
+//         val = await http.get(
+//             Uri.parse(
+//                 'https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lng&key=$mapkey'),
+//             headers: {'X-IOS-Bundle-Identifier': packageName});
+//       }
+//     } else {
+//       val = await http.get(
+//         Uri.parse(
+//             'https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lng&format=json'),
+//       );
+//     }
+//     if (val.statusCode == 200) {
+//       if (mapType == 'google') {
+//         result = jsonDecode(val.body)['results'][0]['formatted_address'];
+//       } else {
+//         result = jsonDecode(val.body)['display_name'].toString();
+//       }
+//       return result;
+//     }
+//   } catch (e) {
+//     if (e is SocketException) {
+//       internet = false;
+//       result = 'no internet';
+//     }
+//   }
+//   return result;
+// }
 
 //lang
 getlangid() async {
@@ -1178,62 +1250,98 @@ getlangid() async {
 List storedAutoAddress = [];
 List addAutoFill = [];
 
-getAutocomplete(input, sessionToken, lat, lng) async {
+Future<void> getAutocomplete(input, sessionToken, lat, lng) async {
+  final Box cacheBox = Hive.box('autocomplete_cache');
+  final String cacheKey = '$input-$lat-$lng';
+
+  addAutoFill.clear();
+
+  // ✅ تحقق من وجود الكاش وصلاحية البيانات (يوم واحد)
+  if (cacheBox.containsKey(cacheKey)) {
+    final cachedData = cacheBox.get(cacheKey);
+    final int timestamp = cachedData['timestamp'] ?? 0;
+    final DateTime cachedTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
+    if (DateTime.now().difference(cachedTime).inHours < 24) {
+      addAutoFill = List<Map<String, dynamic>>.from(cachedData['data']);
+      valueNotifierHome.incrementNotifier();
+      return;
+    } else {
+      cacheBox.delete(cacheKey); // حذف الكاش المنتهي
+    }
+  }
+
   try {
-    addAutoFill.clear();
     if (mapType == 'google') {
       http.Response val;
-      if (Platform.isAndroid) {
-        val = await http.get(
-            Uri.parse(
-                'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$input&key=$mapkey&location=$lat%2C$lng&radius=10000&sessionToken=$sessionToken'),
-            headers: {
+
+      Uri url = Uri.parse(
+        'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$input&key=$mapkey&location=$lat%2C$lng&radius=10000&sessionToken=$sessionToken',
+      );
+
+      Map<String, String> headers = Platform.isAndroid
+          ? {
               'X-Android-Package': packageName,
-              'X-Android-Cert': signKey
-            });
-      } else {
-        val = await http.get(
-            Uri.parse(
-                'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$input&key=$mapkey&location=$lat%2C$lng&radius=10000&sessionToken=$sessionToken'),
-            headers: {'X-IOS-Bundle-Identifier': packageName});
-      }
+              'X-Android-Cert': signKey,
+            }
+          : {
+              'X-IOS-Bundle-Identifier': packageName,
+            };
+
+      val = await http.get(url, headers: headers);
 
       if (val.statusCode == 200) {
         var result = jsonDecode(val.body);
+
         for (var element in result['predictions']) {
+          final placeId = element['place_id'];
+          final description = element['description'];
+
           addAutoFill.add({
-            'place': element['place_id'],
-            'description': element['description'],
+            'place': placeId,
+            'description': description,
             'lat': '',
-            'lon': ''
+            'lon': '',
           });
-          if (storedAutoAddress
-              .where((element) => element['place'] == element['place_id'])
-              .isEmpty) {
+
+          if (storedAutoAddress.where((e) => e['place'] == placeId).isEmpty) {
             storedAutoAddress.add({
-              'place': element['place_id'],
-              'description': element['description'],
+              'place': placeId,
+              'description': description,
               'lat': '',
-              'lon': ''
+              'lon': '',
             });
           }
         }
+
+        // ✅ حفظ في الكاش
+        cacheBox.put(cacheKey, {
+          'timestamp': DateTime.now().millisecondsSinceEpoch,
+          'data': addAutoFill,
+        });
       }
 
-      pref.setString('autoAddress', jsonEncode(storedAutoAddress).toString());
+      pref.setString('autoAddress', jsonEncode(storedAutoAddress));
     } else {
       var result = await http.get(Uri.parse(
           'https://nominatim.openstreetmap.org/search?q=$input&format=json'));
+
       for (var element in jsonDecode(result.body)) {
         addAutoFill.add({
-          'place': element['place_id'],
+          'place': element['place_id'].toString(),
           'description': element['display_name'],
           'secondary': '',
           'lat': element['lat'],
-          'lon': element['lon']
+          'lon': element['lon'],
         });
       }
+
+      // ✅ حفظ في الكاش
+      cacheBox.put(cacheKey, {
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+        'data': addAutoFill,
+      });
     }
+
     valueNotifierHome.incrementNotifier();
   } catch (e) {
     if (e is SocketException) {
@@ -1242,31 +1350,147 @@ getAutocomplete(input, sessionToken, lat, lng) async {
   }
 }
 
-geoCodingForLatLng(id, sessionToken) async {
+// getAutocomplete(input, sessionToken, lat, lng) async {
+//   try {
+//     addAutoFill.clear();
+//     if (mapType == 'google') {
+//       http.Response val;
+//       if (Platform.isAndroid) {
+//         val = await http.get(
+//             Uri.parse(
+//                 'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$input&key=$mapkey&location=$lat%2C$lng&radius=10000&sessionToken=$sessionToken'),
+//             headers: {
+//               'X-Android-Package': packageName,
+//               'X-Android-Cert': signKey
+//             });
+//       } else {
+//         val = await http.get(
+//             Uri.parse(
+//                 'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$input&key=$mapkey&location=$lat%2C$lng&radius=10000&sessionToken=$sessionToken'),
+//             headers: {'X-IOS-Bundle-Identifier': packageName});
+//       }
+
+//       if (val.statusCode == 200) {
+//         var result = jsonDecode(val.body);
+//         for (var element in result['predictions']) {
+//           addAutoFill.add({
+//             'place': element['place_id'],
+//             'description': element['description'],
+//             'lat': '',
+//             'lon': ''
+//           });
+//           if (storedAutoAddress
+//               .where((element) => element['place'] == element['place_id'])
+//               .isEmpty) {
+//             storedAutoAddress.add({
+//               'place': element['place_id'],
+//               'description': element['description'],
+//               'lat': '',
+//               'lon': ''
+//             });
+//           }
+//         }
+//       }
+
+//       pref.setString('autoAddress', jsonEncode(storedAutoAddress).toString());
+//     } else {
+//       var result = await http.get(Uri.parse(
+//           'https://nominatim.openstreetmap.org/search?q=$input&format=json'));
+//       for (var element in jsonDecode(result.body)) {
+//         addAutoFill.add({
+//           'place': element['place_id'],
+//           'description': element['display_name'],
+//           'secondary': '',
+//           'lat': element['lat'],
+//           'lon': element['lon']
+//         });
+//       }
+//     }
+//     valueNotifierHome.incrementNotifier();
+//   } catch (e) {
+//     if (e is SocketException) {
+//       internet = false;
+//     }
+//   }
+// }
+
+// geoCodingForLatLng(id, sessionToken) async {
+//   try {
+//     http.Response val;
+//     if (Platform.isAndroid) {
+//       val = await http.get(
+//           Uri.parse(
+//               'https://maps.googleapis.com/maps/api/place/details/json?placeid=$id&key=$mapkey&sessionToken=$sessionToken'),
+//           headers: {
+//             'X-Android-Package': packageName,
+//             'X-Android-Cert': signKey
+//           });
+//     } else {
+//       val = await http.get(
+//           Uri.parse(
+//               'https://maps.googleapis.com/maps/api/place/details/json?placeid=$id&key=$mapkey&sessionToken=$sessionToken'),
+//           headers: {'X-IOS-Bundle-Identifier': packageName});
+//     }
+
+//     if (val.statusCode == 200) {
+//       var result = jsonDecode(val.body)['result']['geometry']['location'];
+//       return result;
+//     }
+//   } catch (e) {
+//     debugPrint(e.toString());
+//   }
+// }
+Future<Map<String, dynamic>?> geoCodingForLatLng(
+    String id, String sessionToken) async {
+  final Box cacheBox = Hive.box('geocoding_cache');
+  final String cacheKey = 'place_details_$id';
+
+  // ✅ تحقق من الكاش
+  if (cacheBox.containsKey(cacheKey)) {
+    final cachedData = cacheBox.get(cacheKey);
+    final int timestamp = cachedData['timestamp'] ?? 0;
+    final DateTime cachedTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
+
+    if (DateTime.now().difference(cachedTime).inDays < 7) {
+      return Map<String, dynamic>.from(cachedData['data']);
+    } else {
+      cacheBox.delete(cacheKey); // الكاش منتهي الصلاحية
+    }
+  }
+
   try {
     http.Response val;
-    if (Platform.isAndroid) {
-      val = await http.get(
-          Uri.parse(
-              'https://maps.googleapis.com/maps/api/place/details/json?placeid=$id&key=$mapkey&sessionToken=$sessionToken'),
-          headers: {
+
+    Uri url = Uri.parse(
+        'https://maps.googleapis.com/maps/api/place/details/json?placeid=$id&key=$mapkey&sessionToken=$sessionToken');
+
+    Map<String, String> headers = Platform.isAndroid
+        ? {
             'X-Android-Package': packageName,
-            'X-Android-Cert': signKey
-          });
-    } else {
-      val = await http.get(
-          Uri.parse(
-              'https://maps.googleapis.com/maps/api/place/details/json?placeid=$id&key=$mapkey&sessionToken=$sessionToken'),
-          headers: {'X-IOS-Bundle-Identifier': packageName});
-    }
+            'X-Android-Cert': signKey,
+          }
+        : {
+            'X-IOS-Bundle-Identifier': packageName,
+          };
+
+    val = await http.get(url, headers: headers);
 
     if (val.statusCode == 200) {
       var result = jsonDecode(val.body)['result']['geometry']['location'];
-      return result;
+
+      // ✅ تخزين في الكاش
+      cacheBox.put(cacheKey, {
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+        'data': result,
+      });
+
+      return Map<String, dynamic>.from(result);
     }
   } catch (e) {
     debugPrint(e.toString());
   }
+
+  return null;
 }
 
 //pickup drop address list
@@ -1297,14 +1521,15 @@ class AddressList {
 //get polylines
 String polyString = '';
 List<LatLng> polyList = [];
-
-getPolylines(plat, plng, dlat, dlng) async {
+Future<List> getPolylines(plat, plng, dlat, dlng) async {
   polyList.clear();
+  final Box cacheBox = Hive.box('geocoding_cache');
+
   String pickLat = '';
   String pickLng = '';
   String dropLat = '';
-
   String dropLng = '';
+
   if (plat == '' && dlat == '') {
     if (userRequestData.isEmpty ||
         userRequestData['poly_line'] == null ||
@@ -1314,36 +1539,45 @@ getPolylines(plat, plng, dlat, dlng) async {
         pickLng = addressList[i - 1].latlng.longitude.toString();
         dropLat = addressList[i].latlng.latitude.toString();
         dropLng = addressList[i].latlng.longitude.toString();
+
+        String cacheKey = 'polyline_${pickLat}_$pickLng|${dropLat}_$dropLng';
+
+        if (cacheBox.containsKey(cacheKey)) {
+          polyString = cacheBox.get(cacheKey);
+          decodeEncodedPolyline(polyString);
+          continue;
+        }
+
         try {
           http.Response value;
 
-          if (Platform.isIOS) {
-            value = await http.get(
-                Uri.parse(
-                    'https://maps.googleapis.com/maps/api/directions/json?origin=$pickLat%2C$pickLng&destination=$dropLat%2C$dropLng&avoid=ferries|indoor&alternatives=true&mode=driving&key=$mapkey'),
-                headers: {
+          Uri url = Uri.parse(
+              'https://maps.googleapis.com/maps/api/directions/json?origin=$pickLat%2C$pickLng&destination=$dropLat%2C$dropLng&avoid=ferries|indoor&alternatives=true&mode=driving&key=$mapkey');
+
+          Map<String, String> headers = Platform.isAndroid
+              ? {
                   'X-Android-Package': packageName,
-                  'X-Android-Cert': signKey
-                });
-          } else {
-            value = await http.get(
-                Uri.parse(
-                    'https://maps.googleapis.com/maps/api/directions/json?origin=$pickLat%2C$pickLng&destination=$dropLat%2C$dropLng&avoid=ferries|indoor&alternatives=true&mode=driving&key=$mapkey'),
-                headers: {'X-IOS-Bundle-Identifier': packageName});
-          }
+                  'X-Android-Cert': signKey,
+                }
+              : {
+                  'X-IOS-Bundle-Identifier': packageName,
+                };
+
+          value = await http.get(url, headers: headers);
 
           if (value.statusCode == 200) {
-            debugPrint('stepsoto ${value.body}');
             var steps = jsonDecode(value.body)['routes'][0]['overview_polyline']
                 ['points'];
-            debugPrint('stepsoto $steps');
+
             if (i == 1) {
               polyString = steps;
             } else {
               polyString = '${polyString}poly$steps';
             }
+
             decodeEncodedPolyline(steps);
-          } else {}
+            cacheBox.put(cacheKey, steps);
+          }
         } catch (e) {
           if (e is SocketException) {
             internet = false;
@@ -1357,40 +1591,143 @@ getPolylines(plat, plng, dlat, dlng) async {
       }
     }
   } else {
-    try {
-      http.Response value;
+    String cacheKey = 'polyline_${plat}_$plng|${dlat}_$dlng';
 
-      if (Platform.isAndroid) {
-        value = await http.get(
-            Uri.parse(
-                'https://maps.googleapis.com/maps/api/directions/json?origin=$plat%2C$plng&destination=$dlat%2C$dlng&avoid=ferries|indoor&alternatives=true&mode=driving&key=$mapkey'),
-            headers: {
-              'X-Android-Package': packageName,
-              'X-Android-Cert': signKey
-            });
-      } else {
-        value = await http.get(
-            Uri.parse(
-                'https://maps.googleapis.com/maps/api/directions/json?origin=$plat%2C$plng&destination=$dlat%2C$dlng&avoid=ferries|indoor&alternatives=true&mode=driving&key=$mapkey'),
-            headers: {'X-IOS-Bundle-Identifier': packageName});
-      }
-      if (value.statusCode == 200) {
-        var steps =
-            jsonDecode(value.body)['routes'][0]['overview_polyline']['points'];
+    if (cacheBox.containsKey(cacheKey)) {
+      polyString = cacheBox.get(cacheKey);
+      decodeEncodedPolyline(polyString);
+    } else {
+      try {
+        http.Response value;
 
-        // debugPrintWrapped(steps.toString());
-        polyString = steps;
-        decodeEncodedPolyline(steps);
-      } else {}
-    } catch (e) {
-      if (e is SocketException) {
-        internet = false;
+        Uri url = Uri.parse(
+            'https://maps.googleapis.com/maps/api/directions/json?origin=$plat%2C$plng&destination=$dlat%2C$dlng&avoid=ferries|indoor&alternatives=true&mode=driving&key=$mapkey');
+
+        Map<String, String> headers = Platform.isAndroid
+            ? {
+                'X-Android-Package': packageName,
+                'X-Android-Cert': signKey,
+              }
+            : {
+                'X-IOS-Bundle-Identifier': packageName,
+              };
+
+        value = await http.get(url, headers: headers);
+
+        if (value.statusCode == 200) {
+          var steps = jsonDecode(value.body)['routes'][0]['overview_polyline']
+              ['points'];
+
+          polyString = steps;
+          decodeEncodedPolyline(steps);
+
+          cacheBox.put(cacheKey, steps);
+        }
+      } catch (e) {
+        if (e is SocketException) {
+          internet = false;
+        }
       }
     }
   }
+
   polyGot = false;
   return polyList;
 }
+
+// getPolylines(plat, plng, dlat, dlng) async {
+//   polyList.clear();
+//   String pickLat = '';
+//   String pickLng = '';
+//   String dropLat = '';
+
+//   String dropLng = '';
+//   if (plat == '' && dlat == '') {
+//     if (userRequestData.isEmpty ||
+//         userRequestData['poly_line'] == null ||
+//         userRequestData['poly_line'] == '') {
+//       for (var i = 1; i < addressList.length; i++) {
+//         pickLat = addressList[i - 1].latlng.latitude.toString();
+//         pickLng = addressList[i - 1].latlng.longitude.toString();
+//         dropLat = addressList[i].latlng.latitude.toString();
+//         dropLng = addressList[i].latlng.longitude.toString();
+//         try {
+//           http.Response value;
+
+//           if (Platform.isIOS) {
+//             value = await http.get(
+//                 Uri.parse(
+//                     'https://maps.googleapis.com/maps/api/directions/json?origin=$pickLat%2C$pickLng&destination=$dropLat%2C$dropLng&avoid=ferries|indoor&alternatives=true&mode=driving&key=$mapkey'),
+//                 headers: {
+//                   'X-Android-Package': packageName,
+//                   'X-Android-Cert': signKey
+//                 });
+//           } else {
+//             value = await http.get(
+//                 Uri.parse(
+//                     'https://maps.googleapis.com/maps/api/directions/json?origin=$pickLat%2C$pickLng&destination=$dropLat%2C$dropLng&avoid=ferries|indoor&alternatives=true&mode=driving&key=$mapkey'),
+//                 headers: {'X-IOS-Bundle-Identifier': packageName});
+//           }
+
+//           if (value.statusCode == 200) {
+//             debugPrint('stepsoto ${value.body}');
+//             var steps = jsonDecode(value.body)['routes'][0]['overview_polyline']
+//                 ['points'];
+//             debugPrint('stepsoto $steps');
+//             if (i == 1) {
+//               polyString = steps;
+//             } else {
+//               polyString = '${polyString}poly$steps';
+//             }
+//             decodeEncodedPolyline(steps);
+//           } else {}
+//         } catch (e) {
+//           if (e is SocketException) {
+//             internet = false;
+//           }
+//         }
+//       }
+//     } else {
+//       List poly = userRequestData['poly_line'].toString().split('poly');
+//       for (var i = 0; i < poly.length; i++) {
+//         decodeEncodedPolyline(poly[i]);
+//       }
+//     }
+//   } else {
+//     try {
+//       http.Response value;
+
+//       if (Platform.isAndroid) {
+//         value = await http.get(
+//             Uri.parse(
+//                 'https://maps.googleapis.com/maps/api/directions/json?origin=$plat%2C$plng&destination=$dlat%2C$dlng&avoid=ferries|indoor&alternatives=true&mode=driving&key=$mapkey'),
+//             headers: {
+//               'X-Android-Package': packageName,
+//               'X-Android-Cert': signKey
+//             });
+//       } else {
+//         value = await http.get(
+//             Uri.parse(
+//                 'https://maps.googleapis.com/maps/api/directions/json?origin=$plat%2C$plng&destination=$dlat%2C$dlng&avoid=ferries|indoor&alternatives=true&mode=driving&key=$mapkey'),
+//             headers: {'X-IOS-Bundle-Identifier': packageName});
+//       }
+//       if (value.statusCode == 200) {
+//         var steps =
+//             jsonDecode(value.body)['routes'][0]['overview_polyline']['points'];
+
+//         // debugPrintWrapped(steps.toString());
+//         polyString = steps;
+//         decodeEncodedPolyline(steps);
+//       } else {}
+//     } catch (e) {
+//       if (e is SocketException) {
+//         internet = false;
+//       }
+//     }
+//   }
+//   polyGot = false;
+//   return polyList;
+// }
 
 class RouteInfo {
   final int distance;
