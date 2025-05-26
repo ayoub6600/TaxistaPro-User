@@ -76,6 +76,7 @@ bool isRentalRide = false;
 String infoMessage = '';
 bool rideWithoutDestination = false;
 bool rentalRide = false;
+LatLng? _lastRequestedLocation;
 
 TextEditingController pickupAddressController = TextEditingController();
 TextEditingController dropAddressController = TextEditingController();
@@ -924,56 +925,175 @@ class _MapsState extends State<Maps>
                                                                               .target;
                                                                     }
                                                                   },
+                                                                  // onCameraIdle:
+                                                                  //     () async {
+                                                                  //   if (userDetails[
+                                                                  //           'enable_map_location_icon_drag_and_drop_feature'] ==
+                                                                  //       '0') {
+                                                                  //     if ((_bottom == 0 &&
+                                                                  //         _pickaddress ==
+                                                                  //             false &&
+                                                                  //         addressList
+                                                                  //             .where((element) => element.type == 'pickup')
+                                                                  //             .isNotEmpty)) {
+                                                                  //       setState(
+                                                                  //           () {});
+                                                                  //     }
+                                                                  //     if (addressList
+                                                                  //         .where((element) =>
+                                                                  //             element.type ==
+                                                                  //             'pickup')
+                                                                  //         .isEmpty) {
+                                                                  //       if (_bottom ==
+                                                                  //               0 &&
+                                                                  //           _pickaddress ==
+                                                                  //               false) {
+                                                                  //         var val = await geoCoding(
+                                                                  //             _centerLocation.latitude,
+                                                                  //             _centerLocation.longitude);
+                                                                  //         setState(
+                                                                  //             () {
+                                                                  //           if (addressList.where((element) => element.type == 'pickup').isNotEmpty) {
+                                                                  //             var add = addressList.firstWhere((element) => element.type == 'pickup');
+                                                                  //             add.address = val;
+                                                                  //             add.latlng = LatLng(_centerLocation.latitude, _centerLocation.longitude);
+                                                                  //           } else {
+                                                                  //             addressList.add(AddressList(id: '1', type: 'pickup', address: val, latlng: LatLng(_centerLocation.latitude, _centerLocation.longitude), name: userDetails['name'], number: userDetails['mobile'], pickup: true));
+                                                                  //           }
+                                                                  //           _lastCenter =
+                                                                  //               _centerLocation;
+                                                                  //         });
+                                                                  //         _lastCenter =
+                                                                  //             _centerLocation;
+                                                                  //       } else if (_pickaddress ==
+                                                                  //           true) {
+                                                                  //         setState(
+                                                                  //             () {
+                                                                  //           _pickaddress =
+                                                                  //               false;
+                                                                  //         });
+                                                                  //       }
+                                                                  //     } else if (_pickaddress ==
+                                                                  //         true) {
+                                                                  //       setState(
+                                                                  //           () {
+                                                                  //         _pickaddress =
+                                                                  //             false;
+                                                                  //       });
+                                                                  //     }
+                                                                  //   } else if (userDetails[
+                                                                  //           'enable_map_location_icon_drag_and_drop_feature'] ==
+                                                                  //       '1') {
+                                                                  //     var val = await geoCoding(
+                                                                  //         _centerLocation
+                                                                  //             .latitude,
+                                                                  //         _centerLocation
+                                                                  //             .longitude);
+                                                                  //     setState(
+                                                                  //         () {
+                                                                  //       if (addressList
+                                                                  //           .where((element) =>
+                                                                  //               element.type ==
+                                                                  //               'pickup')
+                                                                  //           .isNotEmpty) {
+                                                                  //         var add = addressList.firstWhere((element) =>
+                                                                  //             element.type ==
+                                                                  //             'pickup');
+                                                                  //         add.address =
+                                                                  //             val;
+                                                                  //         add.latlng = LatLng(
+                                                                  //             _centerLocation.latitude,
+                                                                  //             _centerLocation.longitude);
+                                                                  //       } else {
+                                                                  //         addressList.add(AddressList(
+                                                                  //             id: '1',
+                                                                  //             type: 'pickup',
+                                                                  //             address: val,
+                                                                  //             pickup: true,
+                                                                  //             latlng: LatLng(_centerLocation.latitude, _centerLocation.longitude),
+                                                                  //             name: userDetails['name'],
+                                                                  //             number: userDetails['mobile']));
+                                                                  //       }
+                                                                  //     });
+                                                                  //     _lastCenter =
+                                                                  //         _centerLocation;
+                                                                  //     ischanged =
+                                                                  //         false;
+                                                                  //     setState(
+                                                                  //         () {});
+                                                                  //   }
+                                                                  // },
+
                                                                   onCameraIdle:
                                                                       () async {
+                                                                    // ✅ منع التكرار لنفس الموقع
+                                                                    if (_lastRequestedLocation !=
+                                                                            null &&
+                                                                        _lastRequestedLocation!.latitude ==
+                                                                            _centerLocation
+                                                                                .latitude &&
+                                                                        _lastRequestedLocation!.longitude ==
+                                                                            _centerLocation.longitude) {
+                                                                      return;
+                                                                    }
+
+                                                                    _lastRequestedLocation =
+                                                                        _centerLocation;
+
                                                                     if (userDetails[
                                                                             'enable_map_location_icon_drag_and_drop_feature'] ==
                                                                         '0') {
-                                                                      if ((_bottom == 0 &&
-                                                                          _pickaddress ==
-                                                                              false &&
+                                                                      if ((_bottom ==
+                                                                              0 &&
+                                                                          !_pickaddress &&
                                                                           addressList
-                                                                              .where((element) => element.type == 'pickup')
+                                                                              .where((e) => e.type == 'pickup')
                                                                               .isNotEmpty)) {
                                                                         setState(
                                                                             () {});
                                                                       }
+
                                                                       if (addressList
-                                                                          .where((element) =>
-                                                                              element.type ==
+                                                                          .where((e) =>
+                                                                              e.type ==
                                                                               'pickup')
                                                                           .isEmpty) {
                                                                         if (_bottom ==
                                                                                 0 &&
-                                                                            _pickaddress ==
-                                                                                false) {
-                                                                          var val = await geoCoding(
-                                                                              _centerLocation.latitude,
-                                                                              _centerLocation.longitude);
+                                                                            !_pickaddress) {
+                                                                          String?
+                                                                              val =
+                                                                              await geoCoding(_centerLocation.latitude, _centerLocation.longitude);
+
                                                                           setState(
                                                                               () {
-                                                                            if (addressList.where((element) => element.type == 'pickup').isNotEmpty) {
-                                                                              var add = addressList.firstWhere((element) => element.type == 'pickup');
-                                                                              add.address = val;
+                                                                            if (addressList.where((e) => e.type == 'pickup').isNotEmpty) {
+                                                                              var add = addressList.firstWhere((e) => e.type == 'pickup');
+                                                                              add.address = val ?? '';
                                                                               add.latlng = LatLng(_centerLocation.latitude, _centerLocation.longitude);
                                                                             } else {
-                                                                              addressList.add(AddressList(id: '1', type: 'pickup', address: val, latlng: LatLng(_centerLocation.latitude, _centerLocation.longitude), name: userDetails['name'], number: userDetails['mobile'], pickup: true));
+                                                                              addressList.add(AddressList(
+                                                                                id: '1',
+                                                                                type: 'pickup',
+                                                                                address: val ?? '',
+                                                                                latlng: LatLng(_centerLocation.latitude, _centerLocation.longitude),
+                                                                                name: userDetails['name'],
+                                                                                number: userDetails['mobile'],
+                                                                                pickup: true,
+                                                                              ));
                                                                             }
+
                                                                             _lastCenter =
                                                                                 _centerLocation;
                                                                           });
-                                                                          _lastCenter =
-                                                                              _centerLocation;
-                                                                        } else if (_pickaddress ==
-                                                                            true) {
+                                                                        } else if (_pickaddress) {
                                                                           setState(
                                                                               () {
                                                                             _pickaddress =
                                                                                 false;
                                                                           });
                                                                         }
-                                                                      } else if (_pickaddress ==
-                                                                          true) {
+                                                                      } else if (_pickaddress) {
                                                                         setState(
                                                                             () {
                                                                           _pickaddress =
@@ -983,45 +1103,54 @@ class _MapsState extends State<Maps>
                                                                     } else if (userDetails[
                                                                             'enable_map_location_icon_drag_and_drop_feature'] ==
                                                                         '1') {
-                                                                      var val = await geoCoding(
+                                                                      String? val = await geoCoding(
                                                                           _centerLocation
                                                                               .latitude,
                                                                           _centerLocation
                                                                               .longitude);
+
                                                                       setState(
                                                                           () {
                                                                         if (addressList
-                                                                            .where((element) =>
-                                                                                element.type ==
+                                                                            .where((e) =>
+                                                                                e.type ==
                                                                                 'pickup')
                                                                             .isNotEmpty) {
-                                                                          var add = addressList.firstWhere((element) =>
-                                                                              element.type ==
+                                                                          var add = addressList.firstWhere((e) =>
+                                                                              e.type ==
                                                                               'pickup');
                                                                           add.address =
-                                                                              val;
+                                                                              val ?? '';
                                                                           add.latlng = LatLng(
                                                                               _centerLocation.latitude,
                                                                               _centerLocation.longitude);
                                                                         } else {
-                                                                          addressList.add(AddressList(
-                                                                              id: '1',
-                                                                              type: 'pickup',
-                                                                              address: val,
-                                                                              pickup: true,
-                                                                              latlng: LatLng(_centerLocation.latitude, _centerLocation.longitude),
-                                                                              name: userDetails['name'],
-                                                                              number: userDetails['mobile']));
+                                                                          addressList
+                                                                              .add(AddressList(
+                                                                            id: '1',
+                                                                            type:
+                                                                                'pickup',
+                                                                            address:
+                                                                                val ?? '',
+                                                                            pickup:
+                                                                                true,
+                                                                            latlng:
+                                                                                LatLng(_centerLocation.latitude, _centerLocation.longitude),
+                                                                            name:
+                                                                                userDetails['name'],
+                                                                            number:
+                                                                                userDetails['mobile'],
+                                                                          ));
                                                                         }
+
+                                                                        _lastCenter =
+                                                                            _centerLocation;
+                                                                        ischanged =
+                                                                            false;
                                                                       });
-                                                                      _lastCenter =
-                                                                          _centerLocation;
-                                                                      ischanged =
-                                                                          false;
-                                                                      setState(
-                                                                          () {});
                                                                     }
                                                                   },
+
                                                                   minMaxZoomPreference:
                                                                       const MinMaxZoomPreference(
                                                                           8.0,
@@ -1050,106 +1179,281 @@ class _MapsState extends State<Maps>
                                                                   .FlutterMap(
                                                                 mapController:
                                                                     _fmController,
-                                                                options: fm
-                                                                    .MapOptions(
-                                                                        onMapEvent:
-                                                                            (v) async {
-                                                                          if (v.source == fm.MapEventSource.nonRotatedSizeChange &&
-                                                                              addressList.isEmpty) {
-                                                                            _centerLocation =
-                                                                                LatLng(v.camera.center.latitude, v.camera.center.longitude);
-                                                                            setState(() {});
+                                                                options: fm.MapOptions(
+                                                                    //  LatLng? _lastRequestedLocation;
 
-                                                                            var val =
-                                                                                await geoCoding(_centerLocation.latitude, _centerLocation.longitude);
-                                                                            if (val !=
-                                                                                '') {
-                                                                              setState(() {
-                                                                                if (addressList.where((element) => element.type == 'pickup').isNotEmpty) {
-                                                                                  var add = addressList.firstWhere((element) => element.type == 'pickup');
-                                                                                  add.address = val;
-                                                                                  add.latlng = LatLng(_centerLocation.latitude, _centerLocation.longitude);
-                                                                                } else {
-                                                                                  addressList.add(AddressList(id: '1', type: 'pickup', address: val, pickup: true, latlng: LatLng(_centerLocation.latitude, _centerLocation.longitude), name: userDetails['name'], number: userDetails['mobile']));
-                                                                                }
-                                                                              });
+                                                                    onMapEvent: (v) async {
+                                                                      _centerLocation = LatLng(
+                                                                          v.camera.center
+                                                                              .latitude,
+                                                                          v.camera.center
+                                                                              .longitude);
+
+                                                                      // ✅ تجاهل لو نفس الإحداثيات اللي اتطلبت قبل كده
+                                                                      if (_lastRequestedLocation !=
+                                                                              null &&
+                                                                          _lastRequestedLocation!.latitude ==
+                                                                              _centerLocation
+                                                                                  .latitude &&
+                                                                          _lastRequestedLocation!.longitude ==
+                                                                              _centerLocation.longitude) {
+                                                                        return;
+                                                                      }
+
+                                                                      _lastRequestedLocation =
+                                                                          _centerLocation;
+
+                                                                      if (v.source ==
+                                                                              fm.MapEventSource.nonRotatedSizeChange &&
+                                                                          addressList.isEmpty) {
+                                                                        setState(
+                                                                            () {});
+                                                                        String?
+                                                                            val =
+                                                                            await geoCoding(_centerLocation.latitude,
+                                                                                _centerLocation.longitude);
+
+                                                                        if (val !=
+                                                                                null &&
+                                                                            val.isNotEmpty) {
+                                                                          setState(
+                                                                              () {
+                                                                            if (addressList.where((element) => element.type == 'pickup').isNotEmpty) {
+                                                                              var add = addressList.firstWhere((element) => element.type == 'pickup');
+                                                                              add.address = val;
+                                                                              add.latlng = _centerLocation;
+                                                                            } else {
+                                                                              addressList.add(AddressList(
+                                                                                id: '1',
+                                                                                type: 'pickup',
+                                                                                address: val,
+                                                                                pickup: true,
+                                                                                latlng: _centerLocation,
+                                                                                name: userDetails['name'],
+                                                                                number: userDetails['mobile'],
+                                                                              ));
+                                                                            }
+                                                                          });
+
+                                                                          _lastCenter =
+                                                                              _centerLocation;
+                                                                          ischanged =
+                                                                              false;
+                                                                        }
+                                                                      }
+
+                                                                      if (v.source ==
+                                                                          fm.MapEventSource
+                                                                              .dragEnd) {
+                                                                        setState(
+                                                                            () {});
+                                                                        if (userDetails['enable_map_location_icon_drag_and_drop_feature'] ==
+                                                                            '0') {
+                                                                          String?
+                                                                              val =
+                                                                              await geoCoding(_centerLocation.latitude, _centerLocation.longitude);
+
+                                                                          if (val != null &&
+                                                                              val.isNotEmpty) {
+                                                                            lowerLat =
+                                                                                _centerLocation.latitude - (lat * 1.24);
+                                                                            lowerLon =
+                                                                                _centerLocation.longitude - (lon * 1.24);
+                                                                            greaterLat =
+                                                                                _centerLocation.latitude + (lat * 1.24);
+                                                                            greaterLon =
+                                                                                _centerLocation.longitude + (lon * 1.24);
+
+                                                                            lower =
+                                                                                geo.encode(lowerLon, lowerLat);
+                                                                            higher =
+                                                                                geo.encode(greaterLon, greaterLat);
+
+                                                                            fdb =
+                                                                                FirebaseDatabase.instance.ref('drivers').orderByChild('g').startAt(lower).endAt(higher);
+
+                                                                            setState(() {
+                                                                              if (addressList.where((element) => element.type == 'pickup').isNotEmpty) {
+                                                                                var add = addressList.firstWhere((element) => element.type == 'pickup');
+                                                                                add.address = val;
+                                                                                add.latlng = _centerLocation;
+                                                                              } else {
+                                                                                addressList.add(AddressList(
+                                                                                  id: '1',
+                                                                                  type: 'pickup',
+                                                                                  address: val,
+                                                                                  pickup: true,
+                                                                                  latlng: _centerLocation,
+                                                                                  name: userDetails['name'],
+                                                                                  number: userDetails['mobile'],
+                                                                                ));
+                                                                              }
 
                                                                               _lastCenter = _centerLocation;
                                                                               ischanged = false;
-                                                                            }
+                                                                            });
                                                                           }
-                                                                          if (v.source ==
-                                                                              fm.MapEventSource.dragEnd) {
-                                                                            _centerLocation =
-                                                                                LatLng(v.camera.center.latitude, v.camera.center.longitude);
-                                                                            setState(() {});
-                                                                            if (userDetails['enable_map_location_icon_drag_and_drop_feature'] ==
-                                                                                '0') {
-                                                                              var val = await geoCoding(_centerLocation.latitude, _centerLocation.longitude);
-                                                                              lowerLat = _centerLocation.latitude - (lat * 1.24);
-                                                                              lowerLon = _centerLocation.longitude - (lon * 1.24);
-                                                                              greaterLat = _centerLocation.latitude + (lat * 1.24);
-                                                                              greaterLon = _centerLocation.longitude + (lon * 1.24);
-                                                                              lower = geo.encode(lowerLon, lowerLat);
-                                                                              higher = geo.encode(greaterLon, greaterLat);
+                                                                        }
+                                                                      }
+                                                                    },
+                                                                    // onMapEvent:
+                                                                    //     (v) async {
+                                                                    //   if (v.source == fm.MapEventSource.nonRotatedSizeChange &&
+                                                                    //       addressList.isEmpty) {
+                                                                    //     _centerLocation =
+                                                                    //         LatLng(v.camera.center.latitude, v.camera.center.longitude);
+                                                                    //     setState(() {});
 
-                                                                              fdb = FirebaseDatabase.instance.ref('drivers').orderByChild('g').startAt(lower).endAt(higher);
-                                                                              if (val != '') {
-                                                                                setState(() {
-                                                                                  if (addressList.where((element) => element.type == 'pickup').isNotEmpty) {
-                                                                                    var add = addressList.firstWhere((element) => element.type == 'pickup');
-                                                                                    add.address = val;
-                                                                                    add.latlng = LatLng(_centerLocation.latitude, _centerLocation.longitude);
-                                                                                  } else {
-                                                                                    addressList.add(AddressList(id: '1', type: 'pickup', address: val, pickup: true, latlng: LatLng(_centerLocation.latitude, _centerLocation.longitude), name: userDetails['name'], number: userDetails['mobile']));
-                                                                                  }
-                                                                                });
+                                                                    //     var val =
+                                                                    //         await geoCoding(_centerLocation.latitude, _centerLocation.longitude);
+                                                                    //     if (val !=
+                                                                    //         '') {
+                                                                    //       setState(() {
+                                                                    //         if (addressList.where((element) => element.type == 'pickup').isNotEmpty) {
+                                                                    //           var add = addressList.firstWhere((element) => element.type == 'pickup');
+                                                                    //           add.address = val;
+                                                                    //           add.latlng = LatLng(_centerLocation.latitude, _centerLocation.longitude);
+                                                                    //         } else {
+                                                                    //           addressList.add(AddressList(id: '1', type: 'pickup', address: val, pickup: true, latlng: LatLng(_centerLocation.latitude, _centerLocation.longitude), name: userDetails['name'], number: userDetails['mobile']));
+                                                                    //         }
+                                                                    //       });
 
-                                                                                _lastCenter = _centerLocation;
-                                                                                ischanged = false;
+                                                                    //       _lastCenter = _centerLocation;
+                                                                    //       ischanged = false;
+                                                                    //     }
+                                                                    //   }
+                                                                    //   if (v.source ==
+                                                                    //       fm.MapEventSource.dragEnd) {
+                                                                    //     _centerLocation =
+                                                                    //         LatLng(v.camera.center.latitude, v.camera.center.longitude);
+                                                                    //     setState(() {});
+                                                                    //     if (userDetails['enable_map_location_icon_drag_and_drop_feature'] ==
+                                                                    //         '0') {
+                                                                    //       var val = await geoCoding(_centerLocation.latitude, _centerLocation.longitude);
+                                                                    //       lowerLat = _centerLocation.latitude - (lat * 1.24);
+                                                                    //       lowerLon = _centerLocation.longitude - (lon * 1.24);
+                                                                    //       greaterLat = _centerLocation.latitude + (lat * 1.24);
+                                                                    //       greaterLon = _centerLocation.longitude + (lon * 1.24);
+                                                                    //       lower = geo.encode(lowerLon, lowerLat);
+                                                                    //       higher = geo.encode(greaterLon, greaterLat);
+
+                                                                    //       fdb = FirebaseDatabase.instance.ref('drivers').orderByChild('g').startAt(lower).endAt(higher);
+                                                                    //       if (val != '') {
+                                                                    //         setState(() {
+                                                                    //           if (addressList.where((element) => element.type == 'pickup').isNotEmpty) {
+                                                                    //             var add = addressList.firstWhere((element) => element.type == 'pickup');
+                                                                    //             add.address = val;
+                                                                    //             add.latlng = LatLng(_centerLocation.latitude, _centerLocation.longitude);
+                                                                    //           } else {
+                                                                    //             addressList.add(AddressList(id: '1', type: 'pickup', address: val, pickup: true, latlng: LatLng(_centerLocation.latitude, _centerLocation.longitude), name: userDetails['name'], number: userDetails['mobile']));
+                                                                    //           }
+                                                                    //         });
+
+                                                                    //         _lastCenter = _centerLocation;
+                                                                    //         ischanged = false;
+                                                                    //       }
+                                                                    //     }
+                                                                    //   }
+                                                                    // },
+
+                                                                    onPositionChanged: (p, l) async {
+                                                                      if (l ==
+                                                                          false) {
+                                                                        if (addressList
+                                                                            .isEmpty) {
+                                                                          _centerLocation = LatLng(
+                                                                              p.center.latitude,
+                                                                              p.center.longitude);
+
+                                                                          // ✅ منع التكرار
+                                                                          if (_lastRequestedLocation != null &&
+                                                                              _lastRequestedLocation!.latitude == _centerLocation.latitude &&
+                                                                              _lastRequestedLocation!.longitude == _centerLocation.longitude) {
+                                                                            return;
+                                                                          }
+
+                                                                          _lastRequestedLocation =
+                                                                              _centerLocation;
+
+                                                                          setState(
+                                                                              () {});
+
+                                                                          String?
+                                                                              val =
+                                                                              await geoCoding(_centerLocation.latitude, _centerLocation.longitude);
+
+                                                                          lowerLat =
+                                                                              _centerLocation.latitude - (lat * 1.24);
+
+                                                                          if (val != null &&
+                                                                              val.isNotEmpty) {
+                                                                            setState(() {
+                                                                              if (addressList.where((e) => e.type == 'pickup').isNotEmpty) {
+                                                                                var add = addressList.firstWhere((e) => e.type == 'pickup');
+                                                                                add.address = val;
+                                                                                add.latlng = _centerLocation;
+                                                                              } else {
+                                                                                addressList.add(AddressList(
+                                                                                  id: '1',
+                                                                                  type: 'pickup',
+                                                                                  address: val,
+                                                                                  pickup: true,
+                                                                                  latlng: _centerLocation,
+                                                                                  name: userDetails['name'],
+                                                                                  number: userDetails['mobile'],
+                                                                                ));
                                                                               }
-                                                                            }
-                                                                          }
-                                                                        },
-                                                                        onPositionChanged: (p,
-                                                                            l) async {
-                                                                          if (l ==
-                                                                              false) {
-                                                                            if (addressList.isEmpty) {
-                                                                              _centerLocation = LatLng(p.center.latitude, p.center.longitude);
-                                                                              setState(() {});
 
-                                                                              var val = await geoCoding(_centerLocation.latitude, _centerLocation.longitude);
-                                                                              lowerLat = _centerLocation.latitude - (lat * 1.24);
-                                                                              if (val != '') {
-                                                                                setState(() {
-                                                                                  if (addressList.where((element) => element.type == 'pickup').isNotEmpty) {
-                                                                                    var add = addressList.firstWhere((element) => element.type == 'pickup');
-                                                                                    add.address = val;
-                                                                                    add.latlng = LatLng(_centerLocation.latitude, _centerLocation.longitude);
-                                                                                  } else {
-                                                                                    addressList.add(AddressList(id: '1', type: 'pickup', address: val, pickup: true, latlng: LatLng(_centerLocation.latitude, _centerLocation.longitude), name: userDetails['name'], number: userDetails['mobile']));
-                                                                                  }
-                                                                                });
-
-                                                                                _lastCenter = _centerLocation;
-                                                                                ischanged = false;
-                                                                              }
-                                                                            }
+                                                                              _lastCenter = _centerLocation;
+                                                                              ischanged = false;
+                                                                            });
                                                                           }
-                                                                        },
-                                                                        // interactiveFlags: ~fm
-                                                                        //     .InteractiveFlag
-                                                                        //     .doubleTapZoom,
-                                                                        initialCenter: fmlt.LatLng(
-                                                                            center
-                                                                                .latitude,
-                                                                            center
-                                                                                .longitude),
-                                                                        initialZoom:
-                                                                            16,
-                                                                        onTap: (P,
-                                                                            L) {}),
+                                                                        }
+                                                                      }
+                                                                    },
+                                                                    // onPositionChanged: (p, l) async {
+                                                                    //   if (l ==
+                                                                    //       false) {
+                                                                    //     if (addressList
+                                                                    //         .isEmpty) {
+                                                                    //       _centerLocation = LatLng(
+                                                                    //           p.center.latitude,
+                                                                    //           p.center.longitude);
+                                                                    //       setState(
+                                                                    //           () {});
+
+                                                                    //       var val = await geoCoding(
+                                                                    //           _centerLocation.latitude,
+                                                                    //           _centerLocation.longitude);
+                                                                    //       lowerLat =
+                                                                    //           _centerLocation.latitude - (lat * 1.24);
+                                                                    //       if (val !=
+                                                                    //           '') {
+                                                                    //         setState(() {
+                                                                    //           if (addressList.where((element) => element.type == 'pickup').isNotEmpty) {
+                                                                    //             var add = addressList.firstWhere((element) => element.type == 'pickup');
+                                                                    //             add.address = val;
+                                                                    //             add.latlng = LatLng(_centerLocation.latitude, _centerLocation.longitude);
+                                                                    //           } else {
+                                                                    //             addressList.add(AddressList(id: '1', type: 'pickup', address: val, pickup: true, latlng: LatLng(_centerLocation.latitude, _centerLocation.longitude), name: userDetails['name'], number: userDetails['mobile']));
+                                                                    //           }
+                                                                    //         });
+
+                                                                    //         _lastCenter =
+                                                                    //             _centerLocation;
+                                                                    //         ischanged =
+                                                                    //             false;
+                                                                    //       }
+                                                                    //     }
+                                                                    //   }
+                                                                    // },
+
+                                                                    // interactiveFlags: ~fm
+                                                                    //     .InteractiveFlag
+                                                                    //     .doubleTapZoom,
+                                                                    initialCenter: fmlt.LatLng(center.latitude, center.longitude),
+                                                                    initialZoom: 16,
+                                                                    onTap: (P, L) {}),
                                                                 children: [
                                                                   fm.TileLayer(
                                                                     // minZoom: 10,
@@ -1231,25 +1535,67 @@ class _MapsState extends State<Maps>
                                                                       Button(
                                                                           width: media.width *
                                                                               0.5,
+                                                                          //LatLng? _lastRequestedLocation;
+
                                                                           onTap:
                                                                               () async {
-                                                                            var val =
-                                                                                await geoCoding(_centerLocation.latitude, _centerLocation.longitude);
-                                                                            setState(() {
-                                                                              if (addressList.where((element) => element.type == 'pickup').isNotEmpty) {
-                                                                                var add = addressList.firstWhere((element) => element.type == 'pickup');
-                                                                                add.address = val;
-                                                                                add.latlng = LatLng(_centerLocation.latitude, _centerLocation.longitude);
-                                                                              } else {
-                                                                                addressList.add(AddressList(id: '1', type: 'pickup', address: val, pickup: true, latlng: LatLng(_centerLocation.latitude, _centerLocation.longitude), name: userDetails['name'], number: userDetails['mobile']));
-                                                                              }
-                                                                            });
-                                                                            _lastCenter =
+                                                                            // ✅ تجاهل التكرار لنفس الموقع
+                                                                            if (_lastRequestedLocation != null &&
+                                                                                _lastRequestedLocation!.latitude == _centerLocation.latitude &&
+                                                                                _lastRequestedLocation!.longitude == _centerLocation.longitude) {
+                                                                              return;
+                                                                            }
+
+                                                                            _lastRequestedLocation =
                                                                                 _centerLocation;
-                                                                            ischanged =
-                                                                                false;
-                                                                            setState(() {});
+
+                                                                            String?
+                                                                                val =
+                                                                                await geoCoding(_centerLocation.latitude, _centerLocation.longitude);
+
+                                                                            if (val != null &&
+                                                                                val.isNotEmpty) {
+                                                                              setState(() {
+                                                                                if (addressList.where((e) => e.type == 'pickup').isNotEmpty) {
+                                                                                  var add = addressList.firstWhere((e) => e.type == 'pickup');
+                                                                                  add.address = val;
+                                                                                  add.latlng = _centerLocation;
+                                                                                } else {
+                                                                                  addressList.add(AddressList(
+                                                                                    id: '1',
+                                                                                    type: 'pickup',
+                                                                                    address: val,
+                                                                                    pickup: true,
+                                                                                    latlng: _centerLocation,
+                                                                                    name: userDetails['name'],
+                                                                                    number: userDetails['mobile'],
+                                                                                  ));
+                                                                                }
+
+                                                                                _lastCenter = _centerLocation;
+                                                                                ischanged = false;
+                                                                              });
+                                                                            }
                                                                           },
+                                                                          // onTap:
+                                                                          //     () async {
+                                                                          //   var val =
+                                                                          //       await geoCoding(_centerLocation.latitude, _centerLocation.longitude);
+                                                                          //   setState(() {
+                                                                          //     if (addressList.where((element) => element.type == 'pickup').isNotEmpty) {
+                                                                          //       var add = addressList.firstWhere((element) => element.type == 'pickup');
+                                                                          //       add.address = val;
+                                                                          //       add.latlng = LatLng(_centerLocation.latitude, _centerLocation.longitude);
+                                                                          //     } else {
+                                                                          //       addressList.add(AddressList(id: '1', type: 'pickup', address: val, pickup: true, latlng: LatLng(_centerLocation.latitude, _centerLocation.longitude), name: userDetails['name'], number: userDetails['mobile']));
+                                                                          //     }
+                                                                          //   });
+                                                                          //   _lastCenter =
+                                                                          //       _centerLocation;
+                                                                          //   ischanged =
+                                                                          //       false;
+                                                                          //   setState(() {});
+                                                                          // },
                                                                           text: languages[choosenLanguage]
                                                                               [
                                                                               'text_confirm'])
@@ -2629,43 +2975,64 @@ class _MapsState extends State<Maps>
                                                                                                                       color: Colors.transparent,
                                                                                                                       child: InkWell(
                                                                                                                         onTap: () async {
-                                                                                                                          var val;
-                                                                                                                          // if (mapType == 'google') {
+                                                                                                                          Map<String, dynamic>? val;
+
+                                                                                                                          // ✅ استدعاء lat/lng فقط لو فاضيين
                                                                                                                           if (addAutoFill[i]['lat'] == '' || addAutoFill[i]['lat'] == null) {
-                                                                                                                            val = await geoCodingForLatLng(addAutoFill[i]['place'], _sessionToken);
+                                                                                                                            val = await geoCodingForLatLng(
+                                                                                                                              addAutoFill[i]['place'],
+                                                                                                                              _sessionToken,
+                                                                                                                            );
                                                                                                                             _sessionToken = null;
-                                                                                                                            lowerLat = _centerLocation.latitude - (lat * 1.24);
+
+                                                                                                                            if (val != null) {
+                                                                                                                              addAutoFill[i]['lat'] = val['lat'].toString();
+                                                                                                                              addAutoFill[i]['lon'] = val['lng'].toString();
+                                                                                                                            }
                                                                                                                           }
-                                                                                                                          //   val = await geoCodingForLatLng(addAutoFill[i]['place']);
-                                                                                                                          // }
+
+                                                                                                                          LatLng selectedLatLng = LatLng(
+                                                                                                                            double.parse(addAutoFill[i]['lat'].toString()),
+                                                                                                                            double.parse(addAutoFill[i]['lon'].toString()),
+                                                                                                                          );
 
                                                                                                                           if (_pickaddress == true) {
-                                                                                                                            // setState(() {
-                                                                                                                            if (addressList.where((element) => element.type == 'pickup').isEmpty) {
-                                                                                                                              addressList.add(AddressList(id: '1', type: 'pickup', pickup: false, address: addAutoFill[i]['description'], latlng: (addAutoFill[i]['lat'] == '' || addAutoFill[i]['lat'] == null) ? LatLng(double.parse(val['lat'].toString()), double.parse(val['lng'].toString())) : LatLng(double.parse(addAutoFill[i]['lat'].toString()), double.parse(addAutoFill[i]['lon'].toString()))));
-                                                                                                                              // addressList.add(AddressList(id: '1', type: 'pickup', pickup: true, address: addAutoFill[i]['description'], latlng: (addAutoFill[i]['lat'] == '' || addAutoFill[i]['lat'] == null) ? val : LatLng(double.parse(addAutoFill[i]['lat'].toString()), double.parse(addAutoFill[i]['lon'].toString())), name: userDetails['name'], number: userDetails['mobile']));
+                                                                                                                            if (addressList.where((e) => e.type == 'pickup').isEmpty) {
+                                                                                                                              addressList.add(AddressList(
+                                                                                                                                id: '1',
+                                                                                                                                type: 'pickup',
+                                                                                                                                pickup: false,
+                                                                                                                                address: addAutoFill[i]['description'],
+                                                                                                                                latlng: selectedLatLng,
+                                                                                                                              ));
                                                                                                                             } else {
-                                                                                                                              addressList.firstWhere((element) => element.type == 'pickup').address = addAutoFill[i]['description'];
-                                                                                                                              addressList.firstWhere((element) => element.type == 'pickup').latlng = (addAutoFill[i]['lat'] == '' || addAutoFill[i]['lat'] == null) ? LatLng(double.parse(val['lat'].toString()), double.parse(val['lng'].toString())) : LatLng(double.parse(addAutoFill[i]['lat'].toString()), double.parse(addAutoFill[i]['lon'].toString()));
+                                                                                                                              var pickup = addressList.firstWhere((e) => e.type == 'pickup');
+                                                                                                                              pickup.address = addAutoFill[i]['description'];
+                                                                                                                              pickup.latlng = selectedLatLng;
                                                                                                                             }
+
                                                                                                                             infoMessage = '';
                                                                                                                             pickupAddressController.text = '';
                                                                                                                             _dropaddress = true;
                                                                                                                             _pickaddress = false;
-                                                                                                                            center = LatLng(double.parse(val['lat'].toString()), double.parse(val['lng'].toString()));
-                                                                                                                            // _controller?.moveCamera(CameraUpdate.newLatLngZoom(val, 14.0));
-                                                                                                                            // });
+                                                                                                                            center = selectedLatLng;
                                                                                                                             setState(() {});
                                                                                                                           } else {
                                                                                                                             setState(() {
-                                                                                                                              if (addressList.where((element) => element.type == 'drop').isEmpty) {
-                                                                                                                                addressList.add(AddressList(id: '2', type: 'drop', pickup: false, address: addAutoFill[i]['description'], latlng: (addAutoFill[i]['lat'] == '' || addAutoFill[i]['lat'] == null) ? LatLng(double.parse(val['lat'].toString()), double.parse(val['lng'].toString())) : LatLng(double.parse(addAutoFill[i]['lat'].toString()), double.parse(addAutoFill[i]['lon'].toString()))));
+                                                                                                                              if (addressList.where((e) => e.type == 'drop').isEmpty) {
+                                                                                                                                addressList.add(AddressList(
+                                                                                                                                  id: '2',
+                                                                                                                                  type: 'drop',
+                                                                                                                                  pickup: false,
+                                                                                                                                  address: addAutoFill[i]['description'],
+                                                                                                                                  latlng: selectedLatLng,
+                                                                                                                                ));
                                                                                                                               } else {
-                                                                                                                                addressList.firstWhere((element) => element.type == 'drop').address = addAutoFill[i]['description'];
-                                                                                                                                addressList.firstWhere((element) => element.type == 'drop').latlng = (addAutoFill[i]['lat'] == '' || addAutoFill[i]['lat'] == null) ? LatLng(double.parse(val['lat'].toString()), double.parse(val['lng'].toString())) : LatLng(double.parse(addAutoFill[i]['lat'].toString()), double.parse(addAutoFill[i]['lon'].toString()));
-
-                                                                                                                                // recentSearchesList.add(AddressList(id: '2', type: 'drop', pickup: false, address: addAutoFill[i]['description'], latlng: (addAutoFill[i]['lat'] == '') ? val : LatLng(double.parse(addAutoFill[i]['lat'].toString()), double.parse(addAutoFill[i]['lon'].toString()))));
+                                                                                                                                var drop = addressList.firstWhere((e) => e.type == 'drop');
+                                                                                                                                drop.address = addAutoFill[i]['description'];
+                                                                                                                                drop.latlng = selectedLatLng;
                                                                                                                               }
+
                                                                                                                               infoMessage = '';
                                                                                                                               dropAddressController.text = '';
                                                                                                                               _height = media.width * 0.8;
@@ -2673,23 +3040,19 @@ class _MapsState extends State<Maps>
                                                                                                                               _dropaddress = false;
                                                                                                                             });
 
-                                                                                                                            // pref.setStringList('recentsearch', jsonEncode(recentSearchesList).toString());
-
+                                                                                                                            // ✅ حفظ في البحث الأخير
                                                                                                                             if (addressList.length == 2) {
                                                                                                                               if (recentSearchesList.length > 3) {
                                                                                                                                 recentSearchesList.removeAt(0);
                                                                                                                               }
-                                                                                                                              if (recentSearchesList.any((mapTested) => mapTested['address'] == addAutoFill[i]['description'].toString())) {
-                                                                                                                              } else {
+
+                                                                                                                              if (!recentSearchesList.any((item) => item['address'] == addAutoFill[i]['description'])) {
                                                                                                                                 recentSearchesList.add({
                                                                                                                                   'address': addAutoFill[i]['description'],
-                                                                                                                                  'id': addressList.firstWhere((element) => element.type == 'drop').id,
-                                                                                                                                  'type': addressList.firstWhere((element) => element.type == 'drop').type,
-                                                                                                                                  'pickup': addressList.firstWhere((element) => element.type == 'drop').pickup,
-                                                                                                                                  'latlng': [
-                                                                                                                                    addressList.firstWhere((element) => element.type == 'drop').latlng.latitude,
-                                                                                                                                    addressList.firstWhere((element) => element.type == 'drop').latlng.longitude,
-                                                                                                                                  ]
+                                                                                                                                  'id': '2',
+                                                                                                                                  'type': 'drop',
+                                                                                                                                  'pickup': false,
+                                                                                                                                  'latlng': [selectedLatLng.latitude, selectedLatLng.longitude]
                                                                                                                                 });
                                                                                                                                 pref.setString('recentsearch', jsonEncode(recentSearchesList));
                                                                                                                               }
@@ -2697,11 +3060,87 @@ class _MapsState extends State<Maps>
                                                                                                                               navigate();
                                                                                                                             }
                                                                                                                           }
+
                                                                                                                           setState(() {
                                                                                                                             addAutoFill.clear();
                                                                                                                             _dropaddress = false;
                                                                                                                           });
                                                                                                                         },
+                                                                                                                        // onTap: () async {
+                                                                                                                        //   var val;
+                                                                                                                        //   // if (mapType == 'google') {
+                                                                                                                        //   if (addAutoFill[i]['lat'] == '' || addAutoFill[i]['lat'] == null) {
+                                                                                                                        //     val = await geoCodingForLatLng(addAutoFill[i]['place'], _sessionToken);
+                                                                                                                        //     _sessionToken = null;
+                                                                                                                        //     lowerLat = _centerLocation.latitude - (lat * 1.24);
+                                                                                                                        //   }
+                                                                                                                        //   //   val = await geoCodingForLatLng(addAutoFill[i]['place']);
+                                                                                                                        //   // }
+
+                                                                                                                        //   if (_pickaddress == true) {
+                                                                                                                        //     // setState(() {
+                                                                                                                        //     if (addressList.where((element) => element.type == 'pickup').isEmpty) {
+                                                                                                                        //       addressList.add(AddressList(id: '1', type: 'pickup', pickup: false, address: addAutoFill[i]['description'], latlng: (addAutoFill[i]['lat'] == '' || addAutoFill[i]['lat'] == null) ? LatLng(double.parse(val['lat'].toString()), double.parse(val['lng'].toString())) : LatLng(double.parse(addAutoFill[i]['lat'].toString()), double.parse(addAutoFill[i]['lon'].toString()))));
+                                                                                                                        //       // addressList.add(AddressList(id: '1', type: 'pickup', pickup: true, address: addAutoFill[i]['description'], latlng: (addAutoFill[i]['lat'] == '' || addAutoFill[i]['lat'] == null) ? val : LatLng(double.parse(addAutoFill[i]['lat'].toString()), double.parse(addAutoFill[i]['lon'].toString())), name: userDetails['name'], number: userDetails['mobile']));
+                                                                                                                        //     } else {
+                                                                                                                        //       addressList.firstWhere((element) => element.type == 'pickup').address = addAutoFill[i]['description'];
+                                                                                                                        //       addressList.firstWhere((element) => element.type == 'pickup').latlng = (addAutoFill[i]['lat'] == '' || addAutoFill[i]['lat'] == null) ? LatLng(double.parse(val['lat'].toString()), double.parse(val['lng'].toString())) : LatLng(double.parse(addAutoFill[i]['lat'].toString()), double.parse(addAutoFill[i]['lon'].toString()));
+                                                                                                                        //     }
+                                                                                                                        //     infoMessage = '';
+                                                                                                                        //     pickupAddressController.text = '';
+                                                                                                                        //     _dropaddress = true;
+                                                                                                                        //     _pickaddress = false;
+                                                                                                                        //     center = LatLng(double.parse(val['lat'].toString()), double.parse(val['lng'].toString()));
+                                                                                                                        //     // _controller?.moveCamera(CameraUpdate.newLatLngZoom(val, 14.0));
+                                                                                                                        //     // });
+                                                                                                                        //     setState(() {});
+                                                                                                                        //   } else {
+                                                                                                                        //     setState(() {
+                                                                                                                        //       if (addressList.where((element) => element.type == 'drop').isEmpty) {
+                                                                                                                        //         addressList.add(AddressList(id: '2', type: 'drop', pickup: false, address: addAutoFill[i]['description'], latlng: (addAutoFill[i]['lat'] == '' || addAutoFill[i]['lat'] == null) ? LatLng(double.parse(val['lat'].toString()), double.parse(val['lng'].toString())) : LatLng(double.parse(addAutoFill[i]['lat'].toString()), double.parse(addAutoFill[i]['lon'].toString()))));
+                                                                                                                        //       } else {
+                                                                                                                        //         addressList.firstWhere((element) => element.type == 'drop').address = addAutoFill[i]['description'];
+                                                                                                                        //         addressList.firstWhere((element) => element.type == 'drop').latlng = (addAutoFill[i]['lat'] == '' || addAutoFill[i]['lat'] == null) ? LatLng(double.parse(val['lat'].toString()), double.parse(val['lng'].toString())) : LatLng(double.parse(addAutoFill[i]['lat'].toString()), double.parse(addAutoFill[i]['lon'].toString()));
+
+                                                                                                                        //         // recentSearchesList.add(AddressList(id: '2', type: 'drop', pickup: false, address: addAutoFill[i]['description'], latlng: (addAutoFill[i]['lat'] == '') ? val : LatLng(double.parse(addAutoFill[i]['lat'].toString()), double.parse(addAutoFill[i]['lon'].toString()))));
+                                                                                                                        //       }
+                                                                                                                        //       infoMessage = '';
+                                                                                                                        //       dropAddressController.text = '';
+                                                                                                                        //       _height = media.width * 0.8;
+                                                                                                                        //       _bottom = 0;
+                                                                                                                        //       _dropaddress = false;
+                                                                                                                        //     });
+
+                                                                                                                        //     // pref.setStringList('recentsearch', jsonEncode(recentSearchesList).toString());
+
+                                                                                                                        //     if (addressList.length == 2) {
+                                                                                                                        //       if (recentSearchesList.length > 3) {
+                                                                                                                        //         recentSearchesList.removeAt(0);
+                                                                                                                        //       }
+                                                                                                                        //       if (recentSearchesList.any((mapTested) => mapTested['address'] == addAutoFill[i]['description'].toString())) {
+                                                                                                                        //       } else {
+                                                                                                                        //         recentSearchesList.add({
+                                                                                                                        //           'address': addAutoFill[i]['description'],
+                                                                                                                        //           'id': addressList.firstWhere((element) => element.type == 'drop').id,
+                                                                                                                        //           'type': addressList.firstWhere((element) => element.type == 'drop').type,
+                                                                                                                        //           'pickup': addressList.firstWhere((element) => element.type == 'drop').pickup,
+                                                                                                                        //           'latlng': [
+                                                                                                                        //             addressList.firstWhere((element) => element.type == 'drop').latlng.latitude,
+                                                                                                                        //             addressList.firstWhere((element) => element.type == 'drop').latlng.longitude,
+                                                                                                                        //           ]
+                                                                                                                        //         });
+                                                                                                                        //         pref.setString('recentsearch', jsonEncode(recentSearchesList));
+                                                                                                                        //       }
+
+                                                                                                                        //       navigate();
+                                                                                                                        //     }
+                                                                                                                        //   }
+                                                                                                                        //   setState(() {
+                                                                                                                        //     addAutoFill.clear();
+                                                                                                                        //     _dropaddress = false;
+                                                                                                                        //   });
+                                                                                                                        // },
+
                                                                                                                         child: Container(
                                                                                                                           padding: EdgeInsets.fromLTRB(0, media.width * 0.04, 0, media.width * 0.04),
                                                                                                                           decoration: BoxDecoration(
@@ -2736,20 +3175,43 @@ class _MapsState extends State<Maps>
                                                                                                                                         borderRadius: BorderRadius.circular(12),
                                                                                                                                         onTap: () async {
                                                                                                                                           if (favAddress.where((e) => e['pick_address'] == addAutoFill[i]['description']).isEmpty) {
-                                                                                                                                            var val;
-                                                                                                                                            // if (addAutoFill[i]['description'] != null) {
+                                                                                                                                            Map<String, dynamic>? val;
+
                                                                                                                                             if (addAutoFill[i]['lat'] == '' || addAutoFill[i]['lat'] == null) {
                                                                                                                                               val = await geoCodingForLatLng(addAutoFill[i]['place'], _sessionToken);
                                                                                                                                               _sessionToken = null;
+
+                                                                                                                                              if (val != null) {
+                                                                                                                                                addAutoFill[i]['lat'] = val['lat'].toString();
+                                                                                                                                                addAutoFill[i]['lon'] = val['lng'].toString();
+                                                                                                                                              }
                                                                                                                                             }
+
                                                                                                                                             setState(() {
                                                                                                                                               favSelectedAddress = addAutoFill[i]['description'];
-                                                                                                                                              favLat = (addAutoFill[i]['lat'] == '' || addAutoFill[i]['lat'] == null) ? val['lat'] : addAutoFill[i]['lat'];
-                                                                                                                                              favLng = (addAutoFill[i]['lat'] == '' || addAutoFill[i]['lat'] == null) ? val['lng'] : addAutoFill[i]['lon'];
+                                                                                                                                              favLat = double.parse(addAutoFill[i]['lat'].toString());
+                                                                                                                                              favLng = double.parse(addAutoFill[i]['lon'].toString());
                                                                                                                                               favAddressAdd = true;
                                                                                                                                             });
                                                                                                                                           }
                                                                                                                                         },
+                                                                                                                                        // onTap: () async {
+                                                                                                                                        //   if (favAddress.where((e) => e['pick_address'] == addAutoFill[i]['description']).isEmpty) {
+                                                                                                                                        //     var val;
+                                                                                                                                        //     // if (addAutoFill[i]['description'] != null) {
+                                                                                                                                        //     if (addAutoFill[i]['lat'] == '' || addAutoFill[i]['lat'] == null) {
+                                                                                                                                        //       val = await geoCodingForLatLng(addAutoFill[i]['place'], _sessionToken);
+                                                                                                                                        //       _sessionToken = null;
+                                                                                                                                        //     }
+                                                                                                                                        //     setState(() {
+                                                                                                                                        //       favSelectedAddress = addAutoFill[i]['description'];
+                                                                                                                                        //       favLat = (addAutoFill[i]['lat'] == '' || addAutoFill[i]['lat'] == null) ? val['lat'] : addAutoFill[i]['lat'];
+                                                                                                                                        //       favLng = (addAutoFill[i]['lat'] == '' || addAutoFill[i]['lat'] == null) ? val['lng'] : addAutoFill[i]['lon'];
+                                                                                                                                        //       favAddressAdd = true;
+                                                                                                                                        //     });
+                                                                                                                                        //   }
+                                                                                                                                        // },
+
                                                                                                                                         child: Icon(
                                                                                                                                           Icons.bookmark,
                                                                                                                                           size: media.width * 0.05,
