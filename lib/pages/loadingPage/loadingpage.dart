@@ -1,14 +1,13 @@
 import 'dart:async';
-import 'dart:convert';
-
+import 'dart:io';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../functions/functions.dart';
-import '../../styles/styles.dart';
-import '../../widgets/widgets.dart';
 import '../language/languages.dart';
 import '../login/login.dart';
 import '../noInternet/noInternet.dart';
@@ -147,76 +146,139 @@ class _LoadingPageState extends State<LoadingPage> {
     }
   }
 
-  getLanguageDone() async {
+  Future<void> getLanguageDone() async {
     _package = await PackageInfo.fromPlatform();
     try {
-      if (platform == TargetPlatform.android) {
-        _version = await FirebaseDatabase.instance
-            .ref()
-            .child('user_android_version')
-            .get();
-      } else {
-        _version = await FirebaseDatabase.instance
-            .ref()
-            .child('user_ios_version')
-            .get();
-      }
-      _error = false;
-      if (_version.value != null) {
-        var version = _version.value.toString().split('.');
-        var package = _package.version.toString().split('.');
+      final snapshot = await FirebaseDatabase.instance
+          .ref()
+          .child('force_update_user')
+          .get();
 
-        for (var i = 0; i < version.length || i < package.length; i++) {
-          if (i < version.length && i < package.length) {
-            if (int.parse(package[i]) < int.parse(version[i])) {
-              setState(() {
-                updateAvailable = true;
-              });
-              break;
-            } else if (int.parse(package[i]) > int.parse(version[i])) {
-              setState(() {
-                updateAvailable = false;
-              });
-              break;
-            }
-          } else if (i >= version.length && i < package.length) {
-            setState(() {
-              updateAvailable = false;
-            });
-            break;
-          } else if (i < version.length && i >= package.length) {
-            setState(() {
-              updateAvailable = true;
-            });
-            break;
-          }
+      _error = false;
+
+      if (snapshot.exists) {
+        final data = snapshot.value as Map<dynamic, dynamic>;
+
+        final latestVersion = data['version']?.toString() ?? '';
+        final isMandatory = data['is_mandatory'] == true;
+        final currentVersion = _package.version;
+
+        setState(() {
+          updateAvailable = _isVersionOutdated(currentVersion, latestVersion);
+        });
+
+        if (updateAvailable) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            showDialog(
+              context: context,
+              barrierDismissible: !isMandatory,
+              barrierColor: Colors.black.withOpacity(0.85),
+              builder: (_) => WillPopScope(
+                onWillPop: () async => !isMandatory,
+                child: AlertDialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16.0),
+                  ),
+                  title: const Text(
+                    'تحديث متوفر',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.redAccent,
+                    ),
+                  ),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.system_update_rounded,
+                          size: 48, color: Colors.blue),
+                      const SizedBox(height: 16),
+                      Text(
+                        data['release_notes'] ??
+                            'يوجد إصدار جديد من التطبيق. يرجى التحديث.',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 16, height: 1.5),
+                      ),
+                      if (!isMandatory)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 12),
+                          child: Text(
+                            'يمكنك متابعة استخدام التطبيق بدون التحديث الآن.',
+                            textAlign: TextAlign.center,
+                            style:
+                                TextStyle(fontSize: 14, color: Colors.black54),
+                          ),
+                        ),
+                    ],
+                  ),
+                  actionsAlignment: MainAxisAlignment.center,
+                  actions: [
+                    if (!isMandatory)
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('لاحقًا'),
+                      ),
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.download_rounded),
+                      label: const Text('تحديث الآن'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      onPressed: () async {
+                        final updateUrl = Platform.isAndroid
+                            ? data['url'] ?? ''
+                            : data['url_ios'] ?? '';
+                        try {
+                          if (await canLaunchUrl(Uri.parse(updateUrl))) {
+                            await launchUrl(Uri.parse(updateUrl),
+                                mode: LaunchMode.externalApplication);
+                          }
+                        } catch (e) {
+                          debugPrint('Error launching URL: $e');
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                  'فشل في فتح متجر التطبيقات. حاول لاحقاً.'),
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          });
+          return;
         }
       }
 
-      if (updateAvailable == false) {
+      if (!updateAvailable) {
         await getDetailsOfDevice();
         if (internet == true) {
           var val = await getLocalData();
 
           if (val == '3') {
             navigate();
-          } else if (choosenLanguage == '') {
-            // ignore: use_build_context_synchronously
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (context) => const Languages()));
+          } else if (choosenLanguage.isEmpty) {
+            Navigator.pushReplacement(
+                context, MaterialPageRoute(builder: (_) => const Languages()));
           } else if (val == '2') {
             Future.delayed(const Duration(seconds: 2), () {
-              //login page
-              // ignore: use_build_context_synchronously
-              Navigator.pushReplacement(context,
-                  MaterialPageRoute(builder: (context) => const Login()));
+              Navigator.pushReplacement(
+                  context, MaterialPageRoute(builder: (_) => const Login()));
             });
           } else {
             Future.delayed(const Duration(seconds: 2), () {
-              //choose language page
-              // ignore: use_build_context_synchronously
               Navigator.pushReplacement(context,
-                  MaterialPageRoute(builder: (context) => const Languages()));
+                  MaterialPageRoute(builder: (_) => const Languages()));
             });
           }
         } else {
@@ -224,17 +286,36 @@ class _LoadingPageState extends State<LoadingPage> {
         }
       }
     } catch (e) {
-      if (internet == true) {
-        if (_error == false) {
-          setState(() {
-            _error = true;
-          });
-          getData();
-        }
+      if (internet == true && !_error) {
+        setState(() => _error = true);
+        await getData();
       } else {
         setState(() {});
       }
     }
+  }
+
+  /// مقارنة النسخ: true لو فيه تحديث أحدث
+  bool _isVersionOutdated(String current, String latest) {
+    final currentParts = current.split('.').map(int.parse).toList();
+    final latestParts = latest.split('.').map(int.parse).toList();
+
+    final maxLength = currentParts.length > latestParts.length
+        ? currentParts.length
+        : latestParts.length;
+
+    while (currentParts.length < maxLength) {
+      currentParts.add(0);
+    }
+    while (latestParts.length < maxLength) {
+      latestParts.add(0);
+    }
+
+    for (int i = 0; i < maxLength; i++) {
+      if (currentParts[i] < latestParts[i]) return true;
+      if (currentParts[i] > latestParts[i]) return false;
+    }
+    return false;
   }
 
   @override
@@ -264,69 +345,6 @@ class _LoadingPageState extends State<LoadingPage> {
                 ],
               ),
             ),
-
-            //update available
-
-            (updateAvailable == true)
-                ? Positioned(
-                    top: 0,
-                    child: Container(
-                      height: media.height * 1,
-                      width: media.width * 1,
-                      color: Colors.transparent.withOpacity(0.6),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                              width: media.width * 0.9,
-                              padding: EdgeInsets.all(media.width * 0.05),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                color: page,
-                              ),
-                              child: Column(
-                                children: [
-                                  SizedBox(
-                                      width: media.width * 0.8,
-                                      child: MyText(
-                                        text:
-                                            'New version of this app is available in store, please update the app for continue using',
-                                        size: media.width * sixteen,
-                                        fontweight: FontWeight.w600,
-                                      )),
-                                  SizedBox(
-                                    height: media.width * 0.05,
-                                  ),
-                                  Button(
-                                      onTap: () async {
-                                        if (platform ==
-                                            TargetPlatform.android) {
-                                          openBrowser(
-                                              'https://play.google.com/store/apps/details?id=${_package.packageName}');
-                                        } else {
-                                          setState(() {
-                                            _isLoading = true;
-                                          });
-                                          var response = await http.get(Uri.parse(
-                                              'http://itunes.apple.com/lookup?bundleId=${_package.packageName}'));
-                                          if (response.statusCode == 200) {
-                                            openBrowser(jsonDecode(
-                                                    response.body)['results'][0]
-                                                ['trackViewUrl']);
-                                          }
-
-                                          setState(() {
-                                            _isLoading = false;
-                                          });
-                                        }
-                                      },
-                                      text: 'Update')
-                                ],
-                              ))
-                        ],
-                      ),
-                    ))
-                : Container(),
 
             //loader
             (_isLoading == true && internet == true)
