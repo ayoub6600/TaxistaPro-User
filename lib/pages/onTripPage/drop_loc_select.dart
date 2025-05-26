@@ -59,6 +59,7 @@ class _DropLocationState extends State<DropLocation>
   final _debouncer = Debouncer(milliseconds: 1000);
   bool useMyDetails = false;
   bool useMyAddress = false;
+  LatLng? _lastRequestedLocation;
 
   void _onMapCreated(GoogleMapController controller) {
     setState(() {
@@ -273,46 +274,100 @@ class _DropLocationState extends State<DropLocation>
                                       _centerLocation = position.target;
                                       // });
                                     },
+
                                     onCameraIdle: () async {
-                                      // if (addressList.isEmpty) {
+                                      // ✅ منع التكرار لنفس النقطة
+                                      if (_lastRequestedLocation != null &&
+                                          _lastRequestedLocation!.latitude ==
+                                              _centerLocation.latitude &&
+                                          _lastRequestedLocation!.longitude ==
+                                              _centerLocation.longitude) {
+                                        return;
+                                      }
+
+                                      _lastRequestedLocation = _centerLocation;
+
                                       if (userDetails[
                                               'enable_map_location_icon_drag_and_drop_feature'] ==
                                           '0') {
                                         if (dropAddressConfirmation != '') {
                                           setState(() {});
                                         } else {
-                                          if (useMyAddress == false) {
-                                            var val = await geoCoding(
+                                          if (!useMyAddress) {
+                                            String? val = await geoCoding(
                                                 _centerLocation.latitude,
                                                 _centerLocation.longitude);
                                             setState(() {
                                               _center = _centerLocation;
-                                              dropAddressConfirmation = val;
+                                              dropAddressConfirmation =
+                                                  val ?? '';
                                             });
                                           }
-                                          if (useMyAddress == true) {
+                                          if (useMyAddress) {
                                             setState(() {
                                               useMyAddress = false;
                                             });
                                           }
                                         }
                                       } else {
-                                        if (useMyAddress == false) {
-                                          var val = await geoCoding(
+                                        if (!useMyAddress) {
+                                          String? val = await geoCoding(
                                               _centerLocation.latitude,
                                               _centerLocation.longitude);
                                           setState(() {
                                             _center = _centerLocation;
-                                            dropAddressConfirmation = val;
+                                            dropAddressConfirmation = val ?? '';
                                           });
                                         }
-                                        if (useMyAddress == true) {
+                                        if (useMyAddress) {
                                           setState(() {
                                             useMyAddress = false;
                                           });
                                         }
                                       }
                                     },
+
+                                    // onCameraIdle: () async {
+                                    //   // if (addressList.isEmpty) {
+                                    //   if (userDetails[
+                                    //           'enable_map_location_icon_drag_and_drop_feature'] ==
+                                    //       '0') {
+                                    //     if (dropAddressConfirmation != '') {
+                                    //       setState(() {});
+                                    //     } else {
+                                    //       if (useMyAddress == false) {
+                                    //         var val = await geoCoding(
+                                    //             _centerLocation.latitude,
+                                    //             _centerLocation.longitude);
+                                    //         setState(() {
+                                    //           _center = _centerLocation;
+                                    //           dropAddressConfirmation = val;
+                                    //         });
+                                    //       }
+                                    //       if (useMyAddress == true) {
+                                    //         setState(() {
+                                    //           useMyAddress = false;
+                                    //         });
+                                    //       }
+                                    //     }
+                                    //   } else {
+                                    //     if (useMyAddress == false) {
+                                    //       var val = await geoCoding(
+                                    //           _centerLocation.latitude,
+                                    //           _centerLocation.longitude);
+                                    //       setState(() {
+                                    //         _center = _centerLocation;
+                                    //         dropAddressConfirmation = val;
+                                    //       });
+                                    //     }
+                                    //     if (useMyAddress == true) {
+                                    //       setState(() {
+                                    //         useMyAddress = false;
+                                    //       });
+                                    //     }
+                                    //   }
+                                    // },
+
                                     minMaxZoomPreference:
                                         const MinMaxZoomPreference(8.0, 20.0),
                                     myLocationButtonEnabled: false,
@@ -324,37 +379,54 @@ class _DropLocationState extends State<DropLocation>
                                     mapController: _fmController,
                                     options: fm.MapOptions(
                                         onMapEvent: (v) async {
+                                          _centerLocation = LatLng(
+                                            v.camera.center.latitude,
+                                            v.camera.center.longitude,
+                                          );
+
+                                          // ✅ لو نفس الموقع اللي طلبناه قبل كده، نتجاهل
+                                          if (_lastRequestedLocation != null &&
+                                              _lastRequestedLocation!
+                                                      .latitude ==
+                                                  _centerLocation.latitude &&
+                                              _lastRequestedLocation!
+                                                      .longitude ==
+                                                  _centerLocation.longitude) {
+                                            return;
+                                          }
+
+                                          _lastRequestedLocation =
+                                              _centerLocation;
+
                                           if (v.source ==
                                                   fm.MapEventSource
                                                       .nonRotatedSizeChange &&
                                               addressList.isEmpty) {
-                                            _centerLocation = LatLng(
-                                                v.camera.center.latitude,
-                                                v.camera.center.longitude);
                                             setState(() {});
 
-                                            var val = await geoCoding(
+                                            String? val = await geoCoding(
                                                 _centerLocation.latitude,
                                                 _centerLocation.longitude);
-                                            if (val != '') {
+
+                                            if (val != null && val.isNotEmpty) {
                                               setState(() {
                                                 _center = _centerLocation;
                                                 dropAddressConfirmation = val;
                                               });
                                             }
                                           }
+
                                           if (v.source ==
                                               fm.MapEventSource.dragEnd) {
-                                            _centerLocation = LatLng(
-                                                v.camera.center.latitude,
-                                                v.camera.center.longitude);
                                             if (userDetails[
                                                     'enable_map_location_icon_drag_and_drop_feature'] ==
                                                 '1') {
-                                              var val = await geoCoding(
+                                              String? val = await geoCoding(
                                                   _centerLocation.latitude,
                                                   _centerLocation.longitude);
-                                              if (val != '') {
+
+                                              if (val != null &&
+                                                  val.isNotEmpty) {
                                                 setState(() {
                                                   _center = _centerLocation;
                                                   dropAddressConfirmation = val;
@@ -363,6 +435,47 @@ class _DropLocationState extends State<DropLocation>
                                             }
                                           }
                                         },
+                                        // onMapEvent: (v) async {
+                                        //   if (v.source ==
+                                        //           fm.MapEventSource
+                                        //               .nonRotatedSizeChange &&
+                                        //       addressList.isEmpty) {
+                                        //     _centerLocation = LatLng(
+                                        //         v.camera.center.latitude,
+                                        //         v.camera.center.longitude);
+                                        //     setState(() {});
+
+                                        //     var val = await geoCoding(
+                                        //         _centerLocation.latitude,
+                                        //         _centerLocation.longitude);
+                                        //     if (val != '') {
+                                        //       setState(() {
+                                        //         _center = _centerLocation;
+                                        //         dropAddressConfirmation = val;
+                                        //       });
+                                        //     }
+                                        //   }
+                                        //   if (v.source ==
+                                        //       fm.MapEventSource.dragEnd) {
+                                        //     _centerLocation = LatLng(
+                                        //         v.camera.center.latitude,
+                                        //         v.camera.center.longitude);
+                                        //     if (userDetails[
+                                        //             'enable_map_location_icon_drag_and_drop_feature'] ==
+                                        //         '1') {
+                                        //       var val = await geoCoding(
+                                        //           _centerLocation.latitude,
+                                        //           _centerLocation.longitude);
+                                        //       if (val != '') {
+                                        //         setState(() {
+                                        //           _center = _centerLocation;
+                                        //           dropAddressConfirmation = val;
+                                        //         });
+                                        //       }
+                                        //     }
+                                        //   }
+                                        // },
+
                                         onPositionChanged: (p, l) async {
                                           if (l == false) {
                                             _centerLocation = LatLng(
@@ -376,6 +489,7 @@ class _DropLocationState extends State<DropLocation>
                                             if (val != '') {}
                                           }
                                         },
+
                                         // interactiveFlags:
                                         //     ~fm.InteractiveFlag.doubleTapZoom,
                                         initialCenter: fmlt.LatLng(
@@ -1860,52 +1974,81 @@ class _DropLocationState extends State<DropLocation>
                                                               child: InkWell(
                                                                 onTap:
                                                                     () async {
-                                                                  // ignore: prefer_typing_uninitialized_variables
-                                                                  var val;
+                                                                  Map<String,
+                                                                          dynamic>?
+                                                                      val;
+
+                                                                  // ✅ في حالة lat/lon فاضية، نجيبها من Google API أو الكاش
                                                                   if (addAutoFill[
                                                                               i]
                                                                           [
                                                                           'lat'] ==
                                                                       '') {
-                                                                    val = await geoCodingForLatLng(
-                                                                        addAutoFill[i]
-                                                                            [
-                                                                            'place'],
-                                                                        _sessionToken);
+                                                                    val =
+                                                                        await geoCodingForLatLng(
+                                                                      addAutoFill[
+                                                                              i]
+                                                                          [
+                                                                          'place'],
+                                                                      _sessionToken,
+                                                                    );
                                                                     _sessionToken =
                                                                         null;
+
+                                                                    if (val !=
+                                                                        null) {
+                                                                      // ✅ نحفظ القيم في العنصر لتقليل التكرار مستقبلاً
+                                                                      addAutoFill[
+                                                                              i]
+                                                                          [
+                                                                          'lat'] = val[
+                                                                              'lat']
+                                                                          .toString();
+                                                                      addAutoFill[
+                                                                              i]
+                                                                          [
+                                                                          'lon'] = val[
+                                                                              'lng']
+                                                                          .toString();
+                                                                    }
                                                                   }
 
                                                                   setState(() {
                                                                     useMyAddress =
                                                                         true;
-                                                                    _center = (addAutoFill[i]['lat'] ==
-                                                                            '')
-                                                                        ? LatLng(
-                                                                            double.parse(val['lat']
-                                                                                .toString()),
-                                                                            double.parse(val['lng']
-                                                                                .toString()))
-                                                                        : LatLng(
-                                                                            double.parse(addAutoFill[i]['lat'].toString()),
-                                                                            double.parse(addAutoFill[i]['lon'].toString()));
+                                                                    _center =
+                                                                        LatLng(
+                                                                      double.parse(addAutoFill[i]
+                                                                              [
+                                                                              'lat']
+                                                                          .toString()),
+                                                                      double.parse(addAutoFill[i]
+                                                                              [
+                                                                              'lon']
+                                                                          .toString()),
+                                                                    );
+
                                                                     dropAddressConfirmation =
                                                                         addAutoFill[i]
                                                                             [
                                                                             'description'];
+
                                                                     if (mapType ==
                                                                         'google') {
                                                                       _controller?.moveCamera(CameraUpdate.newLatLngZoom(
                                                                           _center,
                                                                           14.0));
                                                                     } else {
-                                                                      _fmController.move(
-                                                                          fmlt.LatLng(
-                                                                              _center.latitude,
-                                                                              _center.longitude),
-                                                                          14);
+                                                                      _fmController
+                                                                          .move(
+                                                                        fmlt.LatLng(
+                                                                            _center.latitude,
+                                                                            _center.longitude),
+                                                                        14,
+                                                                      );
                                                                     }
                                                                   });
+
                                                                   FocusManager
                                                                       .instance
                                                                       .primaryFocus
@@ -1915,6 +2058,64 @@ class _DropLocationState extends State<DropLocation>
                                                                   search.text =
                                                                       '';
                                                                 },
+                                                                // onTap:
+                                                                //     () async {
+                                                                //   // ignore: prefer_typing_uninitialized_variables
+                                                                //   var val;
+                                                                //   if (addAutoFill[
+                                                                //               i]
+                                                                //           [
+                                                                //           'lat'] ==
+                                                                //       '') {
+                                                                //     val = await geoCodingForLatLng(
+                                                                //         addAutoFill[i]
+                                                                //             [
+                                                                //             'place'],
+                                                                //         _sessionToken);
+                                                                //     _sessionToken =
+                                                                //         null;
+                                                                //   }
+
+                                                                //   setState(() {
+                                                                //     useMyAddress =
+                                                                //         true;
+                                                                //     _center = (addAutoFill[i]['lat'] ==
+                                                                //             '')
+                                                                //         ? LatLng(
+                                                                //             double.parse(val['lat']
+                                                                //                 .toString()),
+                                                                //             double.parse(val['lng']
+                                                                //                 .toString()))
+                                                                //         : LatLng(
+                                                                //             double.parse(addAutoFill[i]['lat'].toString()),
+                                                                //             double.parse(addAutoFill[i]['lon'].toString()));
+                                                                //     dropAddressConfirmation =
+                                                                //         addAutoFill[i]
+                                                                //             [
+                                                                //             'description'];
+                                                                //     if (mapType ==
+                                                                //         'google') {
+                                                                //       _controller?.moveCamera(CameraUpdate.newLatLngZoom(
+                                                                //           _center,
+                                                                //           14.0));
+                                                                //     } else {
+                                                                //       _fmController.move(
+                                                                //           fmlt.LatLng(
+                                                                //               _center.latitude,
+                                                                //               _center.longitude),
+                                                                //           14);
+                                                                //     }
+                                                                //   });
+                                                                //   FocusManager
+                                                                //       .instance
+                                                                //       .primaryFocus
+                                                                //       ?.unfocus();
+                                                                //   addAutoFill
+                                                                //       .clear();
+                                                                //   search.text =
+                                                                //       '';
+                                                                // },
+
                                                                 child:
                                                                     Container(
                                                                   padding: EdgeInsets.fromLTRB(
