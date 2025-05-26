@@ -16,6 +16,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geolocator/geolocator.dart' as geolocs;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 // ignore: depend_on_referenced_packages
@@ -452,53 +453,137 @@ class _BookingConfirmationState extends State<BookingConfirmation>
 
   getPoly(change, lat, lng) async {
     fmpoly.clear();
+    final Box cacheBox = Hive.box('geocoding_cache');
+
     if ((userRequestData.isEmpty ||
             userRequestData['accepted_at'] == null ||
             userRequestData['is_driver_arrived'] == 1) &&
         lat == '') {
       for (var i = 1; i < addressList.length; i++) {
+        String cacheKey =
+            'osrm_polyline_${addressList[i - 1].latlng.latitude},${addressList[i - 1].latlng.longitude}|${addressList[i].latlng.latitude},${addressList[i].latlng.longitude}';
+
+        if (cacheBox.containsKey(cacheKey)) {
+          List polyData = List.from(cacheBox.get(cacheKey));
+          for (var step in polyData) {
+            decodeEncodedPolyline(step);
+          }
+        } else {
+          var api = await http.get(Uri.parse(
+              'https://routing.openstreetmap.de/routed-car/route/v1/driving/${addressList[i - 1].latlng.longitude},${addressList[i - 1].latlng.latitude};${addressList[i].latlng.longitude},${addressList[i].latlng.latitude}?overview=false&geometries=polyline&steps=true'));
+
+          if (api.statusCode == 200) {
+            List _poly = jsonDecode(api.body)['routes'][0]['legs'][0]['steps'];
+            List<String> encodedSteps = [];
+
+            polyline.clear();
+            for (var e in _poly) {
+              decodeEncodedPolyline(e['geometry']);
+              encodedSteps.add(e['geometry']);
+            }
+
+            cacheBox.put(cacheKey, encodedSteps);
+
+            double lat = (addressList[0].latlng.latitude +
+                    addressList[addressList.length - 1].latlng.latitude) /
+                2;
+            double lon = (addressList[0].latlng.longitude +
+                    addressList[addressList.length - 1].latlng.longitude) /
+                2;
+            var val = LatLng(lat, lon);
+            _fmController.move(fmlt.LatLng(val.latitude, val.longitude), 13);
+
+            setState(() {});
+          }
+        }
+      }
+    } else {
+      String cacheKey =
+          'osrm_polyline_driver_$lat,$lng|${addressList[0].latlng.latitude},${addressList[0].latlng.longitude}';
+
+      if (cacheBox.containsKey(cacheKey)) {
+        List polyData = List.from(cacheBox.get(cacheKey));
+        for (var step in polyData) {
+          decodeEncodedPolyline(step);
+        }
+      } else {
         var api = await http.get(Uri.parse(
-            'https://routing.openstreetmap.de/routed-car/route/v1/driving/${addressList[i - 1].latlng.longitude},${addressList[i - 1].latlng.latitude};${addressList[i].latlng.longitude},${addressList[i].latlng.latitude}?overview=false&geometries=polyline&steps=true'));
+            'https://routing.openstreetmap.de/routed-car/route/v1/driving/$lng,$lat;${addressList[0].latlng.longitude},${addressList[0].latlng.latitude}?overview=false&geometries=polyline&steps=true'));
+
         if (api.statusCode == 200) {
           List _poly = jsonDecode(api.body)['routes'][0]['legs'][0]['steps'];
+          List<String> encodedSteps = [];
+
           polyline.clear();
           for (var e in _poly) {
             decodeEncodedPolyline(e['geometry']);
+            encodedSteps.add(e['geometry']);
           }
 
-          double lat = (addressList[0].latlng.latitude +
-                  addressList[addressList.length - 1].latlng.latitude) /
-              2;
-          double lon = (addressList[0].latlng.longitude +
-                  addressList[addressList.length - 1].latlng.longitude) /
-              2;
-          var val = LatLng(lat, lon);
-          // if(change == true){
-          _fmController.move(fmlt.LatLng(val.latitude, val.longitude), 13);
+          cacheBox.put(cacheKey, encodedSteps);
+
+          double _lat = (addressList[0].latlng.latitude + lat) / 2;
+          double _lon = (addressList[0].latlng.longitude + lng) / 2;
+          var val = LatLng(_lat, _lon);
+          _fmController.move(fmlt.LatLng(val.latitude, val.longitude), 15);
 
           setState(() {});
         }
       }
-    } else {
-      var api = await http.get(Uri.parse(
-          'https://routing.openstreetmap.de/routed-car/route/v1/driving/$lng,$lat;${addressList[0].latlng.longitude},${addressList[0].latlng.latitude}?overview=false&geometries=polyline&steps=true'));
-      if (api.statusCode == 200) {
-        List _poly = jsonDecode(api.body)['routes'][0]['legs'][0]['steps'];
-        polyline.clear();
-        for (var e in _poly) {
-          decodeEncodedPolyline(e['geometry']);
-        }
-        double _lat = (addressList[0].latlng.latitude + lat) / 2;
-        double _lon = (addressList[0].latlng.longitude + lng) / 2;
-        var val = LatLng(_lat, _lon);
-        // if(change == true){
-        _fmController.move(fmlt.LatLng(val.latitude, val.longitude), 15);
-        // }
-        setState(() {});
-      } else {}
     }
+
     fmPolyGot = false;
   }
+
+  // getPoly(change, lat, lng) async {
+  //   fmpoly.clear();
+  //   if ((userRequestData.isEmpty ||
+  //           userRequestData['accepted_at'] == null ||
+  //           userRequestData['is_driver_arrived'] == 1) &&
+  //       lat == '') {
+  //     for (var i = 1; i < addressList.length; i++) {
+  //       var api = await http.get(Uri.parse(
+  //           'https://routing.openstreetmap.de/routed-car/route/v1/driving/${addressList[i - 1].latlng.longitude},${addressList[i - 1].latlng.latitude};${addressList[i].latlng.longitude},${addressList[i].latlng.latitude}?overview=false&geometries=polyline&steps=true'));
+  //       if (api.statusCode == 200) {
+  //         List _poly = jsonDecode(api.body)['routes'][0]['legs'][0]['steps'];
+  //         polyline.clear();
+  //         for (var e in _poly) {
+  //           decodeEncodedPolyline(e['geometry']);
+  //         }
+
+  //         double lat = (addressList[0].latlng.latitude +
+  //                 addressList[addressList.length - 1].latlng.latitude) /
+  //             2;
+  //         double lon = (addressList[0].latlng.longitude +
+  //                 addressList[addressList.length - 1].latlng.longitude) /
+  //             2;
+  //         var val = LatLng(lat, lon);
+  //         // if(change == true){
+  //         _fmController.move(fmlt.LatLng(val.latitude, val.longitude), 13);
+
+  //         setState(() {});
+  //       }
+  //     }
+  //   } else {
+  //     var api = await http.get(Uri.parse(
+  //         'https://routing.openstreetmap.de/routed-car/route/v1/driving/$lng,$lat;${addressList[0].latlng.longitude},${addressList[0].latlng.latitude}?overview=false&geometries=polyline&steps=true'));
+  //     if (api.statusCode == 200) {
+  //       List _poly = jsonDecode(api.body)['routes'][0]['legs'][0]['steps'];
+  //       polyline.clear();
+  //       for (var e in _poly) {
+  //         decodeEncodedPolyline(e['geometry']);
+  //       }
+  //       double _lat = (addressList[0].latlng.latitude + lat) / 2;
+  //       double _lon = (addressList[0].latlng.longitude + lng) / 2;
+  //       var val = LatLng(_lat, _lon);
+  //       // if(change == true){
+  //       _fmController.move(fmlt.LatLng(val.latitude, val.longitude), 15);
+  //       // }
+  //       setState(() {});
+  //     } else {}
+  //   }
+  //   fmPolyGot = false;
+  // }
 
 //add distance marker
   addDistanceMarker(length) async {
@@ -6540,44 +6625,68 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                       height:
                                                           media.height * 0.02,
                                                     ),
+                                                    Button(
+                                                      onTap: () async {
+                                                        bool confirm =
+                                                            await showDialog(
+                                                          context: context,
+                                                          builder: (context) =>
+                                                              AlertDialog(
+                                                            title: Text(
+                                                              'تأكيد',
+                                                              style: GoogleFonts
+                                                                  .cairo(
+                                                                      fontSize:
+                                                                          12.sp,
+                                                                      color: Colors
+                                                                          .black),
+                                                            ),
+                                                            content: Text(
+                                                              "متأكد أنك تريد الإلغاء \u{1F97A}", // Unicode للإيموجي 🥹
+                                                              style: GoogleFonts
+                                                                  .cairo(
+                                                                      fontSize:
+                                                                          14.sp,
+                                                                      color: Colors
+                                                                          .grey),
+                                                            ),
+                                                            actions: [
+                                                              Button(
+                                                                text: '✅ نعم',
+                                                                backgroundcolor:
+                                                                    Colors.red,
+                                                                onTap: () =>
+                                                                    Navigator.of(
+                                                                            context)
+                                                                        .pop(
+                                                                            true),
+                                                              ),
+                                                              const SizedBox(
+                                                                  height: 10),
+                                                              Button(
+                                                                text: '❌ لا',
+                                                                onTap: () =>
+                                                                    Navigator.of(
+                                                                            context)
+                                                                        .pop(
+                                                                            false),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        );
 
-                                          Button(
-  onTap: () async {
-    bool confirm = await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'تأكيد',
-          style: GoogleFonts.cairo(fontSize: 12.sp, color: Colors.black),
-        ),
-        content: Text(
-          "متأكد أنك تريد الإلغاء \u{1F97A}", // Unicode للإيموجي 🥹
-          style: GoogleFonts.cairo(fontSize: 14.sp, color: Colors.grey),
-        ),
-        actions: [
-          Button(
-            text: '✅ نعم',
-            backgroundcolor: Colors.red,
-            onTap: () => Navigator.of(context).pop(true),
-          ),
-          const SizedBox(height: 10),
-          Button(
-            text: '❌ لا',
-            onTap: () => Navigator.of(context).pop(false),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm) {
-      var val = await cancelRequest();
-      if (val == 'logout') {
-        navigateLogout();
-      }
-    }
-  },
-  text: languages[choosenLanguage]['text_cancel'],
-)
+                                                        if (confirm) {
+                                                          var val =
+                                                              await cancelRequest();
+                                                          if (val == 'logout') {
+                                                            navigateLogout();
+                                                          }
+                                                        }
+                                                      },
+                                                      text: languages[
+                                                              choosenLanguage]
+                                                          ['text_cancel'],
+                                                    )
                                                   ],
                                                 ),
                                               ),
