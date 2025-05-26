@@ -43,6 +43,7 @@ class _PickupLocationState extends State<PickupLocation>
   String _state = '';
   bool _isLoading = false;
   dynamic _sessionToken;
+  LatLng? _lastRequestedLocation;
   LatLng _center = const LatLng(41.4219057, -102.0840772);
   LatLng _centerLocation = const LatLng(41.4219057, -102.0840772);
   TextEditingController search = TextEditingController();
@@ -136,11 +137,12 @@ class _PickupLocationState extends State<PickupLocation>
                 double.parse(loc.longitude.toString()));
           });
         }
-        setState(() {
-          _center = addressList[0].latlng;
-          // dropAddressConfirmation = addressList[0].address;
-          pickupAddressConfirmation = addressList[0].address;
-        });
+        if (addressList.isNotEmpty) {
+          setState(() {
+            _center = addressList[0].latlng;
+            pickupAddressConfirmation = addressList[0].address;
+          });
+        }
       } else if (widget.from != null &&
           widget.from != 'add stop' &&
           widget.from != 'favourite') {
@@ -273,45 +275,99 @@ class _PickupLocationState extends State<PickupLocation>
                                       _centerLocation = position.target;
                                       // });
                                     },
+
                                     onCameraIdle: () async {
+                                      // ✅ تجاهل لو نفس الموقع لتقليل الطلبات
+                                      if (_lastRequestedLocation != null &&
+                                          _lastRequestedLocation!.latitude ==
+                                              _centerLocation.latitude &&
+                                          _lastRequestedLocation!.longitude ==
+                                              _centerLocation.longitude) {
+                                        return;
+                                      }
+
+                                      _lastRequestedLocation = _centerLocation;
+
                                       if (userDetails[
                                               'enable_map_location_icon_drag_and_drop_feature'] ==
                                           '0') {
                                         if (pickupAddressConfirmation != '') {
                                           setState(() {});
                                         } else {
-                                          if (useMyAddress == false) {
-                                            var val = await geoCoding(
-                                                _centerLocation.latitude,
-                                                _centerLocation.longitude);
+                                          if (!useMyAddress) {
+                                            String val = await geoCoding(
+                                                    _centerLocation.latitude,
+                                                    _centerLocation
+                                                        .longitude) ??
+                                                '';
                                             setState(() {
                                               _center = _centerLocation;
                                               pickupAddressConfirmation = val;
                                             });
-                                          }
-                                          if (useMyAddress == true) {
+                                          } else {
                                             setState(() {
                                               useMyAddress = false;
                                             });
                                           }
                                         }
                                       } else {
-                                        if (useMyAddress == false) {
-                                          var val = await geoCoding(
-                                              _centerLocation.latitude,
-                                              _centerLocation.longitude);
+                                        if (!useMyAddress) {
+                                          String val = await geoCoding(
+                                                  _centerLocation.latitude,
+                                                  _centerLocation.longitude) ??
+                                              '';
                                           setState(() {
                                             _center = _centerLocation;
                                             pickupAddressConfirmation = val;
                                           });
-                                        }
-                                        if (useMyAddress == true) {
+                                        } else {
                                           setState(() {
                                             useMyAddress = false;
                                           });
                                         }
                                       }
                                     },
+
+                                    // onCameraIdle: () async {
+                                    //   if (userDetails[
+                                    //           'enable_map_location_icon_drag_and_drop_feature'] ==
+                                    //       '0') {
+                                    //     if (pickupAddressConfirmation != '') {
+                                    //       setState(() {});
+                                    //     } else {
+                                    //       if (useMyAddress == false) {
+                                    //         var val = await geoCoding(
+                                    //             _centerLocation.latitude,
+                                    //             _centerLocation.longitude);
+                                    //         setState(() {
+                                    //           _center = _centerLocation;
+                                    //           pickupAddressConfirmation = val;
+                                    //         });
+                                    //       }
+                                    //       if (useMyAddress == true) {
+                                    //         setState(() {
+                                    //           useMyAddress = false;
+                                    //         });
+                                    //       }
+                                    //     }
+                                    //   } else {
+                                    //     if (useMyAddress == false) {
+                                    //       var val = await geoCoding(
+                                    //           _centerLocation.latitude,
+                                    //           _centerLocation.longitude);
+                                    //       setState(() {
+                                    //         _center = _centerLocation;
+                                    //         pickupAddressConfirmation = val;
+                                    //       });
+                                    //     }
+                                    //     if (useMyAddress == true) {
+                                    //       setState(() {
+                                    //         useMyAddress = false;
+                                    //       });
+                                    //     }
+                                    //   }
+                                    // },
+
                                     minMaxZoomPreference:
                                         const MinMaxZoomPreference(8.0, 20.0),
                                     myLocationButtonEnabled: false,
@@ -323,37 +379,53 @@ class _PickupLocationState extends State<PickupLocation>
                                     mapController: _fmController,
                                     options: fm.MapOptions(
                                         onMapEvent: (v) async {
+                                          _centerLocation = LatLng(
+                                            v.camera.center.latitude,
+                                            v.camera.center.longitude,
+                                          );
+
+                                          if (_lastRequestedLocation != null &&
+                                              _lastRequestedLocation!
+                                                      .latitude ==
+                                                  _centerLocation.latitude &&
+                                              _lastRequestedLocation!
+                                                      .longitude ==
+                                                  _centerLocation.longitude) {
+                                            return;
+                                          }
+
+                                          _lastRequestedLocation =
+                                              _centerLocation;
+
                                           if (v.source ==
                                                   fm.MapEventSource
                                                       .nonRotatedSizeChange &&
                                               addressList.isEmpty) {
-                                            _centerLocation = LatLng(
-                                                v.camera.center.latitude,
-                                                v.camera.center.longitude);
                                             setState(() {});
-
-                                            var val = await geoCoding(
-                                                _centerLocation.latitude,
-                                                _centerLocation.longitude);
-                                            if (val != '') {
+                                            String val = await geoCoding(
+                                                    _centerLocation.latitude,
+                                                    _centerLocation
+                                                        .longitude) ??
+                                                '';
+                                            if (val.isNotEmpty) {
                                               setState(() {
                                                 _center = _centerLocation;
                                                 pickupAddressConfirmation = val;
                                               });
                                             }
                                           }
+
                                           if (v.source ==
                                               fm.MapEventSource.dragEnd) {
-                                            _centerLocation = LatLng(
-                                                v.camera.center.latitude,
-                                                v.camera.center.longitude);
                                             if (userDetails[
                                                     'enable_map_location_icon_drag_and_drop_feature'] ==
                                                 '1') {
-                                              var val = await geoCoding(
-                                                  _centerLocation.latitude,
-                                                  _centerLocation.longitude);
-                                              if (val != '') {
+                                              String val = await geoCoding(
+                                                      _centerLocation.latitude,
+                                                      _centerLocation
+                                                          .longitude) ??
+                                                  '';
+                                              if (val.isNotEmpty) {
                                                 setState(() {
                                                   _center = _centerLocation;
                                                   dropAddressConfirmation = val;
@@ -482,26 +554,61 @@ class _PickupLocationState extends State<PickupLocation>
                                 children: [
                                   Button(
                                     width: media.width * 0.5,
+
                                     onTap: () async {
+                                      // ✅ تجاهل لو نفس الإحداثيات
+                                      if (_lastRequestedLocation != null &&
+                                          _lastRequestedLocation!.latitude ==
+                                              _centerLocation.latitude &&
+                                          _lastRequestedLocation!.longitude ==
+                                              _centerLocation.longitude) {
+                                        return;
+                                      }
+
+                                      _lastRequestedLocation = _centerLocation;
+
                                       setState(() {
                                         _isLoading = true;
                                       });
-                                      if (useMyAddress == false) {
-                                        var val = await geoCoding(
-                                            _centerLocation.latitude,
-                                            _centerLocation.longitude);
+
+                                      if (!useMyAddress) {
+                                        String val = await geoCoding(
+                                                _centerLocation.latitude,
+                                                _centerLocation.longitude) ??
+                                            '';
                                         setState(() {
                                           _center = _centerLocation;
                                           pickupAddressConfirmation = val;
                                           _isLoading = false;
                                         });
-                                      }
-                                      if (useMyAddress == true) {
+                                      } else {
                                         setState(() {
                                           useMyAddress = false;
+                                          _isLoading = false;
                                         });
                                       }
                                     },
+
+                                    // onTap: () async {
+                                    //   setState(() {
+                                    //     _isLoading = true;
+                                    //   });
+                                    //   if (useMyAddress == false) {
+                                    //     var val = await geoCoding(
+                                    //         _centerLocation.latitude,
+                                    //         _centerLocation.longitude);
+                                    //     setState(() {
+                                    //       _center = _centerLocation;
+                                    //       pickupAddressConfirmation = val;
+                                    //       _isLoading = false;
+                                    //     });
+                                    //   }
+                                    //   if (useMyAddress == true) {
+                                    //     setState(() {
+                                    //       useMyAddress = false;
+                                    //     });
+                                    //   }
+                                    // },
                                     text: languages[choosenLanguage]
                                         ['text_confirm'],
                                   ),
@@ -1027,54 +1134,144 @@ class _PickupLocationState extends State<PickupLocation>
                                                               color: Colors
                                                                   .transparent,
                                                               child: InkWell(
+                                                                // onTap:
+                                                                //     () async {
+                                                                //   // ignore: prefer_typing_uninitialized_variables
+                                                                //   var val;
+                                                                //   if (addAutoFill[
+                                                                //               i]
+                                                                //           [
+                                                                //           'lat'] ==
+                                                                //       '') {
+                                                                //     val = await geoCodingForLatLng(
+                                                                //         addAutoFill[i]
+                                                                //             [
+                                                                //             'place'],
+                                                                //         _sessionToken);
+                                                                //     _sessionToken =
+                                                                //         null;
+                                                                //   }
+
+                                                                //   setState(() {
+                                                                //     useMyAddress =
+                                                                //         true;
+                                                                //     _center = (addAutoFill[i]['lat'] ==
+                                                                //             '')
+                                                                //         ? LatLng(
+                                                                //             double.parse(val['lat']
+                                                                //                 .toString()),
+                                                                //             double.parse(val['lng']
+                                                                //                 .toString()))
+                                                                //         : LatLng(
+                                                                //             double.parse(addAutoFill[i]['lat'].toString()),
+                                                                //             double.parse(addAutoFill[i]['lon'].toString()));
+                                                                //     pickupAddressConfirmation =
+                                                                //         addAutoFill[i]
+                                                                //             [
+                                                                //             'description'];
+                                                                //     if (mapType ==
+                                                                //         'google') {
+                                                                //       _controller?.moveCamera(CameraUpdate.newLatLngZoom(
+                                                                //           _center,
+                                                                //           14.0));
+                                                                //     } else {
+                                                                //       _fmController.move(
+                                                                //           fmlt.LatLng(
+                                                                //               _center.latitude,
+                                                                //               _center.longitude),
+                                                                //           14);
+                                                                //     }
+                                                                //   });
+                                                                //   FocusManager
+                                                                //       .instance
+                                                                //       .primaryFocus
+                                                                //       ?.unfocus();
+                                                                //   addAutoFill
+                                                                //       .clear();
+                                                                //   search.text =
+                                                                //       '';
+                                                                // },
                                                                 onTap:
                                                                     () async {
-                                                                  // ignore: prefer_typing_uninitialized_variables
-                                                                  var val;
-                                                                  if (addAutoFill[
+                                                                  Map<String,
+                                                                          dynamic>?
+                                                                      val;
+
+                                                                  if (addAutoFill[i]
+                                                                              [
+                                                                              'lat'] ==
+                                                                          '' ||
+                                                                      addAutoFill[i]
+                                                                              [
+                                                                              'lat'] ==
+                                                                          null) {
+                                                                    val =
+                                                                        await geoCodingForLatLng(
+                                                                      addAutoFill[
                                                                               i]
                                                                           [
-                                                                          'lat'] ==
-                                                                      '') {
-                                                                    val = await geoCodingForLatLng(
-                                                                        addAutoFill[i]
-                                                                            [
-                                                                            'place'],
-                                                                        _sessionToken);
+                                                                          'place'],
+                                                                      _sessionToken,
+                                                                    );
                                                                     _sessionToken =
                                                                         null;
+
+                                                                    if (val !=
+                                                                        null) {
+                                                                      addAutoFill[
+                                                                              i]
+                                                                          [
+                                                                          'lat'] = val[
+                                                                              'lat']
+                                                                          .toString();
+                                                                      addAutoFill[
+                                                                              i]
+                                                                          [
+                                                                          'lon'] = val[
+                                                                              'lng']
+                                                                          .toString();
+                                                                    }
                                                                   }
+
+                                                                  LatLng
+                                                                      selectedLatLng =
+                                                                      LatLng(
+                                                                    double.parse(addAutoFill[i]
+                                                                            [
+                                                                            'lat']
+                                                                        .toString()),
+                                                                    double.parse(addAutoFill[i]
+                                                                            [
+                                                                            'lon']
+                                                                        .toString()),
+                                                                  );
 
                                                                   setState(() {
                                                                     useMyAddress =
                                                                         true;
-                                                                    _center = (addAutoFill[i]['lat'] ==
-                                                                            '')
-                                                                        ? LatLng(
-                                                                            double.parse(val['lat']
-                                                                                .toString()),
-                                                                            double.parse(val['lng']
-                                                                                .toString()))
-                                                                        : LatLng(
-                                                                            double.parse(addAutoFill[i]['lat'].toString()),
-                                                                            double.parse(addAutoFill[i]['lon'].toString()));
+                                                                    _center =
+                                                                        selectedLatLng;
                                                                     pickupAddressConfirmation =
                                                                         addAutoFill[i]
                                                                             [
                                                                             'description'];
+
                                                                     if (mapType ==
                                                                         'google') {
                                                                       _controller?.moveCamera(CameraUpdate.newLatLngZoom(
                                                                           _center,
                                                                           14.0));
                                                                     } else {
-                                                                      _fmController.move(
-                                                                          fmlt.LatLng(
-                                                                              _center.latitude,
-                                                                              _center.longitude),
-                                                                          14);
+                                                                      _fmController
+                                                                          .move(
+                                                                        fmlt.LatLng(
+                                                                            _center.latitude,
+                                                                            _center.longitude),
+                                                                        14,
+                                                                      );
                                                                     }
                                                                   });
+
                                                                   FocusManager
                                                                       .instance
                                                                       .primaryFocus
