@@ -980,8 +980,14 @@ class _InvoiceState extends State<Invoice> {
                                                         ),
                                                         child: Row(
                                                           children: [
+                                                            //تم الدفع عبر
+
                                                             Text(
-                                                              "ادفع للسائق",
+                                                              (userRequestData[
+                                                                          'payment_opt'] ==
+                                                                      '2')
+                                                                  ? "تم الدفع عبر"
+                                                                  : "ادفع للسائق",
                                                               style: GoogleFonts.cairo(
                                                                   fontSize: media
                                                                           .width *
@@ -1034,9 +1040,6 @@ class _InvoiceState extends State<Invoice> {
                                                                       fourteen,
                                                               color:
                                                                   Colors.blue,
-                                                            ),
-                                                            SizedBox(
-                                                              width: 5.w,
                                                             ),
                                                             MyText(
                                                               text:
