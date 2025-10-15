@@ -48,12 +48,78 @@ String signKey = '';
 
 //base url
 //base url
-String url = 'https://www.taxistapro.com/';
+//String url = 'https://www.taxistapro.com/';
+String url = 'https://www.taxista-go.com/';
+
 String mapkey = (platform == TargetPlatform.android)
     ? 'AIzaSyCLVX-Jnqqo89cZ2xQ6CJflSueG-laba7g'
     : 'AIzaSyCLVX-Jnqqo89cZ2xQ6CJflSueG-laba7g';
 
 String mapType = '';
+getCountryCode() async {
+  dynamic result;
+  try {
+    // اطبع الـ base url
+    debugPrint('Base URL: $url');
+
+    // جهّز الـ Uri بشكل آمن (بالتعامل مع الشرط / تلقائياً)
+    final Uri uri = Uri.parse(url).resolve('api/v1/countries-new');
+    debugPrint('Requesting GET $uri');
+
+    final response = await http.get(uri);
+
+    debugPrint('Response status: ${response.statusCode}');
+    debugPrint('Response body: ${response.body}');
+
+    if (response.statusCode == 200) {
+      countries = jsonDecode(response.body)['data']['countries']['data'];
+
+      phcode =
+          (countries.where((element) => element['default'] == true).isNotEmpty)
+              ? countries.indexWhere((element) => element['default'] == true)
+              : 0;
+      result = 'success';
+    } else {
+      debugPrint('Error response: ${response.statusCode} - ${response.body}');
+      result = 'error';
+    }
+  } catch (e) {
+    debugPrint('Exception in getCountryCode: $e');
+    if (e is SocketException) {
+      internet = false;
+      result = 'no internet';
+    } else {
+      result = 'error';
+    }
+  }
+  return result;
+}
+
+// getCountryCode() async {
+//   dynamic result;
+//   try {
+//     final response = await http.get(Uri.parse('${url}api/v1/countries-new'));
+
+//     if (response.statusCode == 200) {
+//       countries = jsonDecode(response.body)['data']['countries']['data'];
+
+//       phcode =
+//           (countries.where((element) => element['default'] == true).isNotEmpty)
+//               ? countries.indexWhere((element) => element['default'] == true)
+//               : 0;
+//       result = 'success';
+//     } else {
+//       debugPrint(response.body);
+//       result = 'error';
+//     }
+//   } catch (e) {
+//     if (e is SocketException) {
+//       internet = false;
+//       result = 'no internet';
+//     }
+//   }
+//   return result;
+// }
 
 //check internet connection
 
@@ -195,31 +261,6 @@ List languagesCode = [
 //getting country code
 
 List countries = [];
-getCountryCode() async {
-  dynamic result;
-  try {
-    final response = await http.get(Uri.parse('${url}api/v1/countries-new'));
-
-    if (response.statusCode == 200) {
-      countries = jsonDecode(response.body)['data']['countries']['data'];
-
-      phcode =
-          (countries.where((element) => element['default'] == true).isNotEmpty)
-              ? countries.indexWhere((element) => element['default'] == true)
-              : 0;
-      result = 'success';
-    } else {
-      debugPrint(response.body);
-      result = 'error';
-    }
-  } catch (e) {
-    if (e is SocketException) {
-      internet = false;
-      result = 'no internet';
-    }
-  }
-  return result;
-}
 
 //login firebase
 
@@ -3562,6 +3603,7 @@ getWalletHistory() async {
         headers: {'Authorization': 'Bearer ${bearerToken[0].token}'});
     if (response.statusCode == 200) {
       walletBalance = jsonDecode(response.body);
+      print("----------->all response ${response.body}");
       walletHistory = walletBalance['wallet_history']['data'];
       walletPages = walletBalance['wallet_history']['meta']['pagination'];
       paymentGateways = walletBalance['payment_gateways'];
