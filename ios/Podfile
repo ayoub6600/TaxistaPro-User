@@ -54,7 +54,10 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
     target.build_configurations.each do |config|
-      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '14.0'
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+      # Simulator frameworks are ad-hoc signed by Xcode. Disabling pod signing
+      # avoids failures caused by Finder metadata on cloud-synced workspaces.
+      config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
       config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= [
         '$(inherited)',
 
