@@ -4,7 +4,6 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../functions/functions.dart';
@@ -30,7 +29,6 @@ class _LoadingPageState extends State<LoadingPage> {
   String dot = '.';
   bool updateAvailable = false;
   dynamic _package;
-  dynamic _version;
   bool _error = false;
   bool _isLoading = false;
 
