@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../functions/functions.dart';
+import '../../utils/version.dart';
 import '../language/languages.dart';
 import '../login/login.dart';
 import '../noInternet/noInternet.dart';
@@ -164,7 +165,7 @@ class _LoadingPageState extends State<LoadingPage> {
         final currentVersion = _package.version;
 
         setState(() {
-          updateAvailable = _isVersionOutdated(currentVersion, latestVersion);
+          updateAvailable = isVersionOutdated(currentVersion, latestVersion);
         });
 
         if (updateAvailable) {
@@ -295,29 +296,6 @@ class _LoadingPageState extends State<LoadingPage> {
     }
   }
 
-  /// مقارنة النسخ: true لو فيه تحديث أحدث
-  bool _isVersionOutdated(String current, String latest) {
-    final currentParts = current.split('.').map(int.parse).toList();
-    final latestParts = latest.split('.').map(int.parse).toList();
-
-    final maxLength = currentParts.length > latestParts.length
-        ? currentParts.length
-        : latestParts.length;
-
-    while (currentParts.length < maxLength) {
-      currentParts.add(0);
-    }
-    while (latestParts.length < maxLength) {
-      latestParts.add(0);
-    }
-
-    for (int i = 0; i < maxLength; i++) {
-      if (currentParts[i] < latestParts[i]) return true;
-      if (currentParts[i] > latestParts[i]) return false;
-    }
-    return false;
-  }
-
   @override
   Widget build(BuildContext context) {
     var media = MediaQuery.of(context).size;
@@ -336,11 +314,11 @@ class _LoadingPageState extends State<LoadingPage> {
                   Container(
                     padding: EdgeInsets.all(media.width * 0.01),
                     width: media.width * 0.6,
-                    height: media.width * 0.8,
+                    height: media.height * 0.6,
                     decoration: const BoxDecoration(
                         image: DecorationImage(
                             image: AssetImage("assets/images/new_logo.jpeg"),
-                            fit: BoxFit.cover)),
+                            fit: BoxFit.contain)),
                   ),
                 ],
               ),
