@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
-import '../../../functions/functions.dart';
+import '../../../functions/functions.dart' as app;
 import '../../../styles/styles.dart';
 import '../../onTripPage/invoice.dart';
 import '../../onTripPage/map_page.dart';
-import '../login.dart' show LegacyLogin;
+import 'auth_policy.dart';
+import 'modern_forgot_password.dart';
 import 'modern_signup.dart';
+import 'signup_location_resolver.dart';
+
+enum _LoginMethod { email, phone }
 
 class ModernLogin extends StatefulWidget {
   const ModernLogin({super.key});
@@ -17,7 +22,11 @@ class ModernLogin extends StatefulWidget {
 class _ModernLoginState extends State<ModernLogin> {
   final _identity = TextEditingController();
   final _password = TextEditingController();
+  List<CountryAuthPolicy> _policies = const [];
+  CountryAuthPolicy? _country;
+  _LoginMethod _method = _LoginMethod.email;
   bool _loading = true;
+  bool _detectingLocation = true;
   bool _obscure = true;
   String? _error;
 
@@ -31,9 +40,37 @@ class _ModernLoginState extends State<ModernLogin> {
   }
 
   Future<void> _prepare() async {
-    await getCountryCode();
-    await getemailmodule();
-    if (mounted) setState(() => _loading = false);
+    await app.getCountryCode();
+    await app.getemailmodule();
+    final policies = List.generate(app.countries.length, (index) {
+      return CountryAuthPolicy.fromApi(
+        index,
+        Map<String, dynamic>.from(app.countries[index] as Map),
+      );
+    });
+    CountryAuthPolicy? detected;
+    if (policies.isNotEmpty) {
+      try {
+        detected = (await detectSignupLocation(
+          baseUrl: app.url,
+          policies: policies,
+        ))
+            ?.country;
+      } catch (_) {
+        detected = null;
+      }
+    }
+    if (!mounted) return;
+    final selected = detected ?? (policies.isEmpty ? null : policies.first);
+    setState(() {
+      _policies = policies;
+      _country = selected;
+      _method = selected?.channel == SignupOtpChannel.email
+          ? _LoginMethod.email
+          : _LoginMethod.phone;
+      _detectingLocation = false;
+      _loading = false;
+    });
   }
 
   @override
@@ -46,24 +83,24 @@ class _ModernLoginState extends State<ModernLogin> {
   Future<void> _login() async {
     FocusScope.of(context).unfocus();
     final identity = _identity.text.trim();
-    if (identity.isEmpty || _password.text.isEmpty) {
-      setState(() => _error =
-          _copy('أدخل بيانات تسجيل الدخول.', 'Enter your login details.'));
+    final validation = _validate(identity);
+    if (validation != null) {
+      setState(() => _error = validation);
       return;
     }
-    final isEmail = identity.contains('@');
     setState(() {
       _loading = true;
       _error = null;
     });
-    final result = await verifyUser(
+    final isEmail = _method == _LoginMethod.email;
+    final result = await app.verifyUser(
         identity, isEmail ? 1 : 0, _password.text, '', false, false);
     if (!mounted) return;
     if (result == true) {
-      final destination =
-          userRequestData.isNotEmpty && userRequestData['is_completed'] == 1
-              ? const Invoice()
-              : const Maps();
+      final destination = app.userRequestData.isNotEmpty &&
+              app.userRequestData['is_completed'] == 1
+          ? const Invoice()
+          : const Maps();
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => destination),
         (_) => false,
@@ -73,14 +110,62 @@ class _ModernLoginState extends State<ModernLogin> {
     setState(() {
       _loading = false;
       _error = result == false
-          ? _copy('لا يوجد حساب بهذه البيانات.',
-              'We could not find an account with these details.')
+          ? _copy('بيانات الدخول غير صحيحة. راجع الحساب وكلمة المرور.',
+              'The login details are incorrect. Check your account and password.')
           : result.toString();
     });
   }
 
+  String? _validate(String identity) {
+    if (_country == null) {
+      return _copy('تعذر تحديد الدولة. اخترها للمتابعة.',
+          'Choose your country to continue.');
+    }
+    if (_method == _LoginMethod.email) {
+      if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(identity)) {
+        return _copy(
+            'أدخل بريدًا إلكترونيًا صحيحًا.', 'Enter a valid email address.');
+      }
+    } else {
+      final phoneLength = identity.replaceAll(RegExp(r'\D'), '').length;
+      if (phoneLength < _country!.minPhoneLength ||
+          phoneLength > _country!.maxPhoneLength) {
+        return _copy('راجع رقم الهاتف.', 'Check your phone number.');
+      }
+    }
+    if (_password.text.length < 8) {
+      return _copy('أدخل كلمة المرور الصحيحة.', 'Enter your password.');
+    }
+    return null;
+  }
+
+  void _changeMethod(_LoginMethod method) {
+    setState(() {
+      _method = method;
+      _identity.clear();
+      _error = null;
+    });
+  }
+
+  Future<void> _forgotPassword() async {
+    final changed = await Navigator.of(context).push<bool>(MaterialPageRoute(
+      builder: (_) => ModernForgotPassword(
+        policies: _policies,
+        initialCountry: _country,
+      ),
+    ));
+    if (changed == true && mounted) {
+      setState(() {
+        _password.clear();
+        _error = _copy('تم تحديث كلمة المرور. سجّل الدخول الآن.',
+            'Password updated. You can sign in now.');
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isEmail = _method == _LoginMethod.email;
     return Scaffold(
       backgroundColor: const Color(0xFFF5F8FF),
       body: SafeArea(
@@ -100,57 +185,133 @@ class _ModernLoginState extends State<ModernLogin> {
                     child: const Icon(Icons.local_taxi_rounded,
                         color: Colors.white, size: 38),
                   ),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 26),
                   Text(_copy('مرحبًا بعودتك', 'Welcome back'),
                       style: const TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w800,
+                          fontSize: 31,
+                          fontWeight: FontWeight.w900,
                           height: 1.15)),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   Text(
-                      _copy('أدخل بريدك أو رقم هاتفك، وسنتعرف عليه تلقائيًا.',
-                          'Use your email or phone number. We will detect it automatically.'),
-                      style: TextStyle(
-                          fontSize: 15,
-                          height: 1.5,
-                          color: Colors.blueGrey.shade600)),
-                  const SizedBox(height: 34),
-                  _AuthField(
-                      controller: _identity,
-                      hint: _copy('البريد أو رقم الهاتف', 'Email or phone'),
-                      keyboardType: TextInputType.emailAddress,
-                      icon: Icons.person_outline_rounded),
+                    _detectingLocation
+                        ? _copy('نحدد دولتك لضبط الدخول بأمان…',
+                            'Detecting your country for a secure sign-in…')
+                        : _copy('اختر طريقة الدخول المناسبة لك.',
+                            'Choose the sign-in method that suits you.'),
+                    style: TextStyle(
+                        fontSize: 15,
+                        height: 1.5,
+                        color: Colors.blueGrey.shade600),
+                  ),
+                  const SizedBox(height: 22),
+                  if (_policies.isNotEmpty)
+                    DropdownButtonFormField<CountryAuthPolicy>(
+                      key: ValueKey(_country?.id),
+                      initialValue: _country,
+                      decoration: _decoration(
+                          _copy('الدولة', 'Country'), Icons.public_rounded),
+                      items: _policies
+                          .map((country) => DropdownMenuItem(
+                              value: country,
+                              child:
+                                  Text('${country.name}  ${country.dialCode}')))
+                          .toList(),
+                      onChanged: _loading
+                          ? null
+                          : (country) => setState(() {
+                                _country = country;
+                                _method =
+                                    country?.channel == SignupOtpChannel.email
+                                        ? _LoginMethod.email
+                                        : _LoginMethod.phone;
+                                _identity.clear();
+                                _error = null;
+                              }),
+                    ),
                   const SizedBox(height: 14),
-                  _AuthField(
-                      controller: _password,
-                      hint: _copy('كلمة المرور', 'Password'),
-                      obscureText: _obscure,
-                      icon: Icons.lock_outline_rounded,
-                      onSubmitted: (_) => _login(),
-                      suffix: IconButton(
-                          onPressed: () => setState(() => _obscure = !_obscure),
-                          icon: Icon(_obscure
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined))),
+                  SegmentedButton<_LoginMethod>(
+                    segments: [
+                      ButtonSegment(
+                          value: _LoginMethod.email,
+                          icon: const Icon(Icons.alternate_email_rounded),
+                          label: Text(_copy('البريد', 'Email'))),
+                      ButtonSegment(
+                          value: _LoginMethod.phone,
+                          icon: const Icon(Icons.phone_rounded),
+                          label: Text(_copy('الهاتف', 'Phone'))),
+                    ],
+                    selected: {_method},
+                    onSelectionChanged: _loading
+                        ? null
+                        : (selection) => _changeMethod(selection.first),
+                    showSelectedIcon: false,
+                    style: ButtonStyle(
+                      visualDensity: VisualDensity.comfortable,
+                      shape: WidgetStatePropertyAll(RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14))),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: _identity,
+                    keyboardType: isEmail
+                        ? TextInputType.emailAddress
+                        : TextInputType.phone,
+                    inputFormatters: isEmail
+                        ? null
+                        : [FilteringTextInputFormatter.digitsOnly],
+                    textInputAction: TextInputAction.next,
+                    decoration: _decoration(
+                      isEmail
+                          ? _copy('البريد الإلكتروني', 'Email address')
+                          : _copy('رقم الهاتف', 'Phone number'),
+                      isEmail
+                          ? Icons.person_outline_rounded
+                          : Icons.phone_rounded,
+                    ).copyWith(
+                        prefixText:
+                            isEmail ? null : '${_country?.dialCode ?? ''}  '),
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: _password,
+                    obscureText: _obscure,
+                    onSubmitted: (_) => _login(),
+                    textInputAction: TextInputAction.done,
+                    decoration: _decoration(_copy('كلمة المرور', 'Password'),
+                            Icons.lock_outline_rounded)
+                        .copyWith(
+                      suffixIcon: IconButton(
+                        onPressed: () => setState(() => _obscure = !_obscure),
+                        icon: Icon(_obscure
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined),
+                      ),
+                    ),
+                  ),
                   Align(
                     alignment: AlignmentDirectional.centerEnd,
                     child: TextButton(
-                      onPressed: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                              builder: (_) => const LegacyLogin())),
+                      onPressed: _loading ? null : _forgotPassword,
                       child:
                           Text(_copy('نسيت كلمة المرور؟', 'Forgot password?')),
                     ),
                   ),
                   if (_error != null) ...[
                     Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                            color: Colors.red.shade50,
-                            borderRadius: BorderRadius.circular(14)),
-                        child: Text(_error!,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.red.shade800))),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                          color: _error!.startsWith('تم')
+                              ? Colors.green.shade50
+                              : Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(14)),
+                      child: Text(_error!,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              color: _error!.startsWith('تم')
+                                  ? Colors.green.shade800
+                                  : Colors.red.shade800)),
+                    ),
                     const SizedBox(height: 14),
                   ],
                   FilledButton(
@@ -169,7 +330,7 @@ class _ModernLoginState extends State<ModernLogin> {
                             style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.w700)),
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 14),
                   OutlinedButton(
                     onPressed: _loading
                         ? null
@@ -193,51 +354,25 @@ class _ModernLoginState extends State<ModernLogin> {
       ),
     );
   }
-}
 
-class _AuthField extends StatelessWidget {
-  const _AuthField(
-      {required this.controller,
-      required this.hint,
-      required this.icon,
-      this.keyboardType,
-      this.obscureText = false,
-      this.suffix,
-      this.onSubmitted});
-  final TextEditingController controller;
-  final String hint;
-  final IconData icon;
-  final TextInputType? keyboardType;
-  final bool obscureText;
-  final Widget? suffix;
-  final ValueChanged<String>? onSubmitted;
-
-  @override
-  Widget build(BuildContext context) => TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        obscureText: obscureText,
-        onSubmitted: onSubmitted,
-        textInputAction:
-            obscureText ? TextInputAction.done : TextInputAction.next,
-        decoration: InputDecoration(
-          hintText: hint,
-          prefixIcon: Icon(icon),
-          suffixIcon: suffix,
-          filled: true,
-          fillColor: Colors.white,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
-          border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide.none),
-          enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide:
-                  BorderSide(color: Colors.blueGrey.withValues(alpha: .12))),
-          focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: theme, width: 1.5)),
+  InputDecoration _decoration(String label, IconData icon) => InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: Colors.blueGrey.withValues(alpha: .12)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: theme, width: 1.5),
         ),
       );
 }

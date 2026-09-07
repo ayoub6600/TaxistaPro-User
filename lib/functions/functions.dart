@@ -718,8 +718,14 @@ updatePassword(email, password, loginby) async {
     } else if (response.statusCode == 401) {
       result = 'logout';
     } else {
-      debugPrint(response.body);
-      result = false;
+      try {
+        final body = jsonDecode(response.body);
+        result = body is Map && body['message'] != null
+            ? body['message'].toString()
+            : 'تعذر تحديث كلمة المرور.';
+      } catch (_) {
+        result = 'تعذر تحديث كلمة المرور.';
+      }
     }
   } catch (e) {
     if (e is SocketException) {
@@ -856,7 +862,7 @@ getUserDetails({id}) async {
     if (response.statusCode == 200) {
       userDetails =
           Map<String, dynamic>.from(jsonDecode(response.body)['data']);
-      print("----->token ${bearerToken[0].token}");
+      debugPrint('Authenticated API request started');
       print("------>url ${url}api/v1/user?current_ride=$id");
       print("------>banners ${userDetails['bannerImage']['data']}");
 
@@ -1592,8 +1598,11 @@ class AddressList {
 //get polylines
 String polyString = '';
 List<LatLng> polyList = [];
+int _polylineRequestGeneration = 0;
+
 Future<List> getPolylines(plat, plng, dlat, dlng) async {
-  polyList.clear();
+  final requestGeneration = ++_polylineRequestGeneration;
+  final routePoints = <LatLng>[];
   final Box cacheBox = Hive.box('geocoding_cache');
 
   String pickLat = '';
@@ -1615,7 +1624,7 @@ Future<List> getPolylines(plat, plng, dlat, dlng) async {
 
         if (cacheBox.containsKey(cacheKey)) {
           polyString = cacheBox.get(cacheKey);
-          decodeEncodedPolyline(polyString);
+          _appendRouteSegment(routePoints, decodePolylinePoints(polyString));
           continue;
         }
 
@@ -1646,7 +1655,7 @@ Future<List> getPolylines(plat, plng, dlat, dlng) async {
               polyString = '${polyString}poly$steps';
             }
 
-            decodeEncodedPolyline(steps);
+            _appendRouteSegment(routePoints, decodePolylinePoints(steps));
             cacheBox.put(cacheKey, steps);
           }
         } catch (e) {
@@ -1658,7 +1667,7 @@ Future<List> getPolylines(plat, plng, dlat, dlng) async {
     } else {
       List poly = userRequestData['poly_line'].toString().split('poly');
       for (var i = 0; i < poly.length; i++) {
-        decodeEncodedPolyline(poly[i]);
+        _appendRouteSegment(routePoints, decodePolylinePoints(poly[i]));
       }
     }
   } else {
@@ -1666,7 +1675,7 @@ Future<List> getPolylines(plat, plng, dlat, dlng) async {
 
     if (cacheBox.containsKey(cacheKey)) {
       polyString = cacheBox.get(cacheKey);
-      decodeEncodedPolyline(polyString);
+      _appendRouteSegment(routePoints, decodePolylinePoints(polyString));
     } else {
       try {
         http.Response value;
@@ -1690,7 +1699,7 @@ Future<List> getPolylines(plat, plng, dlat, dlng) async {
               ['points'];
 
           polyString = steps;
-          decodeEncodedPolyline(steps);
+          _appendRouteSegment(routePoints, decodePolylinePoints(steps));
 
           cacheBox.put(cacheKey, steps);
         }
@@ -1700,6 +1709,13 @@ Future<List> getPolylines(plat, plng, dlat, dlng) async {
         }
       }
     }
+  }
+
+  // Route requests can overlap during rebuilds and driver updates. Only the
+  // newest complete response is allowed to paint the map; otherwise points
+  // from two responses get joined by an incorrect straight line.
+  if (requestGeneration == _polylineRequestGeneration) {
+    await _paintRouteProgressively(routePoints, requestGeneration);
   }
 
   polyGot = false;
@@ -1816,11 +1832,10 @@ class RouteInfo {
 
 Set<Polyline> polyline = {};
 
-List<PointLatLng> decodeEncodedPolyline(String encoded) {
-  List<PointLatLng> poly = [];
+List<LatLng> decodePolylinePoints(String encoded) {
+  final points = <LatLng>[];
   int index = 0, len = encoded.length;
   int lat = 0, lng = 0;
-  polyline.clear();
 
   while (index < len) {
     int b, shift = 0, result = 0;
@@ -1841,21 +1856,74 @@ List<PointLatLng> decodeEncodedPolyline(String encoded) {
     } while (b >= 0x20);
     int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
     lng += dlng;
-    LatLng p = LatLng((lat / 1E5).toDouble(), (lng / 1E5).toDouble());
-    polyList.add(p);
+    points.add(LatLng((lat / 1E5).toDouble(), (lng / 1E5).toDouble()));
   }
 
-  polyline.add(
-    Polyline(
-        polylineId: const PolylineId('1'),
-        color: Colors.blue,
+  return points;
+}
+
+void _appendRouteSegment(List<LatLng> route, List<LatLng> segment) {
+  if (segment.isEmpty) return;
+  final startsAtPreviousPoint = route.isNotEmpty && route.last == segment.first;
+  route.addAll(startsAtPreviousPoint ? segment.skip(1) : segment);
+}
+
+Future<void> _paintRouteProgressively(
+    List<LatLng> route, int requestGeneration) async {
+  polyList = List<LatLng>.from(route);
+  if (route.length < 2) {
+    polyline.clear();
+    valueNotifierBook.incrementNotifier();
+    return;
+  }
+
+  const frameCount = 14;
+  for (var frame = 1; frame <= frameCount; frame++) {
+    if (requestGeneration != _polylineRequestGeneration) return;
+    final visibleCount = ((route.length * frame) / frameCount)
+        .ceil()
+        .clamp(2, route.length)
+        .toInt();
+    polyline = {
+      Polyline(
+        polylineId: const PolylineId('active_route'),
+        color: const Color(0xFF1677FF),
         visible: true,
-        width: 4,
-        points: polyList),
-  );
+        width: 5,
+        startCap: Cap.roundCap,
+        endCap: Cap.roundCap,
+        jointType: JointType.round,
+        points: route.take(visibleCount).toList(growable: false),
+      ),
+    };
+    valueNotifierBook.incrementNotifier();
+    if (frame != frameCount) {
+      await Future<void>.delayed(const Duration(milliseconds: 22));
+    }
+  }
+}
+
+List<PointLatLng> decodeEncodedPolyline(String encoded) {
+  final points = decodePolylinePoints(encoded);
+  polyList = List<LatLng>.from(points);
+
+  polyline = {
+    Polyline(
+      polylineId: const PolylineId('active_route'),
+      color: const Color(0xFF1677FF),
+      visible: true,
+      width: 5,
+      startCap: Cap.roundCap,
+      endCap: Cap.roundCap,
+      jointType: JointType.round,
+      points: polyList,
+    ),
+  };
 
   valueNotifierBook.incrementNotifier();
-  return poly;
+  return points
+      .map((point) => PointLatLng(point.latitude, point.longitude))
+      .toList(growable: false);
 }
 
 class PointLatLng {

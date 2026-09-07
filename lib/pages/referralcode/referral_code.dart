@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import '../../functions/functions.dart';
 import '../../styles/styles.dart';
-import '../../translations/translation.dart';
-import '../../widgets/widgets.dart';
 import '../loadingPage/loading.dart';
 import '../onTripPage/map_page.dart';
 
@@ -15,203 +13,173 @@ class Referral extends StatefulWidget {
 }
 
 dynamic referralCode;
-TextEditingController referalController = TextEditingController();
+final TextEditingController referalController = TextEditingController();
 
 class _ReferralState extends State<Referral> {
   bool _loading = false;
-  String _error = '';
-  TextEditingController controller = TextEditingController();
+  String? _error;
+
+  bool get _rtl => Directionality.of(context) == TextDirection.rtl;
+  String _copy(String ar, String en) => _rtl ? ar : en;
 
   @override
   void initState() {
-    referralCode = '';
-    referalController.text = '';
     super.initState();
+    referralCode = '';
+    referalController.clear();
   }
 
-  //navigate
-  navigate() {
+  void _openHome() {
+    FocusManager.instance.primaryFocus?.unfocus();
     Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (context) => const Maps()));
+        context, MaterialPageRoute(builder: (_) => const Maps()));
+  }
+
+  Future<void> _apply() async {
+    final code = referalController.text.trim();
+    if (code.isEmpty) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    final result = await updateReferral();
+    if (!mounted) return;
+    if (result == 'true') {
+      _openHome();
+    } else {
+      setState(() {
+        _loading = false;
+        _error = _copy('رمز الإحالة غير صحيح أو انتهت صلاحيته.',
+            'This referral code is invalid or expired.');
+      });
+    }
   }
 
   @override
-  Widget build(BuildContext context) {
-    var media = MediaQuery.of(context).size;
-
-    return Material(
-      color: page,
-      child: Directionality(
-        textDirection: (languageDirection == 'rtl')
-            ? TextDirection.rtl
-            : TextDirection.ltr,
-        child: Stack(
-          children: [
-            Container(
-              padding: EdgeInsets.only(
-                  left: media.width * 0.08, right: media.width * 0.08),
-              height: media.height * 1,
-              width: media.width * 1,
-              // color: theme,
-
-              child: SafeArea(
-                child: Column(
-                  children: [
-                    // SizedBox(
-                    //   height: media.height * 0.05 +
-                    //       MediaQuery.of(context).padding.top,
-                    // ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        GestureDetector(
-                          onTap: () async {
-                            setState(() {
-                              _loading = true;
-                            });
-                            // var val = await registerUser();
-                            FocusManager.instance.primaryFocus?.unfocus();
-                            _error = '';
-                            Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const Maps()));
-
-                            setState(() {
-                              _loading = false;
-                            });
-                          },
-                          child: Text(
-                            languages[choosenLanguage]['text_skip'],
-                            style: GoogleFonts.notoSans(
-                                fontSize: media.width * twenty,
-                                color: textColor,
-                                fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        SizedBox(
-                          width: media.width * 0.02,
-                        ),
-                        Icon(
-                          Icons.arrow_forward_ios_rounded,
-                          color: Colors.blue,
-                          size: media.width * 0.05,
-                        ),
-                        // Button(
-                        //     width: media.width * 0.4,
-                        //     onTap: () async {
-                        //       setState(() {
-                        //         _loading = true;
-                        //       });
-                        //       // var val = await registerUser();
-                        //       FocusManager.instance.primaryFocus?.unfocus();
-                        //       _error = '';
-                        //       Navigator.pushReplacement(
-                        //           context,
-                        //           MaterialPageRoute(
-                        //               builder: (context) => const Maps()));
-
-                        //       setState(() {
-                        //         _loading = false;
-                        //       });
-                        //     },
-                        //     text: languages[choosenLanguage]['text_skip']),
-                      ],
-                    ),
-                    SizedBox(
-                      height: media.height * 0.05 +
-                          MediaQuery.of(context).padding.top,
-                    ),
-                    SizedBox(
-                        width: media.width * 1,
-                        child: MyText(
-                          text: languages[choosenLanguage]
-                              ['text_apply_referral'],
-                          size: media.width * twenty,
-                          fontweight: FontWeight.bold,
-                        )),
-                    const SizedBox(height: 10),
-                    Container(
-                      height: media.width * 0.12,
-                      width: media.width * 0.8,
-                      decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                          color: Colors.grey.shade200),
-                      padding: EdgeInsets.only(
-                          right: media.width * 0.025,
-                          left: media.width * 0.025),
-                      child: TextField(
-                        controller: referalController,
-                        decoration: InputDecoration(
-                            hintText: languages[choosenLanguage]
-                                ['text_enter_referral'],
-                            border: InputBorder.none),
-                      ),
-                    ),
-                    (_error != '' && referalController.text.isNotEmpty)
-                        ? Container(
-                            margin: EdgeInsets.only(top: media.height * 0.02),
-                            child: MyText(
-                              text: _error,
-                              size: media.width * sixteen,
-                              color: Colors.red,
-                            ),
-                          )
-                        : Container(),
-                    const SizedBox(
-                      height: 40,
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        //apply code
-                        Button(
-                          width: media.width * 0.4,
-                          onTap: () async {
-                            if (referalController.text.isNotEmpty) {
-                              FocusManager.instance.primaryFocus?.unfocus();
-                              setState(() {
-                                _error = '';
-                                _loading = true;
-                              });
-
-                              var result = await updateReferral();
-                              if (result == 'true') {
-                                navigate();
-                              } else {
-                                setState(() {
-                                  _error = languages[choosenLanguage]
-                                      ['text_referral_code'];
-                                });
-                              }
-                              setState(() {
-                                _loading = false;
-                              });
-                            } else {}
-                          },
-                          text: languages[choosenLanguage]['text_apply'],
-                          color: (referalController.text.isNotEmpty)
-                              ? buttonColor
-                              : Colors.grey,
-                        )
-                      ],
-                    )
-                  ],
-                ),
-              ),
+  Widget build(BuildContext context) => Scaffold(
+        backgroundColor: const Color(0xFFF5F8FF),
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          actions: [
+            TextButton.icon(
+              onPressed: _loading ? null : _openHome,
+              label: Text(_copy('تخطي', 'Skip')),
+              icon: const Icon(Icons.arrow_forward_rounded, size: 19),
             ),
-            //loader
-            (_loading == true)
-                ? const Positioned(top: 0, child: Loading())
-                : Center(
-                    child: Text(
-                      '',
-                    ),
-                  )
+            const SizedBox(width: 12),
           ],
         ),
-      ),
-    );
-  }
+        body: Stack(children: [
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(
+                    width: 84,
+                    height: 84,
+                    decoration: BoxDecoration(
+                      color: theme.withValues(alpha: .1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.card_giftcard_rounded,
+                        color: theme, size: 42),
+                  ),
+                  const SizedBox(height: 26),
+                  Text(
+                    _copy('هل دعاك صديق؟', 'Invited by a friend?'),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    _copy(
+                        'أدخل رمز الإحالة للاستفادة من المكافأة. يمكنك تخطي هذه الخطوة.',
+                        'Enter the referral code to claim your reward, or skip this step.'),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      height: 1.55,
+                      fontSize: 15,
+                      color: Colors.blueGrey.shade600,
+                    ),
+                  ),
+                  const SizedBox(height: 34),
+                  TextField(
+                    controller: referalController,
+                    textAlign: TextAlign.center,
+                    textCapitalization: TextCapitalization.characters,
+                    onChanged: (_) => setState(() => _error = null),
+                    onSubmitted: (_) => _apply(),
+                    decoration: InputDecoration(
+                      hintText: _copy('مثال: TAXISTA24', 'Example: TAXISTA24'),
+                      prefixIcon:
+                          const Icon(Icons.confirmation_number_outlined),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 19),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        borderSide: BorderSide(
+                            color: Colors.blueGrey.withValues(alpha: .13)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        borderSide: BorderSide(color: theme, width: 1.5),
+                      ),
+                    ),
+                  ),
+                  if (_error != null) ...[
+                    const SizedBox(height: 12),
+                    Text(_error!,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                            color: Color(0xFFB42318),
+                            fontWeight: FontWeight.w600)),
+                  ],
+                  const SizedBox(height: 20),
+                  ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: referalController,
+                    builder: (_, value, __) => FilledButton(
+                      onPressed:
+                          value.text.trim().isEmpty || _loading ? null : _apply,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: theme,
+                        minimumSize: const Size.fromHeight(58),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18)),
+                      ),
+                      child: Text(_copy('استخدام الرمز', 'Apply code'),
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w800)),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  TextButton(
+                    onPressed: _loading ? null : _openHome,
+                    child: Text(_copy('ليس لدي رمز، ابدأ الآن',
+                        'I do not have a code, start now')),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_loading)
+            Loading(
+              message: _copy('جارٍ تطبيق الرمز…', 'Applying your code…'),
+              submessage: _copy('نتحقق من المكافأة لحسابك.',
+                  'Checking the reward for your account.'),
+            ),
+        ]),
+      );
 }

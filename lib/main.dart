@@ -60,7 +60,7 @@ Future<void> _initFirebaseMessaging() async {
     try {
       String? token = await FirebaseMessaging.instance.getToken();
       if (token != null) {
-        print('🔥 Current FCM Token: $token');
+        debugPrint('FCM token is ready');
       }
     } catch (e) {
       print('❗ Error getting FCM token: $e');

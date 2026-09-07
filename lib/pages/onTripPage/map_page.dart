@@ -5,7 +5,6 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:ui' as ui;
 
-import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -36,6 +35,7 @@ import '../navDrawer/nav_drawer.dart';
 import '../noInternet/noInternet.dart';
 import 'booking_confirmation.dart';
 import 'drop_loc_select.dart';
+import 'home_quick_actions.dart';
 import 'ongoingrides.dart';
 import 'pick_loc_select.dart';
 // ignore: depend_on_referenced_packages
@@ -2126,7 +2126,11 @@ class _MapsState extends State<Maps>
                                                               media.width * 1,
                                                           height: _height == 0
                                                               ? media.width *
-                                                                  0.49
+                                                                  ((userDetails['show_ride_without_destination'].toString() == '1' &&
+                                                                          choosenTransportType == 0 &&
+                                                                          !isOutStation)
+                                                                      ? 0.84
+                                                                      : 0.68)
                                                               : _height,
                                                           constraints: BoxConstraints(
                                                               minHeight: (userDetails[
@@ -2171,168 +2175,32 @@ class _MapsState extends State<Maps>
                                                           child: Column(
                                                             children: [
                                                               (_bottom == 0)
-                                                                  ? Column(
-                                                                      children: [
-                                                                        SizedBox(
-                                                                          height:
-                                                                              // media.width * 0.03,
-                                                                              media.width * 0.02,
-                                                                        ),
-                                                                        Container(
-                                                                          height:
-                                                                              media.width * 0.01,
-                                                                          width:
-                                                                              media.width * 0.1,
-                                                                          decoration:
-                                                                              BoxDecoration(
-                                                                            borderRadius:
-                                                                                BorderRadius.circular(5),
-                                                                            color:
-                                                                                backgroundColor,
-                                                                          ),
-                                                                        ),
-                                                                        SizedBox(
-                                                                            height:
-                                                                                4.h),
-                                                                        Stack(
-                                                                          children: [
-                                                                            Material(
-                                                                              elevation: 3,
-                                                                              borderRadius: BorderRadius.circular(media.width * 0.02),
-                                                                              child: Container(
-                                                                                width: media.width * 0.9,
-                                                                                padding: EdgeInsets.symmetric(
-                                                                                  horizontal: media.width * 0.03,
-                                                                                  vertical: media.width * 0.02,
-                                                                                ),
-                                                                                decoration: BoxDecoration(
-                                                                                  color: const Color(0xFFF5F5F5).withOpacity(0.9), // لون خلفية أكثر أناقة
-                                                                                  borderRadius: BorderRadius.circular(media.width * 0.02),
-                                                                                  boxShadow: [
-                                                                                    BoxShadow(
-                                                                                      color: Colors.black.withOpacity(0.1),
-                                                                                      blurRadius: 5,
-                                                                                      offset: const Offset(0, 2),
-                                                                                    ),
-                                                                                  ],
-                                                                                ),
-                                                                                child: Row(
-                                                                                  children: [
-                                                                                    Icon(
-                                                                                      Icons.search,
-                                                                                      color: textColor,
-                                                                                      size: media.width * 0.07,
-                                                                                    ),
-                                                                                    SizedBox(width: media.width * 0.02),
-                                                                                    SizedBox(
-                                                                                      width: media.width * 0.7,
-                                                                                      child: AnimatedTextKit(
-                                                                                        repeatForever: true,
-                                                                                        animatedTexts: [
-                                                                                          TyperAnimatedText(languages[choosenLanguage]['text_4lettersforautofill'],
-                                                                                              textStyle: GoogleFonts.notoSans(
-                                                                                                fontSize: media.width * fourteen,
-                                                                                                color: textColor,
-                                                                                                fontWeight: FontWeight.w700,
-                                                                                              ))
-                                                                                        ],
-                                                                                      ),
-                                                                                    ),
-                                                                                  ],
-                                                                                ),
-                                                                              ),
-                                                                            ),
-                                                                            Positioned(
-                                                                                child: InkWell(
-                                                                              onTap: () {
-                                                                                if (addressList.where((element) => element.type == 'pickup').isNotEmpty) {
-                                                                                  setState(() {
-                                                                                    _pickaddress = false;
-                                                                                    _dropaddress = true;
-                                                                                    addAutoFill.clear();
-                                                                                    _height = media.height * 1;
-                                                                                  });
-
-                                                                                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                                                                                    if (mounted) {
-                                                                                      setState(() {
-                                                                                        _bottom = 1;
-                                                                                      });
-                                                                                    }
-                                                                                  });
-                                                                                }
-                                                                              },
-                                                                              child: Container(
-                                                                                height: media.width * 0.1,
-                                                                                width: media.width * 0.9,
-                                                                                color: Colors.transparent,
-                                                                              ),
-                                                                            ))
-                                                                          ],
-                                                                        ),
-                                                                        SizedBox(
-                                                                            height:
-                                                                                // media.width * 0.02,
-                                                                                media.width * 0.05),
-
-                                                                        ////////
-
-                                                                        //////////
-                                                                        (userDetails['show_ride_without_destination'].toString() == '1' &&
-                                                                                choosenTransportType == 0 &&
-                                                                                !isOutStation)
-                                                                            ? Column(
-                                                                                children: [
-                                                                                  SizedBox(
-                                                                                    height: media.width * 0.01,
-                                                                                  ),
-                                                                                  Container(
-                                                                                    margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
-                                                                                    padding: EdgeInsets.symmetric(vertical: 6.h),
-                                                                                    decoration: BoxDecoration(
-                                                                                      color: Colors.blue,
-                                                                                      borderRadius: BorderRadius.circular(20.r),
-                                                                                    ),
-                                                                                    child: Row(
-                                                                                      mainAxisAlignment: MainAxisAlignment.center,
-                                                                                      children: [
-                                                                                        InkWell(
-                                                                                          onTap: () {
-                                                                                            ismulitipleride = false;
-                                                                                            setState(() {
-                                                                                              rideWithoutDestination = true;
-                                                                                              rentalRide = false;
-                                                                                              Navigator.push(context, MaterialPageRoute(builder: (context) => PickupLocation()));
-                                                                                            });
-                                                                                          },
-                                                                                          child: Row(
-                                                                                            children: [
-                                                                                              Container(
-                                                                                                padding: EdgeInsets.all(media.width * 0.01),
-                                                                                                decoration: BoxDecoration(color: Colors.grey.withOpacity(0.1), borderRadius: BorderRadius.circular(media.width * 0.01)),
-                                                                                                child: RotatedBox(
-                                                                                                  quarterTurns: 3,
-                                                                                                  child: Icon(
-                                                                                                    Icons.route_sharp,
-                                                                                                    color: Colors.white,
-                                                                                                    size: media.width * sixteen,
-                                                                                                  ),
-                                                                                                ),
-                                                                                              ),
-                                                                                              SizedBox(
-                                                                                                width: media.width * 0.02,
-                                                                                              ),
-                                                                                              MyText(text: languages[choosenLanguage]['text_ridewithout_destination'], size: media.width * sixteen, fontweight: FontWeight.w600, color: Colors.white),
-                                                                                            ],
-                                                                                          ),
-                                                                                        )
-                                                                                      ],
-                                                                                    ),
-                                                                                  ),
-                                                                                ],
-                                                                              )
-                                                                            : Container(),
-                                                                      ],
+                                                                  ? HomeQuickActions(
+                                                                      rtl: languageDirection == 'rtl',
+                                                                      showRideWithoutDestination:
+                                                                          userDetails['show_ride_without_destination'].toString() == '1' &&
+                                                                              choosenTransportType == 0 &&
+                                                                              !isOutStation,
+                                                                      onChooseDestination: () {
+                                                                        setState(() {
+                                                                          _pickaddress = false;
+                                                                          _dropaddress = true;
+                                                                          addAutoFill.clear();
+                                                                          _height = media.height;
+                                                                          _bottom = 1;
+                                                                        });
+                                                                      },
+                                                                      onRideWithoutDestination: () {
+                                                                        ismulitipleride = false;
+                                                                        setState(() {
+                                                                          rideWithoutDestination = true;
+                                                                          rentalRide = false;
+                                                                        });
+                                                                        Navigator.push(
+                                                                          context,
+                                                                          MaterialPageRoute(builder: (_) => PickupLocation()),
+                                                                        );
+                                                                      },
                                                                     )
                                                                   : Expanded(
                                                                       child:
@@ -2425,9 +2293,9 @@ class _MapsState extends State<Maps>
                                                                                                   alignment: Alignment.center,
                                                                                                   padding: EdgeInsets.all(media.width * 0.01),
                                                                                                   decoration: BoxDecoration(
-                                                                                                    color: hintColor.withOpacity(0.1),
-                                                                                                    borderRadius: BorderRadius.circular(media.width * 0.02),
-                                                                                                    border: Border.all(color: textColor.withOpacity(0.3)),
+                                                                                                    color: const Color(0xFFF2FBF7),
+                                                                                                    borderRadius: BorderRadius.circular(media.width * 0.03),
+                                                                                                    border: Border.all(color: const Color(0xFF16A36A).withValues(alpha: .65)),
                                                                                                   ),
                                                                                                   child: Row(
                                                                                                     children: [
@@ -2685,9 +2553,9 @@ class _MapsState extends State<Maps>
                                                                                                       alignment: Alignment.center,
                                                                                                       padding: EdgeInsets.all(media.width * 0.01),
                                                                                                       decoration: BoxDecoration(
-                                                                                                        color: hintColor.withOpacity(0.1),
-                                                                                                        borderRadius: BorderRadius.circular(media.width * 0.02),
-                                                                                                        border: Border.all(color: textColor.withOpacity(0.3)),
+                                                                                                        color: const Color(0xFFF3F8FF),
+                                                                                                        borderRadius: BorderRadius.circular(media.width * 0.03),
+                                                                                                        border: Border.all(color: Colors.blue.withValues(alpha: .65)),
                                                                                                       ),
                                                                                                       child: Row(
                                                                                                         children: [

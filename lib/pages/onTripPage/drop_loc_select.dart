@@ -62,6 +62,10 @@ class _DropLocationState extends State<DropLocation>
   LatLng? _lastRequestedLocation;
 
   void _onMapCreated(GoogleMapController controller) {
+    if (!mounted) {
+      controller.dispose();
+      return;
+    }
     setState(() {
       _controller = controller;
       _controller?.setMapStyle(mapStyle);
@@ -104,6 +108,7 @@ class _DropLocationState extends State<DropLocation>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _controller?.dispose();
     _controller = null;
 
@@ -112,6 +117,7 @@ class _DropLocationState extends State<DropLocation>
 
   getLocs() async {
     permission = await location.hasPermission();
+    if (!mounted) return;
 
     if (permission == PermissionStatus.denied ||
         permission == PermissionStatus.deniedForever) {
@@ -122,6 +128,7 @@ class _DropLocationState extends State<DropLocation>
     } else if (permission == PermissionStatus.granted ||
         permission == PermissionStatus.grantedLimited) {
       var locs = await geolocs.Geolocator.getLastKnownPosition();
+      if (!mounted) return;
       if (addressList.length != 2 && widget.from == null) {
         if (locs != null) {
           setState(() {
@@ -133,6 +140,7 @@ class _DropLocationState extends State<DropLocation>
         } else {
           var loc = await geolocs.Geolocator.getCurrentPosition(
               desiredAccuracy: geolocs.LocationAccuracy.low);
+          if (!mounted) return;
           setState(() {
             _center = LatLng(double.parse(loc.latitude.toString()),
                 double.parse(loc.longitude.toString()));
@@ -160,6 +168,7 @@ class _DropLocationState extends State<DropLocation>
       } else if (widget.from != null && widget.from == 'favourite') {
         var loc = await geolocs.Geolocator.getCurrentPosition(
             desiredAccuracy: geolocs.LocationAccuracy.low);
+        if (!mounted) return;
         setState(() {
           _center = LatLng(double.parse(loc.latitude.toString()),
               double.parse(loc.longitude.toString()));
@@ -177,6 +186,7 @@ class _DropLocationState extends State<DropLocation>
         } else {
           var loc = await geolocs.Geolocator.getCurrentPosition(
               desiredAccuracy: geolocs.LocationAccuracy.low);
+          if (!mounted) return;
           setState(() {
             _center = LatLng(double.parse(loc.latitude.toString()),
                 double.parse(loc.longitude.toString()));
@@ -697,6 +707,45 @@ class _DropLocationState extends State<DropLocation>
                                           EdgeInsets.all(media.width * 0.05),
                                       child: Column(
                                         children: [
+                                          Align(
+                                            alignment: AlignmentDirectional
+                                                .centerStart,
+                                            child: Text(
+                                              widget.from == 0
+                                                  ? (languageDirection == 'rtl'
+                                                      ? 'ثبّت نقطة مقابلة السائق'
+                                                      : 'Confirm the driver meeting point')
+                                                  : (languageDirection == 'rtl'
+                                                      ? 'ثبّت وجهتك على الخريطة'
+                                                      : 'Confirm your destination on the map'),
+                                              style: GoogleFonts.notoSans(
+                                                fontSize: 17.sp,
+                                                fontWeight: FontWeight.w800,
+                                                color: textColor,
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(height: media.width * .01),
+                                          Align(
+                                            alignment: AlignmentDirectional
+                                                .centerStart,
+                                            child: Text(
+                                              widget.from == 0
+                                                  ? (languageDirection == 'rtl'
+                                                      ? 'حرّك الخريطة إلى مكان واضح يمكن للسائق التوقف عنده.'
+                                                      : 'Move the map to a clear place where the driver can stop.')
+                                                  : (languageDirection == 'rtl'
+                                                      ? 'حرّك الخريطة حتى تكون العلامة فوق مكان الوصول.'
+                                                      : 'Move the map until the marker is over your destination.'),
+                                              style: GoogleFonts.notoSans(
+                                                fontSize: 11.sp,
+                                                height: 1.35,
+                                                color: textColor.withValues(
+                                                    alpha: .58),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(height: media.width * .035),
                                           Container(
                                               padding: EdgeInsets.fromLTRB(
                                                   media.width * 0.03,
@@ -1215,7 +1264,7 @@ class _DropLocationState extends State<DropLocation>
                                                                 builder:
                                                                     (context) =>
                                                                         BookingConfirmation()));
-                                                    if (val) {
+                                                    if (val == true) {
                                                       setState(() {});
                                                     }
                                                   }
@@ -1871,9 +1920,8 @@ class _DropLocationState extends State<DropLocation>
                                               media.width * 0.05)),
                                       child: TextField(
                                           controller: search,
-                                          autofocus: (widget.from == 'add stop')
-                                              ? true
-                                              : false,
+                                          autofocus: widget.from == null ||
+                                              widget.from == 'add stop',
                                           decoration: InputDecoration(
                                               contentPadding:
                                                   (languageDirection == 'rtl')

@@ -8969,6 +8969,22 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                                     fontWeight:
                                                                         FontWeight
                                                                             .w600)),
+                                                        SizedBox(height: 5.h),
+                                                        Text(
+                                                          languageDirection ==
+                                                                  'rtl'
+                                                              ? 'راجع نقطة لقاء السائق والوجهة قبل طلب الرحلة.'
+                                                              : 'Review the driver meeting point and destination before booking.',
+                                                          style: GoogleFonts
+                                                              .notoSans(
+                                                            fontSize: 11.sp,
+                                                            height: 1.35,
+                                                            color: textColor
+                                                                .withValues(
+                                                                    alpha:
+                                                                        .58),
+                                                          ),
+                                                        ),
                                                         SizedBox(
                                                           height: 16.h,
                                                         ),
@@ -9093,15 +9109,16 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                               BoxDecoration(
                                                                   border: Border
                                                                       .all(
-                                                                    color: Colors
-                                                                        .grey,
-                                                                    width: 1.5,
+                                                                    color: const Color(
+                                                                        0xFF16A36A),
+                                                                    width: 1.2,
                                                                   ),
                                                                   borderRadius:
                                                                       BorderRadius.circular(
                                                                           media.width *
                                                                               0.02),
-                                                                  color: page),
+                                                                  color: const Color(
+                                                                      0xFFF2FBF7)),
                                                           alignment:
                                                               Alignment.center,
                                                           height:
@@ -9305,11 +9322,11 @@ class _BookingConfirmationState extends State<BookingConfirmation>
                                                                                     padding: EdgeInsets.fromLTRB(media.width * 0.03, media.width * 0.02, media.width * 0.03, media.width * 0.02),
                                                                                     decoration: BoxDecoration(
                                                                                         border: Border.all(
-                                                                                          color: Colors.grey,
-                                                                                          width: 1.5,
+                                                                                          color: Colors.blue,
+                                                                                          width: 1.2,
                                                                                         ),
                                                                                         borderRadius: BorderRadius.circular(media.width * 0.02),
-                                                                                        color: page),
+                                                                                        color: const Color(0xFFF3F8FF)),
                                                                                     alignment: Alignment.center,
                                                                                     height: media.width * 0.1,
                                                                                     width: (addressList.length > 2) ? media.width * 0.8 : media.width * 0.9,

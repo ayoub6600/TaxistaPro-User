@@ -1,92 +1,83 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
 
 import '../../styles/styles.dart';
 
-class Loading extends StatefulWidget {
-  final dynamic color;
-  const Loading({super.key, this.color});
+class Loading extends StatelessWidget {
+  const Loading({super.key, this.color, this.message, this.submessage});
 
-  @override
-  State<Loading> createState() => _LoadingState();
-}
-
-class _LoadingState extends State<Loading> {
-  var _size1 = 10.0;
-  var _size2 = 5.0;
-  var _size3 = 5.0;
-
-  @override
-  void initState() {
-    //loader animation
-    Timer.periodic(const Duration(milliseconds: 250), (timer) {
-      if (mounted) {
-        setState(() {
-          if (_size1 == 10.0) {
-            _size1 = _size1 - 5.0;
-            _size2 = _size2 + 5.0;
-          } else if (_size2 == 10.0) {
-            _size2 = _size2 - 5.0;
-            _size3 = _size3 + 5.0;
-          } else if (_size3 == 10.0) {
-            _size3 = _size3 - 5.0;
-            _size1 = _size1 + 5.0;
-          }
-        });
-      }
-    });
-
-    super.initState();
-  }
+  final Color? color;
+  final String? message;
+  final String? submessage;
 
   @override
   Widget build(BuildContext context) {
-    var media = MediaQuery.of(context).size;
-    return Container(
-      alignment: Alignment.center,
-      height: media.height * 1,
-      width: media.width * 1,
-      color: (widget.color != null)
-          ? widget.color
-          : Colors.transparent.withOpacity(0.6),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(
-            height: 20,
-            width: media.width * 1,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 225),
-                  height: _size1,
-                  width: _size1,
-                  decoration:
-                      BoxDecoration(shape: BoxShape.circle, color: loaderColor),
-                ),
-                const SizedBox(width: 5),
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 225),
-                  height: _size2,
-                  width: _size2,
-                  decoration:
-                      BoxDecoration(shape: BoxShape.circle, color: loaderColor),
-                ),
-                const SizedBox(
-                  width: 5,
-                ),
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 225),
-                  height: _size3,
-                  width: _size3,
-                  decoration:
-                      BoxDecoration(shape: BoxShape.circle, color: loaderColor),
-                )
-              ],
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    final size = MediaQuery.sizeOf(context);
+    return SizedBox(
+      width: size.width,
+      height: size.height,
+      child: ColoredBox(
+        color: color ?? Colors.black.withValues(alpha: .34),
+        child: Center(
+          child: Semantics(
+            liveRegion: true,
+            label: message ?? (rtl ? 'جارٍ التحميل' : 'Loading'),
+            child: Container(
+              width: 278,
+              padding: const EdgeInsets.fromLTRB(24, 26, 24, 24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: .12),
+                    blurRadius: 30,
+                    offset: const Offset(0, 12),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 58,
+                    height: 58,
+                    padding: const EdgeInsets.all(15),
+                    decoration: BoxDecoration(
+                      color: theme.withValues(alpha: .1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 3,
+                      color: theme,
+                      strokeCap: StrokeCap.round,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Text(
+                    message ?? (rtl ? 'لحظات من فضلك…' : 'Just a moment…'),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  if (submessage != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      submessage!,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        height: 1.45,
+                        color: Colors.blueGrey.shade600,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
-          )
-        ],
+          ),
+        ),
       ),
     );
   }
