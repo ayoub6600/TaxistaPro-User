@@ -390,6 +390,22 @@ getLocalData() async {
 
 List<BearerClass> bearerToken = <BearerClass>[];
 
+void configurePendingUserRegistration({
+  required String displayName,
+  required String emailAddress,
+  required String plainPassword,
+  required String mobileNumber,
+  required String selectedGender,
+  required int countryIndex,
+}) {
+  name = displayName;
+  email = emailAddress;
+  password = plainPassword;
+  phnumber = mobileNumber;
+  gender = selectedGender;
+  phcode = countryIndex;
+}
+
 registerUser() async {
   bearerToken.clear();
   dynamic result;
@@ -4586,11 +4602,15 @@ getemailmodule() async {
   return res;
 }
 
-sendOTPtoMobile(String mobile, String countryCode) async {
+sendOTPtoMobile(String mobile, String countryCode, {String? channel}) async {
   dynamic result;
   try {
     var response = await http.post(Uri.parse('${url}api/v1/mobile-otp'),
-        body: {'mobile': mobile, 'country_code': countryCode});
+        body: {
+          'mobile': mobile,
+          'country_code': countryCode,
+          if (channel != null) 'channel': channel,
+        });
     if (response.statusCode == 200) {
       if (jsonDecode(response.body)['success'] == true) {
         result = 'success';

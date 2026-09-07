@@ -21,12 +21,21 @@ import '../../styles/styles.dart';
 import '../../widgets/widgets.dart';
 import '../loadingPage/loading.dart';
 import 'agreement.dart';
+import 'auth/modern_signup.dart';
+import 'auth/modern_login.dart';
 
-class Login extends StatefulWidget {
+class Login extends StatelessWidget {
   const Login({super.key});
 
   @override
-  State<Login> createState() => _LoginState();
+  Widget build(BuildContext context) => const ModernLogin();
+}
+
+class LegacyLogin extends StatefulWidget {
+  const LegacyLogin({super.key});
+
+  @override
+  State<LegacyLogin> createState() => _LoginState();
 }
 
 //code as int for getting phone dial code of choosen country
@@ -51,7 +60,7 @@ late StreamController profilepicturecontroller;
 StreamSink get profilepicturesink => profilepicturecontroller.sink;
 Stream get profilepicturestream => profilepicturecontroller.stream;
 
-class _LoginState extends State<Login> with TickerProviderStateMixin {
+class _LoginState extends State<LegacyLogin> with TickerProviderStateMixin {
   TextEditingController controller = TextEditingController();
   final TextEditingController _mobile = TextEditingController();
   final TextEditingController _email = TextEditingController();
@@ -499,29 +508,15 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                                               FontWeight.w600,
                                                         )),
                                                     InkWell(
-                                                        onTap: () {
+                                                        onTap: () async {
                                                           if (signIn == 0) {
-                                                            debugPrint('dshfj');
-                                                            setState(() {
-                                                              forgotPassword =
-                                                                  false;
-                                                              otpSent = false;
-                                                              newPassword =
-                                                                  false;
-                                                              confirm = true;
-                                                              proImageFile1 =
-                                                                  null;
-                                                              isLoginemail =
-                                                                  true;
-                                                              withOtp = false;
-                                                              _error = '';
-                                                              _email.clear();
-                                                              _password.clear();
-                                                              _name.clear();
-                                                              _mobile.clear();
-                                                              gender = '';
-                                                              signIn = 1;
-                                                            });
+                                                            await Navigator.of(
+                                                                    context)
+                                                                .push(
+                                                              MaterialPageRoute(
+                                                                  builder: (_) =>
+                                                                      const ModernSignup()),
+                                                            );
                                                           }
                                                         },
                                                         child: MyText(
