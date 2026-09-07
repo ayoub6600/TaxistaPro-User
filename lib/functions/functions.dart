@@ -46,10 +46,12 @@ String gender = '';
 String packageName = '';
 String signKey = '';
 
-//base url
-//base url
-//String url = 'https://www.taxistapro.com/';
-String url = 'https://www.taxista-go.com/';
+// The production endpoint stays the default. Local and staging builds can
+// override it with --dart-define=API_BASE_URL=https://example.test/.
+String url = const String.fromEnvironment(
+  'API_BASE_URL',
+  defaultValue: 'https://www.taxista-go.com/',
+);
 
 String mapkey = (platform == TargetPlatform.android)
     ? 'AIzaSyCLVX-Jnqqo89cZ2xQ6CJflSueG-laba7g'
@@ -4605,12 +4607,11 @@ getemailmodule() async {
 sendOTPtoMobile(String mobile, String countryCode, {String? channel}) async {
   dynamic result;
   try {
-    var response = await http.post(Uri.parse('${url}api/v1/mobile-otp'),
-        body: {
-          'mobile': mobile,
-          'country_code': countryCode,
-          if (channel != null) 'channel': channel,
-        });
+    var response = await http.post(Uri.parse('${url}api/v1/mobile-otp'), body: {
+      'mobile': mobile,
+      'country_code': countryCode,
+      if (channel != null) 'channel': channel,
+    });
     if (response.statusCode == 200) {
       if (jsonDecode(response.body)['success'] == true) {
         result = 'success';

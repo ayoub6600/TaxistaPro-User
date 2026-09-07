@@ -104,6 +104,12 @@ class _ModernSignupState extends State<ModernSignup> {
         if (_country == null) {
           return _copy('اختر الدولة.', 'Choose your country.');
         }
+        if (!_country!.emailOptional && _email.text.trim().isEmpty) {
+          return _copy(
+            'البريد الإلكتروني مطلوب لهذه الدولة. ارجع لإضافته.',
+            'Email is required for this country. Go back and add it.',
+          );
+        }
         final length = _phone.text.replaceAll(RegExp(r'\D'), '').length;
         return length < _country!.minPhoneLength ||
                 length > _country!.maxPhoneLength
