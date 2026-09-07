@@ -5,6 +5,7 @@ import '../../../functions/functions.dart' as app;
 import '../../../styles/styles.dart';
 import '../agreement.dart';
 import 'auth_policy.dart';
+import 'signup_location_resolver.dart';
 
 class ModernSignup extends StatefulWidget {
   const ModernSignup({super.key});
@@ -26,6 +27,9 @@ class _ModernSignupState extends State<ModernSignup> {
   String _gender = '';
   CountryAuthPolicy? _country;
   SignupArea? _area;
+  bool _detectingLocation = true;
+  bool _locationResolved = false;
+  bool _locationAttempted = false;
   late final List<CountryAuthPolicy> _policies;
 
   bool get _rtl => Directionality.of(context) == TextDirection.rtl;
@@ -39,6 +43,7 @@ class _ModernSignupState extends State<ModernSignup> {
         Map<String, dynamic>.from(app.countries[index] as Map),
       );
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _detectLocation());
   }
 
   @override
@@ -56,7 +61,43 @@ class _ModernSignupState extends State<ModernSignup> {
   List<SignupField> get _flow {
     final policy = _country;
     if (policy == null) return SignupField.values;
-    return signupFlowFor(policy, hasEmail: _email.text.trim().isNotEmpty);
+    return signupFlowFor(
+      policy,
+      hasEmail: _email.text.trim().isNotEmpty,
+      locationResolved: _locationResolved,
+    );
+  }
+
+  Future<void> _detectLocation() async {
+    if (_locationAttempted) return;
+    _locationAttempted = true;
+    try {
+      final resolved = await detectSignupLocation(
+        baseUrl: app.url,
+        policies: _policies,
+      );
+      if (!mounted) return;
+      setState(() {
+        _detectingLocation = false;
+        if (resolved != null) {
+          _country = resolved.country;
+          _area = resolved.area;
+          _locationResolved = true;
+        }
+      });
+    } catch (_) {
+      if (mounted) setState(() => _detectingLocation = false);
+    }
+  }
+
+  void _chooseLocationManually() {
+    setState(() {
+      _locationResolved = false;
+      _country = null;
+      _area = null;
+      _step = SignupField.country;
+      _error = null;
+    });
   }
 
   int get _stepIndex => _flow.indexOf(_step);
@@ -277,7 +318,10 @@ class _ModernSignupState extends State<ModernSignup> {
                     ),
                   const SizedBox(height: 20),
                   FilledButton(
-                    onPressed: _loading ? null : _next,
+                    onPressed: _loading ||
+                            (_step == SignupField.name && _detectingLocation)
+                        ? null
+                        : _next,
                     style: FilledButton.styleFrom(
                       backgroundColor: theme,
                       minimumSize: const Size.fromHeight(56),
@@ -325,12 +369,35 @@ class _ModernSignupState extends State<ModernSignup> {
             title: _copy('أهلًا! ما اسمك؟', 'Nice to meet you'),
             subtitle: _copy(
                 'سنستخدمه داخل رحلاتك وحسابك.', 'What should we call you?'),
-            child: _Field(
-                controller: _name,
-                hint: _copy('اسمك', 'Your name'),
-                autofocus: true,
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) => _next()));
+            child: Column(children: [
+              _Field(
+                  controller: _name,
+                  hint: _copy('اسمك', 'Your name'),
+                  autofocus: true,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => _next()),
+              const SizedBox(height: 14),
+              if (_detectingLocation)
+                _LocationStatus(
+                  icon: Icons.my_location_rounded,
+                  text: _copy(
+                      'جارٍ تحديد منطقة خدمتك…', 'Finding your service area…'),
+                  loading: true,
+                )
+              else if (_locationResolved)
+                _LocationStatus(
+                  icon: Icons.location_on_rounded,
+                  text: '${_area!.name}، ${_country!.name}',
+                  actionLabel: _copy('تغيير', 'Change'),
+                  onAction: _chooseLocationManually,
+                )
+              else
+                _LocationStatus(
+                  icon: Icons.location_searching_rounded,
+                  text: _copy('سنطلب منك اختيار المنطقة يدويًا.',
+                      'You can choose your area manually.'),
+                ),
+            ]));
       case SignupField.country:
         return _StepCard(
             key: const ValueKey(SignupField.country),
@@ -516,6 +583,48 @@ class _GmailSuggestion extends StatelessWidget {
             ),
           );
         },
+      );
+}
+
+class _LocationStatus extends StatelessWidget {
+  const _LocationStatus({
+    required this.icon,
+    required this.text,
+    this.loading = false,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  final IconData icon;
+  final String text;
+  final bool loading;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsetsDirectional.fromSTEB(14, 10, 8, 10),
+        decoration: BoxDecoration(
+          color: theme.withValues(alpha: .07),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: theme.withValues(alpha: .12)),
+        ),
+        child: Row(children: [
+          if (loading)
+            const SizedBox.square(
+              dimension: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          else
+            Icon(icon, color: theme, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child:
+                Text(text, style: const TextStyle(fontWeight: FontWeight.w600)),
+          ),
+          if (actionLabel != null)
+            TextButton(onPressed: onAction, child: Text(actionLabel!)),
+        ]),
       );
 }
 

@@ -70,6 +70,25 @@ void main() {
     );
   });
 
+  test('skips country and area after current location is resolved', () {
+    final policy = CountryAuthPolicy.fromApi(0, {
+      'signup_otp_channel': 'email',
+      'email_optional': false,
+    });
+
+    expect(
+      signupFlowFor(policy, hasEmail: true, locationResolved: true),
+      [
+        SignupField.name,
+        SignupField.email,
+        SignupField.password,
+        SignupField.otp,
+        SignupField.phone,
+        SignupField.gender,
+      ],
+    );
+  });
+
   test('phone comes before OTP for a WhatsApp country', () {
     final policy = CountryAuthPolicy.fromApi(0, {
       'signup_otp_channel': 'whatsapp',

@@ -100,12 +100,15 @@ class CountryAuthPolicy {
 List<SignupField> signupFlowFor(
   CountryAuthPolicy policy, {
   required bool hasEmail,
+  bool locationResolved = false,
 }) {
   final channel = policy.channelFor(hasEmail: hasEmail);
   return [
     SignupField.name,
-    SignupField.country,
-    SignupField.area,
+    if (!locationResolved) ...[
+      SignupField.country,
+      SignupField.area,
+    ],
     SignupField.email,
     SignupField.password,
     if (channel == SignupOtpChannel.email) ...[

@@ -4500,14 +4500,25 @@ sendOTPtoEmail(String email) async {
           .replaceAll(']', '')
           .toString();
     } else {
-      result = 'Something went wrong';
+      try {
+        final body = jsonDecode(response.body);
+        result = body is Map && body['message'] != null
+            ? body['message'].toString()
+            : 'تعذر إرسال رمز التحقق. حاول مرة أخرى.';
+      } catch (_) {
+        result = 'تعذر إرسال رمز التحقق. حاول مرة أخرى.';
+      }
     }
     return result;
   } catch (e) {
     if (e is SocketException) {
       internet = false;
+      result = 'no internet';
+    } else {
+      result = 'تعذر الاتصال بخدمة التحقق.';
     }
   }
+  return result;
 }
 
 emailVerify(String email, otpNumber) async {
