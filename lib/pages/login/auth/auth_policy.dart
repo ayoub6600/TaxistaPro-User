@@ -1,5 +1,7 @@
 enum SignupOtpChannel { sms, email, whatsapp, firebase }
 
+enum SignupField { name, country, email, password, phone, otp, gender }
+
 class CountryAuthPolicy {
   const CountryAuthPolicy({
     required this.index,
@@ -54,4 +56,36 @@ class CountryAuthPolicy {
     }
     return channel;
   }
+}
+
+List<SignupField> signupFlowFor(
+  CountryAuthPolicy policy, {
+  required bool hasEmail,
+}) {
+  final channel = policy.channelFor(hasEmail: hasEmail);
+  return [
+    SignupField.name,
+    SignupField.country,
+    SignupField.email,
+    SignupField.password,
+    if (channel == SignupOtpChannel.email) ...[
+      SignupField.otp,
+      SignupField.phone,
+    ] else ...[
+      SignupField.phone,
+      SignupField.otp,
+    ],
+    SignupField.gender,
+  ];
+}
+
+String? gmailSuggestionFor(String input) {
+  final value = input.trim().toLowerCase();
+  final at = value.indexOf('@');
+  if (at <= 0 || value.indexOf('@', at + 1) != -1) return null;
+
+  final localPart = value.substring(0, at);
+  final domain = value.substring(at + 1);
+  if (!'gmail.com'.startsWith(domain) || domain == 'gmail.com') return null;
+  return '$localPart@gmail.com';
 }

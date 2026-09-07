@@ -14,13 +14,12 @@ class ModernSignup extends StatefulWidget {
 }
 
 class _ModernSignupState extends State<ModernSignup> {
-  static const _steps = 6;
   final _name = TextEditingController();
   final _email = TextEditingController();
   final _password = TextEditingController();
   final _phone = TextEditingController();
   final _otp = TextEditingController();
-  int _step = 0;
+  SignupField _step = SignupField.name;
   bool _loading = false;
   bool _obscure = true;
   String? _error;
@@ -39,10 +38,6 @@ class _ModernSignupState extends State<ModernSignup> {
         Map<String, dynamic>.from(app.countries[index] as Map),
       );
     });
-    if (_policies.isNotEmpty) {
-      final preferred = app.phcode is int ? app.phcode as int : 0;
-      _country = _policies[preferred.clamp(0, _policies.length - 1)];
-    }
   }
 
   @override
@@ -57,34 +52,64 @@ class _ModernSignupState extends State<ModernSignup> {
 
   String _copy(String ar, String en) => _rtl ? ar : en;
 
+  List<SignupField> get _flow {
+    final policy = _country;
+    if (policy == null) return SignupField.values;
+    return signupFlowFor(policy, hasEmail: _email.text.trim().isNotEmpty);
+  }
+
+  int get _stepIndex => _flow.indexOf(_step);
+
+  SignupOtpChannel get _channel =>
+      _country!.channelFor(hasEmail: _email.text.trim().isNotEmpty);
+
+  void _advance() {
+    final flow = _flow;
+    final index = flow.indexOf(_step);
+    if (index >= 0 && index < flow.length - 1) {
+      setState(() {
+        _step = flow[index + 1];
+        _error = null;
+      });
+    }
+  }
+
   Future<void> _next() async {
     FocusScope.of(context).unfocus();
     setState(() => _error = _validate());
     if (_error != null) return;
 
-    if (_step == 3) {
+    if (_step == SignupField.password && _channel == SignupOtpChannel.email) {
       await _sendOtp();
       return;
     }
-    if (_step == 4) {
+    if (_step == SignupField.phone && _channel != SignupOtpChannel.email) {
+      await _sendOtp();
+      return;
+    }
+    if (_step == SignupField.otp) {
       await _verifyOtp();
       return;
     }
-    if (_step == 5) {
+    if (_step == SignupField.gender) {
       _finish();
       return;
     }
-    setState(() => _step++);
+    _advance();
   }
 
   String? _validate() {
     switch (_step) {
-      case 0:
+      case SignupField.name:
         return _name.text.trim().length < 2
             ? _copy('اكتب اسمك كما تحب أن يظهر.',
                 'Enter the name you want us to use.')
             : null;
-      case 1:
+      case SignupField.country:
+        return _country == null
+            ? _copy('اختر الدولة.', 'Choose your country.')
+            : null;
+      case SignupField.email:
         final value = _email.text.trim();
         if (value.isNotEmpty &&
             !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value)) {
@@ -96,41 +121,31 @@ class _ModernSignupState extends State<ModernSignup> {
               'Email is required for this country.');
         }
         return null;
-      case 2:
+      case SignupField.password:
         return _password.text.length < 8
             ? _copy('استخدم 8 أحرف على الأقل.', 'Use at least 8 characters.')
             : null;
-      case 3:
-        if (_country == null) {
-          return _copy('اختر الدولة.', 'Choose your country.');
-        }
-        if (!_country!.emailOptional && _email.text.trim().isEmpty) {
-          return _copy(
-            'البريد الإلكتروني مطلوب لهذه الدولة. ارجع لإضافته.',
-            'Email is required for this country. Go back and add it.',
-          );
-        }
+      case SignupField.phone:
         final length = _phone.text.replaceAll(RegExp(r'\D'), '').length;
         return length < _country!.minPhoneLength ||
                 length > _country!.maxPhoneLength
             ? _copy('راجع رقم الهاتف.', 'Check your phone number.')
             : null;
-      case 4:
+      case SignupField.otp:
         return _otp.text.trim().length != 6
             ? _copy('أدخل رمز التحقق المكوّن من 6 أرقام.',
                 'Enter the 6-digit verification code.')
             : null;
-      case 5:
+      case SignupField.gender:
         return _gender.isEmpty
             ? _copy('اختر الجنس للمتابعة.', 'Choose a gender to continue.')
             : null;
     }
-    return null;
   }
 
   Future<void> _sendOtp() async {
     final policy = _country!;
-    final channel = policy.channelFor(hasEmail: _email.text.trim().isNotEmpty);
+    final channel = _channel;
     setState(() => _loading = true);
     dynamic result;
     if (channel == SignupOtpChannel.email) {
@@ -146,7 +161,8 @@ class _ModernSignupState extends State<ModernSignup> {
     setState(() {
       _loading = false;
       if (result == 'success') {
-        _step++;
+        final flow = _flow;
+        _step = flow[flow.indexOf(_step) + 1];
         _error = null;
       } else {
         _error = result?.toString() ??
@@ -156,8 +172,7 @@ class _ModernSignupState extends State<ModernSignup> {
   }
 
   Future<void> _verifyOtp() async {
-    final channel =
-        _country!.channelFor(hasEmail: _email.text.trim().isNotEmpty);
+    final channel = _channel;
     setState(() => _loading = true);
     final result = channel == SignupOtpChannel.email
         ? await app.emailVerify(_email.text.trim(), _otp.text.trim())
@@ -166,7 +181,8 @@ class _ModernSignupState extends State<ModernSignup> {
     setState(() {
       _loading = false;
       if (result == 'success') {
-        _step++;
+        final flow = _flow;
+        _step = flow[flow.indexOf(_step) + 1];
         _error = null;
       } else {
         _error = result?.toString() ??
@@ -189,11 +205,13 @@ class _ModernSignupState extends State<ModernSignup> {
   }
 
   void _back() {
-    if (_step == 0) {
+    if (_step == SignupField.name) {
       Navigator.pop(context);
     } else {
+      final flow = _flow;
+      final index = flow.indexOf(_step);
       setState(() {
-        _step--;
+        _step = flow[index - 1];
         _error = null;
       });
     }
@@ -223,7 +241,8 @@ class _ModernSignupState extends State<ModernSignup> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _Progress(step: _step, count: _steps, color: theme),
+                  _Progress(
+                      step: _stepIndex, count: _flow.length, color: theme),
                   const SizedBox(height: 42),
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 260),
@@ -263,19 +282,20 @@ class _ModernSignupState extends State<ModernSignup> {
                             child: CircularProgressIndicator(
                                 strokeWidth: 2, color: Colors.white))
                         : Text(
-                            _step == 5
+                            _step == SignupField.gender
                                 ? _copy('مراجعة ومتابعة', 'Review and continue')
                                 : _copy('متابعة', 'Continue'),
                             style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.w700)),
                   ),
-                  if (_step == 1 && (_country?.emailOptional ?? true))
+                  if (_step == SignupField.email &&
+                      (_country?.emailOptional ?? false))
                     TextButton(
                         onPressed: _loading
                             ? null
                             : () {
                                 _email.clear();
-                                setState(() => _step++);
+                                _advance();
                               },
                         child: Text(_copy('تخطي الآن', 'Skip for now'))),
                 ],
@@ -288,11 +308,9 @@ class _ModernSignupState extends State<ModernSignup> {
   }
 
   Widget _stepBody(ColorScheme colors) {
-    final channel =
-        _country?.channelFor(hasEmail: _email.text.trim().isNotEmpty) ??
-            SignupOtpChannel.sms;
+    final channel = _country == null ? SignupOtpChannel.sms : _channel;
     switch (_step) {
-      case 0:
+      case SignupField.name:
         return _StepCard(
             key: const ValueKey(0),
             icon: Icons.waving_hand_rounded,
@@ -305,19 +323,43 @@ class _ModernSignupState extends State<ModernSignup> {
                 autofocus: true,
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _next()));
-      case 1:
+      case SignupField.country:
         return _StepCard(
-            key: const ValueKey(1),
+            key: const ValueKey(SignupField.country),
+            icon: Icons.public_rounded,
+            title: _copy('من أي دولة؟', 'Where are you from?'),
+            subtitle: _copy('سنضبط طريقة التحقق ورقم الهاتف تلقائيًا.',
+                'We will tailor verification and phone formatting for you.'),
+            child: DropdownButtonFormField<CountryAuthPolicy>(
+              initialValue: _country,
+              isExpanded: true,
+              decoration: _decoration(_copy('اختر الدولة', 'Choose country')),
+              items: _policies
+                  .map((item) => DropdownMenuItem(
+                      value: item,
+                      child: Text('${item.name}  ${item.dialCode}')))
+                  .toList(),
+              onChanged: (value) => setState(() => _country = value),
+            ));
+      case SignupField.email:
+        return _StepCard(
+            key: const ValueKey(SignupField.email),
             icon: Icons.alternate_email_rounded,
             title: _copy('بريدك الإلكتروني', 'Your email'),
-            subtitle: _copy('لاستعادة الحساب والإيصالات. يمكنك تخطيه.',
-                'Useful for recovery and receipts. You can skip it.'),
-            child: _Field(
-                controller: _email,
-                hint: 'name@example.com',
-                keyboardType: TextInputType.emailAddress,
-                autofocus: true));
-      case 2:
+            subtitle: _country?.emailOptional == true
+                ? _copy('لاستعادة الحساب والإيصالات. يمكنك تخطيه.',
+                    'Useful for recovery and receipts. You can skip it.')
+                : _copy('سنرسل رمز التحقق إلى هذا البريد.',
+                    'We will send your verification code to this email.'),
+            child: Column(children: [
+              _Field(
+                  controller: _email,
+                  hint: 'name@example.com',
+                  keyboardType: TextInputType.emailAddress,
+                  autofocus: true),
+              _GmailSuggestion(controller: _email),
+            ]));
+      case SignupField.password:
         return _StepCard(
             key: const ValueKey(2),
             icon: Icons.lock_outline_rounded,
@@ -334,26 +376,14 @@ class _ModernSignupState extends State<ModernSignup> {
                     icon: Icon(_obscure
                         ? Icons.visibility_outlined
                         : Icons.visibility_off_outlined))));
-      case 3:
+      case SignupField.phone:
         return _StepCard(
-            key: const ValueKey(3),
+            key: const ValueKey(SignupField.phone),
             icon: Icons.phone_iphone_rounded,
             title: _copy('رقم هاتفك', 'Your phone number'),
-            subtitle: _copy('اختر الدولة وسنضبط الرمز والطول تلقائيًا.',
-                'Choose a country and we will format it for you.'),
+            subtitle: _copy('الرمز الدولي مضبوط تلقائيًا.',
+                'Your country code is already set.'),
             child: Column(children: [
-              DropdownButtonFormField<CountryAuthPolicy>(
-                initialValue: _country,
-                isExpanded: true,
-                decoration: _decoration(_copy('الدولة', 'Country')),
-                items: _policies
-                    .map((item) => DropdownMenuItem(
-                        value: item,
-                        child: Text('${item.name}  ${item.dialCode}')))
-                    .toList(),
-                onChanged: (value) => setState(() => _country = value),
-              ),
-              const SizedBox(height: 14),
               _Field(
                   controller: _phone,
                   hint: _copy('رقم الهاتف', 'Phone number'),
@@ -362,7 +392,7 @@ class _ModernSignupState extends State<ModernSignup> {
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   autofocus: true),
             ]));
-      case 4:
+      case SignupField.otp:
         return _StepCard(
             key: const ValueKey(4),
             icon: _channelIcon(channel),
@@ -379,7 +409,7 @@ class _ModernSignupState extends State<ModernSignup> {
                 autofocus: true,
                 textAlign: TextAlign.center,
                 letterSpacing: 10));
-      default:
+      case SignupField.gender:
         return _StepCard(
             key: const ValueKey(5),
             icon: Icons.person_outline_rounded,
@@ -426,6 +456,39 @@ class _ModernSignupState extends State<ModernSignup> {
         _ => _copy(
             'أرسلنا الرمز إلى رقم هاتفك.', 'We sent the code to your phone.'),
       };
+}
+
+class _GmailSuggestion extends StatelessWidget {
+  const _GmailSuggestion({required this.controller});
+
+  final TextEditingController controller;
+
+  @override
+  Widget build(BuildContext context) =>
+      ValueListenableBuilder<TextEditingValue>(
+        valueListenable: controller,
+        builder: (context, value, _) {
+          final suggestion = gmailSuggestionFor(value.text);
+          if (suggestion == null) return const SizedBox.shrink();
+          return Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: ActionChip(
+                avatar: const Icon(Icons.bolt_rounded, size: 18),
+                label: Text(suggestion),
+                onPressed: () {
+                  controller.value = TextEditingValue(
+                    text: suggestion,
+                    selection:
+                        TextSelection.collapsed(offset: suggestion.length),
+                  );
+                },
+              ),
+            ),
+          );
+        },
+      );
 }
 
 class _Progress extends StatelessWidget {
