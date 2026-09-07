@@ -43,6 +43,8 @@ var audio = 'audio/notification_sound.mp3';
 bool internet = true;
 int waitingTime = 0;
 String gender = '';
+String signupServiceLocationId = '';
+String signupZoneId = '';
 String packageName = '';
 String signKey = '';
 
@@ -65,7 +67,11 @@ getCountryCode() async {
     debugPrint('Base URL: $url');
 
     // جهّز الـ Uri بشكل آمن (بالتعامل مع الشرط / تلقائياً)
-    final Uri uri = Uri.parse(url).resolve('api/v1/countries-new');
+    final Uri uri = Uri.parse(url).resolve('api/v1/countries-new').replace(
+      queryParameters: {
+        if (choosenLanguage.isNotEmpty) 'lang': choosenLanguage,
+      },
+    );
     debugPrint('Requesting GET $uri');
 
     final response = await http.get(uri);
@@ -399,6 +405,8 @@ void configurePendingUserRegistration({
   required String mobileNumber,
   required String selectedGender,
   required int countryIndex,
+  required String serviceLocationId,
+  required String zoneId,
 }) {
   name = displayName;
   email = emailAddress;
@@ -406,6 +414,8 @@ void configurePendingUserRegistration({
   phnumber = mobileNumber;
   gender = selectedGender;
   phcode = countryIndex;
+  signupServiceLocationId = serviceLocationId;
+  signupZoneId = zoneId;
 }
 
 registerUser() async {
@@ -454,6 +464,8 @@ registerUser() async {
           : (gender == 'female')
               ? 'female'
               : 'others',
+      'service_location_id': signupServiceLocationId,
+      'zone_id': signupZoneId,
     });
     var request = await response.send();
     var respon = await http.Response.fromStream(request);

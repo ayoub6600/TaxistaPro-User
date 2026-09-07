@@ -12,11 +12,23 @@ void main() {
       'dial_max_length': 10,
       'signup_otp_channel': 'whatsapp',
       'email_optional': true,
+      'service_locations': [
+        {
+          'id': 'libya-service',
+          'name': 'ليبيا',
+          'zones': [
+            {'id': 'tripoli', 'name': 'طرابلس'},
+            {'id': 'misrata', 'name': 'مصراتة'},
+          ],
+        },
+      ],
     });
 
     expect(policy.code, 'LY');
     expect(policy.channel, SignupOtpChannel.whatsapp);
     expect(policy.emailOptional, isTrue);
+    expect(policy.areas.map((area) => area.name), ['طرابلس', 'مصراتة']);
+    expect(policy.areas.first.serviceLocationId, 'libya-service');
   });
 
   test('falls back to SMS when email OTP is selected but email was skipped',
@@ -48,6 +60,7 @@ void main() {
       [
         SignupField.name,
         SignupField.country,
+        SignupField.area,
         SignupField.email,
         SignupField.password,
         SignupField.otp,
@@ -68,6 +81,7 @@ void main() {
       [
         SignupField.name,
         SignupField.country,
+        SignupField.area,
         SignupField.email,
         SignupField.password,
         SignupField.phone,

@@ -1,6 +1,20 @@
 enum SignupOtpChannel { sms, email, whatsapp, firebase }
 
-enum SignupField { name, country, email, password, phone, otp, gender }
+enum SignupField { name, country, area, email, password, phone, otp, gender }
+
+class SignupArea {
+  const SignupArea({
+    required this.id,
+    required this.name,
+    required this.serviceLocationId,
+    required this.serviceLocationName,
+  });
+
+  final String id;
+  final String name;
+  final String serviceLocationId;
+  final String serviceLocationName;
+}
 
 class CountryAuthPolicy {
   const CountryAuthPolicy({
@@ -13,6 +27,7 @@ class CountryAuthPolicy {
     required this.maxPhoneLength,
     required this.channel,
     required this.emailOptional,
+    required this.areas,
     this.flag,
   });
 
@@ -25,6 +40,7 @@ class CountryAuthPolicy {
   final int maxPhoneLength;
   final SignupOtpChannel channel;
   final bool emailOptional;
+  final List<SignupArea> areas;
   final String? flag;
 
   factory CountryAuthPolicy.fromApi(int index, Map<String, dynamic> json) {
@@ -39,6 +55,7 @@ class CountryAuthPolicy {
       channel: _channelFrom('${json['signup_otp_channel'] ?? 'sms'}'),
       emailOptional:
           json['email_optional'] != false && json['email_optional'] != 0,
+      areas: _areasFrom(json['service_locations']),
       flag: json['flag']?.toString(),
     );
   }
@@ -48,6 +65,28 @@ class CountryAuthPolicy {
       (item) => item.name == value.toLowerCase(),
       orElse: () => SignupOtpChannel.sms,
     );
+  }
+
+  static List<SignupArea> _areasFrom(dynamic value) {
+    if (value is! List) return const [];
+    final areas = <SignupArea>[];
+    for (final rawLocation in value) {
+      if (rawLocation is! Map) continue;
+      final location = Map<String, dynamic>.from(rawLocation);
+      final zones = location['zones'];
+      if (zones is! List) continue;
+      for (final rawZone in zones) {
+        if (rawZone is! Map) continue;
+        final zone = Map<String, dynamic>.from(rawZone);
+        areas.add(SignupArea(
+          id: '${zone['id'] ?? ''}',
+          name: '${zone['name'] ?? ''}',
+          serviceLocationId: '${location['id'] ?? ''}',
+          serviceLocationName: '${location['name'] ?? ''}',
+        ));
+      }
+    }
+    return areas;
   }
 
   SignupOtpChannel channelFor({required bool hasEmail}) {
@@ -66,6 +105,7 @@ List<SignupField> signupFlowFor(
   return [
     SignupField.name,
     SignupField.country,
+    SignupField.area,
     SignupField.email,
     SignupField.password,
     if (channel == SignupOtpChannel.email) ...[

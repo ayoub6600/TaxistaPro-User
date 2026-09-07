@@ -25,6 +25,7 @@ class _ModernSignupState extends State<ModernSignup> {
   String? _error;
   String _gender = '';
   CountryAuthPolicy? _country;
+  SignupArea? _area;
   late final List<CountryAuthPolicy> _policies;
 
   bool get _rtl => Directionality.of(context) == TextDirection.rtl;
@@ -108,6 +109,11 @@ class _ModernSignupState extends State<ModernSignup> {
       case SignupField.country:
         return _country == null
             ? _copy('اختر الدولة.', 'Choose your country.')
+            : null;
+      case SignupField.area:
+        return _area == null
+            ? _copy('اختر المنطقة التي ستستخدم فيها تاكسيستا.',
+                'Choose the area where you will use Taxista.')
             : null;
       case SignupField.email:
         final value = _email.text.trim();
@@ -199,6 +205,8 @@ class _ModernSignupState extends State<ModernSignup> {
       mobileNumber: _phone.text.replaceAll(RegExp(r'\D'), ''),
       selectedGender: _gender,
       countryIndex: _country!.index,
+      serviceLocationId: _area!.serviceLocationId,
+      zoneId: _area!.id,
     );
     Navigator.of(context)
         .push(MaterialPageRoute(builder: (_) => const AggreementPage()));
@@ -339,7 +347,27 @@ class _ModernSignupState extends State<ModernSignup> {
                       value: item,
                       child: Text('${item.name}  ${item.dialCode}')))
                   .toList(),
-              onChanged: (value) => setState(() => _country = value),
+              onChanged: (value) => setState(() {
+                _country = value;
+                _area = null;
+              }),
+            ));
+      case SignupField.area:
+        return _StepCard(
+            key: const ValueKey(SignupField.area),
+            icon: Icons.location_on_outlined,
+            title: _copy('أين تسكن؟', 'Choose your area'),
+            subtitle: _copy('سنعرض لك الخدمات المتاحة في منطقتك.',
+                'We will show services available in your selected area.'),
+            child: DropdownButtonFormField<SignupArea>(
+              initialValue: _area,
+              isExpanded: true,
+              decoration: _decoration(_copy('اختر المنطقة', 'Choose area')),
+              items: _country!.areas
+                  .map((item) =>
+                      DropdownMenuItem(value: item, child: Text(item.name)))
+                  .toList(),
+              onChanged: (value) => setState(() => _area = value),
             ));
       case SignupField.email:
         return _StepCard(
