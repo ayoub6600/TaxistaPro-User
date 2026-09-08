@@ -53,6 +53,9 @@ import 'widgets/sos_sheet.dart';
 import 'widgets/trip_details_sheet.dart';
 
 part 'booking_confirmation/booking_confirmation_controller.dart';
+part 'booking_confirmation/booking_confirmation_map_canvas.dart';
+part 'booking_confirmation/booking_confirmation_marker_snapshots.dart';
+part 'booking_confirmation/booking_confirmation_status_overlays.dart';
 part 'booking_confirmation/booking_confirmation_view.dart';
 part 'booking_confirmation/booking_confirmation_polyline.dart';
 
@@ -97,6 +100,9 @@ class _BookingConfirmationState extends State<BookingConfirmation>
         WidgetsBindingObserver,
         TickerProviderStateMixin,
         _BookingConfirmationController,
+        _BookingConfirmationMapCanvas,
+        _BookingConfirmationMarkerSnapshots,
+        _BookingConfirmationStatusOverlays,
         _BookingConfirmationView {
   @override
   Widget build(BuildContext context) => buildBookingConfirmation(context);

@@ -1,7 +1,12 @@
 part of '../booking_confirmation.dart';
 
 mixin _BookingConfirmationView
-    on State<BookingConfirmation>, _BookingConfirmationController {
+    on
+        State<BookingConfirmation>,
+        _BookingConfirmationController,
+        _BookingConfirmationMapCanvas,
+        _BookingConfirmationMarkerSnapshots,
+        _BookingConfirmationStatusOverlays {
   Widget buildBookingConfirmation(BuildContext context) {
     GeoHasher geo = GeoHasher();
 
@@ -398,16 +403,13 @@ mixin _BookingConfirmationView
                           if (event.data!.snapshot.value != null) {
                             if (userRequestData['accepted_at'] == null) {
                               DataSnapshot snapshots = event.data!.snapshot;
-                              // ignore: unnecessary_null_comparison
                               if (snapshots != null &&
                                   choosenVehicle != null &&
                                   etaDetails.isNotEmpty) {
                                 driversData = [];
-                                // ignore: avoid_function_literals_in_foreach_calls
                                 snapshots.children.forEach((element) {
                                   driversData.add(element.value);
                                 });
-                                // ignore: avoid_function_literals_in_foreach_calls
                                 driversData.forEach((e) {
                                   if (e['is_active'] == 1 &&
                                       e['is_available'] == true) {
@@ -639,7 +641,6 @@ mixin _BookingConfirmationView
                                                   e['l'][1],
                                                   _mapMarkerSink,
                                                   this,
-                                                  // _controller,
                                                   'car#${e['id']}#${e['vehicle_type_icon']}',
                                                   e['id'],
                                                   (driverData['vehicle_type_icon'] ==
@@ -703,7 +704,6 @@ mixin _BookingConfirmationView
                                     }
                                     DataSnapshot snapshots =
                                         event.data!.snapshot;
-                                    // ignore: unnecessary_null_comparison
                                     if (snapshots != null) {
                                       driverData = jsonDecode(
                                           jsonEncode(snapshots.value));
@@ -717,8 +717,6 @@ mixin _BookingConfirmationView
                                                   null) {
                                             polyGot = true;
                                             getPolylines(
-                                                //Ahmed
-
                                                 driverData['l'][0],
                                                 driverData['l'][1],
                                                 userRequestData['pick_lat'],
@@ -906,7 +904,6 @@ mixin _BookingConfirmationView
                                                   driverData['l'][1],
                                                   _mapMarkerSink,
                                                   this,
-                                                  // _controller,
                                                   'car#${driverData['id']}#${driverData['vehicle_type_icon']}',
                                                   driverData['id'],
                                                   (driverData['vehicle_type_icon'] ==
@@ -924,213 +921,7 @@ mixin _BookingConfirmationView
                               return Stack(
                                 alignment: Alignment.center,
                                 children: [
-                                  Container(
-                                      alignment: Alignment.topCenter,
-                                      height: media.height * 1,
-                                      width: media.width * 1,
-                                      //get drivers location updates
-                                      child: (mapType == 'google')
-                                          ? StreamBuilder<List<Marker>>(
-                                              stream: mapMarkerStream,
-                                              builder: (context, snapshot) {
-                                                return GoogleMap(
-                                                  padding: EdgeInsets.only(
-                                                      bottom: mapPadding,
-                                                      top: media.height * 0.1 +
-                                                          MediaQuery.of(context)
-                                                              .padding
-                                                              .top),
-                                                  onMapCreated: _onMapCreated,
-                                                  compassEnabled: false,
-                                                  initialCameraPosition:
-                                                      CameraPosition(
-                                                    target: _center,
-                                                    zoom: 11.0,
-                                                  ),
-                                                  markers: Set<Marker>.from(
-                                                      myMarker),
-                                                  polylines: polyline,
-                                                  minMaxZoomPreference:
-                                                      const MinMaxZoomPreference(
-                                                          0.0, 20.0),
-                                                  myLocationButtonEnabled:
-                                                      false,
-                                                  buildingsEnabled: false,
-                                                  zoomControlsEnabled: false,
-                                                  myLocationEnabled: true,
-                                                );
-                                              })
-                                          : StreamBuilder<List<Marker>>(
-                                              stream: mapMarkerStream,
-                                              builder: (context, snapshot) {
-                                                return SizedBox(
-                                                  height: (userRequestData
-                                                          .isEmpty)
-                                                      ? media.height -
-                                                          media.width * 0.5
-                                                      : ((media.height * 1.1) -
-                                                          media.width),
-                                                  child: fm.FlutterMap(
-                                                    mapController:
-                                                        _fmController,
-                                                    options: fm.MapOptions(
-                                                        initialCenter:
-                                                            fmlt.LatLng(
-                                                                _center
-                                                                    .latitude,
-                                                                _center
-                                                                    .longitude),
-                                                        initialZoom: 13,
-                                                        onTap: (P, L) {
-                                                          setState(() {});
-                                                        }),
-                                                    children: [
-                                                      fm.TileLayer(
-                                                        // minZoom: 10,
-                                                        urlTemplate:
-                                                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                                                        userAgentPackageName:
-                                                            'com.Ayoub.Usertaxista',
-                                                      ),
-
-                                                      // fm.PolylineLayer(
-                                                      //   polylines: [
-                                                      //     fm.Polyline(
-                                                      //         points: fmpoly,
-                                                      //         color:
-                                                      //             Colors.blue,
-                                                      //         strokeWidth: 4),
-                                                      //   ],
-                                                      // ),
-
-                                                      // fm.MarkerLayer(
-                                                      //   markers: [
-                                                      //     for (var k = 0;
-                                                      //         k <
-                                                      //             addressList
-                                                      //                 .length;
-                                                      //         k++)
-                                                      //       fm.Marker(
-                                                      //           alignment: Alignment
-                                                      //               .topCenter,
-                                                      //           point: fmlt.LatLng(
-                                                      //               addressList[k]
-                                                      //                   .latlng
-                                                      //                   .latitude,
-                                                      //               addressList[k]
-                                                      //                   .latlng
-                                                      //                   .longitude),
-                                                      //           width: (k == 0 ||
-                                                      //                   k ==
-                                                      //                       addressList.length -
-                                                      //                           1)
-                                                      //               ? media.width *
-                                                      //                   0.7
-                                                      //               : 10,
-                                                      //           height: (k == 0 ||
-                                                      //                   k ==
-                                                      //                       addressList.length -
-                                                      //                           1)
-                                                      //               ? media.width * 0.15 +
-                                                      //                   10
-                                                      //               : 18,
-                                                      //           child:
-                                                      //               (k == 0 ||
-                                                      //                       k ==
-                                                      //                           addressList.length - 1)
-                                                      //                   ? Column(
-                                                      //                       children: [
-                                                      //                         Container(
-                                                      //                             decoration: BoxDecoration(
-                                                      //                                 gradient: LinearGradient(colors: [
-                                                      //                                   (isDarkTheme == true) ? const Color(0xff000000) : const Color(0xffFFFFFF),
-                                                      //                                   (isDarkTheme == true) ? const Color(0xff808080) : const Color(0xffEFEFEF),
-                                                      //                                 ], begin: Alignment.topCenter, end: Alignment.bottomCenter),
-                                                      //                                 borderRadius: BorderRadius.circular(5)),
-                                                      //                             width: (platform == TargetPlatform.android) ? media.width * 0.7 : media.width * 0.9,
-                                                      //                             padding: const EdgeInsets.all(5),
-                                                      //                             child: (userRequestData.isNotEmpty)
-                                                      //                                 ? Text(
-                                                      //                                     addressList[k].address,
-                                                      //                                     maxLines: 1,
-                                                      //                                     overflow: TextOverflow.fade,
-                                                      //                                     softWrap: false,
-                                                      //                                     style: GoogleFonts.notoSans(color: textColor, fontSize: (platform == TargetPlatform.android) ? media.width * twelve : media.width * sixteen),
-                                                      //                                   )
-                                                      //                                 : (addressList.where((element) => element.type == 'pickup').isNotEmpty)
-                                                      //                                     ? Text(
-                                                      //                                         addressList[k].address,
-                                                      //                                         maxLines: 1,
-                                                      //                                         overflow: TextOverflow.fade,
-                                                      //                                         softWrap: false,
-                                                      //                                         style: GoogleFonts.notoSans(color: textColor, fontSize: (platform == TargetPlatform.android) ? media.width * twelve : media.width * sixteen),
-                                                      //                                       )
-                                                      //                                     : Container()),
-                                                      //                         const SizedBox(
-                                                      //                           height: 10,
-                                                      //                         ),
-                                                      //                         Container(
-                                                      //                           decoration: BoxDecoration(shape: BoxShape.circle, image: DecorationImage(image: AssetImage((addressList[k].type == 'pickup') ? 'assets/images/pick_icon.png' : 'assets/images/drop_icon.png'), fit: BoxFit.contain)),
-                                                      //                           height: (platform == TargetPlatform.android) ? media.width * 0.07 : media.width * 0.12,
-                                                      //                           width: (platform == TargetPlatform.android) ? media.width * 0.07 : media.width * 0.12,
-                                                      //                         ),
-                                                      //                       ],
-                                                      //                     )
-                                                      //                   : MyText(
-                                                      //                       text:
-                                                      //                           k.toString(),
-                                                      //                       size:
-                                                      //                           16,
-                                                      //                       fontweight:
-                                                      //                           FontWeight.bold,
-                                                      //                       color:
-                                                      //                           Colors.red,
-                                                      //                     )),
-                                                      //     for (var i = 0;
-                                                      //         i <
-                                                      //             myMarker
-                                                      //                 .length;
-                                                      //         i++)
-                                                      //       fm.Marker(
-                                                      //           alignment:
-                                                      //               Alignment
-                                                      //                   .topCenter,
-                                                      //           point: fmlt.LatLng(
-                                                      //               myMarker[i]
-                                                      //                   .position
-                                                      //                   .latitude,
-                                                      //               myMarker[i]
-                                                      //                   .position
-                                                      //                   .longitude),
-                                                      //           width: media
-                                                      //                   .width *
-                                                      //               0.7,
-                                                      //           height: 50,
-                                                      //           child: RotationTransition(
-                                                      //               turns: AlwaysStoppedAnimation(myMarker[i].rotation / 360),
-                                                      //               child: (myMarker[i].markerId.toString().contains('car#') == true)
-                                                      //                   ? Image.asset(
-                                                      //                       (myMarker[i].markerId.toString().replaceAll('MarkerId(', '').replaceAll(')', '').split('#')[2].toString() == 'taxi')
-                                                      //                           ? 'assets/images/top-taxi.png'
-                                                      //                           : (myMarker[i].markerId.toString().replaceAll('MarkerId(', '').replaceAll(')', '').split('#')[2].toString() == 'truck')
-                                                      //                               ? 'assets/images/deliveryicon.png'
-                                                      //                               : 'assets/images/bike.png',
-                                                      //                     )
-                                                      //                   : Container()))
-                                                      //   ],
-                                                      // ),
-
-                                                      // fm.MarkerLayer()
-
-                                                      const fm
-                                                          .RichAttributionWidget(
-                                                        attributions: [],
-                                                      ),
-                                                    ],
-                                                  ),
-                                                );
-                                              })),
-
+                                  buildBookingMapCanvas(context, media),
                                   Positioned(
                                     top: MediaQuery.of(context).padding.top +
                                         12.5,
@@ -1168,18 +959,14 @@ mixin _BookingConfirmationView
                                               borderRadius:
                                                   BorderRadius.circular(
                                                       media.width * 0.05),
-                                              // color: page,
                                               child: InkWell(
                                                 borderRadius:
                                                     BorderRadius.circular(
                                                         media.width * 0.05),
                                                 onTap: () {
-                                                  // Reset flags
                                                   noDriverFound = false;
                                                   tripReqError = false;
                                                   serviceNotAvailable = false;
-
-                                                  // Check if there is a user request that has not been accepted
                                                   if (userRequestData
                                                           .isNotEmpty &&
                                                       userRequestData[
@@ -1187,8 +974,6 @@ mixin _BookingConfirmationView
                                                           null) {
                                                     return; // Exit early if a trip is in progress
                                                   }
-
-                                                  // Handle navigation and state updates
                                                   bool
                                                       shouldResetDropConfirmed =
                                                       widget.type == null &&
@@ -1249,7 +1034,6 @@ mixin _BookingConfirmationView
                                   ),
                                   Positioned(
                                     bottom: media.width * 1.25,
-                                    // top: media.width*0.2 + MediaQuery.of(context).padding.top,
                                     child: SizedBox(
                                       width: media.width * 0.9,
                                       child: Column(
@@ -1440,7 +1224,6 @@ mixin _BookingConfirmationView
                                                                   true;
                                                             });
                                                           } else {
-                                                            // await location.requestService();
                                                             await geolocs
                                                                     .Geolocator
                                                                 .getCurrentPosition(
@@ -1527,8 +1310,6 @@ mixin _BookingConfirmationView
                                             ),
                                           ))
                                       : Container(),
-
-                                  //show bottom nav bar for choosing ride type and vehicles
                                   (isLoading == false &&
                                           addressList.isNotEmpty &&
                                           etaDetails.isNotEmpty &&
@@ -1622,8 +1403,6 @@ mixin _BookingConfirmationView
                                                                         0.9,
                                                                     child:
                                                                         SingleChildScrollView(
-                                                                      // scrollDirection:
-                                                                      //     Axis.horizontal,
                                                                       child:
                                                                           Column(
                                                                         mainAxisAlignment:
@@ -1659,7 +1438,6 @@ mixin _BookingConfirmationView
                                                                                                         ? Colors.white
                                                                                                         : hintColor
                                                                                                     : Colors.orange),
-                                                                                            // color: page,
                                                                                           ),
                                                                                           child: Row(
                                                                                             children: [
@@ -1722,7 +1500,6 @@ mixin _BookingConfirmationView
                                                                           etaDetails[rentalChoosenOption]['typesWithPrice']
                                                                               [
                                                                               'data'];
-                                                                      // rentalChoosenOption = i;
                                                                       choosenVehicle =
                                                                           null;
                                                                       payingVia =
@@ -1740,8 +1517,6 @@ mixin _BookingConfirmationView
                                                               )
                                                             ],
                                                           )
-
-                                                        // child:
                                                         : (isRentalRide ==
                                                                     false &&
                                                                 etaDetails
@@ -1917,17 +1692,14 @@ mixin _BookingConfirmationView
                                                                                   width: media.width * 0.07,
                                                                                 ),
                                                                                 MyText(
-                                                                                  // ignore: unnecessary_null_comparison
                                                                                   text: (fromDate != null) ? DateFormat('d MMM, h:mm a').format(fromDate).toString() : DateFormat('d MMM, h:mm a').format(DateTime.now().add(Duration(minutes: int.parse(userDetails['user_can_make_a_ride_after_x_miniutes'])))).toString(),
                                                                                   size: media.width * twelve,
-                                                                                  // color: buttonColor,
                                                                                   color: Colors.orange,
                                                                                 ),
                                                                                 (!isOneWayTrip)
                                                                                     ? MyText(
                                                                                         text: ' -- ${(toDate != null) ? DateFormat('d MMM, h:mm a').format(toDate!).toString() : languages[choosenLanguage]['text_select']}',
                                                                                         size: media.width * twelve,
-                                                                                        // color: buttonColor,
                                                                                         color: Colors.orange,
                                                                                       )
                                                                                     : const SizedBox(),
@@ -2051,7 +1823,6 @@ mixin _BookingConfirmationView
                                                                                                             if (choosenVehicle != i) {
                                                                                                               setState(() {
                                                                                                                 choosenVehicle = i;
-                                                                                                                // myMarker.clear();
                                                                                                               });
                                                                                                               myMarker.removeWhere((element) => element.markerId.toString().contains('car'));
                                                                                                             } else {
@@ -2348,7 +2119,6 @@ mixin _BookingConfirmationView
                                                                                                                       vehicleList.add(e.value);
                                                                                                                     });
                                                                                                                     if (vehicleList.isNotEmpty) {
-                                                                                                                      // ignore: avoid_function_literals_in_foreach_calls
                                                                                                                       vehicleList.forEach(
                                                                                                                         (e) async {
                                                                                                                           if (e['is_active'] == 1 && e['is_available'] == true && ((e['vehicle_types'] != null && e['vehicle_types'].contains(rentalOption[i]['type_id'])) || e['vehicle_type'] == rentalOption[i]['type_id'])) {
@@ -2403,12 +2173,6 @@ mixin _BookingConfirmationView
                                                                                                                                 context: context,
                                                                                                                                 isScrollControlled: true,
                                                                                                                                 builder: (context) {
-                                                                                                                                  // return VehicleInfoBottomSheet(
-                                                                                                                                  //   i: i,
-                                                                                                                                  //   width: media.width,
-                                                                                                                                  //   isOneway: isOneWayTrip,
-                                                                                                                                  //   type: widget.type,
-                                                                                                                                  // );
                                                                                                                                   return Container(
                                                                                                                                     width: media.width,
                                                                                                                                     padding: EdgeInsets.all(media.width * 0.05),
@@ -2533,7 +2297,6 @@ mixin _BookingConfirmationView
                                                                                                                         },
                                                                                                                         child: Container(
                                                                                                                           padding: EdgeInsets.all(media.width * 0.02),
-                                                                                                                          // margin: EdgeInsets.only(top: 10, left: media.width * 0.05, right: media.width * 0.05),
                                                                                                                           height: media.width * 0.157,
                                                                                                                           decoration: BoxDecoration(
                                                                                                                               borderRadius: BorderRadius.circular(media.width * 0.01),
@@ -2543,8 +2306,6 @@ mixin _BookingConfirmationView
                                                                                                                                           ? Colors.white
                                                                                                                                           : hintColor
                                                                                                                                       : Colors.orange),
-                                                                                                                              // : Colors.black),
-                                                                                                                              // color: page,
                                                                                                                               color: choosenVehicle == i ? Colors.orange.withOpacity(0.2) : null),
                                                                                                                           child: Row(
                                                                                                                             children: [
@@ -2554,7 +2315,6 @@ mixin _BookingConfirmationView
                                                                                                                                     ? Image.network(
                                                                                                                                         rentalOption[i]['icon'],
                                                                                                                                         fit: BoxFit.contain,
-                                                                                                                                        // width: media.width*0.07,
                                                                                                                                       )
                                                                                                                                     : Container(),
                                                                                                                               ),
@@ -3053,7 +2813,6 @@ mixin _BookingConfirmationView
                                                                             ? Container()
                                                                             : Container(
                                                                                 margin: EdgeInsets.only(left: media.width * 0.05, right: media.width * 0.05),
-                                                                                //height: 50.h,
                                                                                 padding: EdgeInsets.symmetric(vertical: 8.h),
                                                                                 decoration: BoxDecoration(
                                                                                   borderRadius: BorderRadius.circular(20.r),
@@ -3152,7 +2911,6 @@ mixin _BookingConfirmationView
                                                                                                 (addPetPreferences == false && addLuggagePreferences == false)
                                                                                                     ? Container()
                                                                                                     : Icon(
-                                                                                                        // Icons.arrow_forward_ios,
                                                                                                         Icons.edit,
                                                                                                         size: media.width * 0.03,
                                                                                                         color: Colors.grey,
@@ -3199,13 +2957,11 @@ mixin _BookingConfirmationView
                                                                                                       if (choosenVehicle != null) {
                                                                                                         setState(() {
                                                                                                           choosenDateTime = DateTime.now().add(Duration(minutes: int.parse(userDetails['user_can_make_a_ride_after_x_miniutes'])));
-                                                                                                          // _dateTimePicker = true;
                                                                                                         });
 
                                                                                                         showModalBottomSheet(
                                                                                                             context: context,
                                                                                                             isScrollControlled: true,
-                                                                                                            // isDismissible: false,
                                                                                                             builder: (context) {
                                                                                                               return RideLaterBottomSheet(
                                                                                                                 type: widget.type,
@@ -3224,13 +2980,8 @@ mixin _BookingConfirmationView
                                                                                                             color: Colors.blue[200],
                                                                                                             borderRadius: BorderRadius.circular(20.r),
                                                                                                           ),
-                                                                                                          //   backgroundColor: Colors.blue[200],
-                                                                                                          //    height: media.width * 0.12,
-                                                                                                          //  width: media.width * 0.12,
-                                                                                                          //   decoration: BoxDecoration(color: page, borderRadius: BorderRadius.circular(media.width * 0.02), border: Border.all(color: textColor)),
                                                                                                           padding: EdgeInsets.symmetric(
                                                                                                             vertical: 10.h,
-                                                                                                            //horizontal: media.width * 0.01,
                                                                                                           ),
                                                                                                           child: (confirmRideLater == false)
                                                                                                               ? Row(
@@ -3289,11 +3040,6 @@ mixin _BookingConfirmationView
                                                                                                       children: [
                                                                                                         InkWell(
                                                                                                           onTap: () {
-                                                                                                            // setState(() {
-                                                                                                            //   addCoupon =
-                                                                                                            //       true;
-                                                                                                            // });
-
                                                                                                             showModalBottomSheet(
                                                                                                                 context: context,
                                                                                                                 isScrollControlled: true,
@@ -3306,8 +3052,6 @@ mixin _BookingConfirmationView
                                                                                                           child: Container(
                                                                                                             padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 10.w),
                                                                                                             margin: EdgeInsets.symmetric(horizontal: media.width * 0.05),
-                                                                                                            //  height: media.width * 0.106,
-                                                                                                            //width: media.width * 0.4,
                                                                                                             decoration: BoxDecoration(
                                                                                                               color: Colors.blue[200],
                                                                                                               borderRadius: BorderRadius.circular(20.r),
@@ -3326,8 +3070,6 @@ mixin _BookingConfirmationView
                                                                                                             ),
                                                                                                           ),
                                                                                                         ),
-
-                                                                                                        //choses data
                                                                                                       ],
                                                                                                     )
                                                                                                   : Container(),
@@ -3339,13 +3081,6 @@ mixin _BookingConfirmationView
                                                                                     ),
                                                                                     Button(
                                                                                         borcolor: Colors.black,
-                                                                                        // width: ((userDetails['show_ride_later_feature'] == true))
-                                                                                        //     ? ((widget.type == null) ? (etaDetails[choosenVehicle]['enable_bidding'] == null || etaDetails[choosenVehicle]['enable_bidding'] == false) : true) && !isOutStation
-                                                                                        //         ? (confirmRideLater == false)
-                                                                                        //             ? media.width * 0.75
-                                                                                        //             : media.width * 0.68
-                                                                                        //         : media.width * 0.89
-                                                                                        //     : media.width * 0.89,
                                                                                         onTap: () async {
                                                                                           if ((widget.type == 2) || (((rentalOption.isEmpty && (etaDetails[choosenVehicle]['user_wallet_balance'] >= etaDetails[choosenVehicle]['total'] && etaDetails[choosenVehicle]['has_discount'] == false) || (rentalOption.isEmpty && etaDetails[choosenVehicle]['has_discount'] == true && etaDetails[choosenVehicle]['user_wallet_balance'] >= etaDetails[choosenVehicle]['discounted_totel'])) || (rentalOption.isEmpty && etaDetails[choosenVehicle]['payment_type'].toString().split(',').toList()[payingVia] != 'wallet')) || ((rentalOption.isNotEmpty && (etaDetails[0]['user_wallet_balance'] >= rentalOption[choosenVehicle]['fare_amount']) && rentalOption[choosenVehicle]['has_discount'] == false) || (rentalOption.isNotEmpty && rentalOption[choosenVehicle]['has_discount'] == true && etaDetails[0]['user_wallet_balance'] >= rentalOption[choosenVehicle]['discounted_totel']) || rentalOption.isNotEmpty && rentalOption[choosenVehicle]['payment_type'].toString().split(',').toList()[payingVia] != 'wallet'))) {
                                                                                             if (((widget.type == null) ? (etaDetails[choosenVehicle]['enable_bidding'] == true) : false) || isOutStation) {
@@ -3354,7 +3089,6 @@ mixin _BookingConfirmationView
                                                                                                 if (isOneWayTrip && nofromdate) {
                                                                                                   setState(() {
                                                                                                     _showInfoInt = choosenVehicle;
-                                                                                                    // _showInfo = true;
                                                                                                     showModalBottomSheet(
                                                                                                         context: context,
                                                                                                         isScrollControlled: true,
@@ -3395,7 +3129,6 @@ mixin _BookingConfirmationView
                                                                                                     print('isOutStation13');
                                                                                                     setState(() {
                                                                                                       _showInfoInt = choosenVehicle;
-                                                                                                      // _showInfo = true;
                                                                                                       showModalBottomSheet(
                                                                                                           context: context,
                                                                                                           isScrollControlled: true,
@@ -3417,7 +3150,6 @@ mixin _BookingConfirmationView
                                                                                                 print('isOutStation14');
                                                                                                 setState(() {
                                                                                                   _showInfoInt = choosenVehicle;
-                                                                                                  // _showInfo = true;
                                                                                                 });
                                                                                                 showModalBottomSheet(
                                                                                                     context: context,
@@ -3450,8 +3182,6 @@ mixin _BookingConfirmationView
                                                                                                       });
                                                                                                       if (choosenTransportType == 0) {
                                                                                                         print('createRequestLater 1234');
-
-// Debug print: Print the JSON payload being sent
                                                                                                         var jsonPayload = (addressList.where((element) => element.type == 'drop').isNotEmpty)
                                                                                                             ? {
                                                                                                                 'pick_lat': addressList.firstWhere((e) => e.type == 'pickup').latlng.latitude,
@@ -3473,7 +3203,6 @@ mixin _BookingConfirmationView
                                                                                                                 'stops': jsonEncode(dropStopList),
                                                                                                                 'request_eta_amount': etaDetails[choosenVehicle]['total'],
                                                                                                                 'is_pet_available': (addPetPreferences == false) ? false : true,
-                                                                                                                // "rental_pack_id" : etaDetails[rentalChoosenOption]['id'],
                                                                                                                 'is_luggage_available': (addLuggagePreferences == false) ? false : true
                                                                                                               }
                                                                                                             : {
@@ -3491,7 +3220,6 @@ mixin _BookingConfirmationView
                                                                                                                 'is_later': 1,
                                                                                                                 'request_eta_amount': etaDetails[choosenVehicle]['total'],
                                                                                                                 'is_pet_available': (addPetPreferences == false) ? false : true,
-                                                                                                                // "rental_pack_id" : etaDetails[rentalChoosenOption]['id'],
                                                                                                                 'is_luggage_available': (addLuggagePreferences == false) ? false : true
                                                                                                               };
 
@@ -4257,190 +3985,17 @@ mixin _BookingConfirmationView
                                               ))
                                           : Container()
                                       : Container(),
-
-                                  //no driver found
-                                  (noDriverFound == true)
-                                      ? BookingStatusSheet(
-                                          title: languages[choosenLanguage]
-                                              ['text_nodriver'],
-                                          actionLabel:
-                                              languages[choosenLanguage]
-                                                  ['text_tryagain'],
-                                          icon: Icons.local_taxi_rounded,
-                                          onAction: () async {
-                                            setState(() {
-                                              noDriverFound = false;
-                                            });
-                                          },
-                                        )
-                                      : Container(),
-
-                                  //internal server error
-                                  (tripReqError == true)
-                                      ? BookingStatusSheet(
-                                          title: tripError,
-                                          actionLabel:
-                                              languages[choosenLanguage]
-                                                  ['text_tryanother'],
-                                          icon: Icons.sync_problem_rounded,
-                                          onAction: () async {
-                                            setState(() {
-                                              tripReqError = false;
-                                            });
-                                          },
-                                        )
-                                      : Container(),
-
-                                  //service not available
-
-                                  (serviceNotAvailable)
-                                      ? BookingStatusSheet(
-                                          title: languages[choosenLanguage]
-                                              ['text_no_service'],
-                                          actionLabel:
-                                              languages[choosenLanguage]
-                                                  ['text_tryagain'],
-                                          icon: Icons.location_off_rounded,
-                                          accentColor: const Color(0xffF59E0B),
-                                          onAction: () async {
-                                            setState(() {
-                                              serviceNotAvailable = false;
-                                              isLoading = true;
-                                            });
-
-                                            final val = widget.type != 1
-                                                ? await etaRequest(
-                                                    outstation: isOutStation)
-                                                : await rentalEta();
-                                            if (!mounted) return;
-                                            if (val == 'logout') {
-                                              navigateLogout();
-                                              return;
-                                            }
-
-                                            setState(() {
-                                              isLoading = false;
-                                              dropConfirmed = val == true &&
-                                                  etaDetails.isNotEmpty;
-                                              serviceNotAvailable =
-                                                  !dropConfirmed;
-                                            });
-                                          },
-                                        )
-                                      : Container(),
-
-                                  // low wallet balance
-                                  (islowwalletbalance == true)
-                                      ? BookingStatusSheet(
-                                          title: languages[choosenLanguage]
-                                              ['text_wallet_balance_low'],
-                                          actionLabel:
-                                              languages[choosenLanguage]
-                                                  ['text_ok'],
-                                          icon: Icons
-                                              .account_balance_wallet_rounded,
-                                          accentColor: const Color(0xffF59E0B),
-                                          onAction: () async {
-                                            setState(() {
-                                              islowwalletbalance = false;
-                                            });
-                                          },
-                                        )
-                                      : Container(),
-                                  //choose payment method
-                                  (_choosePayment == true)
-                                      ? PaymentMethodSheet(
-                                          methods: (widget.type != 1
-                                                  ? etaDetails[choosenVehicle]
-                                                      ['payment_type']
-                                                  : rentalOption[choosenVehicle]
-                                                      ['payment_type'])
-                                              .toString()
-                                              .split(',')
-                                              .where((method) =>
-                                                  method.trim().isNotEmpty)
-                                              .map((method) => method.trim())
-                                              .toList(),
-                                          selectedIndex: payingVia,
-                                          copy: Map<String, dynamic>.from(
-                                              languages[choosenLanguage]),
-                                          promoController: promoKey,
-                                          promoStatus: promoStatus is int
-                                              ? promoStatus as int
-                                              : null,
-                                          onClose: () {
-                                            setState(() {
-                                              _choosePayment = false;
-                                              promoKey.clear();
-                                              promoCode = '';
-                                            });
-                                          },
-                                          onMethodSelected: (index) {
-                                            setState(() {
-                                              payingVia = index;
-                                            });
-                                          },
-                                          onPromoChanged: (value) {
-                                            setState(() {
-                                              promoCode = value;
-                                            });
-                                          },
-                                          onPromoRemoved: () async {
-                                            setState(() {
-                                              isLoading = true;
-                                              promoStatus = null;
-                                              promoCode = '';
-                                              promoKey.clear();
-                                            });
-                                            final val = widget.type != 1
-                                                ? await etaRequest(
-                                                    outstation: isOutStation)
-                                                : await rentalEta();
-                                            if (!mounted) return;
-                                            if (val == 'logout') {
-                                              navigateLogout();
-                                              return;
-                                            }
-                                            setState(() {
-                                              isLoading = false;
-                                            });
-                                          },
-                                          onConfirm: () async {
-                                            if (promoCode.trim().isEmpty) {
-                                              setState(() {
-                                                _choosePayment = false;
-                                              });
-                                              return;
-                                            }
-                                            setState(() {
-                                              isLoading = true;
-                                            });
-                                            final val = widget.type != 1
-                                                ? await etaRequestWithPromo(
-                                                    outstation: isOutStation)
-                                                : await rentalRequestWithPromo();
-                                            if (!mounted) return;
-                                            if (val == 'logout') {
-                                              navigateLogout();
-                                              return;
-                                            }
-                                            setState(() {
-                                              isLoading = false;
-                                            });
-                                          },
-                                        )
-                                      : Container(),
-
+                                  buildNoDriverOverlay(),
+                                  buildTripErrorOverlay(),
+                                  buildServiceUnavailableOverlay(),
+                                  buildLowWalletOverlay(),
+                                  buildPaymentMethodOverlay(),
                                   (userRequestData.isNotEmpty &&
-                                              userRequestData['is_later'] ==
-                                                  null &&
-                                              userRequestData['accepted_at'] ==
+                                          userRequestData['accepted_at'] ==
+                                              null &&
+                                          (userRequestData['is_later'] ==
                                                   null ||
-                                          userRequestData.isNotEmpty &&
-                                              userRequestData['is_later'] ==
-                                                  0 &&
-                                              userRequestData['accepted_at'] ==
-                                                  null)
+                                              userRequestData['is_later'] == 0))
                                       ? userRequestData.isNotEmpty &&
                                               userRequestData['is_bid_ride'] ==
                                                   1
@@ -4458,8 +4013,6 @@ mixin _BookingConfirmationView
                                                       AsyncSnapshot event) {
                                                     List driverList = [];
                                                     Map rideList = {};
-
-                                                    // rideList = event.data!.snapshot;
                                                     if (event.data != null) {
                                                       DataSnapshot snapshots =
                                                           event.data!.snapshot;
@@ -4539,7 +4092,6 @@ mixin _BookingConfirmationView
                                                             ? media.height * 1
                                                             : media.width *
                                                                 0.72,
-                                                        // height:(driverList.isNotEmpty) ? media.height*1 : media.width*1,
                                                         decoration:
                                                             BoxDecoration(
                                                           borderRadius:
@@ -4641,7 +4193,6 @@ mixin _BookingConfirmationView
                                                                               0.05,
                                                                           media.width *
                                                                               0.05),
-                                                                      // color: Colors.transparent.withOpacity(0.4),
                                                                       child:
                                                                           SingleChildScrollView(
                                                                         child: Column(
@@ -4662,13 +4213,9 @@ mixin _BookingConfirmationView
                                                                                             }
                                                                                             return Container(
                                                                                               margin: EdgeInsets.only(bottom: media.width * 0.025),
-                                                                                              decoration:
-                                                                                                  BoxDecoration(
-                                                                                                      // borderRadius: BorderRadius.circular(10),
-                                                                                                      color: page,
-                                                                                                      boxShadow: [
-                                                                                                    BoxShadow(blurRadius: 2, spreadRadius: 2, color: Colors.black.withOpacity(0.2))
-                                                                                                  ]),
+                                                                                              decoration: BoxDecoration(color: page, boxShadow: [
+                                                                                                BoxShadow(blurRadius: 2, spreadRadius: 2, color: Colors.black.withOpacity(0.2))
+                                                                                              ]),
                                                                                               child: Column(
                                                                                                 crossAxisAlignment: CrossAxisAlignment.start,
                                                                                                 children: [
@@ -4773,7 +4320,6 @@ mixin _BookingConfirmationView
                                                                                                               borcolor: online,
                                                                                                               textcolor: page,
                                                                                                             ),
-                                                                                                            // SizedBox(height: media.width*0.025,),
                                                                                                             Button(
                                                                                                               onTap: () async {
                                                                                                                 setState(() {
@@ -4875,32 +4421,15 @@ mixin _BookingConfirmationView
                                                                             children: [
                                                                               InkWell(
                                                                                 onTap: () {
-                                                                                  if (updateAmount.text.isNotEmpty &&
-                                                                                      (userRequestData['bidding_low_percentage'] == 0 ||
-                                                                                          (double.parse(updateAmount.text.toString()) -
-                                                                                                  // 10
-                                                                                                  ((userDetails['bidding_amount_increase_or_decrease'].toString().contains('.')) ? double.parse(userDetails['bidding_amount_increase_or_decrease'].toString()) : int.parse(userDetails['bidding_amount_increase_or_decrease'].toString()))) >=
-                                                                                              (double.parse(userRequestData['request_eta_amount'].toString()) - ((double.parse(userRequestData['bidding_low_percentage'].toString()) / 100) * double.parse(userRequestData['request_eta_amount'].toString()))))) {
+                                                                                  if (updateAmount.text.isNotEmpty && (userRequestData['bidding_low_percentage'] == 0 || (double.parse(updateAmount.text.toString()) - ((userDetails['bidding_amount_increase_or_decrease'].toString().contains('.')) ? double.parse(userDetails['bidding_amount_increase_or_decrease'].toString()) : int.parse(userDetails['bidding_amount_increase_or_decrease'].toString()))) >= (double.parse(userRequestData['request_eta_amount'].toString()) - ((double.parse(userRequestData['bidding_low_percentage'].toString()) / 100) * double.parse(userRequestData['request_eta_amount'].toString()))))) {
                                                                                     setState(() {
                                                                                       updateAmount.text = (updateAmount.text.isEmpty)
                                                                                           ? (rideList['price'].toString().contains('.'))
-                                                                                              ? (double.parse(rideList['price'].toString()) -
-                                                                                                      // 10
-                                                                                                      ((userDetails['bidding_amount_increase_or_decrease'].toString().contains('.')) ? double.parse(userDetails['bidding_amount_increase_or_decrease'].toString()) : int.parse(userDetails['bidding_amount_increase_or_decrease'].toString())))
-                                                                                                  .toStringAsFixed(2)
-                                                                                              : (int.parse(rideList['price'].toString()) -
-                                                                                                      // 10
-                                                                                                      ((userDetails['bidding_amount_increase_or_decrease'].toString().contains('.')) ? double.parse(userDetails['bidding_amount_increase_or_decrease'].toString()) : int.parse(userDetails['bidding_amount_increase_or_decrease'].toString())))
-                                                                                                  .toString()
+                                                                                              ? (double.parse(rideList['price'].toString()) - ((userDetails['bidding_amount_increase_or_decrease'].toString().contains('.')) ? double.parse(userDetails['bidding_amount_increase_or_decrease'].toString()) : int.parse(userDetails['bidding_amount_increase_or_decrease'].toString()))).toStringAsFixed(2)
+                                                                                              : (int.parse(rideList['price'].toString()) - ((userDetails['bidding_amount_increase_or_decrease'].toString().contains('.')) ? double.parse(userDetails['bidding_amount_increase_or_decrease'].toString()) : int.parse(userDetails['bidding_amount_increase_or_decrease'].toString()))).toString()
                                                                                           : (updateAmount.text.toString().contains('.'))
-                                                                                              ? (double.parse(updateAmount.text.toString()) -
-                                                                                                      // 10
-                                                                                                      ((userDetails['bidding_amount_increase_or_decrease'].toString().contains('.')) ? double.parse(userDetails['bidding_amount_increase_or_decrease'].toString()) : int.parse(userDetails['bidding_amount_increase_or_decrease'].toString())))
-                                                                                                  .toStringAsFixed(2)
-                                                                                              : (int.parse(updateAmount.text.toString()) -
-                                                                                                      // 10
-                                                                                                      ((userDetails['bidding_amount_increase_or_decrease'].toString().contains('.')) ? double.parse(userDetails['bidding_amount_increase_or_decrease'].toString()) : int.parse(userDetails['bidding_amount_increase_or_decrease'].toString())))
-                                                                                                  .toString();
+                                                                                              ? (double.parse(updateAmount.text.toString()) - ((userDetails['bidding_amount_increase_or_decrease'].toString().contains('.')) ? double.parse(userDetails['bidding_amount_increase_or_decrease'].toString()) : int.parse(userDetails['bidding_amount_increase_or_decrease'].toString()))).toStringAsFixed(2)
+                                                                                              : (int.parse(updateAmount.text.toString()) - ((userDetails['bidding_amount_increase_or_decrease'].toString().contains('.')) ? double.parse(userDetails['bidding_amount_increase_or_decrease'].toString()) : int.parse(userDetails['bidding_amount_increase_or_decrease'].toString()))).toString();
                                                                                     });
                                                                                   }
                                                                                 },
@@ -4908,12 +4437,7 @@ mixin _BookingConfirmationView
                                                                                   width: media.width * 0.2,
                                                                                   alignment: Alignment.center,
                                                                                   decoration: BoxDecoration(
-                                                                                      color: (updateAmount.text.isNotEmpty &&
-                                                                                              (userRequestData['bidding_low_percentage'] == 0 ||
-                                                                                                  (double.parse(updateAmount.text.toString()) -
-                                                                                                          // 10
-                                                                                                          ((userDetails['bidding_amount_increase_or_decrease'].toString().contains('.')) ? double.parse(userDetails['bidding_amount_increase_or_decrease'].toString()) : int.parse(userDetails['bidding_amount_increase_or_decrease'].toString()))) >=
-                                                                                                      (double.parse(userRequestData['request_eta_amount'].toString()) - ((double.parse(userRequestData['bidding_low_percentage'].toString()) / 100) * double.parse(userRequestData['request_eta_amount'].toString())))))
+                                                                                      color: (updateAmount.text.isNotEmpty && (userRequestData['bidding_low_percentage'] == 0 || (double.parse(updateAmount.text.toString()) - ((userDetails['bidding_amount_increase_or_decrease'].toString().contains('.')) ? double.parse(userDetails['bidding_amount_increase_or_decrease'].toString()) : int.parse(userDetails['bidding_amount_increase_or_decrease'].toString()))) >= (double.parse(userRequestData['request_eta_amount'].toString()) - ((double.parse(userRequestData['bidding_low_percentage'].toString()) / 100) * double.parse(userRequestData['request_eta_amount'].toString())))))
                                                                                           ? (isDarkTheme)
                                                                                               ? Colors.white
                                                                                               : Colors.black
@@ -4921,7 +4445,6 @@ mixin _BookingConfirmationView
                                                                                       borderRadius: BorderRadius.circular(media.width * 0.04)),
                                                                                   padding: EdgeInsets.all(media.width * 0.025),
                                                                                   child: Text(
-                                                                                    // '-10',
                                                                                     (userDetails['bidding_amount_increase_or_decrease'].toString().contains('.')) ? '-${double.parse(userDetails['bidding_amount_increase_or_decrease'].toString())}' : '-${int.parse(userDetails['bidding_amount_increase_or_decrease'].toString())}',
                                                                                     style: GoogleFonts.notoSans(fontSize: media.width * fourteen, fontWeight: FontWeight.w600, color: (isDarkTheme) ? Colors.black : Colors.white),
                                                                                   ),
@@ -4947,21 +4470,11 @@ mixin _BookingConfirmationView
                                                                               InkWell(
                                                                                 onTap: () {
                                                                                   setState(() {
-                                                                                    if (userRequestData['bidding_high_percentage'] == 0 ||
-                                                                                        (double.parse(updateAmount.text.toString()) +
-                                                                                                // 10
-                                                                                                ((userDetails['bidding_amount_increase_or_decrease'].toString().contains('.')) ? double.parse(userDetails['bidding_amount_increase_or_decrease'].toString()) : int.parse(userDetails['bidding_amount_increase_or_decrease'].toString()))) <=
-                                                                                            (double.parse(userRequestData['request_eta_amount'].toString()) + ((double.parse(userRequestData['bidding_high_percentage'].toString()) / 100) * double.parse(userRequestData['request_eta_amount'].toString())))) {
+                                                                                    if (userRequestData['bidding_high_percentage'] == 0 || (double.parse(updateAmount.text.toString()) + ((userDetails['bidding_amount_increase_or_decrease'].toString().contains('.')) ? double.parse(userDetails['bidding_amount_increase_or_decrease'].toString()) : int.parse(userDetails['bidding_amount_increase_or_decrease'].toString()))) <= (double.parse(userRequestData['request_eta_amount'].toString()) + ((double.parse(userRequestData['bidding_high_percentage'].toString()) / 100) * double.parse(userRequestData['request_eta_amount'].toString())))) {
                                                                                       updateAmount.text = (updateAmount.text.isEmpty)
                                                                                           ? (rideList['price'].toString().contains('.'))
-                                                                                              ? (double.parse(rideList['price'].toString()) +
-                                                                                                      // 10
-                                                                                                      ((userDetails['bidding_amount_increase_or_decrease'].toString().contains('.')) ? double.parse(userDetails['bidding_amount_increase_or_decrease'].toString()) : int.parse(userDetails['bidding_amount_increase_or_decrease'].toString())))
-                                                                                                  .toStringAsFixed(2)
-                                                                                              : (int.parse(rideList['price'].toString()) +
-                                                                                                      // 10
-                                                                                                      ((userDetails['bidding_amount_increase_or_decrease'].toString().contains('.')) ? double.parse(userDetails['bidding_amount_increase_or_decrease'].toString()) : int.parse(userDetails['bidding_amount_increase_or_decrease'].toString())))
-                                                                                                  .toString()
+                                                                                              ? (double.parse(rideList['price'].toString()) + ((userDetails['bidding_amount_increase_or_decrease'].toString().contains('.')) ? double.parse(userDetails['bidding_amount_increase_or_decrease'].toString()) : int.parse(userDetails['bidding_amount_increase_or_decrease'].toString()))).toStringAsFixed(2)
+                                                                                              : (int.parse(rideList['price'].toString()) + ((userDetails['bidding_amount_increase_or_decrease'].toString().contains('.')) ? double.parse(userDetails['bidding_amount_increase_or_decrease'].toString()) : int.parse(userDetails['bidding_amount_increase_or_decrease'].toString()))).toString()
                                                                                           : (updateAmount.text.toString().contains('.'))
                                                                                               ? (double.parse(updateAmount.text.toString()) + ((userDetails['bidding_amount_increase_or_decrease'].toString().contains('.')) ? double.parse(userDetails['bidding_amount_increase_or_decrease'].toString()) : int.parse(userDetails['bidding_amount_increase_or_decrease'].toString()))).toStringAsFixed(2)
                                                                                               : (int.parse(updateAmount.text.toString()) + ((userDetails['bidding_amount_increase_or_decrease'].toString().contains('.')) ? double.parse(userDetails['bidding_amount_increase_or_decrease'].toString()) : int.parse(userDetails['bidding_amount_increase_or_decrease'].toString()))).toString();
@@ -4981,7 +4494,6 @@ mixin _BookingConfirmationView
                                                                                   padding: EdgeInsets.all(media.width * 0.025),
                                                                                   child: Text(
                                                                                     (userDetails['bidding_amount_increase_or_decrease'].toString().contains('.')) ? '+${double.parse(userDetails['bidding_amount_increase_or_decrease'].toString())}' : '+${int.parse(userDetails['bidding_amount_increase_or_decrease'].toString())}',
-                                                                                    // '+10',
                                                                                     style: GoogleFonts.notoSans(fontSize: media.width * fourteen, fontWeight: FontWeight.w600, color: (isDarkTheme) ? Colors.black : Colors.white),
                                                                                   ),
                                                                                 ),
@@ -5092,7 +4604,6 @@ mixin _BookingConfirmationView
                                                       size: media.width *
                                                           fourteen,
                                                       color: Colors.grey,
-                                                      // textAlign: TextAlign.center,
                                                     ),
                                                     SizedBox(
                                                       height:
@@ -5586,7 +5097,6 @@ mixin _BookingConfirmationView
                                                                         ),
                                                                       ],
                                                                     ),
-
                                                                     Row(
                                                                       children: [
                                                                         Expanded(
@@ -5601,14 +5111,6 @@ mixin _BookingConfirmationView
                                                                         )),
                                                                       ],
                                                                     ),
-//                                                                     Text(
-//   userRequestData['data']['user_completed_rides_count'].toString(),
-//   style: GoogleFonts.notoSans(
-//     fontSize: media.width * fourteen,
-//     fontWeight: FontWeight.w500,
-//     color: Colors.black,
-//   ),
-// ),
                                                                   ],
                                                                 ),
                                                               ),
@@ -5963,15 +5465,11 @@ mixin _BookingConfirmationView
                                                                               height: media.width * 0.05,
                                                                               width: media.width * 0.05,
                                                                               alignment: Alignment.center,
-                                                                              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.green.withOpacity(0.4)
-                                                                                  // color: online.withOpacity(0.4)
-                                                                                  ),
+                                                                              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.green.withOpacity(0.4)),
                                                                               child: Container(
                                                                                 height: media.width * 0.025,
                                                                                 width: media.width * 0.025,
-                                                                                decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.green.withOpacity(0.4)
-                                                                                    // color: online
-                                                                                    ),
+                                                                                decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.green.withOpacity(0.4)),
                                                                               ),
                                                                             ),
                                                                             SizedBox(
@@ -5990,7 +5488,6 @@ mixin _BookingConfirmationView
                                                                                   text: userRequestData['pick_address'],
                                                                                   size: media.width * twelve,
                                                                                   color: greyText,
-                                                                                  // maxLines: 1,
                                                                                 ),
                                                                               ],
                                                                             )),
@@ -6065,9 +5562,7 @@ mixin _BookingConfirmationView
                                                                               height: media.width * 0.05,
                                                                               width: media.width * 0.05,
                                                                               alignment: Alignment.center,
-                                                                              child: const Icon(Icons.location_on,
-                                                                                  // color: verifyDeclined,
-                                                                                  color: Color(0xffF52D56)),
+                                                                              child: const Icon(Icons.location_on, color: Color(0xffF52D56)),
                                                                             ),
                                                                             SizedBox(
                                                                               width: media.width * 0.03,
@@ -6085,7 +5580,6 @@ mixin _BookingConfirmationView
                                                                                   text: userRequestData['drop_address'],
                                                                                   size: media.width * twelve,
                                                                                   color: greyText,
-                                                                                  // maxLines: 1,
                                                                                 ),
                                                                               ],
                                                                             )),
@@ -6123,20 +5617,15 @@ mixin _BookingConfirmationView
                                                                               Alignment.center,
                                                                           decoration: BoxDecoration(
                                                                               shape: BoxShape.circle,
-                                                                              color: Colors.green.withOpacity(0.4)
-                                                                              // color: online.withOpacity(0.4)
-                                                                              ),
+                                                                              color: Colors.green.withOpacity(0.4)),
                                                                           child:
                                                                               Container(
                                                                             height:
                                                                                 media.width * 0.025,
                                                                             width:
                                                                                 media.width * 0.025,
-                                                                            decoration: BoxDecoration(
-                                                                                shape: BoxShape.circle,
-                                                                                color: Colors.green.withOpacity(0.4)
-                                                                                // color: online
-                                                                                ),
+                                                                            decoration:
+                                                                                BoxDecoration(shape: BoxShape.circle, color: Colors.green.withOpacity(0.4)),
                                                                           ),
                                                                         ),
                                                                         SizedBox(
@@ -6158,7 +5647,6 @@ mixin _BookingConfirmationView
                                                                               text: userRequestData['pick_address'],
                                                                               size: media.width * twelve,
                                                                               color: greyText,
-                                                                              // maxLines: 1,
                                                                             ),
                                                                           ],
                                                                         )),
@@ -6395,8 +5883,6 @@ mixin _BookingConfirmationView
                                                 )),
                                           ))
                                       : Container(),
-
-                                  // cancel request
                                   (_cancelling == true)
                                       ? CancellationSheet(
                                           reasons: cancelReasonsList
@@ -6432,8 +5918,6 @@ mixin _BookingConfirmationView
                                               _confirmCancellation,
                                         )
                                       : Container(),
-
-                                  //date picker for ride later
                                   (_dateTimePicker)
                                       ? RideDatePickerOverlay(
                                           minimumDate: DateTime.now().add(
@@ -6465,7 +5949,6 @@ mixin _BookingConfirmationView
                                           },
                                         )
                                       : const SizedBox.shrink(),
-
                                   (_isDateTimebottom >= 0)
                                       ? RideScheduleSheet(
                                           height: _dateTimeHeight,
@@ -6560,8 +6043,6 @@ mixin _BookingConfirmationView
                                           },
                                         )
                                       : const SizedBox.shrink(),
-
-                                  //sos popup
                                   (showSos)
                                       ? SosSheet(
                                           copy: languages[choosenLanguage],
@@ -6587,7 +6068,6 @@ mixin _BookingConfirmationView
                                           onCall: makingPhoneCall,
                                         )
                                       : const SizedBox.shrink(),
-
                                   (_locationDenied)
                                       ? LocationPermissionSheet(
                                           message: languages[choosenLanguage]
@@ -6616,8 +6096,6 @@ mixin _BookingConfirmationView
                                           },
                                         )
                                       : const SizedBox.shrink(),
-
-                                  //displaying address details for edit
                                   ((!_chooseGoodsType &&
                                               userRequestData.isEmpty &&
                                               addressList.isNotEmpty &&
@@ -6641,9 +6119,6 @@ mixin _BookingConfirmationView
                                           onConfirm: _confirmTripDetails,
                                         )
                                       : const SizedBox.shrink(),
-
-                                  //edit pick user contact
-
                                   (_editUserDetails)
                                       ? RiderContactSheet(
                                           copy: languages[choosenLanguage],
@@ -6690,7 +6165,6 @@ mixin _BookingConfirmationView
                                           },
                                         )
                                       : const SizedBox.shrink(),
-
                                   if (_cancel)
                                     BookingStatusSheet(
                                       title: languages[choosenLanguage]
@@ -6723,8 +6197,6 @@ mixin _BookingConfirmationView
                                         });
                                       },
                                     ),
-
-                                  // driver cancelled request
                                   (requestCancelledByDriver == true)
                                       ? BookingStatusSheet(
                                           title: languages[choosenLanguage]
@@ -6753,14 +6225,10 @@ mixin _BookingConfirmationView
                                           },
                                         )
                                       : Container(),
-
-                                  //loader
                                   (isLoading == true)
                                       ? const Positioned(
                                           top: 0, child: Loading())
                                       : Container(),
-
-                                  //no internet
                                   (internet == false)
                                       ? Positioned(
                                           top: 0,
@@ -6772,244 +6240,9 @@ mixin _BookingConfirmationView
                                             },
                                           ))
                                       : Container(),
-
-                                  //pick drop marker
-                                  Positioned(
-                                    top: media.height * 1.6,
-                                    child: RepaintBoundary(
-                                        key: iconKey,
-                                        child: Column(
-                                          children: [
-                                            Container(
-                                                decoration: BoxDecoration(
-                                                    gradient: LinearGradient(
-                                                        colors: [
-                                                          (isDarkTheme == true)
-                                                              ? const Color(
-                                                                  0xff000000)
-                                                              : const Color(
-                                                                  0xffFFFFFF),
-                                                          (isDarkTheme == true)
-                                                              ? const Color(
-                                                                  0xff808080)
-                                                              : const Color(
-                                                                  0xffEFEFEF),
-                                                        ],
-                                                        begin:
-                                                            Alignment.topCenter,
-                                                        end: Alignment
-                                                            .bottomCenter),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            5)),
-                                                width: (platform ==
-                                                        TargetPlatform.android)
-                                                    ? media.width * 0.4
-                                                    : media.width * 0.5,
-                                                padding:
-                                                    const EdgeInsets.all(5),
-                                                child: (userRequestData
-                                                        .isNotEmpty)
-                                                    ? Text(
-                                                        userRequestData[
-                                                            'pick_address'],
-                                                        maxLines: 1,
-                                                        overflow:
-                                                            TextOverflow.fade,
-                                                        softWrap: false,
-                                                        style: GoogleFonts.notoSans(
-                                                            color: textColor,
-                                                            fontSize: (platform ==
-                                                                    TargetPlatform
-                                                                        .android)
-                                                                ? media.width *
-                                                                    twelve
-                                                                : media.width *
-                                                                    sixteen),
-                                                      )
-                                                    : (addressList
-                                                            .where((element) =>
-                                                                element.type ==
-                                                                'pickup')
-                                                            .isNotEmpty)
-                                                        ? Text(
-                                                            addressList
-                                                                .firstWhere(
-                                                                    (element) =>
-                                                                        element
-                                                                            .type ==
-                                                                        'pickup')
-                                                                .address,
-                                                            maxLines: 1,
-                                                            overflow:
-                                                                TextOverflow
-                                                                    .fade,
-                                                            softWrap: false,
-                                                            style: GoogleFonts.notoSans(
-                                                                color:
-                                                                    textColor,
-                                                                fontSize: (platform ==
-                                                                        TargetPlatform
-                                                                            .android)
-                                                                    ? media.width *
-                                                                        twelve
-                                                                    : media.width *
-                                                                        sixteen),
-                                                          )
-                                                        : Container()),
-                                            const SizedBox(
-                                              height: 10,
-                                            ),
-                                            Container(
-                                              decoration: const BoxDecoration(
-                                                  shape: BoxShape.circle,
-                                                  image: DecorationImage(
-                                                      image: AssetImage(
-                                                          'assets/images/pick_icon.png'),
-                                                      fit: BoxFit.contain)),
-                                              height: (platform ==
-                                                      TargetPlatform.android)
-                                                  ? media.width * 0.07
-                                                  : media.width * 0.12,
-                                              width: (platform ==
-                                                      TargetPlatform.android)
-                                                  ? media.width * 0.07
-                                                  : media.width * 0.12,
-                                            ),
-                                          ],
-                                        )),
-                                  ),
-                                  (widget.type != 1)
-                                      ? Positioned(
-                                          top: media.height * 2,
-                                          child: Column(
-                                            children: addressList
-                                                .asMap()
-                                                .map((i, value) {
-                                                  iconDropKeys[i] = GlobalKey();
-                                                  return MapEntry(
-                                                    i,
-                                                    (i > 0)
-                                                        ? RepaintBoundary(
-                                                            key:
-                                                                iconDropKeys[i],
-                                                            child: Column(
-                                                              children: [
-                                                                (i ==
-                                                                        addressList.length -
-                                                                            1)
-                                                                    ? Column(
-                                                                        children: [
-                                                                          Container(
-                                                                            decoration: BoxDecoration(
-                                                                                gradient: LinearGradient(colors: [
-                                                                                  (isDarkTheme == true) ? const Color(0xff000000) : const Color(0xffFFFFFF),
-                                                                                  (isDarkTheme == true) ? const Color(0xff808080) : const Color(0xffEFEFEF),
-                                                                                ], begin: Alignment.topCenter, end: Alignment.bottomCenter),
-                                                                                borderRadius: BorderRadius.circular(5)),
-                                                                            width: (platform == TargetPlatform.android)
-                                                                                ? media.width * 0.5
-                                                                                : media.width * 0.7,
-                                                                            padding:
-                                                                                const EdgeInsets.all(5),
-                                                                            child: (addressList[i].address.isNotEmpty)
-                                                                                ? Text(
-                                                                                    addressList[i].address,
-                                                                                    maxLines: 1,
-                                                                                    overflow: TextOverflow.fade,
-                                                                                    softWrap: false,
-                                                                                    style: GoogleFonts.notoSans(fontSize: (platform == TargetPlatform.android) ? media.width * twelve : media.width * sixteen, color: textColor),
-                                                                                  )
-                                                                                : Container(),
-                                                                          ),
-                                                                          const SizedBox(
-                                                                            height:
-                                                                                10,
-                                                                          ),
-                                                                          Container(
-                                                                            decoration:
-                                                                                const BoxDecoration(shape: BoxShape.circle, image: DecorationImage(image: AssetImage('assets/images/drop_icon.png'), fit: BoxFit.contain)),
-                                                                            height: (platform == TargetPlatform.android)
-                                                                                ? media.width * 0.07
-                                                                                : media.width * 0.12,
-                                                                            width: (platform == TargetPlatform.android)
-                                                                                ? media.width * 0.07
-                                                                                : media.width * 0.12,
-                                                                          ),
-                                                                        ],
-                                                                      )
-                                                                    : Text(
-                                                                        (i).toString(),
-                                                                        style: GoogleFonts.notoSans(
-                                                                            fontSize: media.width *
-                                                                                sixteen,
-                                                                            fontWeight:
-                                                                                FontWeight.w600,
-                                                                            color: Colors.red),
-                                                                      ),
-                                                              ],
-                                                            ))
-                                                        : Container(),
-                                                  );
-                                                })
-                                                .values
-                                                .toList(),
-                                          ))
-                                      : Container(),
-
-                                  (widget.type != 1)
-                                      ? Positioned(
-                                          top: media.height * 2,
-                                          child: RepaintBoundary(
-                                              key: iconDistanceKey,
-                                              child: Stack(
-                                                children: [
-                                                  Icon(Icons.chat_bubble,
-                                                      size: media.width * 0.2,
-                                                      color: page,
-                                                      shadows: [
-                                                        BoxShadow(
-                                                            spreadRadius: 2,
-                                                            blurRadius: 2,
-                                                            color: Colors.black
-                                                                .withOpacity(
-                                                                    0.2))
-                                                      ]),
-                                                  if (etaDetails.isNotEmpty)
-                                                    if (etaDetails[0]
-                                                            ['distance'] !=
-                                                        null)
-                                                      Positioned(
-                                                          left: media.width *
-                                                              0.03,
-                                                          top: media.width *
-                                                              0.03,
-                                                          child: Container(
-                                                              width:
-                                                                  media.width *
-                                                                      0.14,
-                                                              height:
-                                                                  media.width *
-                                                                      0.1,
-                                                              alignment:
-                                                                  Alignment
-                                                                      .center,
-                                                              child: Text(
-                                                                "${etaDetails[0]['distance'].toString()} ${etaDetails[0]['unit_in_words'].toString()} ",
-                                                                style: GoogleFonts.notoSans(
-                                                                    fontSize: media
-                                                                            .width *
-                                                                        twelve,
-                                                                    color:
-                                                                        textColor,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .w600),
-                                                              )))
-                                                ],
-                                              )),
-                                        )
-                                      : Container()
+                                  buildPickupMarkerSnapshot(media),
+                                  buildDropMarkerSnapshots(media),
+                                  buildDistanceMarkerSnapshot(media)
                                 ],
                               );
                             });

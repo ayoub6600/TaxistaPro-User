@@ -17,11 +17,11 @@ String signupZoneId = '';
 String packageName = '';
 String signKey = '';
 
-// The production endpoint stays the default. Local and staging builds can
-// override it with --dart-define=API_BASE_URL=https://example.test/.
+// This cleanup branch defaults to the local backend so a plain VS Code Run
+// does not accidentally authenticate against production.
 String url = const String.fromEnvironment(
   'API_BASE_URL',
-  defaultValue: 'https://www.taxista-go.com/',
+  defaultValue: 'http://127.0.0.1:8002/',
 );
 
 String mapkey = (platform == TargetPlatform.android)
