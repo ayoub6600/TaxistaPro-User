@@ -6,6 +6,7 @@ import '../../../styles/styles.dart';
 import '../../onTripPage/invoice.dart';
 import '../../onTripPage/map_page.dart';
 import 'auth_policy.dart';
+import 'login_identity.dart';
 import 'modern_forgot_password.dart';
 import 'modern_signup.dart';
 import 'signup_location_resolver.dart';
@@ -149,14 +150,11 @@ class _ModernLoginState extends State<ModernLogin> {
     final value = input.trim();
     if (_method == _LoginMethod.email || _country == null) return value;
 
-    var digits = value.replaceAll(RegExp(r'\D'), '');
-    final dialDigits = _country!.dialCode.replaceAll(RegExp(r'\D'), '');
-    if (dialDigits.isNotEmpty &&
-        digits.startsWith(dialDigits) &&
-        digits.length > _country!.maxPhoneLength) {
-      digits = digits.substring(dialDigits.length);
-    }
-    return digits;
+    return normalizePhoneIdentity(
+      input: value,
+      dialCode: _country!.dialCode,
+      maxLocalLength: _country!.maxPhoneLength,
+    );
   }
 
   void _changeMethod(_LoginMethod method) {
