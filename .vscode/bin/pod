@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# VS Code does not always inherit Homebrew's Ruby gem bin directory.
+# Delegate to the installed CocoaPods executable using an absolute path so
+# Flutter Run/Debug behaves the same whether it starts from Finder or Terminal.
+exec /opt/homebrew/lib/ruby/gems/3.4.0/bin/pod "$@"

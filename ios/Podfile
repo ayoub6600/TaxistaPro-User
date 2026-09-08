@@ -107,3 +107,21 @@ post_install do |installer|
   end
 end
 end
+
+# Cloud/File Provider folders may attach Finder metadata to copied frameworks.
+# Remove it in CocoaPods' generated embed script immediately before signing.
+post_integrate do |installer|
+  frameworks_script = installer.sandbox.root +
+    'Target Support Files/Pods-Runner/Pods-Runner-frameworks.sh'
+  next unless File.exist?(frameworks_script)
+
+  contents = File.read(frameworks_script)
+  cleanup = '    /usr/bin/xattr -cr "$1" 2>/dev/null || true'
+  unless contents.include?(cleanup)
+    contents.sub!(
+      '    local code_sign_cmd="/usr/bin/codesign',
+      "#{cleanup}\n    local code_sign_cmd=\"/usr/bin/codesign"
+    )
+    File.write(frameworks_script, contents)
+  end
+end

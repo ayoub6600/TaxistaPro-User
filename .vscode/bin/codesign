@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# Flutter signs the framework binary itself, while macOS File Provider stores
+# Finder metadata on the surrounding framework directory. Clear the metadata
+# immediately before delegating to Apple's real codesign executable.
+target=""
+for argument in "$@"; do
+  target="$argument"
+done
+
+if [ -n "$target" ] && [ -e "$target" ]; then
+  /usr/bin/xattr -cr "$(/usr/bin/dirname "$target")" 2>/dev/null || true
+fi
+
+exec /usr/bin/codesign "$@"

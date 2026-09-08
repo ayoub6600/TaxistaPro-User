@@ -82,7 +82,7 @@ class _ModernLoginState extends State<ModernLogin> {
 
   Future<void> _login() async {
     FocusScope.of(context).unfocus();
-    final identity = _identity.text.trim();
+    final identity = _normalizedIdentity(_identity.text);
     final validation = _validate(identity);
     if (validation != null) {
       setState(() => _error = validation);
@@ -93,8 +93,14 @@ class _ModernLoginState extends State<ModernLogin> {
       _error = null;
     });
     final isEmail = _method == _LoginMethod.email;
-    final result = await app.verifyUser(
-        identity, isEmail ? 1 : 0, _password.text, '', false, false);
+    final loginResult = await app.userLogin(
+      identity,
+      isEmail ? 1 : 0,
+      _password.text,
+      false,
+    );
+    final result =
+        loginResult == true ? await app.getUserDetails() : loginResult;
     if (!mounted) return;
     if (result == true) {
       final destination = app.userRequestData.isNotEmpty &&
@@ -137,6 +143,20 @@ class _ModernLoginState extends State<ModernLogin> {
       return _copy('أدخل كلمة المرور الصحيحة.', 'Enter your password.');
     }
     return null;
+  }
+
+  String _normalizedIdentity(String input) {
+    final value = input.trim();
+    if (_method == _LoginMethod.email || _country == null) return value;
+
+    var digits = value.replaceAll(RegExp(r'\D'), '');
+    final dialDigits = _country!.dialCode.replaceAll(RegExp(r'\D'), '');
+    if (dialDigits.isNotEmpty &&
+        digits.startsWith(dialDigits) &&
+        digits.length > _country!.maxPhoneLength) {
+      digits = digits.substring(dialDigits.length);
+    }
+    return digits;
   }
 
   void _changeMethod(_LoginMethod method) {

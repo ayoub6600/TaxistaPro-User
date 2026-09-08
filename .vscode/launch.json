@@ -5,21 +5,51 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Taxista User — Local iPhone 17",
+            "request": "launch",
+            "type": "dart",
+            "preLaunchTask": "Prepare Taxista local debug",
+            "program": "lib/main.dart",
+            "deviceId": "908F5B79-E6DD-42E8-9CBA-377104F82E26",
+            "toolArgs": [
+                "--dart-define=API_BASE_URL=http://127.0.0.1:8002/",
+                "--dart-define=FIREBASE_EMULATOR_HOST=127.0.0.1"
+            ],
+            "env": {
+                "PATH": "${workspaceFolder}/.vscode/bin:/opt/homebrew/lib/ruby/gems/3.4.0/bin:/opt/homebrew/opt/ruby/bin:${env:PATH}"
+            }
+        },
+        {
             "name": "NEW-USER-APP-TAXISTA-main",
             "request": "launch",
-            "type": "dart"
+            "type": "dart",
+            "preLaunchTask": "Prepare Taxista local debug",
+            "program": "lib/main.dart",
+            "toolArgs": [
+                "--dart-define=API_BASE_URL=http://127.0.0.1:8002/",
+                "--dart-define=FIREBASE_EMULATOR_HOST=127.0.0.1"
+            ],
+            "env": {
+                "PATH": "${workspaceFolder}/.vscode/bin:/opt/homebrew/lib/ruby/gems/3.4.0/bin:/opt/homebrew/opt/ruby/bin:${env:PATH}"
+            }
         },
         {
             "name": "NEW-USER-APP-TAXISTA-main (profile mode)",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "profile"
+            "flutterMode": "profile",
+            "toolArgs": [
+                "--dart-define=API_BASE_URL=http://127.0.0.1:8002/"
+            ]
         },
         {
             "name": "NEW-USER-APP-TAXISTA-main (release mode)",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "release"
+            "flutterMode": "release",
+            "toolArgs": [
+                "--dart-define=API_BASE_URL=http://127.0.0.1:8002/"
+            ]
         }
     ]
 }

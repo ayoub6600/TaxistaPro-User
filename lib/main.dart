@@ -1,6 +1,5 @@
 import 'package:bot_toast/bot_toast.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -11,6 +10,7 @@ import 'package:taxista/firebase_options.dart';
 
 import 'functions/functions.dart';
 import 'functions/notifications.dart';
+import 'local_firebase.dart';
 import 'pages/loadingPage/loadingpage.dart';
 
 Future<void> main() async {
@@ -32,44 +32,16 @@ Future<void> main() async {
     );
   }
 
-  // 🔔 طلب صلاحيات الإشعارات
-  await _initFirebaseMessaging();
+  await configureLocalFirebase(url);
+
+  // Local ride rehearsals use RTDB updates; FCM has no local emulator.
+  if (!usesLocalFirebase) {
+    await initMessaging();
+  }
 
   checkInternetConnection();
-  await initMessaging();
 
   runApp(const MyApp());
-}
-
-/// 🔧 إعداد إشعارات FCM
-Future<void> _initFirebaseMessaging() async {
-  NotificationSettings settings =
-      await FirebaseMessaging.instance.requestPermission(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
-
-  if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-    print('✅ User granted permission');
-
-    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
-      print("🔥 FCM Token after refresh: $newToken");
-    });
-
-    try {
-      String? token = await FirebaseMessaging.instance.getToken();
-      if (token != null) {
-        debugPrint('FCM token is ready');
-      }
-    } catch (e) {
-      print('❗ Error getting FCM token: $e');
-    }
-  } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
-    print('⚠️ User granted provisional permission');
-  } else {
-    print('❌ User declined or has not accepted permission');
-  }
 }
 
 class MyApp extends StatelessWidget {

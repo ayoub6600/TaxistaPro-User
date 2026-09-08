@@ -204,6 +204,7 @@
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				65ACD9DF74D515FB8AC05920 /* [CP] Embed Pods Frameworks */,
 				9F02E8B39DB52D74DA8D17AD /* [CP] Copy Pods Resources */,
+				C0D3E8A11A2B3C4D5E6F7001 /* Clean Extended Attributes */,
 			);
 			buildRules = (
 			);
@@ -290,7 +291,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" embed_and_thin";
+			shellScript = "export PATH=\"$SRCROOT/../.vscode/bin:$PATH\"\n/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" embed_and_thin";
 		};
 		65ACD9DF74D515FB8AC05920 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -344,7 +345,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" build";
+			shellScript = "export PATH=\"$SRCROOT/../.vscode/bin:$PATH\"\n/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" build";
 		};
 		9F02E8B39DB52D74DA8D17AD /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -362,6 +363,21 @@
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources.sh\"\n";
 			showEnvVarsInLog = 0;
+		};
+		C0D3E8A11A2B3C4D5E6F7001 /* Clean Extended Attributes */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Clean Extended Attributes";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"$PLATFORM_NAME\" = \"iphonesimulator\" ] && [ -d \"$TARGET_BUILD_DIR/$WRAPPER_NAME\" ]; then\n  chmod -R u+rwX \"$TARGET_BUILD_DIR/$WRAPPER_NAME\" 2>/dev/null || true\n  /usr/bin/xattr -cr \"$TARGET_BUILD_DIR/$WRAPPER_NAME\" 2>/dev/null || true\nfi";
 		};
 		CDD52585DAF7A85697653ACB /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -499,6 +515,10 @@
 				ENABLE_BITCODE = NO;
 				FLUTTER_BUILD_NAME = 3.0.0;
 				FLUTTER_BUILD_NUMBER = 2;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(CONFIGURATION_BUILD_DIR)",
+				);
 				INFOPLIST_FILE = Runner/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -506,6 +526,11 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = "6.0.0+5";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					Flutter,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.taxistapro.user;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
@@ -687,6 +712,10 @@
 				ENABLE_BITCODE = NO;
 				FLUTTER_BUILD_NAME = 3.0.0;
 				FLUTTER_BUILD_NUMBER = 2;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(CONFIGURATION_BUILD_DIR)",
+				);
 				INFOPLIST_FILE = Runner/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -694,6 +723,11 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = "6.0.0+5";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					Flutter,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.taxistapro.user;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
@@ -715,6 +749,10 @@
 				ENABLE_BITCODE = NO;
 				FLUTTER_BUILD_NAME = 3.0.0;
 				FLUTTER_BUILD_NUMBER = 2;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(CONFIGURATION_BUILD_DIR)",
+				);
 				INFOPLIST_FILE = Runner/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -722,6 +760,11 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = "6.0.0+5";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					Flutter,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.taxistapro.user;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";

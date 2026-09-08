@@ -1,0 +1,31 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Ensure Taxista local backend",
+            "type": "shell",
+            "command": "${workspaceFolder}/tool/ensure_local_backend.sh",
+            "problemMatcher": []
+        },
+        {
+            "label": "Prepare Taxista iOS build",
+            "type": "shell",
+            "command": "${workspaceFolder}/tool/prepare_ios_build.sh",
+            "options": {
+                "env": {
+                    "PATH": "${workspaceFolder}/.vscode/bin:/opt/homebrew/lib/ruby/gems/3.4.0/bin:/opt/homebrew/opt/ruby/bin:${env:PATH}"
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Prepare Taxista local debug",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Ensure Taxista local backend",
+                "Prepare Taxista iOS build"
+            ],
+            "problemMatcher": []
+        }
+    ]
+}

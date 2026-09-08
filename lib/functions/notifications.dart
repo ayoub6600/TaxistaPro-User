@@ -16,6 +16,8 @@ FlutterLocalNotificationsPlugin rideNotification =
 bool isGeneral = false;
 String latestNotification = '';
 int id = 0;
+bool _messagingInitialized = false;
+bool _permissionRequestInFlight = false;
 
 void notificationTapBackground(NotificationResponse notificationResponse) {
   isGeneral = true;
@@ -50,8 +52,11 @@ var initSetting = InitializationSettings(android: androiInit, iOS: iosInit);
 
 Future<void> initMessaging() async {
   await fltNotification.initialize(initSetting);
+  _messagingInitialized = true;
 
-  await FirebaseMessaging.instance.requestPermission();
+  FirebaseMessaging.instance.onTokenRefresh.listen((_) {
+    debugPrint('FCM token refreshed');
+  });
 
   FirebaseMessaging.instance.getInitialMessage().then((message) {
     if (message?.data != null) {
@@ -86,6 +91,32 @@ Future<void> initMessaging() async {
       valueNotifierHome.incrementNotifier();
     }
   });
+}
+
+/// Requests the system prompt only after the rider reaches the home screen.
+/// This avoids interrupting onboarding and also prevents duplicate prompts.
+Future<void> requestNotificationPermissionIfNeeded() async {
+  if (!_messagingInitialized || _permissionRequestInFlight) return;
+
+  final current = await FirebaseMessaging.instance.getNotificationSettings();
+  if (current.authorizationStatus != AuthorizationStatus.notDetermined) return;
+
+  _permissionRequestInFlight = true;
+  try {
+    final settings = await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+    if (settings.authorizationStatus == AuthorizationStatus.authorized ||
+        settings.authorizationStatus == AuthorizationStatus.provisional) {
+      await FirebaseMessaging.instance.getToken();
+    }
+  } catch (error) {
+    debugPrint('Unable to request notification permission: $error');
+  } finally {
+    _permissionRequestInFlight = false;
+  }
 }
 
 Future<String> _downloadAndSaveFile(String url, String fileName) async {

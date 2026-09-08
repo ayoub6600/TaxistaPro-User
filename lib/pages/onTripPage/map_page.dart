@@ -144,6 +144,7 @@ class _MapsState extends State<Maps>
 
   @override
   void initState() {
+    super.initState();
     _isDarkTheme = isDarkTheme;
     WidgetsBinding.instance.addObserver(this);
     choosenTransportType =
@@ -155,8 +156,9 @@ class _MapsState extends State<Maps>
 
     getLocs();
     getadminCurrentMessages();
-
-    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(requestNotificationPermissionIfNeeded());
+    });
   }
 
   @override
@@ -2126,8 +2128,10 @@ class _MapsState extends State<Maps>
                                                               media.width * 1,
                                                           height: _height == 0
                                                               ? media.width *
-                                                                  ((userDetails['show_ride_without_destination'].toString() == '1' &&
-                                                                          choosenTransportType == 0 &&
+                                                                  ((userDetails['show_ride_without_destination'].toString() ==
+                                                                              '1' &&
+                                                                          choosenTransportType ==
+                                                                              0 &&
                                                                           !isOutStation)
                                                                       ? 0.84
                                                                       : 0.68)
@@ -2175,32 +2179,43 @@ class _MapsState extends State<Maps>
                                                           child: Column(
                                                             children: [
                                                               (_bottom == 0)
-                                                                  ? HomeQuickActions(
-                                                                      rtl: languageDirection == 'rtl',
-                                                                      showRideWithoutDestination:
-                                                                          userDetails['show_ride_without_destination'].toString() == '1' &&
+                                                                  ? Expanded(
+                                                                      child:
+                                                                          SingleChildScrollView(
+                                                                        physics:
+                                                                            const BouncingScrollPhysics(),
+                                                                        child:
+                                                                            HomeQuickActions(
+                                                                          rtl: languageDirection ==
+                                                                              'rtl',
+                                                                          showRideWithoutDestination: userDetails['show_ride_without_destination'].toString() == '1' &&
                                                                               choosenTransportType == 0 &&
                                                                               !isOutStation,
-                                                                      onChooseDestination: () {
-                                                                        setState(() {
-                                                                          _pickaddress = false;
-                                                                          _dropaddress = true;
-                                                                          addAutoFill.clear();
-                                                                          _height = media.height;
-                                                                          _bottom = 1;
-                                                                        });
-                                                                      },
-                                                                      onRideWithoutDestination: () {
-                                                                        ismulitipleride = false;
-                                                                        setState(() {
-                                                                          rideWithoutDestination = true;
-                                                                          rentalRide = false;
-                                                                        });
-                                                                        Navigator.push(
-                                                                          context,
-                                                                          MaterialPageRoute(builder: (_) => PickupLocation()),
-                                                                        );
-                                                                      },
+                                                                          onChooseDestination:
+                                                                              () {
+                                                                            setState(() {
+                                                                              _pickaddress = false;
+                                                                              _dropaddress = true;
+                                                                              addAutoFill.clear();
+                                                                              _height = media.height;
+                                                                              _bottom = 1;
+                                                                            });
+                                                                          },
+                                                                          onRideWithoutDestination:
+                                                                              () {
+                                                                            ismulitipleride =
+                                                                                false;
+                                                                            setState(() {
+                                                                              rideWithoutDestination = true;
+                                                                              rentalRide = false;
+                                                                            });
+                                                                            Navigator.push(
+                                                                              context,
+                                                                              MaterialPageRoute(builder: (_) => PickupLocation()),
+                                                                            );
+                                                                          },
+                                                                        ),
+                                                                      ),
                                                                     )
                                                                   : Expanded(
                                                                       child:
