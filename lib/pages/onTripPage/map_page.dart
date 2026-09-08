@@ -40,6 +40,9 @@ import 'ongoingrides.dart';
 import 'pick_loc_select.dart';
 // ignore: depend_on_referenced_packages
 
+part 'map_page/map_animation.dart';
+part 'map_page/map_destination_state.dart';
+
 class Maps extends StatefulWidget {
   const Maps({super.key});
 
@@ -152,7 +155,7 @@ class _MapsState extends State<Maps>
                 userDetails['enable_modules_for_applications'] == 'taxi')
             ? 0
             : 1;
-    addressList.removeWhere((element) => element.id == 'drop');
+    addressList.removeWhere((element) => element.type == 'drop');
 
     getLocs();
     getadminCurrentMessages();
@@ -233,7 +236,7 @@ class _MapsState extends State<Maps>
       signKey = buildKeys.buildSignature;
       packageName = buildKeys.packageName;
     }
-    myBearings.clear;
+    myBearings.clear();
     addressList.clear();
     serviceEnabled = await location.serviceEnabled();
     polyline.clear();
@@ -2194,11 +2197,7 @@ class _MapsState extends State<Maps>
                                                                           onChooseDestination:
                                                                               () {
                                                                             setState(() {
-                                                                              _pickaddress = false;
-                                                                              _dropaddress = true;
-                                                                              addAutoFill.clear();
-                                                                              _height = media.height;
-                                                                              _bottom = 1;
+                                                                              resetDestinationEntry(media);
                                                                             });
                                                                           },
                                                                           onRideWithoutDestination:
@@ -2924,7 +2923,7 @@ class _MapsState extends State<Maps>
                                                                                                                             });
 
                                                                                                                             // ✅ حفظ في البحث الأخير
-                                                                                                                            if (addressList.length == 2) {
+                                                                                                                            if (hasPickupAndDrop) {
                                                                                                                               if (recentSearchesList.length > 3) {
                                                                                                                                 recentSearchesList.removeAt(0);
                                                                                                                               }
@@ -2940,7 +2939,7 @@ class _MapsState extends State<Maps>
                                                                                                                                 pref.setString('recentsearch', jsonEncode(recentSearchesList));
                                                                                                                               }
 
-                                                                                                                              navigate();
+                                                                                                                              navigateWhenRouteReady();
                                                                                                                             }
                                                                                                                           }
 
@@ -3154,10 +3153,7 @@ class _MapsState extends State<Maps>
                                                                                                       debugPrint('-------->drops is 2 : ${recentSearchesList[i]['latlng'][0]} ${recentSearchesList[i]['latlng'][1]}');
                                                                                                     }
                                                                                                   });
-                                                                                                  if (addressList.length == 2) {
-                                                                                                    polyList.clear();
-                                                                                                    navigate();
-                                                                                                  }
+                                                                                                  navigateWhenRouteReady();
                                                                                                 },
                                                                                                 child: Container(
                                                                                                   padding: EdgeInsets.only(left: media.width * 0.03, right: media.width * 0.03, top: media.width * 0.01, bottom: media.width * 0.01),
@@ -3265,7 +3261,7 @@ class _MapsState extends State<Maps>
                                                                                                                                     _height = media.width * 0.8;
                                                                                                                                     _bottom = 0;
                                                                                                                                   });
-                                                                                                                                  if (addressList.length == 2) {
+                                                                                                                                  if (hasPickupAndDrop) {
                                                                                                                                     if (choosenTransportType == 0) {
                                                                                                                                       ismulitipleride = false;
 
@@ -4653,101 +4649,5 @@ class _MapsState extends State<Maps>
             }),
       ),
     );
-  }
-
-  double getBearing(LatLng begin, LatLng end) {
-    double lat = (begin.latitude - end.latitude).abs();
-
-    double lng = (begin.longitude - end.longitude).abs();
-
-    if (begin.latitude < end.latitude && begin.longitude < end.longitude) {
-      return vector.degrees(atan(lng / lat));
-    } else if (begin.latitude >= end.latitude &&
-        begin.longitude < end.longitude) {
-      return (90 - vector.degrees(atan(lng / lat))) + 90;
-    } else if (begin.latitude >= end.latitude &&
-        begin.longitude >= end.longitude) {
-      return vector.degrees(atan(lng / lat)) + 180;
-    } else if (begin.latitude < end.latitude &&
-        begin.longitude >= end.longitude) {
-      return (90 - vector.degrees(atan(lng / lat))) + 270;
-    }
-
-    return -1;
-  }
-
-  animateCar(
-      double fromLat, //Starting latitude
-
-      double fromLong, //Starting longitude
-
-      double toLat, //Ending latitude
-
-      double toLong, //Ending longitude
-
-      StreamSink<List<Marker>>
-          mapMarkerSink, //Stream build of map to update the UI
-
-      TickerProvider
-          provider, //Ticker provider of the widget. This is used for animation
-
-// GoogleMapController controller, //Google map controller of our widget
-
-      markerid,
-      markerBearing,
-      icon) async {
-    final double bearing =
-        getBearing(LatLng(fromLat, fromLong), LatLng(toLat, toLong));
-
-    myBearings[markerBearing.toString()] = bearing;
-
-    var carMarker = Marker(
-        markerId: MarkerId(markerid),
-        position: LatLng(fromLat, fromLong),
-        icon: icon,
-        anchor: const Offset(0.5, 0.5),
-        flat: true,
-        draggable: false);
-
-    myMarkers.add(carMarker);
-
-    mapMarkerSink.add(Set<Marker>.from(myMarkers).toList());
-
-    Tween<double> tween = Tween(begin: 0, end: 1);
-
-    _animation = tween.animate(animationController)
-      ..addListener(() async {
-        myMarkers
-            .removeWhere((element) => element.markerId == MarkerId(markerid));
-
-        final v = _animation!.value;
-
-        double lng = v * toLong + (1 - v) * fromLong;
-
-        double lat = v * toLat + (1 - v) * fromLat;
-
-        LatLng newPos = LatLng(lat, lng);
-
-//New marker location
-
-        carMarker = Marker(
-            markerId: MarkerId(markerid),
-            position: newPos,
-            icon: icon,
-            anchor: const Offset(0.5, 0.5),
-            flat: true,
-            rotation: bearing,
-            draggable: false);
-
-//Adding new marker to our list and updating the google map UI.
-
-        myMarkers.add(carMarker);
-
-        mapMarkerSink.add(Set<Marker>.from(myMarkers).toList());
-      });
-
-//Starting the animation
-
-    animationController.forward();
   }
 }

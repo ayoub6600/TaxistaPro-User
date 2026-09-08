@@ -20,7 +20,7 @@ class HomeQuickActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 10, 20, 18),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -34,11 +34,11 @@ class HomeQuickActions extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 10),
             Text(
               _copy('إلى أين نوصّلك؟', 'Where are you going?'),
               style: const TextStyle(
-                fontSize: 21,
+                fontSize: 19,
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -48,7 +48,7 @@ class HomeQuickActions extends StatelessWidget {
                   'Choose a destination and we will find a nearby ride.'),
               style: TextStyle(color: Colors.blueGrey.shade600, height: 1.35),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 10),
             Material(
               color: const Color(0xFFF6F8FC),
               borderRadius: BorderRadius.circular(17),
@@ -56,11 +56,12 @@ class HomeQuickActions extends StatelessWidget {
                 onTap: onChooseDestination,
                 borderRadius: BorderRadius.circular(17),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   child: Row(children: [
                     Container(
-                      width: 38,
-                      height: 38,
+                      width: 34,
+                      height: 34,
                       decoration: BoxDecoration(
                         color: theme.withValues(alpha: .1),
                         borderRadius: BorderRadius.circular(12),
@@ -73,7 +74,7 @@ class HomeQuickActions extends StatelessWidget {
                         _copy('ابحث عن مكان أو عنوان',
                             'Search for a place or address'),
                         style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w700),
+                            fontSize: 15, fontWeight: FontWeight.w700),
                       ),
                     ),
                     Icon(Icons.arrow_forward_ios_rounded,
