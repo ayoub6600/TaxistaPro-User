@@ -23,7 +23,7 @@ mixin _BookingConfirmationMarkerSnapshots
               widthFactor: platform == TargetPlatform.android ? 0.4 : 0.5,
             ),
             const SizedBox(height: 10),
-            _buildMarkerIcon(media, 'assets/images/pick_icon.png'),
+            _buildMarkerIcon(media, pickup: true),
           ],
         ),
       ),
@@ -53,7 +53,7 @@ mixin _BookingConfirmationMarkerSnapshots
                     widthFactor: platform == TargetPlatform.android ? 0.5 : 0.7,
                   ),
                   const SizedBox(height: 10),
-                  _buildMarkerIcon(media, 'assets/images/drop_icon.png'),
+                  _buildMarkerIcon(media, pickup: false),
                 ] else
                   Text(
                     i.toString(),
@@ -154,21 +154,29 @@ mixin _BookingConfirmationMarkerSnapshots
     );
   }
 
-  Widget _buildMarkerIcon(Size media, String asset) {
+  Widget _buildMarkerIcon(Size media, {required bool pickup}) {
     final markerSize = platform == TargetPlatform.android
-        ? media.width * 0.07
-        : media.width * 0.12;
+        ? media.width * 0.085
+        : media.width * 0.105;
+    final color = pickup ? const Color(0xFF16A36A) : const Color(0xFF1677FF);
 
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        image: DecorationImage(
-          image: AssetImage(asset),
-          fit: BoxFit.contain,
-        ),
+        color: color,
+        border: Border.all(color: Colors.white, width: 3),
+        boxShadow: const [
+          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 3)),
+        ],
       ),
       height: markerSize,
       width: markerSize,
+      alignment: Alignment.center,
+      child: Icon(
+        pickup ? Icons.my_location_rounded : Icons.flag_rounded,
+        color: Colors.white,
+        size: markerSize * .52,
+      ),
     );
   }
 }

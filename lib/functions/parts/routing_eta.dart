@@ -279,7 +279,7 @@ Future<void> _paintRouteProgressively(
     return;
   }
 
-  const frameCount = 14;
+  const frameCount = 24;
   for (var frame = 1; frame <= frameCount; frame++) {
     if (requestGeneration != _polylineRequestGeneration) return;
     final visibleCount = ((route.length * frame) / frameCount)
@@ -300,7 +300,7 @@ Future<void> _paintRouteProgressively(
     };
     valueNotifierBook.incrementNotifier();
     if (frame != frameCount) {
-      await Future<void>.delayed(const Duration(milliseconds: 22));
+      await Future<void>.delayed(const Duration(milliseconds: 28));
     }
   }
 }

@@ -7,7 +7,6 @@ import 'dart:ui' as ui;
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -35,6 +34,7 @@ import '../../styles/styles.dart';
 import '../../translations/translation.dart';
 import '../../widgets/widgets.dart';
 import '../NavigatorPages/pickcontacts.dart';
+import '../NavigatorPages/support.dart';
 import '../chatPage/chat_page.dart';
 import '../loadingPage/loading.dart';
 import '../login/login.dart';
@@ -44,6 +44,9 @@ import 'drop_loc_select.dart';
 import 'invoice.dart';
 import 'map_page.dart';
 import 'widgets/booking_status_sheet.dart';
+import 'booking_confirmation/widgets/booking_back_button.dart';
+import 'booking_confirmation/widgets/vehicle_service_card.dart';
+import 'booking_confirmation/widgets/vehicle_services_section.dart';
 import 'widgets/cancellation_sheet.dart';
 import 'widgets/location_permission_sheet.dart';
 import 'widgets/payment_method_sheet.dart';
@@ -56,6 +59,21 @@ part 'booking_confirmation/booking_confirmation_controller.dart';
 part 'booking_confirmation/booking_confirmation_map_canvas.dart';
 part 'booking_confirmation/booking_confirmation_marker_snapshots.dart';
 part 'booking_confirmation/booking_confirmation_status_overlays.dart';
+part 'booking_confirmation/booking_confirmation_vehicle_services.dart';
+part 'booking_confirmation/booking_confirmation_rental_options.dart';
+part 'booking_confirmation/booking_confirmation_scheduled_request.dart';
+part 'booking_confirmation/booking_confirmation_immediate_request.dart';
+part 'booking_confirmation/booking_confirmation_request_handler.dart';
+part 'booking_confirmation/booking_confirmation_request_action.dart';
+part 'booking_confirmation/booking_confirmation_vehicle_options.dart';
+part 'booking_confirmation/booking_confirmation_booking_controls.dart';
+part 'booking_confirmation/booking_confirmation_selection_sheet.dart';
+part 'booking_confirmation/booking_confirmation_pending_request.dart';
+part 'booking_confirmation/booking_confirmation_searching_widgets.dart';
+part 'booking_confirmation/booking_confirmation_fare.dart';
+part 'booking_confirmation/booking_confirmation_active_ride.dart';
+part 'booking_confirmation/booking_confirmation_map_controls.dart';
+part 'booking_confirmation/booking_confirmation_modal_overlays.dart';
 part 'booking_confirmation/booking_confirmation_view.dart';
 part 'booking_confirmation/booking_confirmation_polyline.dart';
 
@@ -103,6 +121,19 @@ class _BookingConfirmationState extends State<BookingConfirmation>
         _BookingConfirmationMapCanvas,
         _BookingConfirmationMarkerSnapshots,
         _BookingConfirmationStatusOverlays,
+        _BookingConfirmationVehicleServices,
+        _BookingConfirmationRentalOptions,
+        _BookingConfirmationScheduledRequest,
+        _BookingConfirmationImmediateRequest,
+        _BookingConfirmationRequestHandler,
+        _BookingConfirmationRequestAction,
+        _BookingConfirmationVehicleOptions,
+        _BookingConfirmationBookingControls,
+        _BookingConfirmationSelectionSheet,
+        _BookingConfirmationPendingRequest,
+        _BookingConfirmationActiveRide,
+        _BookingConfirmationMapControls,
+        _BookingConfirmationModalOverlays,
         _BookingConfirmationView {
   @override
   Widget build(BuildContext context) => buildBookingConfirmation(context);

@@ -11,6 +11,7 @@ import 'package:taxista/firebase_options.dart';
 import 'functions/functions.dart';
 import 'functions/notifications.dart';
 import 'local_firebase.dart';
+import 'navigation/taxista_page_transitions.dart';
 import 'pages/loadingPage/loadingpage.dart';
 
 Future<void> main() async {
@@ -68,7 +69,9 @@ class MyApp extends StatelessWidget {
             return MaterialApp(
               debugShowCheckedModeBanner: false,
               title: 'Taxista',
-              theme: ThemeData(),
+              theme: ThemeData(
+                pageTransitionsTheme: taxistaPageTransitionsTheme,
+              ),
               locale: const Locale('ar'),
               supportedLocales: const [
                 Locale('en', 'US'),

@@ -451,6 +451,42 @@ makeRequestComplaint() async {
 StreamSubscription<DatabaseEvent>? requestStreamStart;
 StreamSubscription<DatabaseEvent>? requestStreamEnd;
 bool userCancelled = false;
+bool _requestRefreshInFlight = false;
+bool _requestRefreshQueued = false;
+String? _queuedRefreshRequestId;
+
+bool _firebaseFlagEnabled(dynamic value) =>
+    value == true || value == 1 || value?.toString() == '1';
+
+Future<void> refreshUserRequestState([String? requestId]) async {
+  final normalizedId = requestId?.trim();
+  if (_requestRefreshInFlight) {
+    _requestRefreshQueued = true;
+    _queuedRefreshRequestId = normalizedId;
+    return;
+  }
+
+  _requestRefreshInFlight = true;
+  var nextRequestId = normalizedId;
+  try {
+    do {
+      _requestRefreshQueued = false;
+      _queuedRefreshRequestId = null;
+      ismulitipleride = nextRequestId?.isNotEmpty == true;
+      await getUserDetails(id: nextRequestId);
+      ismulitipleride = false;
+      nextRequestId = _queuedRefreshRequestId;
+    } while (_requestRefreshQueued);
+  } finally {
+    ismulitipleride = false;
+    _requestRefreshInFlight = false;
+    _requestRefreshQueued = false;
+    _queuedRefreshRequestId = null;
+  }
+}
+
+Future<void> _refreshRequestFromApi(String requestId) =>
+    refreshUserRequestState(requestId);
 
 streamRequest() {
   requestStreamEnd?.cancel();
@@ -462,17 +498,33 @@ streamRequest() {
   rideStreamUpdate = null;
   rideStreamStart = null;
 
+  final requestId = userRequestData['id']?.toString();
+  if (requestId == null || requestId.isEmpty) return;
+
   requestStreamStart = FirebaseDatabase.instance
-      .ref('request-meta')
-      .child(userRequestData['id'])
-      .onChildRemoved
+      .ref('request-meta/$requestId')
+      .onValue
       .handleError((onError) {
     requestStreamStart?.cancel();
   }).listen((event) async {
-    ismulitipleride = true;
-    getUserDetails(id: userRequestData['id']);
+    final value = event.snapshot.value;
+    final metadata = value is Map ? value : null;
+    final accepted =
+        metadata != null && _firebaseFlagEnabled(metadata['is_accepted']);
+    if (value == null || accepted) {
+      await _refreshRequestFromApi(requestId);
+    }
+  });
+
+  requestStreamEnd = FirebaseDatabase.instance
+      .ref('requests/$requestId/is_accept')
+      .onValue
+      .handleError((onError) {
     requestStreamEnd?.cancel();
-    requestStreamStart?.cancel();
+  }).listen((event) async {
+    if (_firebaseFlagEnabled(event.snapshot.value)) {
+      await _refreshRequestFromApi(requestId);
+    }
   });
 }
 
@@ -497,21 +549,18 @@ streamRide() {
     rideStreamUpdate?.cancel();
   }).listen((DatabaseEvent event) async {
     if (event.snapshot.key.toString() == 'modified_by_driver') {
-      ismulitipleride = true;
-      getUserDetails(id: userRequestData['id']);
+      await _refreshRequestFromApi(userRequestData['id'].toString());
     } else if (event.snapshot.key.toString() == 'message_by_driver') {
       getCurrentMessages();
     } else if (event.snapshot.key.toString() == 'cancelled_by_driver') {
       requestCancelledByDriver = true;
-      ismulitipleride = true;
-      // getUserDetails(id: userRequestData['id']);
-      getUserDetails();
+      await refreshUserRequestState();
     } else if (event.snapshot.key.toString() == 'total_waiting_time') {
       var val = event.snapshot.value.toString();
       waitingTime = int.parse(val);
       valueNotifierBook.incrementNotifier();
     } else if (event.snapshot.key.toString() == 'is_accept') {
-      getUserDetails(id: userRequestData['id']);
+      await _refreshRequestFromApi(userRequestData['id'].toString());
     }
   });
 
@@ -526,18 +575,15 @@ streamRide() {
     // } else
     if (event.snapshot.key.toString() == 'cancelled_by_driver') {
       requestCancelledByDriver = true;
-      ismulitipleride = true;
-      // getUserDetails(id: userRequestData['id']);
-      getUserDetails();
+      await refreshUserRequestState();
     } else if (event.snapshot.key.toString() == 'modified_by_driver') {
-      ismulitipleride = true;
-      getUserDetails(id: userRequestData['id']);
+      await _refreshRequestFromApi(userRequestData['id'].toString());
     } else if (event.snapshot.key.toString() == 'total_waiting_time') {
       var val = event.snapshot.value.toString();
       waitingTime = int.parse(val);
       valueNotifierBook.incrementNotifier();
     } else if (event.snapshot.key.toString() == 'is_accept') {
-      getUserDetails(id: userRequestData['id']);
+      await _refreshRequestFromApi(userRequestData['id'].toString());
     }
   });
 }

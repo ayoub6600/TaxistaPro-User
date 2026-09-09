@@ -2,6 +2,40 @@ part of '../booking_confirmation.dart';
 
 mixin _BookingConfirmationController
     on State<BookingConfirmation>, WidgetsBindingObserver, TickerProvider {
+  void handleBookingBack(BuildContext context) {
+    noDriverFound = false;
+    tripReqError = false;
+    serviceNotAvailable = false;
+
+    if (widget.type == null && dropConfirmed) {
+      setState(() {
+        dropConfirmed = false;
+        promoStatus = false;
+        addCoupon = false;
+        promoKey.clear();
+      });
+      return;
+    }
+
+    isRentalRide = false;
+    ismulitipleride = false;
+    isOutStation = false;
+    etaDetails.clear();
+    promoKey.clear();
+    promoStatus = false;
+    addCoupon = false;
+    rentalOption.clear();
+    myMarker.clear();
+    dropStopList.clear();
+    addressList.removeWhere((element) => element.id == 'drop');
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const Maps()),
+      (_) => false,
+    );
+  }
+
   TextEditingController updateAmount = TextEditingController();
   TextEditingController pickerName = TextEditingController();
   TextEditingController pickerNumber = TextEditingController();
@@ -36,6 +70,7 @@ mixin _BookingConfirmationController
   bool _choosePayment = false;
   String _cancelCustomReason = '';
   dynamic timers;
+  int _pendingRequestRefreshTick = 0;
   bool _dateTimePicker = false;
   bool showSos = false;
   bool notifyCompleted = false;
@@ -58,6 +93,8 @@ mixin _BookingConfirmationController
 
   bool isOneWayTrip = true;
   bool isFromDate = true;
+  String? _lastRouteCameraSignature;
+  bool _routeCameraFitScheduled = false;
 
   DateTime fromDate = DateTime.now().add(Duration(
       minutes:
@@ -66,6 +103,91 @@ mixin _BookingConfirmationController
   double _isDateTimebottom = -1000;
   dynamic _dateTimeHeight = 0;
   bool nofromdate = false;
+
+  void scheduleRouteCameraFit(Size media) {
+    if (_controller == null || mapType != 'google' || widget.type == 1) return;
+
+    final points = _routeCameraPoints();
+    if (points.length < 2) return;
+
+    final minLatitude = points.map((point) => point.latitude).reduce(min);
+    final maxLatitude = points.map((point) => point.latitude).reduce(max);
+    final minLongitude = points.map((point) => point.longitude).reduce(min);
+    final maxLongitude = points.map((point) => point.longitude).reduce(max);
+    final signature = [
+      minLatitude.toStringAsFixed(5),
+      maxLatitude.toStringAsFixed(5),
+      minLongitude.toStringAsFixed(5),
+      maxLongitude.toStringAsFixed(5),
+      mapPadding.round(),
+    ].join(':');
+
+    if (_lastRouteCameraSignature == signature || _routeCameraFitScheduled) {
+      return;
+    }
+    _routeCameraFitScheduled = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Future<void>.delayed(const Duration(milliseconds: 260));
+      _routeCameraFitScheduled = false;
+      if (!mounted || _controller == null) return;
+
+      try {
+        final latitudeSpan = maxLatitude - minLatitude;
+        final longitudeSpan = maxLongitude - minLongitude;
+        if (latitudeSpan.abs() < 0.00001 && longitudeSpan.abs() < 0.00001) {
+          await _controller!.animateCamera(
+            CameraUpdate.newLatLngZoom(points.first, 16),
+          );
+        } else {
+          await _controller!.animateCamera(
+            CameraUpdate.newLatLngBounds(
+              LatLngBounds(
+                southwest: LatLng(minLatitude, minLongitude),
+                northeast: LatLng(maxLatitude, maxLongitude),
+              ),
+              36,
+            ),
+          );
+        }
+        _lastRouteCameraSignature = signature;
+      } catch (error) {
+        debugPrint('Unable to fit booking route: $error');
+      }
+    });
+  }
+
+  List<LatLng> _routeCameraPoints() {
+    final points = <LatLng>[];
+    if (polyList.isNotEmpty) points.addAll(polyList);
+
+    for (final address in addressList) {
+      final point = address.latlng;
+      if (!points.contains(point)) points.add(point);
+    }
+
+    if (userRequestData.isNotEmpty) {
+      final pickupLatitude = userRequestData['pick_lat'];
+      final pickupLongitude = userRequestData['pick_lng'];
+      final dropLatitude = userRequestData['drop_lat'];
+      final dropLongitude = userRequestData['drop_lng'];
+      if (pickupLatitude is num && pickupLongitude is num) {
+        points.add(LatLng(
+          pickupLatitude.toDouble(),
+          pickupLongitude.toDouble(),
+        ));
+      }
+      if (dropLatitude is num && dropLongitude is num) {
+        points.add(LatLng(
+          dropLatitude.toDouble(),
+          dropLongitude.toDouble(),
+        ));
+      }
+    }
+
+    return points;
+  }
+
   @override
   void initState() {
     fmpoly.clear();
@@ -144,7 +266,8 @@ mixin _BookingConfirmationController
   @override
   void dispose() {
     if (timers != null) {
-      timers?.cancel;
+      timers?.cancel();
+      timers = null;
     }
 
     _controller?.dispose();
@@ -156,20 +279,32 @@ mixin _BookingConfirmationController
 
 //running timer
   timer() {
+    _pendingRequestRefreshTick = 0;
     if (userRequestData['is_bid_ride'] == 1) {
+      timers?.cancel();
       timers = Timer.periodic(const Duration(seconds: 1), (timer) {
         valueNotifierTimer.incrementNotifier();
       });
     } else {
-      timing =
-          userRequestData['maximum_time_for_find_drivers_for_regular_ride'];
+      timers?.cancel();
+      final configuredDuration =
+          userRequestData['maximum_time_for_find_drivers_for_regular_ride'] ??
+              userDetails['maximum_time_for_find_drivers_for_regular_ride'];
+      timing = int.tryParse(configuredDuration?.toString() ?? '') ?? 0;
       if (mounted) {
         timers = Timer.periodic(const Duration(seconds: 1), (timer) async {
           if (timing != null) {
             if (userRequestData.isNotEmpty &&
-                userDetails['accepted_at'] == null &&
+                userRequestData['accepted_at'] == null &&
                 timing > 0) {
               timing--;
+              _pendingRequestRefreshTick++;
+              if (_pendingRequestRefreshTick % 4 == 0) {
+                final requestId = userRequestData['id']?.toString();
+                if (requestId != null && requestId.isNotEmpty) {
+                  unawaited(refreshUserRequestState(requestId));
+                }
+              }
               valueNotifierBook.incrementNotifier();
             } else if (userRequestData.isNotEmpty &&
                 userRequestData['accepted_at'] == null &&
@@ -181,16 +316,19 @@ mixin _BookingConfirmationController
               });
 
               timer.cancel();
+              timers = null;
               timing = null;
               if (val == 'logout') {
                 navigateLogout();
               }
             } else {
               timer.cancel();
+              timers = null;
               timing = null;
             }
           } else {
             timer.cancel();
+            timers = null;
             timing = null;
           }
         });

@@ -134,7 +134,11 @@ class _LoadingPageState extends State<LoadingPage> {
       //home page
       Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (context) => const Maps()),
+          PageRouteBuilder(
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+            pageBuilder: (_, __, ___) => const Maps(animateColdLaunch: true),
+          ),
           (route) => false);
     }
   }

@@ -14,9 +14,12 @@ bool changeBound = false;
 getUserDetails({id}) async {
   dynamic result;
   try {
+    final requestedRideId = id?.toString().trim();
+    final hasRequestedRide =
+        requestedRideId != null && requestedRideId.isNotEmpty;
     var response = await http.get(
-      (ismulitipleride)
-          ? Uri.parse('${url}api/v1/user?current_ride=$id')
+      hasRequestedRide
+          ? Uri.parse('${url}api/v1/user?current_ride=$requestedRideId')
           : Uri.parse('${url}api/v1/user'),
       headers: {
         'Content-Type': 'application/json',
@@ -27,7 +30,8 @@ getUserDetails({id}) async {
       userDetails =
           Map<String, dynamic>.from(jsonDecode(response.body)['data']);
       debugPrint('Authenticated API request started');
-      print("------>url ${url}api/v1/user?current_ride=$id");
+      print(
+          "------>url ${url}api/v1/user${hasRequestedRide ? '?current_ride=$requestedRideId' : ''}");
       print("------>banners ${userDetails['bannerImage']['data']}");
 
       favAddress = userDetails['favouriteLocations']['data'];
@@ -224,6 +228,7 @@ getUserDetails({id}) async {
       result = false;
     }
   } catch (e) {
+    debugPrint('getUserDetails failed: $e');
     if (e is SocketException) {
       internet = false;
     }

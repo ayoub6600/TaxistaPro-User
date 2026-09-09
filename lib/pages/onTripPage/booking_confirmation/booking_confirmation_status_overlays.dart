@@ -2,7 +2,7 @@ part of '../booking_confirmation.dart';
 
 mixin _BookingConfirmationStatusOverlays
     on State<BookingConfirmation>, _BookingConfirmationController {
-  Widget buildNoDriverOverlay() {
+  Widget buildNoDriverOverlay({required Future<void> Function() onRetry}) {
     if (!noDriverFound) return Container();
 
     return BookingStatusSheet(
@@ -13,6 +13,7 @@ mixin _BookingConfirmationStatusOverlays
         setState(() {
           noDriverFound = false;
         });
+        await onRetry();
       },
     );
   }
