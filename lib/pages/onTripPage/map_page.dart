@@ -26,6 +26,7 @@ import '../../functions/geohash.dart';
 import '../../functions/notifications.dart';
 import '../../styles/styles.dart';
 import '../../translations/translation.dart';
+import '../../widgets/clippers.dart';
 import '../../widgets/widgets.dart';
 import '../NavigatorPages/notification.dart';
 import '../loadingPage/loading.dart';
