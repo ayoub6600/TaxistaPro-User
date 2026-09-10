@@ -8,9 +8,21 @@ const usesLocalFirebase = localFirebaseHost != '';
 
 /// Configure before any database reference is created, including on restart.
 Future<void> configureLocalFirebase(String apiBaseUrl) async {
-  if (!usesLocalFirebase) return;
   final apiHost = Uri.parse(apiBaseUrl).host;
   const loopbackHosts = ['localhost', '127.0.0.1', '10.0.2.2'];
+  if (!usesLocalFirebase) {
+    // A local API with cloud Firebase splits the app across two databases:
+    // rides go to the local MySQL while driver presence, offers and
+    // request-meta go to production, so each app sees a different world.
+    if (kDebugMode && loopbackHosts.contains(apiHost)) {
+      throw StateError(
+        'API_BASE_URL points at $apiHost but FIREBASE_EMULATOR_HOST is empty, '
+        'so this build would use production Firebase with the local backend. '
+        'Launch with --dart-define=FIREBASE_EMULATOR_HOST=127.0.0.1.',
+      );
+    }
+    return;
+  }
   if (!kDebugMode ||
       !loopbackHosts.contains(localFirebaseHost) ||
       !loopbackHosts.contains(apiHost)) {
