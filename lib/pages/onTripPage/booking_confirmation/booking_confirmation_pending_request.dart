@@ -697,14 +697,16 @@ mixin _BookingConfirmationPendingRequest
         0;
     final remaining =
         int.tryParse(timing?.toString() ?? '') ?? configuredDuration;
-    final nearbyCandidates = _nearbySearchCandidates(
+    final nearbyCandidates = nearbySearchCandidates(
       source: List<dynamic>.from(driversData),
       serviceType: serviceType,
       transportType: choosenTransportType,
       pickupLatitude: pickupLatitude,
       pickupLongitude: pickupLongitude,
+      distanceBetween: (lat1, lon1, lat2, lon2) =>
+          calculateDistance(lat1, lon1, lat2, lon2) as double,
     );
-    final candidates = _prioritizeTargetedDrivers(
+    final candidates = prioritizeTargetedDrivers(
       nearbyCandidates,
       requestMetadata,
       counterOfferMetadata,
@@ -723,13 +725,12 @@ mixin _BookingConfirmationPendingRequest
           MaterialPageRoute(builder: (_) => const SupportPage()),
         );
       },
-      onCancel: _confirmAndCancelSearchingRequest,
       onAcceptOffer: _acceptRegularCounterOffer,
     );
   }
 
   Future<bool> _acceptRegularCounterOffer(
-    _NearbyDriverCandidate driver,
+    NearbyDriverCandidate driver,
   ) async {
     final offeredFare = driver.counterOffer;
     final requestId = userRequestData['id']?.toString();

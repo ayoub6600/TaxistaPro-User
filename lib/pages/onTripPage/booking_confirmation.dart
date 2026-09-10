@@ -55,6 +55,8 @@ import 'widgets/rider_contact_sheet.dart';
 import 'widgets/sos_sheet.dart';
 import 'widgets/trip_details_sheet.dart';
 
+import 'booking_confirmation/searching/nearby_driver_selection.dart';
+
 part 'booking_confirmation/booking_confirmation_controller.dart';
 part 'booking_confirmation/booking_confirmation_map_canvas.dart';
 part 'booking_confirmation/booking_confirmation_marker_snapshots.dart';
@@ -70,6 +72,8 @@ part 'booking_confirmation/booking_confirmation_booking_controls.dart';
 part 'booking_confirmation/booking_confirmation_selection_sheet.dart';
 part 'booking_confirmation/booking_confirmation_pending_request.dart';
 part 'booking_confirmation/booking_confirmation_searching_widgets.dart';
+part 'booking_confirmation/booking_confirmation_searching_offer_card.dart';
+part 'booking_confirmation/booking_confirmation_searching_driver_sheet.dart';
 part 'booking_confirmation/booking_confirmation_fare.dart';
 part 'booking_confirmation/booking_confirmation_active_ride.dart';
 part 'booking_confirmation/booking_confirmation_map_controls.dart';

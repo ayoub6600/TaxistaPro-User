@@ -3,232 +3,10 @@ part of '../booking_confirmation.dart';
 const _searchBlue = Color(0xff1677FF);
 const _searchNavy = Color(0xff102A56);
 const _searchMuted = Color(0xff7B8BA8);
-const _searchMint = Color(0xff15C79A);
 
 double _searchingSheetHeight(Size media) {
   final compact = media.height < 720;
   return (media.height * (compact ? 0.58 : 0.52)).clamp(390.0, 510.0);
-}
-
-class _NearbyDriverCandidate {
-  const _NearbyDriverCandidate({required this.data, required this.distance});
-
-  final Map<String, dynamic> data;
-  final double distance;
-
-  String get driverId => (data['id'] ?? data['driver_id']).toString();
-
-  double? get counterOffer =>
-      double.tryParse(data['counter_offer']?.toString() ?? '');
-
-  double? get counterOfferBase =>
-      double.tryParse(data['counter_offer_base']?.toString() ?? '');
-
-  String get counterOfferCurrency =>
-      data['counter_offer_currency']?.toString() ?? 'LYD';
-
-  String get revealKey =>
-      (data['id'] ?? data['driver_id'] ?? avatarUrl ?? name).toString();
-
-  String get name {
-    final rawName = data['name'] ??
-        data['driver_name'] ??
-        data['first_name'] ??
-        data['full_name'];
-    final value = rawName?.toString().trim() ?? '';
-    if (value.isEmpty) return '';
-    return value.split(RegExp(r'\s+')).first;
-  }
-
-  String? get avatarUrl {
-    final raw = data['profile_picture'] ??
-        data['profile_image'] ??
-        data['avatar'] ??
-        data['image'];
-    final value = raw?.toString().trim() ?? '';
-    return value.startsWith('http://') || value.startsWith('https://')
-        ? value
-        : null;
-  }
-}
-
-List<_NearbyDriverCandidate> _nearbySearchCandidates({
-  required List<dynamic> source,
-  required dynamic serviceType,
-  required int transportType,
-  required double pickupLatitude,
-  required double pickupLongitude,
-}) {
-  final candidates = <_NearbyDriverCandidate>[];
-
-  for (final raw in source) {
-    if (raw is! Map) continue;
-    final driver = Map<String, dynamic>.from(raw);
-    if (!_searchFlagIsOn(driver['is_active']) ||
-        !_searchFlagIsOn(driver['is_available'])) {
-      continue;
-    }
-
-    final transport = driver['transport_type']?.toString();
-    final supportsTransport = transportType != 0 ||
-        transport == null ||
-        transport == 'taxi' ||
-        transport == 'both';
-    if (!supportsTransport || !_searchDriverSupports(driver, serviceType)) {
-      continue;
-    }
-
-    final updatedAt = int.tryParse(driver['updated_at']?.toString() ?? '');
-    if (updatedAt == null ||
-        DateTime.now()
-                .difference(DateTime.fromMillisecondsSinceEpoch(updatedAt))
-                .inMinutes >
-            2) {
-      continue;
-    }
-
-    final location = driver['l'];
-    if (location is! List || location.length < 2) continue;
-    final latitude = double.tryParse(location[0].toString());
-    final longitude = double.tryParse(location[1].toString());
-    if (latitude == null || longitude == null) continue;
-
-    candidates.add(
-      _NearbyDriverCandidate(
-        data: driver,
-        distance: calculateDistance(
-          pickupLatitude,
-          pickupLongitude,
-          latitude,
-          longitude,
-        ),
-      ),
-    );
-  }
-
-  candidates.sort((a, b) => a.distance.compareTo(b.distance));
-  return candidates;
-}
-
-List<_NearbyDriverCandidate> _prioritizeTargetedDrivers(
-  List<_NearbyDriverCandidate> nearby,
-  dynamic requestMetadata,
-  dynamic counterOfferMetadata,
-) {
-  final offers = <String, Map<String, dynamic>>{};
-  if (counterOfferMetadata is Map) {
-    for (final value in counterOfferMetadata.values) {
-      if (value is! Map || value['driver_id'] == null) continue;
-      if (value['is_rejected']?.toString() != 'none') continue;
-      final offer = Map<String, dynamic>.from(value);
-      offers[offer['driver_id'].toString()] = offer;
-    }
-  }
-
-  _NearbyDriverCandidate withOffer(_NearbyDriverCandidate candidate) {
-    final offer = offers[candidate.driverId];
-    if (offer == null) return candidate;
-    return _NearbyDriverCandidate(
-      data: {
-        ...candidate.data,
-        if (offer['driver_name'] != null) 'name': offer['driver_name'],
-        if (offer['driver_img'] != null) 'profile_picture': offer['driver_img'],
-        'counter_offer': offer['price'],
-        'counter_offer_base': offer['base_price'],
-        'counter_offer_currency': offer['currency'],
-      },
-      distance: candidate.distance,
-    );
-  }
-
-  final metadataEntries = <Map<String, dynamic>>[];
-  if (requestMetadata is Map) {
-    final root = Map<dynamic, dynamic>.from(requestMetadata);
-    if (root['driver_id'] != null) {
-      metadataEntries.add(Map<String, dynamic>.from(root));
-    }
-    for (final value in root.values) {
-      if (value is Map && value['driver_id'] != null) {
-        metadataEntries.add(Map<String, dynamic>.from(value));
-      }
-    }
-  }
-
-  final targeted = <_NearbyDriverCandidate>[];
-  final targetedIds = <String>{};
-  for (final metadata in metadataEntries) {
-    final id = metadata['driver_id']?.toString();
-    if (id == null || id.isEmpty || !targetedIds.add(id)) continue;
-    final matchingIndex = nearby.indexWhere(
-      (candidate) => candidate.data['id']?.toString() == id,
-    );
-    if (matchingIndex >= 0) {
-      targeted.add(withOffer(nearby[matchingIndex]));
-    } else {
-      final offer = offers[id];
-      targeted.add(
-        _NearbyDriverCandidate(
-          data: {
-            'id': id,
-            if (offer?['driver_name'] != null)
-              'name': offer!['driver_name']
-            else if (metadata['name'] != null)
-              'name': metadata['name'],
-            if (offer?['driver_img'] != null)
-              'profile_picture': offer!['driver_img']
-            else if (metadata['profile_picture'] != null)
-              'profile_picture': metadata['profile_picture'],
-            if (offer != null) ...{
-              'counter_offer': offer['price'],
-              'counter_offer_base': offer['base_price'],
-              'counter_offer_currency': offer['currency'],
-            },
-          },
-          distance: double.infinity,
-        ),
-      );
-    }
-  }
-
-  return [
-    ...targeted,
-    ...nearby
-        .where(
-          (candidate) =>
-              !targetedIds.contains(candidate.data['id']?.toString()),
-        )
-        .map(withOffer),
-    ...offers.entries
-        .where((entry) =>
-            !targetedIds.contains(entry.key) &&
-            !nearby.any((candidate) => candidate.driverId == entry.key))
-        .map(
-          (entry) => _NearbyDriverCandidate(
-            data: {
-              'id': entry.key,
-              'name': entry.value['driver_name'],
-              'profile_picture': entry.value['driver_img'],
-              'counter_offer': entry.value['price'],
-              'counter_offer_base': entry.value['base_price'],
-              'counter_offer_currency': entry.value['currency'],
-            },
-            distance: double.infinity,
-          ),
-        ),
-  ];
-}
-
-bool _searchFlagIsOn(dynamic value) =>
-    value == true || value == 1 || value?.toString() == '1';
-
-bool _searchDriverSupports(Map<String, dynamic> driver, dynamic serviceType) {
-  if (serviceType == null) return true;
-  final expected = serviceType.toString();
-  final types = driver['vehicle_types'];
-  if (types is List && types.any((type) => type.toString() == expected)) {
-    return true;
-  }
-  return driver['vehicle_type']?.toString() == expected;
 }
 
 class _SearchingDriverOverlay extends StatefulWidget {
@@ -240,19 +18,17 @@ class _SearchingDriverOverlay extends StatefulWidget {
     required this.isRtl,
     required this.onMenu,
     required this.onSupport,
-    required this.onCancel,
     required this.onAcceptOffer,
   });
 
-  final List<_NearbyDriverCandidate> drivers;
+  final List<NearbyDriverCandidate> drivers;
   final _RideFareData? fare;
   final int remainingSeconds;
   final int totalSeconds;
   final bool isRtl;
   final VoidCallback onMenu;
   final VoidCallback onSupport;
-  final Future<void> Function() onCancel;
-  final Future<bool> Function(_NearbyDriverCandidate driver) onAcceptOffer;
+  final Future<bool> Function(NearbyDriverCandidate driver) onAcceptOffer;
 
   @override
   State<_SearchingDriverOverlay> createState() =>
@@ -262,11 +38,10 @@ class _SearchingDriverOverlay extends StatefulWidget {
 class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
     with SingleTickerProviderStateMixin {
   late final AnimationController _pulseController;
-  final Map<String, _NearbyDriverCandidate> _revealedDrivers = {};
+  final Map<String, NearbyDriverCandidate> _revealedDrivers = {};
   final Map<String, Timer> _driverRevealTimers = {};
   final AudioPlayer _driverRevealAudio = AudioPlayer();
   DateTime? _lastRevealSoundAt;
-  bool _isCancelling = false;
   String? _acceptingOfferKey;
 
   @override
@@ -355,21 +130,33 @@ class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
     super.dispose();
   }
 
-  Future<void> _cancel() async {
-    if (_isCancelling) return;
-    setState(() => _isCancelling = true);
-    try {
-      await widget.onCancel();
-    } finally {
-      if (mounted) setState(() => _isCancelling = false);
-    }
-  }
-
-  Future<void> _acceptOffer(_NearbyDriverCandidate driver) async {
+  Future<void> _acceptOffer(NearbyDriverCandidate driver) async {
     if (_acceptingOfferKey != null) return;
     setState(() => _acceptingOfferKey = driver.revealKey);
     final accepted = await widget.onAcceptOffer(driver);
     if (mounted && !accepted) setState(() => _acceptingOfferKey = null);
+  }
+
+  Future<void> _showDriverDetails(NearbyDriverCandidate driver) async {
+    final isRtl = widget.isRtl;
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => Directionality(
+        textDirection: isRtl ? ui.TextDirection.rtl : ui.TextDirection.ltr,
+        child: _DriverDetailsSheet(
+          driver: driver,
+          isRtl: isRtl,
+          isAccepting: _acceptingOfferKey == driver.revealKey,
+          onAccept: driver.counterOffer == null
+              ? null
+              : () {
+                  Navigator.pop(sheetContext);
+                  _acceptOffer(driver);
+                },
+        ),
+      ),
+    );
   }
 
   @override
@@ -381,9 +168,15 @@ class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
     final revealedDrivers = widget.drivers
         .where((driver) => _revealedDrivers.containsKey(driver.revealKey))
         .toList(growable: false);
-    final activeDrivers = revealedDrivers.take(3).toList(growable: false);
-    final queuedDrivers =
-        revealedDrivers.skip(3).take(3).toList(growable: false);
+    final offeringDrivers = revealedDrivers
+        .where((driver) => driver.counterOffer != null)
+        .toList(growable: false);
+    // Only drivers the dispatcher actually put the request in front of may be
+    // shown as viewing it. Nearby drivers that were never notified stay on the
+    // map only.
+    final viewingDrivers = revealedDrivers
+        .where((driver) => driver.counterOffer == null && driver.targeted)
+        .toList(growable: false);
 
     return Directionality(
       textDirection: widget.isRtl ? ui.TextDirection.rtl : ui.TextDirection.ltr,
@@ -458,16 +251,28 @@ class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
                     ),
                   ),
                   SizedBox(height: compact ? 13 : 18),
-                  Text(
-                    widget.isRtl
-                        ? 'قريبًا سيتم قبول طلبك'
-                        : 'Your ride will be accepted soon',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.cairo(
-                      color: _searchNavy,
-                      fontSize: compact ? 21 : 24,
-                      fontWeight: FontWeight.w800,
-                      height: 1.25,
+                  SizedBox(
+                    width: double.infinity,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Text(
+                          widget.isRtl
+                              ? 'قريبًا سيتم قبول طلبك'
+                              : 'Your ride will be accepted soon',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.cairo(
+                            color: _searchNavy,
+                            fontSize: compact ? 21 : 24,
+                            fontWeight: FontWeight.w800,
+                            height: 1.25,
+                          ),
+                        ),
+                        Positioned(
+                          left: 0,
+                          child: _TitleMenuButton(onTap: widget.onMenu),
+                        ),
+                      ],
                     ),
                   ),
                   SizedBox(height: compact ? 3 : 5),
@@ -476,7 +281,7 @@ class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
                     children: [
                       Flexible(
                         child: Text(
-                          _subtitle(activeDrivers.length),
+                          _subtitle(revealedDrivers.length),
                           textAlign: TextAlign.center,
                           overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.cairo(
@@ -505,67 +310,115 @@ class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
                   ),
                   SizedBox(height: compact ? 9 : 13),
                   Expanded(
-                    child: activeDrivers.isEmpty
+                    child: offeringDrivers.isEmpty && viewingDrivers.isEmpty
                         ? _WaitingForNearbyDrivers(isRtl: widget.isRtl)
-                        : Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: activeDrivers
-                                    .map(
-                                      (driver) => _ActiveDriverAvatar(
-                                        driver: driver,
-                                        animation: _pulseController,
-                                        isRtl: widget.isRtl,
-                                        isAccepting: _acceptingOfferKey ==
-                                            driver.revealKey,
-                                        onAcceptOffer: () =>
-                                            _acceptOffer(driver),
-                                      ),
-                                    )
-                                    .toList(growable: false),
-                              ),
-                              if (queuedDrivers.isNotEmpty) ...[
-                                SizedBox(height: compact ? 7 : 10),
-                                _QueuedDriversRow(
-                                  drivers: queuedDrivers,
-                                  isRtl: widget.isRtl,
-                                ),
+                        : SingleChildScrollView(
+                            physics: const ClampingScrollPhysics(),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                if (offeringDrivers.isNotEmpty) ...[
+                                  _DriverGroupHeader(
+                                    text: widget.isRtl
+                                        ? (offeringDrivers.length == 1
+                                            ? 'عرض واحد تم استلامه'
+                                            : '${offeringDrivers.length} عروض تم استلامها')
+                                        : '${offeringDrivers.length} offer${offeringDrivers.length == 1 ? '' : 's'} received',
+                                  ),
+                                  SizedBox(height: compact ? 6 : 8),
+                                  SizedBox(
+                                    height: compact ? 158 : 168,
+                                    child: offeringDrivers.length <= 3
+                                        ? Center(
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                for (var index = 0;
+                                                    index <
+                                                        offeringDrivers.length;
+                                                    index++) ...[
+                                                  if (index > 0)
+                                                    const SizedBox(width: 10),
+                                                  _OfferCard(
+                                                    driver:
+                                                        offeringDrivers[index],
+                                                    isRtl: widget.isRtl,
+                                                    isAccepting:
+                                                        _acceptingOfferKey ==
+                                                            offeringDrivers[
+                                                                    index]
+                                                                .revealKey,
+                                                    onAccept: () =>
+                                                        _acceptOffer(
+                                                            offeringDrivers[
+                                                                index]),
+                                                    onTap: () =>
+                                                        _showDriverDetails(
+                                                            offeringDrivers[
+                                                                index]),
+                                                  ),
+                                                ],
+                                              ],
+                                            ),
+                                          )
+                                        : ListView.separated(
+                                            scrollDirection: Axis.horizontal,
+                                            padding: EdgeInsets.zero,
+                                            itemCount: offeringDrivers.length,
+                                            separatorBuilder: (_, __) =>
+                                                const SizedBox(width: 10),
+                                            itemBuilder: (context, index) {
+                                              final driver =
+                                                  offeringDrivers[index];
+                                              return _OfferCard(
+                                                driver: driver,
+                                                isRtl: widget.isRtl,
+                                                isAccepting:
+                                                    _acceptingOfferKey ==
+                                                        driver.revealKey,
+                                                onAccept: () =>
+                                                    _acceptOffer(driver),
+                                                onTap: () =>
+                                                    _showDriverDetails(driver),
+                                              );
+                                            },
+                                          ),
+                                  ),
+                                ],
+                                if (viewingDrivers.isNotEmpty) ...[
+                                  SizedBox(height: compact ? 8 : 11),
+                                  _DriverGroupHeader(
+                                    text: widget.isRtl
+                                        ? (viewingDrivers.length == 1
+                                            ? 'سائق واحد يشاهد الطلب الآن'
+                                            : '${viewingDrivers.length} سائقين يشاهدون الطلب الآن')
+                                        : '${viewingDrivers.length} driver${viewingDrivers.length == 1 ? '' : 's'} viewing your request',
+                                  ),
+                                  SizedBox(height: compact ? 6 : 8),
+                                  SizedBox(
+                                    height: compact ? 58 : 64,
+                                    child: ListView.separated(
+                                      scrollDirection: Axis.horizontal,
+                                      padding: EdgeInsets.zero,
+                                      itemCount: viewingDrivers.length,
+                                      separatorBuilder: (_, __) =>
+                                          const SizedBox(width: 10),
+                                      itemBuilder: (context, index) {
+                                        final driver = viewingDrivers[index];
+                                        return _ViewingDriverAvatar(
+                                          driver: driver,
+                                          isRtl: widget.isRtl,
+                                          onTap: () =>
+                                              _showDriverDetails(driver),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ],
                               ],
-                            ],
-                          ),
-                  ),
-                  SizedBox(height: compact ? 7 : 10),
-                  SizedBox(
-                    width: double.infinity,
-                    height: compact ? 48 : 52,
-                    child: OutlinedButton(
-                      onPressed: _isCancelling ? null : _cancel,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: _searchBlue,
-                        side: const BorderSide(color: _searchBlue, width: 1.5),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                      ),
-                      child: _isCancelling
-                          ? const SizedBox.square(
-                              dimension: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.2,
-                                color: _searchBlue,
-                              ),
-                            )
-                          : Text(
-                              widget.isRtl ? 'إلغاء الطلب' : 'Cancel request',
-                              style: GoogleFonts.cairo(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                              ),
                             ),
-                    ),
+                          ),
                   ),
                 ],
               ),
@@ -626,6 +479,28 @@ class _TaxistaWordmark extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TitleMenuButton extends StatelessWidget {
+  const _TitleMenuButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: const Color(0xffF2F5FA),
+      shape: const CircleBorder(),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: const SizedBox.square(
+          dimension: 30,
+          child: Icon(Icons.more_horiz_rounded, color: _searchNavy, size: 19),
         ),
       ),
     );
@@ -857,298 +732,23 @@ class _SearchTimer extends StatelessWidget {
   }
 }
 
-class _ActiveDriverAvatar extends StatelessWidget {
-  const _ActiveDriverAvatar({
-    required this.driver,
-    required this.animation,
-    required this.isRtl,
-    required this.isAccepting,
-    required this.onAcceptOffer,
-  });
+class _DriverGroupHeader extends StatelessWidget {
+  const _DriverGroupHeader({required this.text});
 
-  final _NearbyDriverCandidate driver;
-  final Animation<double> animation;
-  final bool isRtl;
-  final bool isAccepting;
-  final VoidCallback onAcceptOffer;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      key: ValueKey('driver-reveal-${driver.revealKey}'),
-      duration: const Duration(milliseconds: 680),
-      curve: Curves.elasticOut,
-      tween: Tween(begin: 0, end: 1),
-      builder: (context, value, child) => Opacity(
-        opacity: value.clamp(0.0, 1.0),
-        child: Transform.scale(
-          scale: 0.62 + (value.clamp(0.0, 1.0) * 0.38),
-          child: child,
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Text(
+        text,
+        style: GoogleFonts.cairo(
+          color: _searchNavy,
+          fontSize: 12.5,
+          fontWeight: FontWeight.w800,
         ),
       ),
-      child: SizedBox(
-        width: driver.counterOffer == null ? 86 : 104,
-        child: Column(
-          children: [
-            AnimatedBuilder(
-              animation: animation,
-              builder: (context, child) {
-                final glow = 7 + sin(animation.value * pi) * 5;
-                return Container(
-                  width: 68,
-                  height: 68,
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white,
-                    border:
-                        Border.all(color: const Color(0xff66E7DC), width: 2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: _searchMint.withValues(alpha: 0.22),
-                        blurRadius: glow,
-                        spreadRadius: 3,
-                      ),
-                    ],
-                  ),
-                  child: child,
-                );
-              },
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Positioned.fill(child: _DriverPortrait(driver: driver)),
-                  Positioned(
-                    right: -1,
-                    bottom: 1,
-                    child: Container(
-                      width: 15,
-                      height: 15,
-                      decoration: BoxDecoration(
-                        color: _searchMint,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2.5),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    left: -5,
-                    bottom: -5,
-                    child: Container(
-                      width: 25,
-                      height: 25,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.10),
-                            blurRadius: 6,
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.local_taxi_rounded,
-                        color: _searchBlue,
-                        size: 15,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 5),
-            Text(
-              driver.name.isEmpty
-                  ? (isRtl ? 'سائق قريب' : 'Nearby driver')
-                  : driver.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.cairo(
-                color: _searchNavy,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            if (driver.counterOffer != null) ...[
-              const SizedBox(height: 4),
-              _DriverCounterOfferChip(
-                driver: driver,
-                isRtl: isRtl,
-                isAccepting: isAccepting,
-                onTap: onAcceptOffer,
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DriverCounterOfferChip extends StatelessWidget {
-  const _DriverCounterOfferChip({
-    required this.driver,
-    required this.isRtl,
-    required this.isAccepting,
-    required this.onTap,
-  });
-
-  final _NearbyDriverCandidate driver;
-  final bool isRtl;
-  final bool isAccepting;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final offer = driver.counterOffer!;
-    final base = driver.counterOfferBase;
-    final currency = driver.counterOfferCurrency;
-    String money(double value) => value == value.roundToDouble()
-        ? value.toStringAsFixed(0)
-        : value.toStringAsFixed(2);
-    return TweenAnimationBuilder<double>(
-      key: ValueKey('offer-${driver.revealKey}-$offer'),
-      duration: const Duration(milliseconds: 520),
-      curve: Curves.elasticOut,
-      tween: Tween(begin: 0.55, end: 1),
-      builder: (context, scale, child) => Transform.scale(
-        scale: scale,
-        child: child,
-      ),
-      child: Material(
-        color: const Color(0xffE6FBF5),
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: isAccepting ? null : onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
-            child: isAccepting
-                ? const SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Column(
-                    children: [
-                      Text(
-                        isRtl
-                            ? 'يقبل بـ ${money(offer)} $currency'
-                            : 'Accepts for ${money(offer)} $currency',
-                        maxLines: 1,
-                        style: GoogleFonts.cairo(
-                          color: const Color(0xff087F65),
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      Text(
-                        base == null
-                            ? (isRtl ? 'اضغط للقبول' : 'Tap to accept')
-                            : (isRtl
-                                ? 'بدل ${money(base)} • قبول'
-                                : 'Instead of ${money(base)} • Accept'),
-                        maxLines: 1,
-                        style: GoogleFonts.cairo(
-                          color: _searchMuted,
-                          fontSize: 7.5,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DriverPortrait extends StatelessWidget {
-  const _DriverPortrait({required this.driver});
-
-  final _NearbyDriverCandidate driver;
-
-  @override
-  Widget build(BuildContext context) {
-    final fallback = Container(
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xffE8F4FF), Color(0xffD9FFF7)],
-        ),
-      ),
-      child: const Icon(Icons.person_rounded, color: _searchBlue, size: 35),
-    );
-    final avatar = driver.avatarUrl;
-    if (avatar == null) return fallback;
-    return ClipOval(
-      child: Image.network(
-        avatar,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => fallback,
-      ),
-    );
-  }
-}
-
-class _QueuedDriversRow extends StatelessWidget {
-  const _QueuedDriversRow({required this.drivers, required this.isRtl});
-
-  final List<_NearbyDriverCandidate> drivers;
-  final bool isRtl;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          isRtl ? 'بعدها' : 'Next',
-          style: GoogleFonts.cairo(
-            color: _searchMuted,
-            fontSize: 10.5,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(width: 8),
-        ...drivers.asMap().entries.map((entry) {
-          return Container(
-            width: 29,
-            height: 29,
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xffECF1F8),
-              shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xffD9E2EF)),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              '${entry.key + 4}',
-              style: GoogleFonts.nunitoSans(
-                color: _searchMuted,
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          );
-        }),
-        const SizedBox(width: 6),
-        Flexible(
-          child: Text(
-            isRtl ? 'في حال لم يقبل أحد' : 'if no driver accepts',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.cairo(
-              color: _searchMuted.withValues(alpha: 0.78),
-              fontSize: 9.5,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
