@@ -658,9 +658,17 @@ mixin _BookingConfirmationPendingRequest
         stream:
             FirebaseDatabase.instance.ref('request-meta/$requestId').onValue,
         builder: (context, snapshot) {
-          return _buildRegularDriverSearchContent(
-            media,
-            snapshot.data?.snapshot.value,
+          return StreamBuilder<DatabaseEvent>(
+            stream: FirebaseDatabase.instance
+                .ref('bid-meta/$requestId/drivers')
+                .onValue,
+            builder: (context, offersSnapshot) {
+              return _buildRegularDriverSearchContent(
+                media,
+                snapshot.data?.snapshot.value,
+                offersSnapshot.data?.snapshot.value,
+              );
+            },
           );
         },
       ),
@@ -670,6 +678,7 @@ mixin _BookingConfirmationPendingRequest
   Widget _buildRegularDriverSearchContent(
     Size media,
     dynamic requestMetadata,
+    dynamic counterOfferMetadata,
   ) {
     final pickupLatitude =
         double.tryParse(userRequestData['pick_lat']?.toString() ?? '') ?? 0;
@@ -695,8 +704,11 @@ mixin _BookingConfirmationPendingRequest
       pickupLatitude: pickupLatitude,
       pickupLongitude: pickupLongitude,
     );
-    final candidates =
-        _prioritizeTargetedDrivers(nearbyCandidates, requestMetadata);
+    final candidates = _prioritizeTargetedDrivers(
+      nearbyCandidates,
+      requestMetadata,
+      counterOfferMetadata,
+    );
 
     return _SearchingDriverOverlay(
       drivers: candidates,
@@ -712,7 +724,48 @@ mixin _BookingConfirmationPendingRequest
         );
       },
       onCancel: _confirmAndCancelSearchingRequest,
+      onAcceptOffer: _acceptRegularCounterOffer,
     );
+  }
+
+  Future<bool> _acceptRegularCounterOffer(
+    _NearbyDriverCandidate driver,
+  ) async {
+    final offeredFare = driver.counterOffer;
+    final requestId = userRequestData['id']?.toString();
+    if (offeredFare == null || requestId == null || requestId.isEmpty) {
+      return false;
+    }
+    final originalFare = double.tryParse(
+          userRequestData['request_eta_amount']?.toString() ?? '',
+        ) ??
+        double.tryParse(
+          _resolveRideFare(userRequestData)?.amount ?? '',
+        ) ??
+        offeredFare;
+    final result = await acceptRequest(jsonEncode({
+      'driver_id': driver.driverId,
+      'request_id': requestId,
+      'accepted_ride_fare': offeredFare,
+      'offerred_ride_fare': originalFare,
+    }));
+    if (result == 'success') {
+      await FirebaseDatabase.instance.ref('bid-meta/$requestId').remove();
+      return true;
+    }
+    if (mounted) {
+      final message = result == 'no internet'
+          ? (languageDirection == 'rtl'
+              ? 'تحقق من اتصال الإنترنت وحاول مجددًا'
+              : 'Check your internet connection and try again')
+          : (languageDirection == 'rtl'
+              ? 'تعذر قبول عرض السائق. حاول مرة أخرى'
+              : 'Unable to accept the driver offer. Please try again');
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(message)));
+    }
+    return false;
   }
 
   void _showSearchingRequestMenu() {

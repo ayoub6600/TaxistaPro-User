@@ -712,11 +712,24 @@ mixin _BookingConfirmationView
                                               userRequestData['drop_lat'] !=
                                                   null) {
                                             polyGot = true;
-                                            getPolylines(
-                                                driverData['l'][0],
-                                                driverData['l'][1],
-                                                userRequestData['pick_lat'],
-                                                userRequestData['pick_lng']);
+                                            final driverLatitude =
+                                                driverData['l'][0];
+                                            final driverLongitude =
+                                                driverData['l'][1];
+                                            final pickupLatitude =
+                                                userRequestData['pick_lat'];
+                                            final pickupLongitude =
+                                                userRequestData['pick_lng'];
+                                            WidgetsBinding.instance
+                                                .addPostFrameCallback((_) {
+                                              if (!mounted) return;
+                                              unawaited(getPolylines(
+                                                driverLatitude,
+                                                driverLongitude,
+                                                pickupLatitude,
+                                                pickupLongitude,
+                                              ));
+                                            });
                                             LatLngBounds bound;
                                             if (userRequestData.isNotEmpty) {
                                               if (driverData['l'][0] >

@@ -901,67 +901,19 @@ mixin _BookingConfirmationActiveRide
                                                   mainAxisAlignment:
                                                       MainAxisAlignment.center,
                                                   children: [
-                                                    (userRequestData[
-                                                                'is_bid_ride'] ==
-                                                            1)
-                                                        ? MyText(
-                                                            textAlign:
-                                                                TextAlign.end,
-                                                            text: userRequestData[
-                                                                    'requested_currency_symbol'] +
-                                                                ' ' +
-                                                                userRequestData[
-                                                                        'accepted_ride_fare']
-                                                                    .toString(),
-                                                            size: media.width *
-                                                                sixteen,
-                                                            fontweight:
-                                                                FontWeight.w500,
-                                                            color: textColor,
-                                                          )
-                                                        : (userRequestData[
-                                                                    'discounted_total'] !=
-                                                                null)
-                                                            ? MyText(
-                                                                textAlign:
-                                                                    TextAlign
-                                                                        .end,
-                                                                text: userRequestData[
-                                                                        'requested_currency_symbol'] +
-                                                                    ' ' +
-                                                                    userRequestData[
-                                                                            'discounted_total']
-                                                                        .toString(),
-                                                                size: media
-                                                                        .width *
-                                                                    sixteen,
-                                                                fontweight:
-                                                                    FontWeight
-                                                                        .w500,
-                                                                color:
-                                                                    textColor,
-                                                                maxLines: 1,
-                                                              )
-                                                            : MyText(
-                                                                textAlign:
-                                                                    TextAlign
-                                                                        .end,
-                                                                text: userRequestData[
-                                                                        'requested_currency_symbol'] +
-                                                                    ' ' +
-                                                                    userRequestData[
-                                                                            'request_eta_amount']
-                                                                        .toString(),
-                                                                size: media
-                                                                        .width *
-                                                                    sixteen,
-                                                                fontweight:
-                                                                    FontWeight
-                                                                        .w500,
-                                                                color:
-                                                                    textColor,
-                                                                maxLines: 1,
-                                                              ),
+                                                    MyText(
+                                                      textAlign: TextAlign.end,
+                                                      text:
+                                                          _resolvedRideFareText(
+                                                        userRequestData,
+                                                      ),
+                                                      size:
+                                                          media.width * sixteen,
+                                                      fontweight:
+                                                          FontWeight.w500,
+                                                      color: textColor,
+                                                      maxLines: 1,
+                                                    ),
                                                   ],
                                                 ),
                                               ),

@@ -637,13 +637,17 @@ verifyUser(String number, int login, String password, String email, isOtp,
 acceptRequest(body) async {
   dynamic result;
   try {
-    var response =
-        await http.post(Uri.parse('${url}api/v1/request/respond-for-bid'),
-            headers: {
-              'Authorization': 'Bearer ${bearerToken[0].token}',
-              'Content-Type': 'application/json',
-            },
-            body: body);
+    final endpoint = Uri.parse('${url}api/v1/request/respond-for-bid');
+    final response = await http.post(endpoint,
+        headers: {
+          'Authorization': 'Bearer ${bearerToken[0].token}',
+          'Content-Type': 'application/json',
+        },
+        body: body);
+
+    debugPrint(
+      'accept counter offer: ${response.statusCode} ${response.body}',
+    );
 
     if (response.statusCode == 200) {
       ismulitipleride = true;
@@ -652,16 +656,24 @@ acceptRequest(body) async {
     } else if (response.statusCode == 401) {
       result = 'logout';
     } else {
-      debugPrint(response.body);
       valueNotifierBook.incrementNotifier();
-
-      result = false;
+      try {
+        final decoded = jsonDecode(response.body);
+        result = decoded['errors']?['driver_id']?.first ??
+            decoded['message'] ??
+            'Unable to accept the offer';
+      } catch (_) {
+        result = 'Unable to accept the offer';
+      }
     }
     return result;
   } catch (e) {
+    debugPrint('accept counter offer failed: $e');
     if (e is SocketException) {
       internet = false;
+      return 'no internet';
     }
+    return 'Unable to accept the offer';
   }
 }
 

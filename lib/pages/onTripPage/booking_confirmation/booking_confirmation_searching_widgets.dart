@@ -16,6 +16,17 @@ class _NearbyDriverCandidate {
   final Map<String, dynamic> data;
   final double distance;
 
+  String get driverId => (data['id'] ?? data['driver_id']).toString();
+
+  double? get counterOffer =>
+      double.tryParse(data['counter_offer']?.toString() ?? '');
+
+  double? get counterOfferBase =>
+      double.tryParse(data['counter_offer_base']?.toString() ?? '');
+
+  String get counterOfferCurrency =>
+      data['counter_offer_currency']?.toString() ?? 'LYD';
+
   String get revealKey =>
       (data['id'] ?? data['driver_id'] ?? avatarUrl ?? name).toString();
 
@@ -102,7 +113,34 @@ List<_NearbyDriverCandidate> _nearbySearchCandidates({
 List<_NearbyDriverCandidate> _prioritizeTargetedDrivers(
   List<_NearbyDriverCandidate> nearby,
   dynamic requestMetadata,
+  dynamic counterOfferMetadata,
 ) {
+  final offers = <String, Map<String, dynamic>>{};
+  if (counterOfferMetadata is Map) {
+    for (final value in counterOfferMetadata.values) {
+      if (value is! Map || value['driver_id'] == null) continue;
+      if (value['is_rejected']?.toString() != 'none') continue;
+      final offer = Map<String, dynamic>.from(value);
+      offers[offer['driver_id'].toString()] = offer;
+    }
+  }
+
+  _NearbyDriverCandidate withOffer(_NearbyDriverCandidate candidate) {
+    final offer = offers[candidate.driverId];
+    if (offer == null) return candidate;
+    return _NearbyDriverCandidate(
+      data: {
+        ...candidate.data,
+        if (offer['driver_name'] != null) 'name': offer['driver_name'],
+        if (offer['driver_img'] != null) 'profile_picture': offer['driver_img'],
+        'counter_offer': offer['price'],
+        'counter_offer_base': offer['base_price'],
+        'counter_offer_currency': offer['currency'],
+      },
+      distance: candidate.distance,
+    );
+  }
+
   final metadataEntries = <Map<String, dynamic>>[];
   if (requestMetadata is Map) {
     final root = Map<dynamic, dynamic>.from(requestMetadata);
@@ -125,15 +163,26 @@ List<_NearbyDriverCandidate> _prioritizeTargetedDrivers(
       (candidate) => candidate.data['id']?.toString() == id,
     );
     if (matchingIndex >= 0) {
-      targeted.add(nearby[matchingIndex]);
+      targeted.add(withOffer(nearby[matchingIndex]));
     } else {
+      final offer = offers[id];
       targeted.add(
         _NearbyDriverCandidate(
           data: {
             'id': id,
-            if (metadata['name'] != null) 'name': metadata['name'],
-            if (metadata['profile_picture'] != null)
+            if (offer?['driver_name'] != null)
+              'name': offer!['driver_name']
+            else if (metadata['name'] != null)
+              'name': metadata['name'],
+            if (offer?['driver_img'] != null)
+              'profile_picture': offer!['driver_img']
+            else if (metadata['profile_picture'] != null)
               'profile_picture': metadata['profile_picture'],
+            if (offer != null) ...{
+              'counter_offer': offer['price'],
+              'counter_offer_base': offer['base_price'],
+              'counter_offer_currency': offer['currency'],
+            },
           },
           distance: double.infinity,
         ),
@@ -143,9 +192,29 @@ List<_NearbyDriverCandidate> _prioritizeTargetedDrivers(
 
   return [
     ...targeted,
-    ...nearby.where(
-      (candidate) => !targetedIds.contains(candidate.data['id']?.toString()),
-    ),
+    ...nearby
+        .where(
+          (candidate) =>
+              !targetedIds.contains(candidate.data['id']?.toString()),
+        )
+        .map(withOffer),
+    ...offers.entries
+        .where((entry) =>
+            !targetedIds.contains(entry.key) &&
+            !nearby.any((candidate) => candidate.driverId == entry.key))
+        .map(
+          (entry) => _NearbyDriverCandidate(
+            data: {
+              'id': entry.key,
+              'name': entry.value['driver_name'],
+              'profile_picture': entry.value['driver_img'],
+              'counter_offer': entry.value['price'],
+              'counter_offer_base': entry.value['base_price'],
+              'counter_offer_currency': entry.value['currency'],
+            },
+            distance: double.infinity,
+          ),
+        ),
   ];
 }
 
@@ -172,6 +241,7 @@ class _SearchingDriverOverlay extends StatefulWidget {
     required this.onMenu,
     required this.onSupport,
     required this.onCancel,
+    required this.onAcceptOffer,
   });
 
   final List<_NearbyDriverCandidate> drivers;
@@ -182,6 +252,7 @@ class _SearchingDriverOverlay extends StatefulWidget {
   final VoidCallback onMenu;
   final VoidCallback onSupport;
   final Future<void> Function() onCancel;
+  final Future<bool> Function(_NearbyDriverCandidate driver) onAcceptOffer;
 
   @override
   State<_SearchingDriverOverlay> createState() =>
@@ -196,6 +267,7 @@ class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
   final AudioPlayer _driverRevealAudio = AudioPlayer();
   DateTime? _lastRevealSoundAt;
   bool _isCancelling = false;
+  String? _acceptingOfferKey;
 
   @override
   void initState() {
@@ -226,7 +298,14 @@ class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
     _revealedDrivers.removeWhere((key, _) => !currentByKey.containsKey(key));
     for (final entry in _revealedDrivers.entries.toList()) {
       final refreshed = currentByKey[entry.key];
-      if (refreshed != null) _revealedDrivers[entry.key] = refreshed;
+      if (refreshed != null) {
+        final previousOffer = entry.value.counterOffer;
+        _revealedDrivers[entry.key] = refreshed;
+        if (refreshed.counterOffer != null &&
+            refreshed.counterOffer != previousOffer) {
+          unawaited(_playDriverRevealSound());
+        }
+      }
     }
 
     var revealIndex = 0;
@@ -284,6 +363,13 @@ class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
     } finally {
       if (mounted) setState(() => _isCancelling = false);
     }
+  }
+
+  Future<void> _acceptOffer(_NearbyDriverCandidate driver) async {
+    if (_acceptingOfferKey != null) return;
+    setState(() => _acceptingOfferKey = driver.revealKey);
+    final accepted = await widget.onAcceptOffer(driver);
+    if (mounted && !accepted) setState(() => _acceptingOfferKey = null);
   }
 
   @override
@@ -433,6 +519,10 @@ class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
                                         driver: driver,
                                         animation: _pulseController,
                                         isRtl: widget.isRtl,
+                                        isAccepting: _acceptingOfferKey ==
+                                            driver.revealKey,
+                                        onAcceptOffer: () =>
+                                            _acceptOffer(driver),
                                       ),
                                     )
                                     .toList(growable: false),
@@ -772,11 +862,15 @@ class _ActiveDriverAvatar extends StatelessWidget {
     required this.driver,
     required this.animation,
     required this.isRtl,
+    required this.isAccepting,
+    required this.onAcceptOffer,
   });
 
   final _NearbyDriverCandidate driver;
   final Animation<double> animation;
   final bool isRtl;
+  final bool isAccepting;
+  final VoidCallback onAcceptOffer;
 
   @override
   Widget build(BuildContext context) {
@@ -793,7 +887,7 @@ class _ActiveDriverAvatar extends StatelessWidget {
         ),
       ),
       child: SizedBox(
-        width: 86,
+        width: driver.counterOffer == null ? 86 : 104,
         child: Column(
           children: [
             AnimatedBuilder(
@@ -877,7 +971,94 @@ class _ActiveDriverAvatar extends StatelessWidget {
                 fontWeight: FontWeight.w700,
               ),
             ),
+            if (driver.counterOffer != null) ...[
+              const SizedBox(height: 4),
+              _DriverCounterOfferChip(
+                driver: driver,
+                isRtl: isRtl,
+                isAccepting: isAccepting,
+                onTap: onAcceptOffer,
+              ),
+            ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DriverCounterOfferChip extends StatelessWidget {
+  const _DriverCounterOfferChip({
+    required this.driver,
+    required this.isRtl,
+    required this.isAccepting,
+    required this.onTap,
+  });
+
+  final _NearbyDriverCandidate driver;
+  final bool isRtl;
+  final bool isAccepting;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final offer = driver.counterOffer!;
+    final base = driver.counterOfferBase;
+    final currency = driver.counterOfferCurrency;
+    String money(double value) => value == value.roundToDouble()
+        ? value.toStringAsFixed(0)
+        : value.toStringAsFixed(2);
+    return TweenAnimationBuilder<double>(
+      key: ValueKey('offer-${driver.revealKey}-$offer'),
+      duration: const Duration(milliseconds: 520),
+      curve: Curves.elasticOut,
+      tween: Tween(begin: 0.55, end: 1),
+      builder: (context, scale, child) => Transform.scale(
+        scale: scale,
+        child: child,
+      ),
+      child: Material(
+        color: const Color(0xffE6FBF5),
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: isAccepting ? null : onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
+            child: isAccepting
+                ? const SizedBox.square(
+                    dimension: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Column(
+                    children: [
+                      Text(
+                        isRtl
+                            ? 'يقبل بـ ${money(offer)} $currency'
+                            : 'Accepts for ${money(offer)} $currency',
+                        maxLines: 1,
+                        style: GoogleFonts.cairo(
+                          color: const Color(0xff087F65),
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      Text(
+                        base == null
+                            ? (isRtl ? 'اضغط للقبول' : 'Tap to accept')
+                            : (isRtl
+                                ? 'بدل ${money(base)} • قبول'
+                                : 'Instead of ${money(base)} • Accept'),
+                        maxLines: 1,
+                        style: GoogleFonts.cairo(
+                          color: _searchMuted,
+                          fontSize: 7.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
         ),
       ),
     );

@@ -12,23 +12,37 @@ _RideFareData? _resolveRideFare(Map<dynamic, dynamic> request) {
 
   final isBidRide =
       request['is_bid_ride'] == 1 || request['is_bid_ride']?.toString() == '1';
+  final acceptedFare =
+      double.tryParse(request['accepted_ride_fare']?.toString() ?? '');
+  final hasAcceptedFare = acceptedFare != null && acceptedFare > 0;
   final bill = request['requestBill'];
   final billData = bill is Map && bill['data'] is Map
       ? Map<dynamic, dynamic>.from(bill['data'] as Map)
       : const <dynamic, dynamic>{};
-  final candidates = isBidRide
+  // A regular ride can become a negotiated ride after a driver sends a
+  // counter offer. Once accepted, that fare is authoritative even though the
+  // original `is_bid_ride` flag remains false.
+  final candidates = hasAcceptedFare
       ? <dynamic>[
           request['accepted_ride_fare'],
-          request['offerred_ride_fare'],
-          request['request_eta_amount'],
-          billData['total_amount'],
-        ]
-      : <dynamic>[
           request['discounted_total'],
           request['request_eta_amount'],
-          request['accepted_ride_fare'],
+          request['offerred_ride_fare'],
           billData['total_amount'],
-        ];
+        ]
+      : isBidRide
+          ? <dynamic>[
+              request['accepted_ride_fare'],
+              request['offerred_ride_fare'],
+              request['request_eta_amount'],
+              billData['total_amount'],
+            ]
+          : <dynamic>[
+              request['discounted_total'],
+              request['request_eta_amount'],
+              request['accepted_ride_fare'],
+              billData['total_amount'],
+            ];
 
   double? amount;
   double? zeroFallback;
@@ -51,6 +65,14 @@ _RideFareData? _resolveRideFare(Map<dynamic, dynamic> request) {
     amount: amount.toStringAsFixed(2),
     currency: rawCurrency.toString().trim(),
   );
+}
+
+String _resolvedRideFareText(Map<dynamic, dynamic> request) {
+  final fare = _resolveRideFare(request);
+  if (fare == null) return '';
+  return fare.currency.isEmpty
+      ? fare.amount
+      : '${fare.currency} ${fare.amount}';
 }
 
 class _RideFareBadge extends StatelessWidget {
