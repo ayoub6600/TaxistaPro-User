@@ -221,8 +221,18 @@ extension _MapCanvas on _MapsState {
                       } else {
                         _centerLocation = position.target;
                       }
+                      if (!_isPickingLocation) {
+                        setState(() {
+                          _isPickingLocation = true;
+                        });
+                      }
                     },
                     onCameraIdle: () async {
+                      if (_isPickingLocation) {
+                        setState(() {
+                          _isPickingLocation = false;
+                        });
+                      }
                       if (_lastRequestedLocation != null &&
                           _lastRequestedLocation!.latitude ==
                               _centerLocation.latitude &&

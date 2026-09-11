@@ -13,12 +13,26 @@ extension _MapHomeOverlays on _MapsState {
                   ? Column(
                       children: [
                         SizedBox(
-                          height: (media.height / 2) - media.width * 0.08,
+                          height: (media.height / 2) -
+                              riderMascotHeight -
+                              riderMascotBubbleAllowance,
                         ),
+                        RiderMascotBubble(
+                          text: _isPickingLocation
+                              ? (languageDirection == 'rtl'
+                                  ? 'يحدد نقطة اللقاء'
+                                  : 'Choosing the meeting point')
+                              : _riderFirstName(),
+                        ),
+                        const SizedBox(height: 4),
                         Image.asset(
-                          "assets/images/gps.png",
-                          width: 38.w,
-                          height: 38.h,
+                          riderMascotAsset,
+                          width: riderMascotWidth,
+                          height: riderMascotHeight,
+                          cacheWidth: (riderMascotWidth *
+                                  MediaQuery.of(context).devicePixelRatio)
+                              .round(),
+                          fit: BoxFit.contain,
                         ),
                         if (userDetails[
                                 'enable_map_location_icon_drag_and_drop_feature'] ==

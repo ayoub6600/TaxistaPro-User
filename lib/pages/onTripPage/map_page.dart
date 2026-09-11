@@ -36,6 +36,7 @@ import '../noInternet/noInternet.dart';
 import 'booking_confirmation.dart';
 import 'drop_loc_select.dart';
 import 'home_quick_actions.dart';
+import 'widgets/rider_mascot_marker.dart';
 import 'map_page/widgets/map_advertisement_banner.dart';
 import 'map_page/widgets/map_floating_menu_button.dart';
 import 'map_page/widgets/map_recenter_button.dart';
@@ -126,6 +127,11 @@ class _MapsState extends State<Maps>
   bool _dropaddress = false;
   final bool _dropLocationMap = false;
   bool _locationDenied = false;
+
+  /// True while the home map's camera is moving under the fixed pickup pin
+  /// - drives the mascot's speech bubble between "يحدد نقطة اللقاء" and the
+  /// rider's name, same as the dedicated pickup-location picker screen.
+  bool _isPickingLocation = false;
   int gettingPerm = 0;
   Animation<double>? _animation;
 
@@ -153,6 +159,16 @@ class _MapsState extends State<Maps>
   Stream<List<Marker>> get carMarkerStream => _mapMarkerSC.stream;
 
   double _isbottom = -1000;
+
+  /// The rider's own first name for the confirmed-pickup bubble, falling
+  /// back to a generic greeting if the profile has no name yet.
+  String _riderFirstName() {
+    final name = userDetails['name']?.toString().trim();
+    if (name == null || name.isEmpty) {
+      return languageDirection == 'rtl' ? 'أنت' : 'You';
+    }
+    return name.split(' ').first;
+  }
 
   void _onMapCreated(GoogleMapController controller) {
     setState(() {

@@ -20,6 +20,7 @@ import '../login/login.dart';
 import '../noInternet/noInternet.dart';
 import 'booking_confirmation.dart';
 import 'map_page.dart';
+import 'widgets/rider_mascot_marker.dart';
 import 'package:flutter_map/flutter_map.dart' as fm;
 // ignore: depend_on_referenced_packages
 import 'package:latlong2/latlong.dart' as fmlt;
@@ -57,6 +58,21 @@ class _PickupLocationState extends State<PickupLocation>
   final _debouncer = Debouncer(milliseconds: 1000);
   bool useMyDetails = false;
   bool useMyAddress = false;
+
+  /// True while the map camera is moving under the fixed pickup pin (the
+  /// rider is actively dragging the map to choose a spot) - drives the
+  /// mascot's speech bubble between "يحدد نقطة اللقاء" and the rider's name.
+  bool _isPickingLocation = false;
+
+  /// The rider's own first name for the confirmed-pickup bubble, falling
+  /// back to a generic greeting if the profile has no name yet.
+  String _riderFirstName() {
+    final name = userDetails['name']?.toString().trim();
+    if (name == null || name.isEmpty) {
+      return languageDirection == 'rtl' ? 'أنت' : 'You';
+    }
+    return name.split(' ').first;
+  }
 
   void _onMapCreated(GoogleMapController controller) {
     setState(() {
@@ -271,9 +287,12 @@ class _PickupLocationState extends State<PickupLocation>
                                     ),
                                     onCameraMove: (CameraPosition position) {
                                       //pick current location
-                                      // setState(() {
                                       _centerLocation = position.target;
-                                      // });
+                                      if (!_isPickingLocation) {
+                                        setState(() {
+                                          _isPickingLocation = true;
+                                        });
+                                      }
                                     },
 
                                     onCameraIdle: () async {
@@ -283,6 +302,9 @@ class _PickupLocationState extends State<PickupLocation>
                                               _centerLocation.latitude &&
                                           _lastRequestedLocation!.longitude ==
                                               _centerLocation.longitude) {
+                                        setState(() {
+                                          _isPickingLocation = false;
+                                        });
                                         return;
                                       }
 
@@ -292,7 +314,9 @@ class _PickupLocationState extends State<PickupLocation>
                                               'enable_map_location_icon_drag_and_drop_feature'] ==
                                           '0') {
                                         if (pickupAddressConfirmation != '') {
-                                          setState(() {});
+                                          setState(() {
+                                            _isPickingLocation = false;
+                                          });
                                         } else {
                                           if (!useMyAddress) {
                                             String val = await geoCoding(
@@ -303,10 +327,12 @@ class _PickupLocationState extends State<PickupLocation>
                                             setState(() {
                                               _center = _centerLocation;
                                               pickupAddressConfirmation = val;
+                                              _isPickingLocation = false;
                                             });
                                           } else {
                                             setState(() {
                                               useMyAddress = false;
+                                              _isPickingLocation = false;
                                             });
                                           }
                                         }
@@ -319,10 +345,12 @@ class _PickupLocationState extends State<PickupLocation>
                                           setState(() {
                                             _center = _centerLocation;
                                             pickupAddressConfirmation = val;
+                                            _isPickingLocation = false;
                                           });
                                         } else {
                                           setState(() {
                                             useMyAddress = false;
+                                            _isPickingLocation = false;
                                           });
                                         }
                                       }
@@ -539,12 +567,26 @@ class _PickupLocationState extends State<PickupLocation>
                         child: Column(
                           children: [
                             SizedBox(
-                              height: (media.height / 2) - media.width * 0.08,
+                              height: (media.height / 2) -
+                                  riderMascotHeight -
+                                  riderMascotBubbleAllowance,
                             ),
+                            RiderMascotBubble(
+                              text: _isPickingLocation
+                                  ? (languageDirection == 'rtl'
+                                      ? 'يحدد نقطة اللقاء'
+                                      : 'Choosing the meeting point')
+                                  : _riderFirstName(),
+                            ),
+                            const SizedBox(height: 4),
                             Image.asset(
-                              'assets/images/pickupmarker.png',
-                              width: media.width * 0.07,
-                              height: media.width * 0.08,
+                              riderMascotAsset,
+                              width: riderMascotWidth,
+                              height: riderMascotHeight,
+                              cacheWidth: (riderMascotWidth *
+                                      MediaQuery.of(context).devicePixelRatio)
+                                  .round(),
+                              fit: BoxFit.contain,
                             ),
                             if (userDetails[
                                     'enable_map_location_icon_drag_and_drop_feature'] ==
