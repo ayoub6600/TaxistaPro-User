@@ -41,6 +41,8 @@ class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
   final Map<String, NearbyDriverCandidate> _revealedDrivers = {};
   final Map<String, Timer> _driverRevealTimers = {};
   final AudioPlayer _driverRevealAudio = AudioPlayer();
+  final AudioPlayer _offerReceivedAudio = AudioPlayer();
+  final Set<String> _announcedOffers = {};
   DateTime? _lastRevealSoundAt;
   String? _acceptingOfferKey;
 
@@ -78,7 +80,7 @@ class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
         _revealedDrivers[entry.key] = refreshed;
         if (refreshed.counterOffer != null &&
             refreshed.counterOffer != previousOffer) {
-          unawaited(_playDriverRevealSound());
+          _announceOffer(refreshed);
         }
       }
     }
@@ -100,9 +102,31 @@ class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
             .firstOrNull;
         if (latest == null) return;
         setState(() => _revealedDrivers[key] = latest);
+        // A driver revealed with an offer already on it is not news: only the
+        // "driver is here" sound plays, and the offer is marked as announced
+        // so a later resync does not replay the coin drop.
+        _markOfferAnnounced(latest);
         unawaited(_playDriverRevealSound());
       });
     }
+  }
+
+  String? _offerKey(NearbyDriverCandidate driver) {
+    final offer = driver.counterOffer;
+    return offer == null ? null : '${driver.revealKey}:$offer';
+  }
+
+  void _markOfferAnnounced(NearbyDriverCandidate driver) {
+    final key = _offerKey(driver);
+    if (key != null) _announcedOffers.add(key);
+  }
+
+  /// Plays the coin drop once per distinct offer. Rebuilds, stream resyncs and
+  /// repeated Firebase events for the same amount stay silent.
+  void _announceOffer(NearbyDriverCandidate driver) {
+    final key = _offerKey(driver);
+    if (key == null || !_announcedOffers.add(key)) return;
+    unawaited(_playOfferReceivedSound());
   }
 
   Future<void> _playDriverRevealSound() async {
@@ -119,6 +143,14 @@ class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
     );
   }
 
+  Future<void> _playOfferReceivedSound() async {
+    await _offerReceivedAudio.stop();
+    await _offerReceivedAudio.play(
+      AssetSource('audio/offer_received.mp3'),
+      volume: 0.8,
+    );
+  }
+
   @override
   void dispose() {
     for (final timer in _driverRevealTimers.values) {
@@ -126,6 +158,7 @@ class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
     }
     _driverRevealTimers.clear();
     unawaited(_driverRevealAudio.dispose());
+    unawaited(_offerReceivedAudio.dispose());
     _pulseController.dispose();
     super.dispose();
   }

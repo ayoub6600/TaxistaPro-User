@@ -655,24 +655,78 @@ mixin _BookingConfirmationPendingRequest
     }
     return Positioned.fill(
       child: StreamBuilder<DatabaseEvent>(
+        // Sequential dispatch and the legacy next-driver job still write a
+        // single node at this exact path (flat, or nested one level under
+        // the request id) - kept so neither regresses.
         stream:
             FirebaseDatabase.instance.ref('request-meta/$requestId').onValue,
-        builder: (context, snapshot) {
+        builder: (context, singlePathSnapshot) {
           return StreamBuilder<DatabaseEvent>(
+            // Broadcast dispatch gives each targeted driver their own
+            // sibling key ('<requestId>_<driverId>') so one driver's write
+            // can't overwrite another's; a query on the shared 'request_id'
+            // field every dispatch path stamps on its entries is the only
+            // way to collect them all without knowing the driver ids
+            // up front.
             stream: FirebaseDatabase.instance
-                .ref('bid-meta/$requestId/drivers')
+                .ref('request-meta')
+                .orderByChild('request_id')
+                .equalTo(requestId)
                 .onValue,
-            builder: (context, offersSnapshot) {
-              return _buildRegularDriverSearchContent(
-                media,
-                snapshot.data?.snapshot.value,
-                offersSnapshot.data?.snapshot.value,
+            builder: (context, querySnapshot) {
+              return StreamBuilder<DatabaseEvent>(
+                stream: FirebaseDatabase.instance
+                    .ref('bid-meta/$requestId/drivers')
+                    .onValue,
+                builder: (context, offersSnapshot) {
+                  return _buildRegularDriverSearchContent(
+                    media,
+                    _mergeRequestMetaEntries(
+                      singlePathSnapshot.data?.snapshot.value,
+                      querySnapshot.data?.snapshot.value,
+                    ),
+                    offersSnapshot.data?.snapshot.value,
+                  );
+                },
               );
             },
           );
         },
       ),
     );
+  }
+
+  /// Normalizes every request-meta shape the backend writes - the old flat
+  /// single node, the legacy job's node nested one level under the request
+  /// id, and broadcast dispatch's sibling-keyed nodes - into one flat map of
+  /// driver id to that driver's entry, which is exactly what
+  /// [targetedDriverIds]/[prioritizeTargetedDrivers] already expect.
+  Map<String, dynamic> _mergeRequestMetaEntries(
+    dynamic singlePathValue,
+    dynamic queryValue,
+  ) {
+    Map<String, dynamic> flatten(dynamic value) {
+      final entries = <String, dynamic>{};
+      if (value is! Map) return entries;
+      final map = Map<String, dynamic>.from(value);
+      if (map['driver_id'] != null) {
+        // Flat shape: the whole map is one driver's entry.
+        entries[map['driver_id'].toString()] = map;
+        return entries;
+      }
+      // Nested shape: every child is its own driver entry.
+      map.forEach((key, child) {
+        if (child is Map) {
+          entries[key.toString()] = Map<String, dynamic>.from(child);
+        }
+      });
+      return entries;
+    }
+
+    return {
+      ...flatten(singlePathValue),
+      ...flatten(queryValue),
+    };
   }
 
   Widget _buildRegularDriverSearchContent(
@@ -754,18 +808,30 @@ mixin _BookingConfirmationPendingRequest
       await FirebaseDatabase.instance.ref('bid-meta/$requestId').remove();
       return true;
     }
-    if (mounted) {
-      final message = result == 'no internet'
-          ? (languageDirection == 'rtl'
-              ? 'تحقق من اتصال الإنترنت وحاول مجددًا'
-              : 'Check your internet connection and try again')
-          : (languageDirection == 'rtl'
-              ? 'تعذر قبول عرض السائق. حاول مرة أخرى'
-              : 'Unable to accept the driver offer. Please try again');
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(message)));
-    }
+    // The backend refuses a stale offer with its own business message, e.g.
+    // when the driver already took another ride. Prefer it over a guess.
+    final serverMessage = (result is String &&
+            result.isNotEmpty &&
+            result != 'failed' &&
+            result != 'logout' &&
+            result != 'no internet' &&
+            result != 'Unable to accept the offer')
+        ? result
+        : null;
+    final message = serverMessage ??
+        (result == 'no internet'
+            ? (languageDirection == 'rtl'
+                ? 'تحقق من اتصال الإنترنت وحاول مجددًا'
+                : 'Check your internet connection and try again')
+            : (languageDirection == 'rtl'
+                ? 'تعذر قبول عرض السائق. حاول مرة أخرى'
+                : 'Unable to accept the driver offer. Please try again'));
+    // The searching screen can already be mid-transition by the time this
+    // resolves (the driver realtime state changed, another card took focus),
+    // so ScaffoldMessenger.of(context) is not reliably safe here even behind
+    // a mounted check. The app's global, context-free toast is what the rest
+    // of the app already uses for this exact class of business error.
+    showErrorToast(msg: message);
     return false;
   }
 
