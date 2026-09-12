@@ -632,7 +632,10 @@ class _EditProfileState extends State<EditProfile> {
                                         r"^[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])*$";
                                     var remail = email.text.replaceAll(' ', '');
                                     RegExp regex = RegExp(pattern);
-                                    if (regex.hasMatch(remail)) {
+                                    // Email is optional: an empty value skips
+                                    // format validation entirely instead of
+                                    // blocking the rider.
+                                    if (remail.isEmpty || regex.hasMatch(remail)) {
                                       setState(() {
                                         _isLoading = true;
                                       });
