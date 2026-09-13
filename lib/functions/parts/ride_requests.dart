@@ -33,10 +33,18 @@ createRequest(value, api) async {
       result = 'logout';
     } else {
       debugPrint(response.body);
-      if (jsonDecode(response.body)['message'] == 'no drivers available') {
+      String? message;
+      try {
+        message = jsonDecode(response.body)['message']?.toString();
+      } catch (_) {
+        message = null;
+      }
+      if (message == 'no drivers available') {
         noDriverFound = true;
       } else {
-        tripError = jsonDecode(response.body)['message'].toString();
+        tripError = (message == null || message.isEmpty)
+            ? languages[choosenLanguage]['text_something_went_wrong']
+            : message;
         tripReqError = true;
       }
 
@@ -44,11 +52,16 @@ createRequest(value, api) async {
       valueNotifierBook.incrementNotifier();
     }
   } catch (e) {
+    debugPrint('createRequest failed: $e');
     if (e is SocketException) {
       internet = false;
       result = 'no internet';
-      valueNotifierBook.incrementNotifier();
+    } else {
+      tripError = languages[choosenLanguage]['text_something_went_wrong'];
+      tripReqError = true;
+      result = 'failure';
     }
+    valueNotifierBook.incrementNotifier();
   }
   return result;
 }

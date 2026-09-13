@@ -899,6 +899,7 @@ mixin _BookingConfirmationController
   }
 
   Future<void> _confirmTripDetails() async {
+    if (isLoading) return;
     choosePets = false;
     chooseLuggages = false;
     setState(() {
@@ -934,7 +935,12 @@ mixin _BookingConfirmationController
       isLoading = false;
       if (etaDetails.isEmpty) {
         dropConfirmed = false;
-        serviceNotAvailable = true;
+        // A specific backend error (tripReqError) already explains what went
+        // wrong; only fall back to the generic "no service" message when
+        // nothing more specific was reported.
+        if (!tripReqError) {
+          serviceNotAvailable = true;
+        }
       } else {
         dropConfirmed = true;
         if (choosenTransportType == 1) {

@@ -7,6 +7,7 @@ mixin _BookingConfirmationRequestHandler
         _BookingConfirmationScheduledRequest,
         _BookingConfirmationImmediateRequest {
   Future<void> handleRideRequest(Size media, GeoHasher geo) async {
+    if (isLoading) return;
     if ((widget.type == 2) ||
         (((rentalOption.isEmpty &&
                         (etaDetails[choosenVehicle]['user_wallet_balance'] >=

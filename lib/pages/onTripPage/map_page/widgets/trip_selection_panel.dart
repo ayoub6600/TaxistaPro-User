@@ -70,7 +70,18 @@ class TripSelectionOverlay extends StatelessWidget {
     final media = MediaQuery.sizeOf(context);
     final safeTop = MediaQuery.paddingOf(context).top;
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
-    final panelHeight = (media.height * .70).clamp(500.0, 620.0).toDouble();
+    final desiredPanelHeight =
+        (media.height * .70).clamp(500.0, 620.0).toDouble();
+    // Reserve space for the back-button header (top offset + its own
+    // height) so the panel never grows taller than what's actually left
+    // above the keyboard — otherwise a fixed-height panel simply slides
+    // its top (and the pickup field inside it) off-screen.
+    const headerReserved = 10.0 + 58.0;
+    final maxPanelHeight =
+        media.height - safeTop - headerReserved - keyboard - 8.0;
+    final panelHeight = desiredPanelHeight > maxPanelHeight
+        ? maxPanelHeight.clamp(280.0, desiredPanelHeight)
+        : desiredPanelHeight;
 
     return Directionality(
       textDirection: rtl ? TextDirection.rtl : TextDirection.ltr,

@@ -537,9 +537,19 @@ etaRequest({transport, outstation}) async {
       result = 'logout';
     } else {
       debugPrint(response.body);
-      if (jsonDecode(response.body)['message'] ==
-          "service not available with this location") {
+      String? message;
+      try {
+        message = jsonDecode(response.body)['message']?.toString();
+      } catch (_) {
+        message = null;
+      }
+      if (message == "service not available with this location") {
         serviceNotAvailable = true;
+      } else {
+        tripError = (message == null || message.isEmpty)
+            ? languages[choosenLanguage]['text_something_went_wrong']
+            : message;
+        tripReqError = true;
       }
       result = false;
     }
@@ -548,8 +558,13 @@ etaRequest({transport, outstation}) async {
     debugPrint('ETA request failed: $e');
     if (e is SocketException) {
       internet = false;
+      result = 'no internet';
+    } else {
+      tripError = languages[choosenLanguage]['text_something_went_wrong'];
+      tripReqError = true;
+      result = false;
     }
-    return false;
+    return result;
   }
 }
 
