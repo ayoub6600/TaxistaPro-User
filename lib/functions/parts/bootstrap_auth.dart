@@ -448,6 +448,11 @@ registerUser() async {
           type: jsonVal['token_type'].toString(),
           token: jsonVal['access_token'].toString()));
       pref.setString('Bearer', bearerToken[0].token);
+      // The onboarding language picker runs before registration, so it has
+      // no token to persist the choice with - sync it now that one exists.
+      if (choosenLanguage.isNotEmpty) {
+        unawaited(getlangid());
+      }
       await getUserDetails();
       if (platform == TargetPlatform.android && package != null) {
         await FirebaseDatabase.instance
@@ -783,6 +788,13 @@ userLogin(number, login, password, isOtp) async {
           token: jsonVal['access_token'].toString()));
       result = true;
       pref.setString('Bearer', bearerToken[0].token);
+      // The onboarding language picker runs before login, so it has no
+      // token to persist the choice with - sync it now that one exists,
+      // otherwise the backend never learns it and background pushes fall
+      // back to the server's default locale.
+      if (choosenLanguage.isNotEmpty) {
+        unawaited(getlangid());
+      }
       package = await PackageInfo.fromPlatform();
       if (platform == TargetPlatform.android && package != null) {
         await FirebaseDatabase.instance
