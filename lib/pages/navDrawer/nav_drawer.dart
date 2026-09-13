@@ -10,6 +10,7 @@ import '../../widgets/widgets.dart';
 import '../NavigatorPages/editprofile.dart';
 import '../NavigatorPages/history.dart';
 import '../NavigatorPages/notification.dart';
+import '../NavigatorPages/upcoming_scheduled_rides.dart';
 import '../NavigatorPages/referral.dart';
 import '../NavigatorPages/settings.dart';
 import '../NavigatorPages/sos.dart';
@@ -146,6 +147,21 @@ class _NavDrawerState extends State<NavDrawer> {
                                 text: languages[choosenLanguage]
                                     ['text_enable_history'],
                                 //  icon: Icons.view_list_outlined,
+                                image: "assets/images/booking.png",
+                              ),
+                            ),
+                            SizedBox(
+                              width: media.width * 0.7,
+                              child: NavMenu(
+                                onTap: () {
+                                  Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              const UpcomingScheduledRidesPage()));
+                                },
+                                text: languages[choosenLanguage]
+                                    ['text_upcoming_rides'],
                                 image: "assets/images/booking.png",
                               ),
                             ),

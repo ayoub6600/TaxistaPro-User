@@ -40,3 +40,4 @@ part 'parts/ride_requests.dart';
 part 'parts/trip_support.dart';
 part 'parts/payments_profile.dart';
 part 'parts/verification.dart';
+part 'parts/scheduled_rides.dart';
