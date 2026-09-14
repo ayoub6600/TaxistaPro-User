@@ -7,6 +7,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../functions/functions.dart';
+import '../../translations/translation.dart';
 import '../../utils/version.dart';
 import '../language/languages.dart';
 import '../login/login.dart';
@@ -172,122 +173,13 @@ class _LoadingPageState extends State<LoadingPage> {
 
         if (updateAvailable) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            showDialog(
-              context: context,
-              barrierDismissible: !isMandatory,
-              barrierColor: Colors.black.withOpacity(0.85),
-              builder: (_) => WillPopScope(
-                onWillPop: () async => !isMandatory,
-                child: AlertDialog(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16.0),
-                  ),
-                  title: const Text(
-                    'تحديث متوفر',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.redAccent,
-                    ),
-                  ),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.system_update_rounded,
-                          size: 48, color: Colors.blue),
-                      const SizedBox(height: 16),
-                      Text(
-                        data['release_notes'] ??
-                            'يوجد إصدار جديد من التطبيق. يرجى التحديث.',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 16, height: 1.5),
-                      ),
-                      if (!isMandatory)
-                        const Padding(
-                          padding: EdgeInsets.only(top: 12),
-                          child: Text(
-                            'يمكنك متابعة استخدام التطبيق بدون التحديث الآن.',
-                            textAlign: TextAlign.center,
-                            style:
-                                TextStyle(fontSize: 14, color: Colors.black54),
-                          ),
-                        ),
-                    ],
-                  ),
-                  actionsAlignment: MainAxisAlignment.center,
-                  actions: [
-                    if (!isMandatory)
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('لاحقًا'),
-                      ),
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.download_rounded),
-                      label: const Text('تحديث الآن'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                      ),
-                      onPressed: () async {
-                        final updateUrl = Platform.isAndroid
-                            ? data['url'] ?? ''
-                            : data['url_ios'] ?? '';
-                        try {
-                          if (await canLaunchUrl(Uri.parse(updateUrl))) {
-                            await launchUrl(Uri.parse(updateUrl),
-                                mode: LaunchMode.externalApplication);
-                          }
-                        } catch (e) {
-                          debugPrint('Error launching URL: $e');
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                  'فشل في فتح متجر التطبيقات. حاول لاحقاً.'),
-                            ),
-                          );
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            );
+            _showUpdateDialog(data: data, isMandatory: isMandatory);
           });
           return;
         }
       }
 
-      if (!updateAvailable) {
-        await getDetailsOfDevice();
-        if (internet == true) {
-          var val = await getLocalData();
-
-          if (val == '3') {
-            navigate();
-          } else if (choosenLanguage.isEmpty) {
-            Navigator.pushReplacement(
-                context, MaterialPageRoute(builder: (_) => const Languages()));
-          } else if (val == '2') {
-            Future.delayed(const Duration(seconds: 2), () {
-              Navigator.pushReplacement(
-                  context, MaterialPageRoute(builder: (_) => const Login()));
-            });
-          } else {
-            Future.delayed(const Duration(seconds: 2), () {
-              Navigator.pushReplacement(context,
-                  MaterialPageRoute(builder: (_) => const Languages()));
-            });
-          }
-        } else {
-          setState(() {});
-        }
-      }
+      await _continueAfterUpdateCheck();
     } catch (e) {
       if (internet == true && !_error) {
         setState(() => _error = true);
@@ -296,6 +188,132 @@ class _LoadingPageState extends State<LoadingPage> {
         setState(() {});
       }
     }
+  }
+
+  /// Everything that happens once we know no mandatory update is blocking
+  /// the app - shared by the normal "no update" path and by dismissing an
+  /// optional update's dialog, which must resume the exact same flow rather
+  /// than leaving the loading screen stuck with nothing left to do.
+  Future<void> _continueAfterUpdateCheck() async {
+    await getDetailsOfDevice();
+    if (internet == true) {
+      var val = await getLocalData();
+
+      if (val == '3') {
+        navigate();
+      } else if (choosenLanguage.isEmpty) {
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (_) => const Languages()));
+      } else if (val == '2') {
+        Future.delayed(const Duration(seconds: 2), () {
+          Navigator.pushReplacement(
+              context, MaterialPageRoute(builder: (_) => const Login()));
+        });
+      } else {
+        Future.delayed(const Duration(seconds: 2), () {
+          Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (_) => const Languages()));
+        });
+      }
+    } else {
+      setState(() {});
+    }
+  }
+
+  void _showUpdateDialog({
+    required Map<dynamic, dynamic> data,
+    required bool isMandatory,
+  }) {
+    showDialog(
+      context: context,
+      barrierDismissible: !isMandatory,
+      barrierColor: Colors.black.withOpacity(0.85),
+      builder: (_) => WillPopScope(
+        onWillPop: () async => !isMandatory,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.0),
+          ),
+          title: Text(
+            languages[choosenLanguage]['text_update_required_title'],
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.redAccent,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.system_update_rounded,
+                  size: 48, color: Colors.blue),
+              const SizedBox(height: 16),
+              Text(
+                (data['release_notes']?.toString().isNotEmpty ?? false)
+                    ? data['release_notes'].toString()
+                    : languages[choosenLanguage]['text_update_available'],
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16, height: 1.5),
+              ),
+              if (!isMandatory)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Text(
+                    languages[choosenLanguage]['text_update_optional_hint'],
+                    textAlign: TextAlign.center,
+                    style:
+                        const TextStyle(fontSize: 14, color: Colors.black54),
+                  ),
+                ),
+            ],
+          ),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            if (!isMandatory)
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _continueAfterUpdateCheck();
+                },
+                child: Text(languages[choosenLanguage]['text_later']),
+              ),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.download_rounded),
+              label: Text(languages[choosenLanguage]['text_update']),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+              ),
+              onPressed: () async {
+                final updateUrl = Platform.isAndroid
+                    ? data['url'] ?? ''
+                    : data['url_ios'] ?? '';
+                try {
+                  if (await canLaunchUrl(Uri.parse(updateUrl))) {
+                    await launchUrl(Uri.parse(updateUrl),
+                        mode: LaunchMode.externalApplication);
+                  }
+                } catch (e) {
+                  debugPrint('Error launching URL: $e');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(languages[choosenLanguage]
+                          ['text_update_store_open_failed']),
+                    ),
+                  );
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override

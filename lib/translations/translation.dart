@@ -773,7 +773,10 @@ Map<String, dynamic> languages = {
     "text_end_trip_desc":
         "لقد أضفت 3 محطات توقف أخرى. هل ترغب في إنهاء الرحلة لكل منها؟",
     "text_new_trip_req": "رحلة جديدة مطلوبة",
-    "text_new_trip_req_bid": "تم طلب رحلة جديدة، يمكنك تقديم الطلب أو رفضه"
+    "text_new_trip_req_bid": "تم طلب رحلة جديدة، يمكنك تقديم الطلب أو رفضه",
+    "text_update_required_title": "تحديث متوفر",
+    "text_update_optional_hint": "يمكنك متابعة استخدام التطبيق بدون التحديث الآن.",
+    "text_update_store_open_failed": "فشل في فتح متجر التطبيقات. حاول لاحقاً."
   },
   "en": {
     "text_enter_social": "Or Enter Social Media",
@@ -1556,6 +1559,9 @@ Map<String, dynamic> languages = {
         "Fair prices, complete transparency. With us, you'll find no hidden fees; transparency is our guarantee",
     "text_fast_and_easy": "Smooth and Easy Access",
     "text_fast_and_easy_desc":
-        "Seamless journeys with just one click; explore without any hassle every step of the way"
+        "Seamless journeys with just one click; explore without any hassle every step of the way",
+    "text_update_required_title": "Update Available",
+    "text_update_optional_hint": "You can keep using the app without updating right now.",
+    "text_update_store_open_failed": "Failed to open the app store. Please try again later."
   },
 };
