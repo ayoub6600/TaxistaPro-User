@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -5,6 +7,7 @@ import 'package:taxista/pages/login/login.dart';
 import 'package:taxista/translations/translation.dart';
 
 import '../../functions/functions.dart';
+import '../../functions/schedule_time.dart';
 import '../../styles/styles.dart';
 import '../../widgets/widgets.dart';
 
@@ -22,11 +25,26 @@ class _UpcomingScheduledRidesPageState
   bool showCancelConfirm = false;
   dynamic cancelId;
   String? actionError;
+  Timer? _ticker;
+
+  bool get isRtl => languageDirection == 'rtl';
 
   @override
   void initState() {
     super.initState();
     load();
+    // Relative labels ("starts in 12 min", "today", "tomorrow") must keep
+    // advancing while the rider simply has this screen open, not only on
+    // the next pull-to-refresh.
+    _ticker = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
   }
 
   load() async {
@@ -276,13 +294,28 @@ class _UpcomingScheduledRidesPageState
             item['driverDetail']['data'] != null
         ? item['driverDetail']['data']
         : null;
+    final isReady = item['scheduled_status'] == 'ready';
+    final tripStart = parseTripStart(item);
+    final relativeLabel = tripStart != null
+        ? scheduleRelativeLabel(tripStart, isRtl: isRtl)
+        : (item['trip_start_time'] ?? '').toString();
+    final vehicleLabel = [item['car_make_name'], item['car_model_name']]
+        .where((v) => v != null && v != '-')
+        .join(' ');
 
     return Container(
       width: media.width * 1,
       padding: EdgeInsets.all(media.width * 0.03),
       margin: EdgeInsets.only(bottom: media.width * 0.03),
-      decoration:
-          BoxDecoration(borderRadius: BorderRadius.circular(12), color: page),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        color: page,
+        // A ready ride is about to start, so it earns a bit more visual
+        // weight than the calm "scheduled/dispatching/reserved" cards
+        // around it - without leaving this list or looking like an
+        // active-trip card.
+        border: isReady ? Border.all(color: online, width: 1.4) : null,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -312,13 +345,14 @@ class _UpcomingScheduledRidesPageState
           SizedBox(height: 10.h),
           Row(
             children: [
-              const Icon(Icons.watch_later, color: Colors.blue),
+              Icon(isReady ? Icons.notifications_active : Icons.watch_later,
+                  color: isReady ? online : Colors.blue, size: media.width * 0.045),
               SizedBox(width: media.width * 0.02),
               Expanded(
                 child: MyText(
-                  text: (item['trip_start_time'] ?? '').toString(),
-                  color: Colors.grey,
-                  fontweight: FontWeight.w600,
+                  text: relativeLabel,
+                  color: isReady ? online : Colors.grey,
+                  fontweight: isReady ? FontWeight.w800 : FontWeight.w600,
                   size: media.width * fourteen,
                 ),
               ),
@@ -406,10 +440,28 @@ class _UpcomingScheduledRidesPageState
                   ),
                 SizedBox(width: media.width * 0.03),
                 Expanded(
-                  child: MyText(
-                    text: driver['name'] ?? '',
-                    fontweight: FontWeight.w600,
-                    size: media.width * fourteen,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      MyText(
+                        text: driver['name'] ?? '',
+                        fontweight: FontWeight.w600,
+                        size: media.width * fourteen,
+                      ),
+                      if (vehicleLabel.isNotEmpty ||
+                          (item['car_number'] != null &&
+                              item['car_number'] != '-'))
+                        MyText(
+                          text: [
+                            if (vehicleLabel.isNotEmpty) vehicleLabel,
+                            if (item['car_number'] != null &&
+                                item['car_number'] != '-')
+                              item['car_number']
+                          ].join(' · '),
+                          color: Colors.grey,
+                          size: media.width * twelve,
+                        ),
+                    ],
                   ),
                 ),
               ],

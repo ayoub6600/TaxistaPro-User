@@ -5,8 +5,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
+// intl exports its own TextDirection, which otherwise silently shadows
+// Flutter's (the one Directionality/CupertinoDatePicker etc. actually take)
+// for every file in this part-of family - hide it here rather than qualify
+// every Directionality(textDirection: ...) call site individually.
+import 'package:intl/intl.dart' hide TextDirection;
 import 'package:taxista/functions/functions.dart';
+import 'package:taxista/functions/schedule_time.dart';
 import 'package:taxista/pages/onTripPage/booking_confirmation.dart';
 import 'package:taxista/pages/onTripPage/choosegoods.dart';
 import 'package:taxista/pages/onTripPage/map_page.dart';
