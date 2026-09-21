@@ -651,6 +651,42 @@ cancelReason(reason) async {
   return result;
 }
 
+/// Pre-accept counterpart to cancelReason() above - the ride is still
+/// searching, no driver assigned yet, so the existing arrival_status axis
+/// (before/after the driver ARRIVES at pickup, which presupposes one
+/// already exists) doesn't apply. The backend filters by
+/// available_before_accept instead (?stage=pre_accept), admin-configured
+/// per reason - never a hardcoded list here.
+fetchPreAcceptCancelReasons() async {
+  dynamic result;
+  try {
+    var response = await http.get(
+      Uri.parse(
+          '${url}api/v1/common/cancallation/reasons?stage=pre_accept&transport_type=${userRequestData['transport_type']}'),
+      headers: {
+        'Authorization': 'Bearer ${bearerToken[0].token}',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      cancelReasonsList = jsonDecode(response.body)['data'];
+      result = true;
+    } else if (response.statusCode == 401) {
+      result = 'logout';
+    } else {
+      debugPrint(response.body);
+      result = false;
+    }
+  } catch (e) {
+    if (e is SocketException) {
+      internet = false;
+      result = 'no internet';
+    }
+  }
+  return result;
+}
+
 List<CancelReasonJson> cancelJson = <CancelReasonJson>[];
 
 class CancelReasonJson {

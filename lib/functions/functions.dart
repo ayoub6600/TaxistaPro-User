@@ -41,3 +41,4 @@ part 'parts/trip_support.dart';
 part 'parts/payments_profile.dart';
 part 'parts/verification.dart';
 part 'parts/scheduled_rides.dart';
+part 'parts/ride_recovery.dart';

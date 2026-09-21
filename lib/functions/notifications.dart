@@ -24,6 +24,17 @@ void notificationTapBackground(NotificationResponse notificationResponse) {
   valueNotifierHome.incrementNotifier();
 }
 
+/// This push is only ever a timely nudge, never trusted on its own -
+/// findPresentedOfferForRider() on the backend is the actual source of
+/// truth either way. Re-fetching it here is what makes the Home card
+/// appear immediately instead of waiting for the next periodic poll,
+/// including while the app is already open in the foreground.
+void _handleRecoveryDriverReadyPush() {
+  fetchPendingRecoveryOfferForRider().then((_) {
+    valueNotifierHome.incrementNotifier();
+  });
+}
+
 var androidDetails = const AndroidNotificationDetails(
   '54321',
   'normal_notification',
@@ -65,11 +76,17 @@ Future<void> initMessaging() async {
         isGeneral = true;
         valueNotifierHome.incrementNotifier();
       }
+      if (message?.data['push_type'] == 'recovery_driver_ready') {
+        _handleRecoveryDriverReadyPush();
+      }
     }
   });
 
   FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
     RemoteNotification? notification = message.notification;
+    if (message.data['push_type'].toString() == 'recovery_driver_ready') {
+      _handleRecoveryDriverReadyPush();
+    }
     if (notification != null) {
       if (message.data['push_type'].toString() == 'general') {
         latestNotification = message.data['message'];
@@ -89,6 +106,9 @@ Future<void> initMessaging() async {
       latestNotification = message.data['message'];
       isGeneral = true;
       valueNotifierHome.incrementNotifier();
+    }
+    if (message.data['push_type'].toString() == 'recovery_driver_ready') {
+      _handleRecoveryDriverReadyPush();
     }
   });
 }

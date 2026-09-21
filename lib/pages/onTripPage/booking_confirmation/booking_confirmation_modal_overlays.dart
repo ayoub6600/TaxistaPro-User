@@ -31,6 +31,7 @@ mixin _BookingConfirmationModalOverlays
           await handleRideRequest(media, geo);
         },
       ),
+      buildStillSearchingOverlay(),
       buildTripErrorOverlay(),
       buildServiceUnavailableOverlay(),
       buildLowWalletOverlay(),
@@ -40,9 +41,9 @@ mixin _BookingConfirmationModalOverlays
       (_cancelling == true)
           ? CancellationSheet(
               reasons: cancelReasonsList
-                  .map((item) => item['reason'].toString())
+                  .where((item) => item is Map && item.isNotEmpty)
                   .toList(),
-              selectedReason: _cancelReason,
+              selectedReasonId: _cancelReason,
               otherValue: 'others',
               copy: Map<String, dynamic>.from(languages[choosenLanguage]),
               errorText: _cancellingError,

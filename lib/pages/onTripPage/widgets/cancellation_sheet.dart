@@ -9,7 +9,7 @@ class CancellationSheet extends StatelessWidget {
   const CancellationSheet({
     super.key,
     required this.reasons,
-    required this.selectedReason,
+    required this.selectedReasonId,
     required this.otherValue,
     required this.copy,
     required this.errorText,
@@ -19,8 +19,12 @@ class CancellationSheet extends StatelessWidget {
     required this.onConfirmCancellation,
   });
 
-  final List<String> reasons;
-  final String selectedReason;
+  /// Each entry is one admin-configured cancellation reason as returned by
+  /// the backend - must contain at least 'id' and 'reason' (display text).
+  /// Never a hardcoded list - always whatever the caller fetched for the
+  /// current ride stage (pre- or post-accept).
+  final List reasons;
+  final String selectedReasonId;
   final String otherValue;
   final Map<String, dynamic> copy;
   final String errorText;
@@ -30,6 +34,22 @@ class CancellationSheet extends StatelessWidget {
   final Future<void> Function() onConfirmCancellation;
 
   String _text(String key) => copy[key]?.toString() ?? '';
+
+  /// Whether the currently-selected reason is admin-flagged
+  /// treats_as_no_driver_found - purely to show the rider an honest heads-up
+  /// before they confirm, never used to decide anything else client-side
+  /// (the backend is the sole source of truth for what actually happens).
+  bool _selectedReasonIsRecoverable() {
+    if (selectedReasonId.isEmpty || selectedReasonId == otherValue) {
+      return false;
+    }
+    for (final item in reasons) {
+      if (item['id'].toString() == selectedReasonId) {
+        return item['treats_as_no_driver_found'] == true;
+      }
+    }
+    return false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,18 +90,18 @@ class CancellationSheet extends StatelessWidget {
                     ),
                     SizedBox(height: 14.h),
                     ...reasons.map(
-                      (reason) => _ReasonTile(
-                        label: reason,
-                        selected: selectedReason == reason,
-                        onTap: () => onReasonSelected(reason),
+                      (item) => _ReasonTile(
+                        label: (item['reason'] ?? '').toString(),
+                        selected: selectedReasonId == item['id'].toString(),
+                        onTap: () => onReasonSelected(item['id'].toString()),
                       ),
                     ),
                     _ReasonTile(
                       label: _text('text_others'),
-                      selected: selectedReason == otherValue,
+                      selected: selectedReasonId == otherValue,
                       onTap: () => onReasonSelected(otherValue),
                     ),
-                    if (selectedReason == otherValue) ...[
+                    if (selectedReasonId == otherValue) ...[
                       SizedBox(height: 8.h),
                       TextField(
                         minLines: 2,
@@ -98,6 +118,24 @@ class CancellationSheet extends StatelessWidget {
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(14.r),
                             borderSide: BorderSide(color: borderLines),
+                          ),
+                        ),
+                      ),
+                    ],
+                    if (_selectedReasonIsRecoverable()) ...[
+                      SizedBox(height: 10.h),
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(12.w),
+                        decoration: BoxDecoration(
+                          color: const Color(0xff1677FF).withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        child: Text(
+                          _text('text_recovery_cancel_notice'),
+                          style: GoogleFonts.cairo(
+                            fontSize: 12.sp,
+                            color: textColor,
                           ),
                         ),
                       ),

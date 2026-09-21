@@ -3,13 +3,18 @@ part of '../map_page.dart';
 extension _MapHomeOverlays on _MapsState {
   List<Widget> buildMapHomeOverlays(Size media) {
     return <Widget>[
+      buildRecoveryOfferCard(media),
       Positioned(
           top: 0,
           child: Container(
               height: media.height * 1,
               width: media.width * 1,
               alignment: Alignment.center,
-              child: (_dropLocationMap == false)
+              // The recovery card takes visual priority and sits in the
+              // same vertical band as the idle mascot - showing both at
+              // once reads as broken, not busy.
+              child: (_dropLocationMap == false &&
+                      pendingRecoveryOfferForRider == null)
                   ? Column(
                       children: [
                         SizedBox(
@@ -83,7 +88,9 @@ extension _MapHomeOverlays on _MapsState {
                               text: languages[choosenLanguage]['text_confirm'])
                       ],
                     )
-                  : Image.asset('assets/images/dropmarker.png'))),
+                  : (_dropLocationMap
+                      ? Image.asset('assets/images/dropmarker.png')
+                      : const SizedBox()))),
       (contactus == true)
           ? Positioned(
               right: 10,

@@ -4,6 +4,8 @@ mixin _BookingConfirmationController
     on State<BookingConfirmation>, WidgetsBindingObserver, TickerProvider {
   void handleBookingBack(BuildContext context) {
     noDriverFound = false;
+    stillSearchingForDriver = false;
+    pendingRecoveryDriverOffer = null;
     tripReqError = false;
     serviceNotAvailable = false;
 
@@ -71,6 +73,7 @@ mixin _BookingConfirmationController
   String _cancelCustomReason = '';
   dynamic timers;
   int _pendingRequestRefreshTick = 0;
+  bool pendingRecoveryOfferDialogShown = false;
   bool _dateTimePicker = false;
   bool showSos = false;
   bool notifyCompleted = false;
@@ -199,6 +202,8 @@ mixin _BookingConfirmationController
     tripReqError = false;
     myBearings.clear();
     noDriverFound = false;
+    stillSearchingForDriver = false;
+    pendingRecoveryDriverOffer = null;
     etaDetails.clear();
     rentalOption.clear();
     currentpage = true;
@@ -291,6 +296,22 @@ mixin _BookingConfirmationController
           userRequestData['maximum_time_for_find_drivers_for_regular_ride'] ??
               userDetails['maximum_time_for_find_drivers_for_regular_ride'];
       timing = int.tryParse(configuredDuration?.toString() ?? '') ?? 0;
+      // The backend's own no-driver-found dispatch doesn't fire until the
+      // dispatch-retry cron has ticked PAST this same duration (it cancels
+      // once attempts exceed it, one attempt per ~1-minute tick - so it can
+      // take up to a minute longer than this raw duration). Without this
+      // margin, whenever recovery is enabled this client timer reaches 0
+      // and self-cancels the ride before the backend has even had a chance
+      // to flip recovery_active, defeating recovery every time.
+      final recoveryEnabled = (int.tryParse(
+              userDetails['missed_ride_recovery_window_seconds']
+                      ?.toString() ??
+                  '') ??
+          0) >
+          0;
+      if (recoveryEnabled && timing > 0) {
+        timing = timing + 90;
+      }
       if (mounted) {
         timers = Timer.periodic(const Duration(seconds: 1), (timer) async {
           if (timing != null) {
@@ -303,16 +324,46 @@ mixin _BookingConfirmationController
                 final requestId = userRequestData['id']?.toString();
                 if (requestId != null && requestId.isNotEmpty) {
                   unawaited(refreshUserRequestState(requestId));
+                  if (stillSearchingForDriver) {
+                    unawaited(_checkForRecoveryDriverOffer(requestId));
+                  }
                 }
               }
               valueNotifierBook.incrementNotifier();
             } else if (userRequestData.isNotEmpty &&
                 userRequestData['accepted_at'] == null &&
                 timing == 0) {
+              // Missed-ride recovery: before giving up client-side, check
+              // whether the backend already kept this ride open for a
+              // recovery window instead of cancelling it (see
+              // NoDriverFoundNotifyJob/MissedRideRecoveryService). Without
+              // this check, this timer would cancel the ride out from under
+              // that recovery window every time, regardless of the backend.
+              final requestId = userRequestData['id']?.toString();
+              if (requestId != null && requestId.isNotEmpty) {
+                await refreshUserRequestState(requestId);
+              }
+              final recoveryWindowSeconds = int.tryParse(userDetails[
+                              'missed_ride_recovery_window_seconds']
+                          ?.toString() ??
+                      '') ??
+                  0;
+              if (userRequestData['recovery_active'] == true &&
+                  recoveryWindowSeconds > 0 &&
+                  !stillSearchingForDriver) {
+                timing = recoveryWindowSeconds;
+                setState(() {
+                  stillSearchingForDriver = true;
+                });
+                valueNotifierBook.incrementNotifier();
+                return;
+              }
+
               var val = await cancelRequest();
 
               setState(() {
                 noDriverFound = true;
+                stillSearchingForDriver = false;
               });
 
               timer.cancel();
@@ -334,6 +385,53 @@ mixin _BookingConfirmationController
         });
       }
     }
+  }
+
+  /// One driver going "ready" during a recovery window is a proposal, not
+  /// an assignment - the rider must confirm before anyone is actually
+  /// assigned (see RideRecoveryController::confirmDriver). This surfaces
+  /// that choice as soon as it appears; a dialog already open is left alone
+  /// rather than stacking a second one on top.
+  Future<void> _checkForRecoveryDriverOffer(String requestId) async {
+    if (pendingRecoveryOfferDialogShown) return;
+    final result = await fetchPendingRecoveryOffers(requestId);
+    if (result != 'success' || !mounted) return;
+    if (pendingRecoveryOffers.isEmpty) return;
+
+    final offer = pendingRecoveryOffers.first;
+    pendingRecoveryOfferDialogShown = true;
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(choosenLanguage == 'ar' ? 'لقينالك سواق' : 'We found a driver'),
+        content: Text(choosenLanguage == 'ar'
+            ? 'السواق ${offer['driver_name'] ?? ''} مستعد يوصلك. تأكده؟'
+            : 'Driver ${offer['driver_name'] ?? ''} is ready to pick you up. Confirm?'),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              await rejectRecoveryDriver(offer['offer_id']);
+            },
+            child: Text(choosenLanguage == 'ar' ? 'لا، رفض' : 'No, decline'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              final requestId = userRequestData['id']?.toString();
+              await confirmRecoveryDriver(offer['offer_id']);
+              if (requestId != null) {
+                await refreshUserRequestState(requestId);
+              }
+              if (mounted) setState(() {});
+            },
+            child: Text(choosenLanguage == 'ar' ? 'نعم، أكد' : 'Yes, confirm'),
+          ),
+        ],
+      ),
+    );
+    pendingRecoveryOfferDialogShown = false;
   }
 
 //create icon

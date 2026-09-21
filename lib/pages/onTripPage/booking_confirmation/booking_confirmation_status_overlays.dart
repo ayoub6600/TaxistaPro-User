@@ -18,6 +18,37 @@ mixin _BookingConfirmationStatusOverlays
     );
   }
 
+  /// Shown instead of the immediate no-driver-found screen while the
+  /// backend keeps this ride open for a missed-ride recovery window
+  /// (recovery_active on userRequestData) - "still trying", not "gave up".
+  /// The rider can still bail out early via the action button; if they
+  /// don't, either a driver gets confirmed (this ride's timer stops on its
+  /// own - see the accepted_at check in timer()) or the window closes and
+  /// noDriverFound takes over normally.
+  Widget buildStillSearchingOverlay() {
+    if (!stillSearchingForDriver) return Container();
+
+    return BookingStatusSheet(
+      title: languages[choosenLanguage]['text_still_searching'] ??
+          (choosenLanguage == 'ar'
+              ? 'نكمل نلقالك سواق...'
+              : 'Still looking for a driver...'),
+      actionLabel: languages[choosenLanguage]['text_cancel'] ??
+          (choosenLanguage == 'ar' ? 'إلغاء' : 'Cancel'),
+      icon: Icons.search_rounded,
+      accentColor: const Color(0xff1677FF),
+      onAction: () async {
+        var val = await cancelRequest();
+        setState(() {
+          stillSearchingForDriver = false;
+        });
+        if (val == 'logout') {
+          navigateLogout();
+        }
+      },
+    );
+  }
+
   Widget buildTripErrorOverlay() {
     if (!tripReqError) return Container();
 

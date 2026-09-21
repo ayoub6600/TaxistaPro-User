@@ -101,6 +101,12 @@ dynamic timing;
 dynamic mapPadding = 0.0;
 String goodsSize = '';
 bool noDriverFound = false;
+// Missed-ride recovery: the backend kept this ride open past the normal
+// search window instead of cancelling it (see recovery_active on
+// userRequestData). Distinct from noDriverFound - this is "still trying",
+// not "gave up".
+bool stillSearchingForDriver = false;
+Map? pendingRecoveryDriverOffer;
 var driverData = {};
 var driversData = [];
 dynamic choosenDateTime;

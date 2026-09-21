@@ -89,9 +89,19 @@ mixin _BookingConfirmationPendingRequest
                                 width: media.width * 0.9,
                                 alignment: Alignment.centerRight,
                                 child: InkWell(
-                                  onTap: () {
+                                  onTap: () async {
+                                    // Pre-accept cancel must show the same
+                                    // admin-configured reason picker as the
+                                    // post-accept flow - never an immediate,
+                                    // reason-less cancel (see
+                                    // fetchPreAcceptCancelReasons()).
+                                    await fetchPreAcceptCancelReasons();
+                                    if (!mounted) return;
                                     setState(() {
-                                      _cancel = true;
+                                      _cancelReason = '';
+                                      _cancelCustomReason = '';
+                                      _cancellingError = '';
+                                      _cancelling = true;
                                     });
                                   },
                                   child: Text(
@@ -901,46 +911,19 @@ mixin _BookingConfirmationPendingRequest
     );
   }
 
+  /// Pre-accept cancel must show the same admin-configured reason picker
+  /// as the post-accept flow (see CancellationSheet /
+  /// fetchPreAcceptCancelReasons()) - a plain reason-less confirm dialog
+  /// would bypass the treats_as_no_driver_found recovery rule entirely,
+  /// since recovery eligibility is decided by which reason was picked.
   Future<void> _confirmAndCancelSearchingRequest() async {
-    final isRtl = languageDirection == 'rtl';
-    final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (dialogContext) => Directionality(
-            textDirection: isRtl ? ui.TextDirection.rtl : ui.TextDirection.ltr,
-            child: AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(22),
-              ),
-              title: Text(
-                isRtl ? 'إلغاء الطلب؟' : 'Cancel request?',
-                style: GoogleFonts.cairo(fontWeight: FontWeight.w800),
-              ),
-              content: Text(
-                isRtl
-                    ? 'سيتوقف البحث الحالي عن سائق.'
-                    : 'The current driver search will stop.',
-                style: GoogleFonts.cairo(color: Colors.grey.shade700),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogContext, false),
-                  child: Text(isRtl ? 'متابعة البحث' : 'Keep searching'),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.pop(dialogContext, true),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xffE44747),
-                  ),
-                  child: Text(isRtl ? 'إلغاء' : 'Cancel'),
-                ),
-              ],
-            ),
-          ),
-        ) ??
-        false;
-
-    if (!confirmed) return;
-    final result = await cancelRequest();
-    if (result == 'logout') navigateLogout();
+    await fetchPreAcceptCancelReasons();
+    if (!mounted) return;
+    setState(() {
+      _cancelReason = '';
+      _cancelCustomReason = '';
+      _cancellingError = '';
+      _cancelling = true;
+    });
   }
 }

@@ -61,6 +61,7 @@ part 'map_page/map_location_services.dart';
 part 'map_page/map_main_content.dart';
 part 'map_page/map_mode_sheet.dart';
 part 'map_page/map_permission_states.dart';
+part 'map_page/map_recovery_offer.dart';
 part 'map_page/map_search_results.dart';
 part 'map_page/map_system_overlays.dart';
 part 'map_page/map_view.dart';
@@ -160,6 +161,12 @@ class _MapsState extends State<Maps>
 
   double _isbottom = -1000;
 
+  /// Drives the Home recovery-offer card's countdown and its periodic
+  /// backend re-check - the Home screen has no other periodic timer to
+  /// reuse, and the countdown needs a per-second tick regardless.
+  Timer? _recoveryOfferTicker;
+  int _recoveryOfferTickCount = 0;
+
   /// The rider's own first name for the confirmed-pickup bubble, falling
   /// back to a generic greeting if the profile has no name yet.
   String _riderFirstName() {
@@ -215,6 +222,10 @@ class _MapsState extends State<Maps>
 
     getLocs();
     getadminCurrentMessages();
+    unawaited(fetchPendingRecoveryOfferForRider().then((_) {
+      if (mounted) setState(() {});
+    }));
+    startRecoveryOfferTicker();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(requestNotificationPermissionIfNeeded());
     });
@@ -232,6 +243,9 @@ class _MapsState extends State<Maps>
       });
     }
     if (state == AppLifecycleState.resumed) {
+      unawaited(fetchPendingRecoveryOfferForRider().then((_) {
+        if (mounted) setState(() {});
+      }));
       if (_controller != null) {
         _controller?.setMapStyle(mapStyle);
         valueNotifierHome.incrementNotifier();
@@ -251,6 +265,7 @@ class _MapsState extends State<Maps>
     _controller = null;
     animationController?.dispose();
     _animationcontroller.dispose();
+    _recoveryOfferTicker?.cancel();
     super.dispose();
   }
 
