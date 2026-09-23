@@ -58,7 +58,7 @@ class NearbyDriverCandidate {
       double.tryParse(data['counter_offer_base']?.toString() ?? '');
 
   String get counterOfferCurrency =>
-      data['counter_offer_currency']?.toString() ?? 'LYD';
+      data['counter_offer_currency']?.toString() ?? '';
 
   String? get vehicleMake =>
       data['vehicle_make']?.toString().trim().isNotEmpty == true
