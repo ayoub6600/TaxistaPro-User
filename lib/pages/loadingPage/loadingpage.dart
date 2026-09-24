@@ -229,12 +229,14 @@ class _LoadingPageState extends State<LoadingPage> {
         Navigator.pushReplacement(
             context, MaterialPageRoute(builder: (_) => const Languages()));
       } else if (val == '2') {
-        Future.delayed(const Duration(seconds: 2), () {
+        Future.delayed(const Duration(milliseconds: 600), () {
+          if (!mounted) return;
           Navigator.pushReplacement(
               context, MaterialPageRoute(builder: (_) => const Login()));
         });
       } else {
-        Future.delayed(const Duration(seconds: 2), () {
+        Future.delayed(const Duration(milliseconds: 600), () {
+          if (!mounted) return;
           Navigator.pushReplacement(
               context, MaterialPageRoute(builder: (_) => const Languages()));
         });
@@ -324,6 +326,7 @@ class _LoadingPageState extends State<LoadingPage> {
                   }
                 } catch (e) {
                   debugPrint('Error launching URL: $e');
+                  if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(languages[choosenLanguage]

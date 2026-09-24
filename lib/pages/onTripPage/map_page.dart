@@ -46,6 +46,7 @@ import 'map_page/widgets/trip_selection_panel.dart';
 import 'map_launch/map_launch_coordinator.dart';
 import 'map_launch/taxi_launch_overlay.dart';
 import 'pick_loc_select.dart';
+import '../../navigation/guarded_navigation.dart';
 // ignore: depend_on_referenced_packages
 
 part 'map_page/map_animation.dart';
@@ -113,6 +114,8 @@ TextEditingController dropAddressController = TextEditingController();
 class _MapsState extends State<Maps>
     with WidgetsBindingObserver, TickerProviderStateMixin {
 // dynamic _currentCenter;
+  // One destination-entry tap (where to / home / work / recent) at a time.
+  final ExclusiveRunner _destinationEntry = ExclusiveRunner();
   dynamic _lastCenter;
   LatLng _centerLocation = const LatLng(41.4219057, -102.0840772);
   final _debouncer = Debouncer(milliseconds: 1000);

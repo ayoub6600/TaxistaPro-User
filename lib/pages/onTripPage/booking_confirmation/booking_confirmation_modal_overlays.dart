@@ -271,7 +271,7 @@ mixin _BookingConfirmationModalOverlays
                 });
               },
               onPickContact: () async {
-                final picked = await Navigator.push(
+                final picked = await guardedPush(
                   context,
                   MaterialPageRoute(
                     builder: (_) => const PickContact(from: '1'),

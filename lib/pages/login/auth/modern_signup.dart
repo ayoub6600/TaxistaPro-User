@@ -6,6 +6,7 @@ import '../../../styles/styles.dart';
 import '../agreement.dart';
 import 'auth_policy.dart';
 import 'signup_location_resolver.dart';
+import '../../../navigation/guarded_navigation.dart';
 
 class ModernSignup extends StatefulWidget {
   const ModernSignup({super.key});
@@ -225,8 +226,8 @@ class _ModernSignupState extends State<ModernSignup> {
       serviceLocationId: _area!.serviceLocationId,
       zoneId: _area!.id,
     );
-    Navigator.of(context)
-        .push(MaterialPageRoute(builder: (_) => const AggreementPage()));
+    guardedPush(
+        context, MaterialPageRoute(builder: (_) => const AggreementPage()));
   }
 
   void _back() {
@@ -453,7 +454,7 @@ class _ModernSignupState extends State<ModernSignup> {
               _Field(
                   controller: _phone,
                   hint: _copy('رقم الهاتف', 'Phone number'),
-                  prefixText: '${_country?.dialCode ?? ''}  ',
+                  prefixText: '\u2066${_country?.dialCode ?? ''}\u2069  ',
                   keyboardType: TextInputType.phone,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   autofocus: true),

@@ -784,7 +784,7 @@ mixin _BookingConfirmationPendingRequest
       isRtl: languageDirection == 'rtl',
       onMenu: _showSearchingRequestMenu,
       onSupport: () {
-        Navigator.push(
+        guardedPush(
           context,
           MaterialPageRoute(builder: (_) => const SupportPage()),
         );

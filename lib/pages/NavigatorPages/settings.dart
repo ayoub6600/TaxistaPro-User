@@ -8,6 +8,7 @@ import '../../widgets/widgets.dart';
 import '../loadingPage/loading.dart';
 import '../login/login.dart';
 import 'selectlanguage.dart';
+import '../../navigation/guarded_navigation.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -95,7 +96,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           text: languages[choosenLanguage]
                               ['text_change_language'],
                           onTap: () {
-                            Navigator.push(
+                            guardedPush(
                                 context,
                                 MaterialPageRoute(
                                     builder: (context) =>

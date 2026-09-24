@@ -6,6 +6,7 @@ import '../../styles/styles.dart';
 import '../../widgets/widgets.dart';
 import '../loadingPage/loading.dart';
 import 'pickcontacts.dart';
+import '../../navigation/guarded_navigation.dart';
 
 class Sos extends StatefulWidget {
   const Sos({super.key});
@@ -255,7 +256,7 @@ class _SosState extends State<Sos> {
                                           children: [
                                             InkWell(
                                               onTap: () async {
-                                                var nav = await Navigator.push(
+                                                var nav = await guardedPush(
                                                     context,
                                                     MaterialPageRoute(
                                                         builder: (context) =>
@@ -395,7 +396,7 @@ class _SosState extends State<Sos> {
                                       bottom: media.width * 0.05),
                                   child: Button(
                                       onTap: () async {
-                                        var nav = await Navigator.push(
+                                        var nav = await guardedPush(
                                             context,
                                             MaterialPageRoute(
                                                 builder: (context) =>

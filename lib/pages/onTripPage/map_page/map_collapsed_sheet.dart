@@ -24,7 +24,8 @@ extension _MapCollapsedSheet on _MapsState {
           icon: Icons.home_rounded,
           accent: theme,
           isConfigured: home != null,
-          onTap: () => useQuickFavorite(media, 'Home'),
+          onTap: () =>
+              runDestinationEntryOnce(() => useQuickFavorite(media, 'Home')),
         ),
         HomeQuickDestination(
           label: languages[choosenLanguage]['text_work']?.toString() ??
@@ -33,7 +34,8 @@ extension _MapCollapsedSheet on _MapsState {
           icon: Icons.work_rounded,
           accent: const Color(0xFF2381E9),
           isConfigured: work != null,
-          onTap: () => useQuickFavorite(media, 'Work'),
+          onTap: () =>
+              runDestinationEntryOnce(() => useQuickFavorite(media, 'Work')),
         ),
         HomeQuickDestination(
           label: rtl ? 'مؤخراً' : 'Recent',
@@ -42,25 +44,24 @@ extension _MapCollapsedSheet on _MapsState {
           icon: Icons.history_rounded,
           accent: const Color(0xFF14A47B),
           isConfigured: recent != null,
-          onTap: () {
+          onTap: () => runDestinationEntryOnce(() async {
             if (recent == null) {
-              prepareDestinationEntry(media);
+              await prepareDestinationEntry(media);
             } else {
-              selectRecentDestination(recent);
+              await selectRecentDestination(recent);
             }
-          },
+          }),
         ),
       ],
-      onChooseDestination: () async {
-        await prepareDestinationEntry(media);
-      },
+      onChooseDestination: () =>
+          runDestinationEntryOnce(() => prepareDestinationEntry(media)),
       onRideWithoutDestination: () {
         ismulitipleride = false;
         setState(() {
           rideWithoutDestination = true;
           rentalRide = false;
         });
-        Navigator.push(
+        guardedPush(
           context,
           MaterialPageRoute(builder: (_) => PickupLocation()),
         );

@@ -27,6 +27,7 @@ class _WalletPageState extends State<WalletPage> {
   TextEditingController addMoneyController = TextEditingController();
   dynamic _shimmer;
   bool _addPayment = false;
+  bool _addingMoney = false;
   int ischeckmoneytransfer = 0;
   ScrollController custom = ScrollController();
 
@@ -828,10 +829,19 @@ class _WalletPageState extends State<WalletPage> {
                                                         ),
                                                         Button(
                                                           onTap: () async {
+                                                            if (_addingMoney) {
+                                                              return;
+                                                            }
+                                                            _addingMoney = true;
                                                             var result =
                                                                 await addBalance(
                                                                     addMoneyController
                                                                         .text);
+                                                            _addingMoney = false;
+                                                            if (!context
+                                                                .mounted) {
+                                                              return;
+                                                            }
                                                             Navigator.pop(
                                                                 context);
                                                             result ==

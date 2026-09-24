@@ -80,6 +80,7 @@ class _UpcomingScheduledRidesPageState
 
   navigateLogout() {
     Future.delayed(const Duration(seconds: 1), () {
+      if (!mounted) return;
       Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const Login()),
@@ -791,6 +792,7 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
                 });
                 var val = await rescheduleScheduledRide(
                     widget.requestId, pickedDateTime);
+                if (!mounted) return;
                 setState(() => isLoading = false);
                 if (val == 'success') {
                   await widget.onDone();

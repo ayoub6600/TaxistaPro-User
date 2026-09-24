@@ -20,6 +20,12 @@ extension _MapDestinationState on _MapsState {
     _isbottom = -1000;
   }
 
+  /// Run a destination-entry tap exclusively: rapid repeat taps while the
+  /// first one is still resolving the pickup or showing the next page are
+  /// ignored instead of racing (duplicate pickups, stacked pages).
+  Future<void> runDestinationEntryOnce(Future<void> Function() action) =>
+      _destinationEntry.run(action);
+
   Future<void> prepareDestinationEntry(Size media) async {
     setState(resetDestinationEntry);
     await ensurePickupForDestination();
@@ -43,6 +49,8 @@ extension _MapDestinationState on _MapsState {
               '';
     }
     if (pickupAddress.isEmpty) return false;
+    // Another tap may have created the pickup while we were geocoding.
+    if (addressList.any((element) => element.type == 'pickup')) return true;
 
     addressList.add(
       AddressList(
@@ -73,7 +81,7 @@ extension _MapDestinationState on _MapsState {
       return;
     }
 
-    final selected = await Navigator.push<bool>(
+    final selected = await guardedPush<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => DropLocation(returnSelectionOnly: true),
@@ -106,7 +114,7 @@ extension _MapDestinationState on _MapsState {
     final pickupIndex =
         addressList.indexWhere((element) => element.type == 'pickup');
     if (pickupIndex < 0) return;
-    final selected = await Navigator.push<bool>(
+    final selected = await guardedPush<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => DropLocation(
@@ -325,7 +333,7 @@ extension _MapDestinationState on _MapsState {
   ) async {
     final favorite = quickFavorite(addressName);
     if (favorite == null) {
-      await Navigator.push(
+      await guardedPush(
         context,
         MaterialPageRoute(
           builder: (_) => DropLocation(

@@ -1062,7 +1062,7 @@ mixin _BookingConfirmationController
   }
 
   Future<void> _editTripLocation(dynamic from) async {
-    final changed = await Navigator.push(
+    final changed = await guardedPush(
       context,
       MaterialPageRoute(builder: (_) => DropLocation(from: from)),
     );

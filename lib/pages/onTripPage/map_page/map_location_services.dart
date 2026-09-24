@@ -59,7 +59,7 @@ extension _MapLocationServices on _MapsState {
         (_) => false,
       );
     } else if (choosenTransportType == 1) {
-      Navigator.push(
+      guardedPush(
         context,
         MaterialPageRoute(builder: (_) => DropLocation()),
       );

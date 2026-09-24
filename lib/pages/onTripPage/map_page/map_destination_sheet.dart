@@ -85,7 +85,7 @@ extension _MapDestinationSheet on _MapsState {
 
     if (isDoubleTap) {
       FocusScope.of(context).unfocus();
-      openPickupLocationPicker();
+      runDestinationEntryOnce(openPickupLocationPicker);
       return;
     }
 
@@ -110,7 +110,7 @@ extension _MapDestinationSheet on _MapsState {
 
     if (isDoubleTap) {
       FocusScope.of(context).unfocus();
-      openDropLocationPicker();
+      runDestinationEntryOnce(openDropLocationPicker);
       return;
     }
 
@@ -242,10 +242,10 @@ extension _MapDestinationSheet on _MapsState {
           subtitle: parts.length > 1 ? parts.skip(1).join(',').trim() : '',
           icon: Icons.history_rounded,
           accent: const Color(0xFF2381E9),
-          onTap: () => selectRecentDestination(
-            recent,
-            navigateAfterSelection: false,
-          ),
+          onTap: () => runDestinationEntryOnce(() => selectRecentDestination(
+                recent,
+                navigateAfterSelection: false,
+              )),
         ),
       );
       if (places.length == 4) break;

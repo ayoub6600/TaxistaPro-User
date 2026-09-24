@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../functions/functions.dart';
 import '../onTripPage/booking_confirmation.dart';
 import 'upcoming_scheduled_rides.dart';
+import '../../navigation/guarded_navigation.dart';
 
 /// One entry point for all of a rider's current bookings. Scheduled bookings
 /// remain visible before a driver is assigned; live bookings can be selected
@@ -39,7 +40,7 @@ class _ActiveRiderBookingsPageState extends State<ActiveRiderBookingsPage> {
   Future<void> _open(Map<String, dynamic> ride) async {
     if (_opening) return;
     if (ride['is_later'] == 1 || ride['is_later'] == true) {
-      await Navigator.push(
+      await guardedPush(
         context,
         MaterialPageRoute(builder: (_) => const UpcomingScheduledRidesPage()),
       );
@@ -66,7 +67,7 @@ class _ActiveRiderBookingsPageState extends State<ActiveRiderBookingsPage> {
         : userRequestData['drop_address'] == null
             ? 2
             : null;
-    await Navigator.push(
+    await guardedPush(
       context,
       MaterialPageRoute(builder: (_) => BookingConfirmation(type: type)),
     );

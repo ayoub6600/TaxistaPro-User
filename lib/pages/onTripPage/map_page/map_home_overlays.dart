@@ -204,7 +204,7 @@ extension _MapHomeOverlays on _MapsState {
                   : media.width * 0.67,
               child: InkWell(
                 onTap: () async {
-                  await Navigator.push(
+                  await guardedPush(
                       context,
                       MaterialPageRoute(
                           builder: (context) => activeRiderBookings.isNotEmpty

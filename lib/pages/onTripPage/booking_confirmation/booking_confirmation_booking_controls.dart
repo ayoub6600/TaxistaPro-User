@@ -133,7 +133,7 @@ mixin _BookingConfirmationBookingControls
                       SizedBox(height: media.width * 0.02),
                       InkWell(
                         onTap: () async {
-                          var val = await Navigator.push(
+                          var val = await guardedPush(
                               context,
                               MaterialPageRoute(
                                   builder: (context) => const ChooseGoods()));
@@ -580,7 +580,7 @@ mixin _BookingConfirmationBookingControls
               ? Button(
                   width: media.width * 0.9,
                   onTap: () async {
-                    var val = await Navigator.push(
+                    var val = await guardedPush(
                         context,
                         MaterialPageRoute(
                             builder: (context) => const ChooseGoods()));

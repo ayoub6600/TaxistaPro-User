@@ -50,7 +50,7 @@ extension _MapModeSheet on _MapsState {
                           ismulitipleride = false;
                           rentalRide = true;
                           rideWithoutDestination = false;
-                          Navigator.push(
+                          guardedPush(
                               context,
                               MaterialPageRoute(
                                   builder: (context) => PickupLocation()));
@@ -138,7 +138,7 @@ extension _MapModeSheet on _MapsState {
                           isOutStation = false;
                           rentalRide = true;
                           rideWithoutDestination = false;
-                          Navigator.push(
+                          guardedPush(
                               context,
                               MaterialPageRoute(
                                   builder: (context) => PickupLocation()));

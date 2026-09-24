@@ -17,6 +17,7 @@ import '../NavigatorPages/sos.dart';
 import '../NavigatorPages/support.dart';
 import '../NavigatorPages/walletpage.dart';
 import '../onTripPage/map_page.dart';
+import '../../navigation/guarded_navigation.dart';
 
 class NavDrawer extends StatefulWidget {
   const NavDrawer({super.key});
@@ -25,6 +26,14 @@ class NavDrawer extends StatefulWidget {
 }
 
 class _NavDrawerState extends State<NavDrawer> {
+  /// Opens a page from a menu item. The drawer is closed first, so coming back
+  /// shows the map - not the same menu still open on top of it.
+  Future<T?> _open<T>(Route<T> route) {
+    final scaffold = Scaffold.maybeOf(context);
+    if (scaffold != null && scaffold.isDrawerOpen) scaffold.closeDrawer();
+    return guardedPush(context, route);
+  }
+
   @override
   Widget build(BuildContext context) {
     var media = MediaQuery.of(context).size;
@@ -51,9 +60,7 @@ class _NavDrawerState extends State<NavDrawer> {
                       ),
                       InkWell(
                         onTap: () async {
-                          var val = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
+                          var val = await _open(MaterialPageRoute(
                                   builder: (context) => const EditProfile()));
                           if (val) {
                             setState(() {});
@@ -122,9 +129,7 @@ class _NavDrawerState extends State<NavDrawer> {
                               width: media.width * 0.7,
                               child: NavMenu(
                                 onTap: () {
-                                  Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
+                                  _open(MaterialPageRoute(
                                           builder: (context) =>
                                               const FavAddressPage()));
                                 },
@@ -138,9 +143,7 @@ class _NavDrawerState extends State<NavDrawer> {
                               width: media.width * 0.7,
                               child: NavMenu(
                                 onTap: () {
-                                  Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
+                                  _open(MaterialPageRoute(
                                           builder: (context) =>
                                               const History()));
                                 },
@@ -154,9 +157,7 @@ class _NavDrawerState extends State<NavDrawer> {
                               width: media.width * 0.7,
                               child: NavMenu(
                                 onTap: () {
-                                  Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
+                                  _open(MaterialPageRoute(
                                           builder: (context) =>
                                               const UpcomingScheduledRidesPage()));
                                 },
@@ -171,9 +172,7 @@ class _NavDrawerState extends State<NavDrawer> {
                                 builder: (context, value, child) {
                                   return InkWell(
                                     onTap: () {
-                                      Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
+                                      _open(MaterialPageRoute(
                                               builder: (context) =>
                                                   const NotificationPage()));
                                       setState(() {
@@ -255,9 +254,7 @@ class _NavDrawerState extends State<NavDrawer> {
                                 width: media.width * 0.7,
                                 child: NavMenu(
                                   onTap: () {
-                                    Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
+                                    _open(MaterialPageRoute(
                                             builder: (context) =>
                                                 const OutStationRides()));
                                   },
@@ -277,9 +274,7 @@ class _NavDrawerState extends State<NavDrawer> {
                                     width: media.width * 0.7,
                                     child: NavMenu(
                                       onTap: () {
-                                        Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
+                                        _open(MaterialPageRoute(
                                                 builder: (context) =>
                                                     const WalletPage()));
                                       },
@@ -296,9 +291,7 @@ class _NavDrawerState extends State<NavDrawer> {
                               width: media.width * 0.7,
                               child: NavMenu(
                                 onTap: () async {
-                                  var nav = await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
+                                  var nav = await _open(MaterialPageRoute(
                                           builder: (context) => const Sos()));
                                   if (nav) {
                                     setState(() {});
@@ -317,9 +310,7 @@ class _NavDrawerState extends State<NavDrawer> {
                                 text: languages[choosenLanguage]
                                     ['text_make_complaints'],
                                 onTap: () {
-                                  Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
+                                  _open(MaterialPageRoute(
                                           builder: (context) =>
                                               const MakeComplaint()));
                                 },
@@ -331,9 +322,7 @@ class _NavDrawerState extends State<NavDrawer> {
                               width: media.width * 0.7,
                               child: NavMenu(
                                 onTap: () async {
-                                  var nav = await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
+                                  var nav = await _open(MaterialPageRoute(
                                           builder: (context) =>
                                               const SettingsPage()));
                                   if (nav) {
@@ -353,9 +342,7 @@ class _NavDrawerState extends State<NavDrawer> {
                                 builder: (context, value, child) {
                                   return InkWell(
                                     onTap: () {
-                                      Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
+                                      _open(MaterialPageRoute(
                                               builder: (context) =>
                                                   const SupportPage()));
                                     },
@@ -429,7 +416,7 @@ class _NavDrawerState extends State<NavDrawer> {
                                 onTap: () {
                                   Future.delayed(
                                       const Duration(microseconds: 500), () {
-                                    Navigator.push(
+                                    guardedPush(
                                         // ignore: use_build_context_synchronously
                                         context,
                                         MaterialPageRoute(

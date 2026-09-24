@@ -10,6 +10,7 @@ import 'login_identity.dart';
 import 'modern_forgot_password.dart';
 import 'modern_signup.dart';
 import 'signup_location_resolver.dart';
+import '../../../navigation/guarded_navigation.dart';
 
 enum _LoginMethod { email, phone }
 
@@ -167,7 +168,7 @@ class _ModernLoginState extends State<ModernLogin> {
   }
 
   Future<void> _forgotPassword() async {
-    final changed = await Navigator.of(context).push<bool>(MaterialPageRoute(
+    final changed = await guardedPush<bool>(context, MaterialPageRoute(
       builder: (_) => ModernForgotPassword(
         policies: _policies,
         initialCountry: _country,
@@ -289,7 +290,7 @@ class _ModernLoginState extends State<ModernLogin> {
                           : Icons.phone_rounded,
                     ).copyWith(
                         prefixText:
-                            isEmail ? null : '${_country?.dialCode ?? ''}  '),
+                            isEmail ? null : '\u2066${_country?.dialCode ?? ''}\u2069  '),
                   ),
                   const SizedBox(height: 14),
                   TextField(
@@ -353,7 +354,7 @@ class _ModernLoginState extends State<ModernLogin> {
                   OutlinedButton(
                     onPressed: _loading
                         ? null
-                        : () => Navigator.of(context).push(MaterialPageRoute(
+                        : () => guardedPush(context, MaterialPageRoute(
                             builder: (_) => const ModernSignup())),
                     style: OutlinedButton.styleFrom(
                         foregroundColor: theme,

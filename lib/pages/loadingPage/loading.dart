@@ -11,6 +11,19 @@ class Loading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The overlay blocks taps from the first frame, but stays invisible for
+    // the first ~180ms and then fades in: quick actions never flash a dialog.
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 340),
+      curve: const Interval(0.53, 1, curve: Curves.easeOut),
+      builder: (context, opacity, child) =>
+          Opacity(opacity: opacity, child: child),
+      child: _buildOverlay(context),
+    );
+  }
+
+  Widget _buildOverlay(BuildContext context) {
     final rtl = Directionality.of(context) == TextDirection.rtl;
     final size = MediaQuery.sizeOf(context);
     return SizedBox(

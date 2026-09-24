@@ -16,4 +16,10 @@ class Debouncer {
     }
     _timer = Timer(Duration(milliseconds: milliseconds), action);
   }
+
+  /// Drop a pending call, e.g. when the screen that scheduled it is closed.
+  void cancel() {
+    _timer?.cancel();
+    _timer = null;
+  }
 }

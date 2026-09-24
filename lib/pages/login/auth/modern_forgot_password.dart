@@ -493,7 +493,7 @@ class _ModernForgotPasswordState extends State<ModernForgotPassword> {
               onSubmitted: (_) => _submit(),
               decoration: _decoration(
                       _copy('رقم الهاتف', 'Phone number'), Icons.phone_rounded)
-                  .copyWith(prefixText: '$_dialCode  '),
+                  .copyWith(prefixText: '\u2066$_dialCode\u2069  '),
             ),
           ],
         );

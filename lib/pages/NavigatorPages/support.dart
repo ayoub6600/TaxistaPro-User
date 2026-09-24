@@ -6,6 +6,7 @@ import '../../translations/translation.dart';
 import '../../widgets/widgets.dart';
 import 'adminchatpage.dart';
 import 'faq.dart';
+import '../../navigation/guarded_navigation.dart';
 
 class SupportPage extends StatefulWidget {
   const SupportPage({super.key});
@@ -66,7 +67,7 @@ class _SupportPageState extends State<SupportPage> {
                           builder: (context, value, child) {
                             return InkWell(
                               onTap: () {
-                                Navigator.push(
+                                guardedPush(
                                     context,
                                     MaterialPageRoute(
                                         builder: (context) =>
@@ -139,7 +140,7 @@ class _SupportPageState extends State<SupportPage> {
                         icon: Icons.warning_amber,
                         text: languages[choosenLanguage]['text_faq'],
                         onTap: () {
-                          Navigator.push(
+                          guardedPush(
                               context,
                               MaterialPageRoute(
                                   builder: (context) => const Faq()));

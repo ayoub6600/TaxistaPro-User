@@ -397,7 +397,7 @@ mixin _BookingConfirmationActiveRide
                                   Expanded(
                                       child: InkWell(
                                     onTap: () async {
-                                      var result = await Navigator.push(
+                                      var result = await guardedPush(
                                           context,
                                           MaterialPageRoute(
                                               builder: (context) =>

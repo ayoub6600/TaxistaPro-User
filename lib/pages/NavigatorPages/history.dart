@@ -8,6 +8,7 @@ import '../../styles/styles.dart';
 import '../../widgets/widgets.dart';
 import '../noInternet/nointernet.dart';
 import 'historydetails.dart';
+import '../../navigation/guarded_navigation.dart';
 
 class History extends StatefulWidget {
   const History({super.key});
@@ -528,7 +529,7 @@ class _HistoryState extends State<History> {
                                                         onTap: () {
                                                           selectedHistory = i;
 
-                                                          Navigator.push(
+                                                          guardedPush(
                                                               context,
                                                               MaterialPageRoute(
                                                                   builder:

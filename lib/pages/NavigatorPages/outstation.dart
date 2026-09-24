@@ -7,6 +7,7 @@ import 'package:taxista/pages/onTripPage/booking_confirmation.dart';
 import 'package:taxista/styles/styles.dart';
 import 'package:taxista/translations/translation.dart';
 import 'package:taxista/widgets/widgets.dart';
+import '../../navigation/guarded_navigation.dart';
 
 class OutStationRides extends StatefulWidget {
   const OutStationRides({super.key});
@@ -355,7 +356,7 @@ class _OutStationRidesState extends State<OutStationRides> {
                                                         children: [
                                                           InkWell(
                                                             onTap: () async {
-                                                              var result = await Navigator.push(
+                                                              var result = await guardedPush(
                                                                   context,
                                                                   MaterialPageRoute(
                                                                       builder: (context) => OutStationDetails(

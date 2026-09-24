@@ -104,6 +104,7 @@ mixin _DropLocationController on State<DropLocation>, WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _debouncer.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _controller?.dispose();
     _controller = null;

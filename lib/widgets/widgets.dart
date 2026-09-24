@@ -13,6 +13,7 @@ import '../functions/functions.dart';
 import '../pages/NavigatorPages/walletpage.dart';
 import '../styles/styles.dart';
 import '../translations/translation.dart';
+import '../navigation/guarded_navigation.dart';
 
 //button style
 
@@ -46,13 +47,26 @@ class Button extends StatefulWidget {
 }
 
 class _ButtonState extends State<Button> {
+  // A second tap inside the lock window is ignored, so a double tap (or a tap
+  // while the first handler is still starting a route/request) cannot push
+  // the same page or submit the same action twice.
+  final TapLock _tapLock = TapLock();
+
+  VoidCallback? get _guardedTap {
+    final onTap = widget.onTap;
+    if (onTap == null) return null;
+    return () {
+      if (_tapLock.tryAcquire()) onTap();
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     var media = MediaQuery.of(context).size;
 // F9C27D
     return CupertinoButton(
       padding: const EdgeInsets.all(0),
-      onPressed: widget.onTap,
+      onPressed: _guardedTap,
       child: Container(
         width: (widget.width != null) ? widget.width : media.width * 0.9,
         decoration: BoxDecoration(

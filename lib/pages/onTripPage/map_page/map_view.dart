@@ -38,7 +38,7 @@ extension _MapPageView on _MapsState {
                   pref.setString('lastNotification', latestNotification);
                   latestNotification = '';
                   WidgetsBinding.instance.addPostFrameCallback((_) {
-                    Navigator.push(
+                    guardedPush(
                         context,
                         MaterialPageRoute(
                             builder: (context) => const NotificationPage()));

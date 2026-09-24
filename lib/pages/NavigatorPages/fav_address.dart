@@ -8,6 +8,7 @@ import 'package:taxista/pages/onTripPage/drop_loc_select.dart';
 import 'package:taxista/styles/styles.dart';
 import 'package:taxista/translations/translation.dart';
 import 'package:taxista/widgets/widgets.dart';
+import '../../navigation/guarded_navigation.dart';
 
 class FavAddressPage extends StatefulWidget {
   const FavAddressPage({super.key});
@@ -102,7 +103,7 @@ class _FavAddressPageState extends State<FavAddressPage> {
                                         const EdgeInsets.fromLTRB(2, 2, 2, 8),
                                     child: InkWell(
                                       onTap: () {
-                                        Navigator.push(
+                                        guardedPush(
                                                 context,
                                                 MaterialPageRoute(
                                                     builder: (context) =>
@@ -166,7 +167,7 @@ class _FavAddressPageState extends State<FavAddressPage> {
                                               const Spacer(),
                                               InkWell(
                                                 onTap: () async {
-                                                  Navigator.push(
+                                                  guardedPush(
                                                       context,
                                                       MaterialPageRoute(
                                                           builder: (context) =>
@@ -287,7 +288,7 @@ class _FavAddressPageState extends State<FavAddressPage> {
                                         const EdgeInsets.fromLTRB(2, 2, 2, 8),
                                     child: InkWell(
                                       onTap: () {
-                                        Navigator.push(
+                                        guardedPush(
                                                 context,
                                                 MaterialPageRoute(
                                                     builder: (context) =>
@@ -353,7 +354,7 @@ class _FavAddressPageState extends State<FavAddressPage> {
                                               const Spacer(),
                                               InkWell(
                                                 onTap: () async {
-                                                  Navigator.push(
+                                                  guardedPush(
                                                       context,
                                                       MaterialPageRoute(
                                                           builder: (context) =>
@@ -735,7 +736,7 @@ class _FavAddressPageState extends State<FavAddressPage> {
         Button(
           onTap: () async {
             Navigator.pop(context);
-            await Navigator.push(
+            await guardedPush(
                 context,
                 MaterialPageRoute(
                     builder: (context) => DropLocation(

@@ -7,6 +7,7 @@ import '../../styles/styles.dart';
 import '../../translations/translation.dart';
 import '../../widgets/widgets.dart';
 import '../noInternet/noInternet.dart';
+import '../../navigation/guarded_navigation.dart';
 
 class MakeComplaint extends StatefulWidget {
   const MakeComplaint({super.key});
@@ -120,7 +121,7 @@ class _MakeComplaintState extends State<MakeComplaint> {
                                           i,
                                           InkWell(
                                             onTap: () {
-                                              Navigator.push(
+                                              guardedPush(
                                                   context,
                                                   MaterialPageRoute(
                                                       builder: (context) =>

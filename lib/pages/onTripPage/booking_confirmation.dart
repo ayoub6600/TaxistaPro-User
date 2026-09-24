@@ -57,6 +57,7 @@ import 'widgets/sos_sheet.dart';
 import 'widgets/trip_details_sheet.dart';
 
 import 'booking_confirmation/searching/nearby_driver_selection.dart';
+import '../../navigation/guarded_navigation.dart';
 
 part 'booking_confirmation/booking_confirmation_controller.dart';
 part 'booking_confirmation/booking_confirmation_map_canvas.dart';

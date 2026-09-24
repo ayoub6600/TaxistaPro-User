@@ -12,6 +12,7 @@ import '../login/login.dart';
 import 'booking_confirmation.dart';
 import 'map_page.dart';
 import 'review_page.dart';
+import '../../navigation/guarded_navigation.dart';
 
 class Invoice extends StatefulWidget {
   const Invoice({super.key});
@@ -106,6 +107,7 @@ class _InvoiceState extends State<Invoice> {
                                     children: [
                                       InkWell(
                                           onTap: () async {
+                                            if (_isLoading) return;
                                             setState(() => _isLoading = true);
                                             await refreshUserRequestState();
                                             if (!mounted) return;
@@ -1114,7 +1116,7 @@ class _InvoiceState extends State<Invoice> {
                                             _choosePaymentMethod = true;
                                           });
                                         } else {
-                                          Navigator.push(
+                                          guardedPush(
                                               context,
                                               MaterialPageRoute(
                                                   builder: (context) =>
@@ -1236,7 +1238,7 @@ class _InvoiceState extends State<Invoice> {
                                                                           'total_amount']
                                                                       .toStringAsFixed(
                                                                           2));
-                                                              var val = await Navigator.push(
+                                                              var val = await guardedPush(
                                                                   context,
                                                                   MaterialPageRoute(
                                                                       builder: (context) => PaymentGatwaysPage(
