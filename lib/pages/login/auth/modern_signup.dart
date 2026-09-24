@@ -58,15 +58,12 @@ class _ModernSignupState extends State<ModernSignup> {
 
   String _copy(String ar, String en) => _rtl ? ar : en;
 
-  List<SignupField> get _flow {
-    final policy = _country;
-    if (policy == null) return SignupField.values;
-    return signupFlowFor(
-      policy,
-      hasEmail: _email.text.trim().isNotEmpty,
-      locationResolved: _locationResolved,
-    );
-  }
+  List<SignupField> get _flow =>
+      signupFlowFor(locationResolved: _locationResolved);
+
+  /// The local mobile number as sent to send-otp, validate-otp and register:
+  /// the same digits every time, paired with the selected country's dial code.
+  String get _mobile => _phone.text.replaceAll(RegExp(r'\D'), '');
 
   Future<void> _detectLocation() async {
     if (_locationAttempted) return;
@@ -102,9 +99,6 @@ class _ModernSignupState extends State<ModernSignup> {
 
   int get _stepIndex => _flow.indexOf(_step);
 
-  SignupOtpChannel get _channel =>
-      _country!.channelFor(hasEmail: _email.text.trim().isNotEmpty);
-
   void _advance() {
     final flow = _flow;
     final index = flow.indexOf(_step);
@@ -121,11 +115,7 @@ class _ModernSignupState extends State<ModernSignup> {
     setState(() => _error = _validate());
     if (_error != null) return;
 
-    if (_step == SignupField.password && _channel == SignupOtpChannel.email) {
-      await _sendOtp();
-      return;
-    }
-    if (_step == SignupField.phone && _channel != SignupOtpChannel.email) {
+    if (_step == SignupField.phone) {
       await _sendOtp();
       return;
     }
@@ -163,17 +153,13 @@ class _ModernSignupState extends State<ModernSignup> {
           return _copy(
               'البريد الإلكتروني غير صحيح.', 'Enter a valid email address.');
         }
-        if ((_country?.emailOptional == false) && value.isEmpty) {
-          return _copy('البريد مطلوب لهذه الدولة.',
-              'Email is required for this country.');
-        }
         return null;
       case SignupField.password:
         return _password.text.length < 8
             ? _copy('استخدم 8 أحرف على الأقل.', 'Use at least 8 characters.')
             : null;
       case SignupField.phone:
-        final length = _phone.text.replaceAll(RegExp(r'\D'), '').length;
+        final length = _mobile.length;
         return length < _country!.minPhoneLength ||
                 length > _country!.maxPhoneLength
             ? _copy('راجع رقم الهاتف.', 'Check your phone number.')
@@ -191,19 +177,8 @@ class _ModernSignupState extends State<ModernSignup> {
   }
 
   Future<void> _sendOtp() async {
-    final policy = _country!;
-    final channel = _channel;
     setState(() => _loading = true);
-    dynamic result;
-    if (channel == SignupOtpChannel.email) {
-      result = await app.sendOTPtoEmail(_email.text.trim());
-    } else {
-      result = await app.sendOTPtoMobile(
-        _phone.text.trim(),
-        policy.dialCode,
-        channel: channel.name,
-      );
-    }
+    final result = await app.sendRegistrationOtp(_country!.dialCode, _mobile);
     if (!mounted) return;
     setState(() {
       _loading = false;
@@ -219,11 +194,12 @@ class _ModernSignupState extends State<ModernSignup> {
   }
 
   Future<void> _verifyOtp() async {
-    final channel = _channel;
     setState(() => _loading = true);
-    final result = channel == SignupOtpChannel.email
-        ? await app.emailVerify(_email.text.trim(), _otp.text.trim())
-        : await app.validateSmsOtp(_phone.text.trim(), _otp.text.trim());
+    final result = await app.validateRegistrationOtp(
+      _country!.dialCode,
+      _mobile,
+      _otp.text.trim(),
+    );
     if (!mounted) return;
     setState(() {
       _loading = false;
@@ -243,7 +219,7 @@ class _ModernSignupState extends State<ModernSignup> {
       displayName: _name.text.trim(),
       emailAddress: _email.text.trim(),
       plainPassword: _password.text,
-      mobileNumber: _phone.text.replaceAll(RegExp(r'\D'), ''),
+      mobileNumber: _mobile,
       selectedGender: _gender,
       countryIndex: _country!.index,
       serviceLocationId: _area!.serviceLocationId,
@@ -340,8 +316,7 @@ class _ModernSignupState extends State<ModernSignup> {
                             style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.w700)),
                   ),
-                  if (_step == SignupField.email &&
-                      (_country?.emailOptional ?? false))
+                  if (_step == SignupField.email)
                     TextButton(
                         onPressed: _loading
                             ? null
@@ -360,7 +335,6 @@ class _ModernSignupState extends State<ModernSignup> {
   }
 
   Widget _stepBody(ColorScheme colors) {
-    final channel = _country == null ? SignupOtpChannel.sms : _channel;
     switch (_step) {
       case SignupField.name:
         return _StepCard(
@@ -441,11 +415,8 @@ class _ModernSignupState extends State<ModernSignup> {
             key: const ValueKey(SignupField.email),
             icon: Icons.alternate_email_rounded,
             title: _copy('بريدك الإلكتروني', 'Your email'),
-            subtitle: _country?.emailOptional == true
-                ? _copy('لاستعادة الحساب والإيصالات. يمكنك تخطيه.',
-                    'Useful for recovery and receipts. You can skip it.')
-                : _copy('سنرسل رمز التحقق إلى هذا البريد.',
-                    'We will send your verification code to this email.'),
+            subtitle: _copy('لاستعادة الحساب والإيصالات. يمكنك تخطيه.',
+                'Useful for recovery and receipts. You can skip it.'),
             child: Column(children: [
               _Field(
                   controller: _email,
@@ -490,9 +461,10 @@ class _ModernSignupState extends State<ModernSignup> {
       case SignupField.otp:
         return _StepCard(
             key: const ValueKey(4),
-            icon: _channelIcon(channel),
+            icon: Icons.sms_outlined,
             title: _copy('أدخل رمز التحقق', 'Enter verification code'),
-            subtitle: _otpMessage(channel),
+            subtitle: _copy(
+                'أرسلنا الرمز إلى رقم هاتفك.', 'We sent the code to your phone.'),
             child: _Field(
                 controller: _otp,
                 hint: '000000',
@@ -536,21 +508,6 @@ class _ModernSignupState extends State<ModernSignup> {
       border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none));
-
-  IconData _channelIcon(SignupOtpChannel value) => switch (value) {
-        SignupOtpChannel.email => Icons.mark_email_read_outlined,
-        SignupOtpChannel.whatsapp => Icons.chat_bubble_outline_rounded,
-        _ => Icons.sms_outlined,
-      };
-
-  String _otpMessage(SignupOtpChannel value) => switch (value) {
-        SignupOtpChannel.email => _copy('أرسلنا الرمز إلى بريدك الإلكتروني.',
-            'We sent the code to your email.'),
-        SignupOtpChannel.whatsapp => _copy('أرسلنا الرمز إلى رقمك عبر واتساب.',
-            'We sent the code to your WhatsApp number.'),
-        _ => _copy(
-            'أرسلنا الرمز إلى رقم هاتفك.', 'We sent the code to your phone.'),
-      };
 }
 
 class _GmailSuggestion extends StatelessWidget {

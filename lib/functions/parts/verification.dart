@@ -77,6 +77,79 @@ getemailmodule() async {
   return res;
 }
 
+/// Registration phone OTP (Twilio Verify, run by the backend).
+///
+/// Every country - Libya (+218), Egypt (+20), any other - goes through this
+/// exact same pair of calls; email is never part of registration
+/// verification. Both calls take the same `country` dial code and local
+/// `mobile` number that [registerUser] later submits, and the backend keeps
+/// the proof of verification keyed to that phone, so there is no token or
+/// uuid to carry from one step to the next.
+///
+/// Resolves to `'success'`, or a user-facing failure message. Returns null on
+/// a transport failure so callers fall back to their generic message.
+sendRegistrationOtp(String countryDialCode, String mobile) async {
+  dynamic result;
+  try {
+    var response = await http.post(
+        Uri.parse('${url}api/v1/user/register/send-otp'),
+        body: {'country': countryDialCode, 'mobile': mobile});
+    result = _registrationOtpOutcome(response);
+  } catch (e) {
+    if (e is SocketException) {
+      internet = false;
+    }
+  }
+  return result;
+}
+
+/// Verifies the code from [sendRegistrationOtp] for the same phone.
+/// See [sendRegistrationOtp] for the contract and return values.
+validateRegistrationOtp(
+    String countryDialCode, String mobile, String otp) async {
+  dynamic result;
+  try {
+    var response = await http.post(
+        Uri.parse('${url}api/v1/user/register/validate-otp'),
+        body: {'country': countryDialCode, 'mobile': mobile, 'otp': otp});
+    result = _registrationOtpOutcome(response);
+  } catch (e) {
+    if (e is SocketException) {
+      internet = false;
+    }
+  }
+  return result;
+}
+
+String _registrationOtpOutcome(http.Response response) {
+  dynamic body;
+  try {
+    body = jsonDecode(response.body);
+  } catch (_) {
+    body = null;
+  }
+  if (response.statusCode == 200 && body is Map && body['success'] == true) {
+    return 'success';
+  }
+  debugPrint(response.body);
+  if (body is Map) {
+    final errors = body['errors'];
+    if (errors is Map && errors.isNotEmpty) {
+      final first = errors.values.first;
+      return (first is List && first.isNotEmpty ? first.first : first)
+          .toString();
+    }
+    final message = body['message'];
+    if (message is String && message.isNotEmpty) {
+      return message;
+    }
+  }
+  return 'something went wrong';
+}
+
+/// Legacy phone/email OTP endpoints. Registration no longer uses these (see
+/// [sendRegistrationOtp]); they remain only for the forgot-password flow,
+/// whose backend `user/update-password` still relies on them.
 sendOTPtoMobile(String mobile, String countryCode, {String? channel}) async {
   dynamic result;
   try {
@@ -111,11 +184,15 @@ sendOTPtoMobile(String mobile, String countryCode, {String? channel}) async {
   }
 }
 
-validateSmsOtp(String mobile, String otp) async {
+validateSmsOtp(String mobile, String otp, {String? countryDialCode}) async {
   dynamic result;
   try {
-    var response = await http.post(Uri.parse('${url}api/v1/validate-otp'),
-        body: {'mobile': mobile, 'otp': otp});
+    var response =
+        await http.post(Uri.parse('${url}api/v1/validate-otp'), body: {
+      'mobile': mobile,
+      'otp': otp,
+      if (countryDialCode != null) 'country': countryDialCode,
+    });
     if (response.statusCode == 200) {
       if (jsonDecode(response.body)['success'] == true) {
         result = 'success';

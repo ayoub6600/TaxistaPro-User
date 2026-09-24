@@ -73,12 +73,17 @@ class _ModernForgotPasswordState extends State<ModernForgotPassword> {
     } else if (_step == 1) {
       result = _usesEmail
           ? await app.emailVerify(_identity.text.trim(), _otp.text.trim())
-          : await app.validateSmsOtp(_identity.text.trim(), _otp.text.trim());
+          : await app.validateSmsOtp(
+              _identity.text.trim(),
+              _otp.text.trim(),
+              countryDialCode: _country!.dialCode,
+            );
     } else {
       result = await app.updatePassword(
         _identity.text.trim(),
         _password.text,
         _usesEmail,
+        countryDialCode: _country!.dialCode,
       );
     }
 

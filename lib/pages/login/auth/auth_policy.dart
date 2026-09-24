@@ -1,3 +1,7 @@
+/// The country's `signup_otp_channel` from the countries API. Registration no
+/// longer branches on this: every country verifies its phone number with the
+/// same Twilio Verify OTP. It still drives the sign-in method default and the
+/// forgot-password recovery channel.
 enum SignupOtpChannel { sms, email, whatsapp, firebase }
 
 enum SignupField { name, country, area, email, password, phone, otp, gender }
@@ -26,7 +30,6 @@ class CountryAuthPolicy {
     required this.minPhoneLength,
     required this.maxPhoneLength,
     required this.channel,
-    required this.emailOptional,
     required this.areas,
     this.flag,
   });
@@ -39,7 +42,6 @@ class CountryAuthPolicy {
   final int minPhoneLength;
   final int maxPhoneLength;
   final SignupOtpChannel channel;
-  final bool emailOptional;
   final List<SignupArea> areas;
   final String? flag;
 
@@ -53,8 +55,6 @@ class CountryAuthPolicy {
       minPhoneLength: int.tryParse('${json['dial_min_length']}') ?? 6,
       maxPhoneLength: int.tryParse('${json['dial_max_length']}') ?? 15,
       channel: _channelFrom('${json['signup_otp_channel'] ?? 'sms'}'),
-      emailOptional:
-          json['email_optional'] != false && json['email_optional'] != 0,
       areas: _areasFrom(json['service_locations']),
       flag: json['flag']?.toString(),
     );
@@ -88,21 +88,12 @@ class CountryAuthPolicy {
     }
     return areas;
   }
-
-  SignupOtpChannel channelFor({required bool hasEmail}) {
-    if (channel == SignupOtpChannel.email && !hasEmail) {
-      return SignupOtpChannel.sms;
-    }
-    return channel;
-  }
 }
 
-List<SignupField> signupFlowFor(
-  CountryAuthPolicy policy, {
-  required bool hasEmail,
-  bool locationResolved = false,
-}) {
-  final channel = policy.channelFor(hasEmail: hasEmail);
+/// The registration steps, identical for every country: the phone number is
+/// collected and verified by an OTP sent to it. Email is an optional profile
+/// field (skippable, never verified) and plays no part in registration.
+List<SignupField> signupFlowFor({bool locationResolved = false}) {
   return [
     SignupField.name,
     if (!locationResolved) ...[
@@ -111,13 +102,8 @@ List<SignupField> signupFlowFor(
     ],
     SignupField.email,
     SignupField.password,
-    if (channel == SignupOtpChannel.email) ...[
-      SignupField.otp,
-      SignupField.phone,
-    ] else ...[
-      SignupField.phone,
-      SignupField.otp,
-    ],
+    SignupField.phone,
+    SignupField.otp,
     SignupField.gender,
   ];
 }

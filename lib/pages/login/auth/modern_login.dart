@@ -99,6 +99,8 @@ class _ModernLoginState extends State<ModernLogin> {
       isEmail ? 1 : 0,
       _password.text,
       false,
+      // Phone accounts are resolved by country + number.
+      countryDialCode: isEmail ? null : _country!.dialCode,
     );
     final result =
         loginResult == true ? await app.getUserDetails() : loginResult;

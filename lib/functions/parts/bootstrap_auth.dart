@@ -571,17 +571,23 @@ otpCall() async {
 // verify user already exist
 
 verifyUser(String number, int login, String password, String email, isOtp,
-    forgot) async {
+    forgot,
+    {String? countryDialCode}) async {
   dynamic val;
   debugPrint('drops1 ${url}api/v1/user/validate-mobile-for-login');
   try {
     var response = await http.post(
         Uri.parse('${url}api/v1/user/validate-mobile-for-login'),
         body: (number != '' && email != '')
-            ? {"mobile": number, "email": email}
+            ? {
+                "mobile": number,
+                "email": email,
+                if (countryDialCode != null) 'country': countryDialCode,
+              }
             : (login == 0)
                 ? {
                     "mobile": number,
+                    if (countryDialCode != null) 'country': countryDialCode,
                   }
                 : {
                     "email": number,
@@ -605,7 +611,8 @@ verifyUser(String number, int login, String password, String email, isOtp,
           }
         } else {
           debugPrint('drops4 ');
-          var check = await userLogin(number, login, password, isOtp);
+          var check = await userLogin(number, login, password, isOtp,
+              countryDialCode: countryDialCode);
           if (check == true) {
             var uCheck = await getUserDetails();
             val = uCheck;
@@ -682,7 +689,7 @@ acceptRequest(body) async {
   }
 }
 
-updatePassword(email, password, loginby) async {
+updatePassword(email, password, loginby, {String? countryDialCode}) async {
   dynamic result;
 
   try {
@@ -690,6 +697,8 @@ updatePassword(email, password, loginby) async {
         await http.post(Uri.parse('${url}api/v1/user/update-password'), body: {
       if (loginby == true) 'email': email,
       if (loginby == false) 'mobile': email,
+      if (loginby == false && countryDialCode != null)
+        'country': countryDialCode,
       'password': password
     });
 
@@ -723,7 +732,11 @@ updatePassword(email, password, loginby) async {
 }
 
 //user login
-userLogin(number, login, password, isOtp) async {
+//
+// [countryDialCode] (e.g. "+218", "+20") must accompany a phone (login == 0)
+// login: the backend resolves accounts by country + number, since riders in
+// different countries can share the same local digits.
+userLogin(number, login, password, isOtp, {String? countryDialCode}) async {
   bearerToken.clear();
   dynamic result;
   try {
@@ -756,6 +769,8 @@ userLogin(number, login, password, isOtp) async {
         body: (isOtp == false)
             ? jsonEncode({
                 if (login == 0) "mobile": number,
+                if (login == 0 && countryDialCode != null)
+                  'country': countryDialCode,
                 if (login == 1) "email": number,
                 'password': password,
                 'device_token': fcm,
@@ -765,6 +780,7 @@ userLogin(number, login, password, isOtp) async {
             : (login == 0)
                 ? jsonEncode({
                     "mobile": number,
+                    if (countryDialCode != null) 'country': countryDialCode,
                     'device_token': fcm,
                     "login_by": (platform == TargetPlatform.android)
                         ? 'android'
