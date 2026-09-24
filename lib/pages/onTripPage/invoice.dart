@@ -27,6 +27,28 @@ class _InvoiceState extends State<Invoice> {
   String _error = '';
   String myPaymentMethod = '';
 
+  Widget billAdjustmentRow(Size media, String field) {
+    final bill = userRequestData['requestBill']?['data'];
+    final value = double.tryParse(bill?[field]?.toString() ?? '') ?? 0;
+    if (value == 0) return const SizedBox.shrink();
+    final isArabic = choosenLanguage == 'ar';
+    final label = field == 'fare_floor_adjustment'
+        ? (isArabic ? 'حماية التسعيرة الأصلية' : 'Upfront fare protection')
+        : value < 0
+            ? (isArabic ? 'خصم السعر المتفق عليه' : 'Agreed fare discount')
+            : (isArabic ? 'تعديل السعر المتفق عليه' : 'Agreed fare adjustment');
+    return Column(children: [
+      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        MyText(text: label, size: media.width * twelve,
+            color: value < 0 ? Colors.red : null),
+        MyText(text: '${bill['requested_currency_symbol']} ${value.toStringAsFixed(2)}',
+            size: media.width * twelve, color: value < 0 ? Colors.red : null),
+      ]),
+      Container(margin: EdgeInsets.symmetric(vertical: media.width * 0.03),
+          height: 1.5, color: const Color(0xffE0E0E0)),
+    ]);
+  }
+
   bool isShow = false;
   @override
   void initState() {
@@ -83,7 +105,12 @@ class _InvoiceState extends State<Invoice> {
                                         MainAxisAlignment.spaceBetween,
                                     children: [
                                       InkWell(
-                                          onTap: () {
+                                          onTap: () async {
+                                            setState(() => _isLoading = true);
+                                            await refreshUserRequestState();
+                                            if (!mounted) return;
+                                            dropStopList.clear();
+                                            addressList.clear();
                                             Navigator.pushAndRemoveUntil(
                                                 context,
                                                 MaterialPageRoute(
@@ -647,6 +674,8 @@ class _InvoiceState extends State<Invoice> {
                                                               ),
                                                             ],
                                                           ),
+                                                          billAdjustmentRow(media, 'negotiated_fare_adjustment'),
+                                                          billAdjustmentRow(media, 'fare_floor_adjustment'),
                                                           (userRequestData[
                                                                           'requestBill'] !=
                                                                       null &&

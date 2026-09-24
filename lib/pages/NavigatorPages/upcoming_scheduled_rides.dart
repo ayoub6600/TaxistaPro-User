@@ -26,6 +26,7 @@ class _UpcomingScheduledRidesPageState
   dynamic cancelId;
   String? actionError;
   Timer? _ticker;
+  String? _acceptingOfferId;
 
   bool get isRtl => languageDirection == 'rtl';
 
@@ -37,7 +38,10 @@ class _UpcomingScheduledRidesPageState
     // advancing while the rider simply has this screen open, not only on
     // the next pull-to-refresh.
     _ticker = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (mounted) setState(() {});
+      if (mounted) {
+        setState(() {});
+        _refreshOffers();
+      }
     });
   }
 
@@ -55,11 +59,23 @@ class _UpcomingScheduledRidesPageState
       setState(() {});
     }
     var val = await getUpcomingScheduledRides();
+    if (!mounted) return;
     if (val == 'logout') {
       navigateLogout();
       return;
     }
-    setState(() {});
+    await _refreshOffers();
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _refreshOffers() async {
+    final ids = upcomingScheduledRides
+        .where((ride) => ride is Map && ride.isNotEmpty &&
+            ride['driver_id'] == null && ride['id'] != null)
+        .map((ride) => ride['id'].toString())
+        .toList();
+    await Future.wait(ids.map(getScheduledCounterOffers));
+    if (mounted) setState(() {});
   }
 
   navigateLogout() {
@@ -105,8 +121,7 @@ class _UpcomingScheduledRidesPageState
       case 'scheduled':
         return languages[choosenLanguage]['text_scheduled_status_scheduled'];
       case 'dispatching':
-        return languages[choosenLanguage]
-            ['text_scheduled_status_dispatching'];
+        return languages[choosenLanguage]['text_scheduled_status_dispatching'];
       case 'reserved':
         return languages[choosenLanguage]['text_scheduled_status_reserved'];
       case 'ready':
@@ -150,16 +165,17 @@ class _UpcomingScheduledRidesPageState
     var media = MediaQuery.of(context).size;
     return Material(
       child: Directionality(
-        textDirection:
-            (languageDirection == 'rtl') ? TextDirection.rtl : TextDirection.ltr,
+        textDirection: (languageDirection == 'rtl')
+            ? TextDirection.rtl
+            : TextDirection.ltr,
         child: Stack(
           children: [
             Container(
               height: media.height * 1,
               width: media.width * 1,
               color: page,
-              padding: EdgeInsets.fromLTRB(
-                  media.width * 0.05, media.width * 0.05, media.width * 0.05, 0),
+              padding: EdgeInsets.fromLTRB(media.width * 0.05,
+                  media.width * 0.05, media.width * 0.05, 0),
               child: Column(
                 children: [
                   SizedBox(height: MediaQuery.of(context).padding.top),
@@ -192,8 +208,9 @@ class _UpcomingScheduledRidesPageState
                                   color: Colors.black.withOpacity(0.17)),
                               child: Icon(Icons.arrow_back,
                                   size: media.width * 0.05,
-                                  color:
-                                      (isDarkTheme) ? Colors.white : Colors.black),
+                                  color: (isDarkTheme)
+                                      ? Colors.white
+                                      : Colors.black),
                             ),
                           ),
                         ),
@@ -225,8 +242,7 @@ class _UpcomingScheduledRidesPageState
                                     ? (upcomingScheduledRidesPage['pagination']
                                                 ['current_page'] <
                                             upcomingScheduledRidesPage[
-                                                    'pagination']
-                                                ['total_pages'])
+                                                'pagination']['total_pages'])
                                         ? InkWell(
                                             onTap: loadMore,
                                             child: Container(
@@ -290,10 +306,10 @@ class _UpcomingScheduledRidesPageState
   }
 
   Widget _rideCard(media, dynamic item) {
-    final driver = item['driverDetail'] != null &&
-            item['driverDetail']['data'] != null
-        ? item['driverDetail']['data']
-        : null;
+    final driver =
+        item['driverDetail'] != null && item['driverDetail']['data'] != null
+            ? item['driverDetail']['data']
+            : null;
     final isReady = item['scheduled_status'] == 'ready';
     final tripStart = parseTripStart(item);
     final relativeLabel = tripStart != null
@@ -346,7 +362,8 @@ class _UpcomingScheduledRidesPageState
           Row(
             children: [
               Icon(isReady ? Icons.notifications_active : Icons.watch_later,
-                  color: isReady ? online : Colors.blue, size: media.width * 0.045),
+                  color: isReady ? online : Colors.blue,
+                  size: media.width * 0.045),
               SizedBox(width: media.width * 0.02),
               Expanded(
                 child: MyText(
@@ -358,6 +375,16 @@ class _UpcomingScheduledRidesPageState
               ),
             ],
           ),
+          if (item['scheduled_status'] == 'scheduled' && driver == null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                isRtl
+                    ? 'رحلتك متاحة للسائقين الآن. إن لم يحجزها أحد، سنعيد عرضها بقوة قبل الموعد بـ${userDetails['scheduled_driver_search_window_minutes'] ?? 30} دقيقة.'
+                    : 'Your ride is available to drivers now. If none reserve it, we will offer it again ${userDetails['scheduled_driver_search_window_minutes'] ?? 30} minutes before pickup.',
+                style: TextStyle(color: Colors.grey[700]),
+              ),
+            ),
           SizedBox(height: media.width * 0.02),
           Row(
             mainAxisAlignment: MainAxisAlignment.start,
@@ -369,8 +396,8 @@ class _UpcomingScheduledRidesPageState
                 decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: Colors.green.withOpacity(0.4)),
-                child: const Icon(Icons.location_on_outlined,
-                    color: Colors.white),
+                child:
+                    const Icon(Icons.location_on_outlined, color: Colors.white),
               ),
               SizedBox(width: media.width * 0.03),
               Expanded(
@@ -414,12 +441,64 @@ class _UpcomingScheduledRidesPageState
                 SizedBox(width: media.width * 0.02),
                 MyText(
                   text:
-                      '${item['requested_currency_symbol'] ?? ''} ${item['request_eta_amount']}',
+                      '${isRtl ? 'السعر العادل: ' : 'Fair fare: '}${item['requested_currency_symbol'] ?? ''} ${item['request_eta_amount']}',
                   fontweight: FontWeight.bold,
                   size: media.width * fourteen,
                 ),
               ],
             ),
+          ],
+          if (item['rider_proposed_fare'] != null ||
+              (item['accepted_ride_fare'] != null &&
+                  double.tryParse(item['accepted_ride_fare'].toString()) != 0)) ...[
+            const SizedBox(height: 5),
+            Text(driver == null
+                ? '${isRtl ? 'عرضك' : 'Your offer'}: ${item['requested_currency_symbol'] ?? ''} ${item['rider_proposed_fare']}'
+                : '${isRtl ? 'السعر المتفق عليه' : 'Agreed fare'}: ${item['requested_currency_symbol'] ?? ''} ${item['accepted_ride_fare']}',
+              style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.blue)),
+          ],
+          if (driver == null &&
+              (scheduledCounterOffers[item['id']?.toString()] ?? []).isNotEmpty) ...[
+            const SizedBox(height: 12),
+            for (final offer in scheduledCounterOffers[item['id']?.toString()]!)
+              Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.07),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                ),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(isRtl
+                      ? '${offer['driver_name'] ?? 'سائق'} يقترح ${offer['currency'] ?? ''} ${offer['offered_fare']}'
+                      : '${offer['driver_name'] ?? 'Driver'} offers ${offer['currency'] ?? ''} ${offer['offered_fare']}',
+                    style: const TextStyle(fontWeight: FontWeight.w700)),
+                  Text(item['rider_proposed_fare'] != null
+                      ? (isRtl ? 'عرضك السابق: ${offer['base_fare']}' : 'Your previous offer: ${offer['base_fare']}')
+                      : (isRtl ? 'السعر العادل: ${offer['base_fare']}' : 'Fair fare: ${offer['base_fare']}'),
+                    style: TextStyle(color: Colors.grey[700])),
+                  Align(alignment: AlignmentDirectional.centerEnd, child: TextButton(
+                    onPressed: _acceptingOfferId != null ? null : () async {
+                      setState(() { _acceptingOfferId = item['id']?.toString(); actionError = null; });
+                      final result = await acceptScheduledCounterOffer(item['id'].toString(), offer);
+                      if (!mounted) return;
+                      if (result == 'success') {
+                        scheduledCounterOffers.remove(item['id'].toString());
+                        await load();
+                      } else {
+                        setState(() => actionError = result);
+                        await _refreshOffers();
+                      }
+                      if (mounted) setState(() => _acceptingOfferId = null);
+                    },
+                    child: Text(_acceptingOfferId == item['id']?.toString()
+                        ? (isRtl ? 'جارٍ التأكيد…' : 'Confirming…')
+                        : (isRtl ? 'اقبل العرض' : 'Accept offer')),
+                  )),
+                ]),
+              ),
+            if (actionError != null) Text(actionError!, style: const TextStyle(color: Colors.red)),
           ],
           if (driver != null) ...[
             SizedBox(height: media.width * 0.02),
@@ -447,6 +526,13 @@ class _UpcomingScheduledRidesPageState
                         text: driver['name'] ?? '',
                         fontweight: FontWeight.w600,
                         size: media.width * fourteen,
+                      ),
+                      MyText(
+                        text: isRtl
+                            ? 'سيأتيك عند موعد الرحلة: ${item['trip_start_time'] ?? ''}'
+                            : 'Pickup at your scheduled time: ${item['trip_start_time'] ?? ''}',
+                        color: online,
+                        size: media.width * twelve,
                       ),
                       if (vehicleLabel.isNotEmpty ||
                           (item['car_number'] != null &&
@@ -476,7 +562,8 @@ class _UpcomingScheduledRidesPageState
                     onTap: () => openReschedule(item),
                     child: Container(
                       alignment: Alignment.center,
-                      padding: EdgeInsets.symmetric(vertical: media.width * 0.025),
+                      padding:
+                          EdgeInsets.symmetric(vertical: media.width * 0.025),
                       decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(color: borderLines, width: 1.2)),
@@ -500,7 +587,8 @@ class _UpcomingScheduledRidesPageState
                     },
                     child: Container(
                       alignment: Alignment.center,
-                      padding: EdgeInsets.symmetric(vertical: media.width * 0.025),
+                      padding:
+                          EdgeInsets.symmetric(vertical: media.width * 0.025),
                       decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(10),
                           color: verifyDeclined),
@@ -590,9 +678,9 @@ class _UpcomingScheduledRidesPageState
                         navigateLogout();
                       } else {
                         setState(() {
-                          actionError =
-                              languages[choosenLanguage]['text_error'] ??
-                                  'Something went wrong';
+                          actionError = languages[choosenLanguage]
+                                  ['text_error'] ??
+                              'Something went wrong';
                         });
                       }
                     },
@@ -619,6 +707,8 @@ class _RescheduleSheet extends StatefulWidget {
 
 class _RescheduleSheetState extends State<_RescheduleSheet> {
   late DateTime pickedDateTime;
+  late final DateTime pickerMinimumDate;
+  late final DateTime pickerMaximumDate;
   bool isLoading = false;
   String? error;
 
@@ -629,16 +719,23 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
             (userDetails['user_can_make_a_ride_after_x_miniutes'] ?? '30')
                 .toString()) ??
         30;
-    pickedDateTime = DateTime.now().add(Duration(minutes: minMinutes));
+    // All three Cupertino bounds come from one instant and remain fixed
+    // while this sheet rebuilds; separate DateTime.now() calls or a moving
+    // minimum used to make an old initial date fail its constructor assert.
+    final pickerNow = DateTime.now();
+    pickerMinimumDate = pickerNow.add(Duration(minutes: minMinutes));
+    pickerMaximumDate = pickerNow.add(const Duration(days: 30));
+    pickedDateTime = pickerMinimumDate.add(const Duration(minutes: 1));
   }
 
   @override
   Widget build(BuildContext context) {
     var media = MediaQuery.of(context).size;
-    final minMinutes = int.tryParse(
-            (userDetails['user_can_make_a_ride_after_x_miniutes'] ?? '30')
-                .toString()) ??
-        30;
+    final initialDate = pickedDateTime.isBefore(pickerMinimumDate)
+        ? pickerMinimumDate.add(const Duration(minutes: 1))
+        : pickedDateTime.isAfter(pickerMaximumDate)
+            ? pickerMaximumDate
+            : pickedDateTime;
 
     return Container(
       height: media.height * 0.55,
@@ -663,12 +760,12 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
           Container(
             height: media.width * 0.5,
             width: media.width * 0.9,
-            decoration:
-                BoxDecoration(borderRadius: BorderRadius.circular(12), color: topBar),
+            decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12), color: topBar),
             child: CupertinoDatePicker(
-              minimumDate: DateTime.now().add(Duration(minutes: minMinutes)),
-              initialDateTime: pickedDateTime,
-              maximumDate: DateTime.now().add(const Duration(days: 30)),
+              minimumDate: pickerMinimumDate,
+              initialDateTime: initialDate,
+              maximumDate: pickerMaximumDate,
               onDateTimeChanged: (val) {
                 setState(() => pickedDateTime = val);
               },

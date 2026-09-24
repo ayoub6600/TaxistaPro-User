@@ -45,6 +45,7 @@ import 'invoice.dart';
 import 'map_page.dart';
 import 'widgets/booking_status_sheet.dart';
 import 'booking_confirmation/widgets/booking_back_button.dart';
+import 'booking_confirmation/widgets/promo_teaser_card.dart';
 import 'booking_confirmation/widgets/vehicle_service_card.dart';
 import 'booking_confirmation/widgets/vehicle_services_section.dart';
 import 'widgets/cancellation_sheet.dart';
@@ -66,6 +67,7 @@ part 'booking_confirmation/booking_confirmation_rental_options.dart';
 part 'booking_confirmation/booking_confirmation_scheduled_request.dart';
 part 'booking_confirmation/booking_confirmation_immediate_request.dart';
 part 'booking_confirmation/booking_confirmation_request_handler.dart';
+part 'booking_confirmation/rider_fare_offer.dart';
 part 'booking_confirmation/booking_confirmation_request_action.dart';
 part 'booking_confirmation/booking_confirmation_vehicle_options.dart';
 part 'booking_confirmation/booking_confirmation_booking_controls.dart';
@@ -80,6 +82,39 @@ part 'booking_confirmation/booking_confirmation_map_controls.dart';
 part 'booking_confirmation/booking_confirmation_modal_overlays.dart';
 part 'booking_confirmation/booking_confirmation_view.dart';
 part 'booking_confirmation/booking_confirmation_polyline.dart';
+
+// Taxista brand blue/cyan scheme for the booking confirmation redesign.
+// The app's MaterialApp never sets a custom ColorScheme, so
+// Theme.of(context).colorScheme.primary anywhere in this app falls back to
+// Flutter's default Material 3 purple.
+//
+// This is a plain function, not a Theme(...) widget, because most of this
+// screen's UI (buildVehicleOptions, buildBookingControls, etc.) is built by
+// plain mixin methods on _BookingConfirmationState rather than separate
+// widget classes - they read `context` via State.context, which is fixed to
+// wherever the BookingConfirmation widget itself sits in ITS PARENT's tree.
+// A Theme(...) wrapped around this State's own build() output is a
+// DESCENDANT of that context, so Theme.of(context) inside those mixin
+// methods would still miss it and keep resolving to the ambient (purple)
+// app theme. Calling this function directly for `colors` in those methods
+// sidesteps that entirely. The separate widget CLASSES under
+// booking_confirmation/widgets/ (VehicleServiceCard, VehicleServicesSection,
+// PromoTeaserCard) don't have this problem - they get their own fresh
+// BuildContext at their actual mount position - and still use
+// Theme.of(context).colorScheme, picked up correctly via the Theme(...)
+// wrapper in _BookingConfirmationState.build() below.
+ColorScheme bookingBrandColorScheme() => ColorScheme.fromSeed(
+      seedColor: theme,
+      brightness: Brightness.light,
+    ).copyWith(
+      primary: theme,
+      onPrimary: Colors.white,
+      secondary: themeCyan,
+      surface: Colors.white,
+      onSurface: textColor,
+      onSurfaceVariant: greyText,
+      outlineVariant: borderLines,
+    );
 
 // ignore: must_be_immutable
 class BookingConfirmation extends StatefulWidget {
@@ -145,6 +180,18 @@ class _BookingConfirmationState extends State<BookingConfirmation>
         _BookingConfirmationMapControls,
         _BookingConfirmationModalOverlays,
         _BookingConfirmationView {
+  // Visual-only redesign scope: the app's MaterialApp never sets a custom
+  // ColorScheme, so every Theme.of(context).colorScheme.primary read on
+  // this screen (vehicle cards, booking controls, section headers) was
+  // silently falling back to Flutter's default Material 3 purple. This
+  // screen-local Theme override replaces it with the existing Taxista
+  // brand blue (`theme`, styles.dart) so those already-correct widgets
+  // render on-brand without touching the app-wide theme in main.dart.
   @override
-  Widget build(BuildContext context) => buildBookingConfirmation(context);
+  Widget build(BuildContext context) {
+    return Theme(
+      data: Theme.of(context).copyWith(colorScheme: bookingBrandColorScheme()),
+      child: buildBookingConfirmation(context),
+    );
+  }
 }

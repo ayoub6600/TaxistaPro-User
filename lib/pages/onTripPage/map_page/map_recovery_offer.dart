@@ -58,9 +58,26 @@ extension _MapRecoveryOffer on _MapsState {
         await refreshUserRequestState(requestId);
       }
       if (!mounted) return;
+      // Same convention as opening an accepted ride from "حجوزاتك القائمة"
+      // (active_rider_bookings.dart) - a fresh BookingConfirmation's own
+      // initState() clears userRequestData whenever ismulitipleride is
+      // false and accepted_at is already set, on the assumption that's
+      // stale leftover data from a previous session rather than the ride
+      // this exact push is meant to resume. refreshUserRequestState()
+      // above resets ismulitipleride to false itself once it completes,
+      // so it must be set back to true here, after the fetch and before
+      // the push, or the accepted-ride UI it just fetched gets wiped the
+      // instant the page mounts and the rider is left looking at the
+      // booking/search screen instead.
+      ismulitipleride = true;
+      final type = userRequestData['is_rental'] == true
+          ? 1
+          : userRequestData['drop_address'] == null
+              ? 2
+              : null;
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => BookingConfirmation()),
+        MaterialPageRoute(builder: (_) => BookingConfirmation(type: type)),
         (_) => false,
       );
       return;

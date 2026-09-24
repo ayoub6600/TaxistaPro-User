@@ -6,15 +6,20 @@ mixin _BookingConfirmationBookingControls
         _BookingConfirmationController,
         _BookingConfirmationRequestAction {
   Widget buildBookingControls(Size media, GeoHasher geo) {
+    // NOT Theme.of(context).colorScheme here - see bookingBrandColorScheme()
+    // doc comment in booking_confirmation.dart for why that silently misses
+    // this screen's brand color override in a plain mixin method like this.
+    final colors = bookingBrandColorScheme();
     return Container(
       width: media.width,
-      padding: EdgeInsets.all(media.width * 0.03),
+      padding: EdgeInsets.fromLTRB(
+          media.width * 0.05, 14.h, media.width * 0.05, 12.h),
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
-              blurRadius: 2,
-              color: Colors.black.withOpacity(0.2),
-              spreadRadius: 2)
+              blurRadius: 24,
+              color: Colors.black.withValues(alpha: 0.08),
+              offset: const Offset(0, -6))
         ],
         color: page,
       ),
@@ -179,7 +184,9 @@ mixin _BookingConfirmationBookingControls
                       ),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(14.r),
-                        color: buttonColor.withValues(alpha: 0.86),
+                        color: colors.primary.withValues(alpha: 0.09),
+                        border: Border.all(
+                            color: colors.primary.withValues(alpha: 0.18)),
                       ),
                       height: media.width * 0.10,
                       width: media.width * 0.52,
@@ -286,7 +293,7 @@ mixin _BookingConfirmationBookingControls
                                                   ['text_upi'],
                                   size: media.width * sixteen,
                                   fontweight: FontWeight.w600,
-                                  color: Colors.white,
+                                  color: colors.primary,
                                 ),
                                 SizedBox(
                                   width: media.width * 0.03,
@@ -295,7 +302,7 @@ mixin _BookingConfirmationBookingControls
                                   quarterTurns: 1,
                                   child: Icon(
                                     Icons.arrow_forward_ios,
-                                    color: Colors.white,
+                                    color: colors.primary,
                                     size: media.width * 0.03,
                                   ),
                                 )
@@ -449,7 +456,9 @@ mixin _BookingConfirmationBookingControls
                       EdgeInsets.symmetric(vertical: 7.h, horizontal: 10.w),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14.r),
-                    color: buttonColor.withValues(alpha: 0.86),
+                    color: colors.primary.withValues(alpha: 0.09),
+                    border: Border.all(
+                        color: colors.primary.withValues(alpha: 0.18)),
                   ),
                   alignment: Alignment.center,
                   child: Center(
@@ -499,7 +508,7 @@ mixin _BookingConfirmationBookingControls
                                     width: media.width * 0.075,
                                     child: Image.asset(
                                       'assets/images/Tune.png',
-                                      color: Colors.white,
+                                      color: colors.primary,
                                     ),
                                   ),
                                   MyText(
@@ -507,7 +516,7 @@ mixin _BookingConfirmationBookingControls
                                         ['text_ride_preference'],
                                     size: 14.sp,
                                     fontweight: FontWeight.w600,
-                                    color: Colors.white,
+                                    color: colors.primary,
                                   ),
                                   if (addPetPreferences == true ||
                                       addLuggagePreferences == true)
@@ -515,7 +524,7 @@ mixin _BookingConfirmationBookingControls
                                       text: ' :- ',
                                       size: media.width * fourteen,
                                       fontweight: FontWeight.w600,
-                                      color: Colors.white,
+                                      color: colors.primary,
                                     ),
                                   SizedBox(
                                     width: media.width * 0.025,
@@ -603,15 +612,13 @@ mixin _BookingConfirmationBookingControls
                                 Expanded(
                                   child: InkWell(
                                     onTap: () async {
-                                      if (((rentalOption.isEmpty && (etaDetails[choosenVehicle]['user_wallet_balance'] >= etaDetails[choosenVehicle]['total'] && etaDetails[choosenVehicle]['has_discount'] == false) ||
-                                                  (rentalOption.isEmpty &&
-                                                      etaDetails[choosenVehicle]['has_discount'] ==
-                                                          true &&
-                                                      etaDetails[choosenVehicle]['user_wallet_balance'] >=
-                                                          etaDetails[choosenVehicle][
-                                                              'discounted_totel'])) ||
+                                      if ((widget.type == null &&
+                                              choosenTransportType == 0 &&
+                                              rentalOption.isEmpty) ||
+                                          ((rentalOption.isEmpty && (etaDetails[choosenVehicle]['user_wallet_balance'] >= quotedFareForPayment(etaDetails[choosenVehicle], scheduled: choosenTransportType == 0 && widget.type == null, discounted: false) && etaDetails[choosenVehicle]['has_discount'] == false) || (rentalOption.isEmpty && etaDetails[choosenVehicle]['has_discount'] == true && etaDetails[choosenVehicle]['user_wallet_balance'] >= quotedFareForPayment(etaDetails[choosenVehicle], scheduled: choosenTransportType == 0 && widget.type == null, discounted: true))) ||
                                               (rentalOption.isEmpty &&
-                                                  etaDetails[choosenVehicle]['payment_type'].toString().split(',').toList()[payingVia] !=
+                                                  etaDetails[choosenVehicle]['payment_type'].toString().split(',').toList()[
+                                                          payingVia] !=
                                                       'wallet')) ||
                                           ((rentalOption.isNotEmpty &&
                                                   (etaDetails[0]['user_wallet_balance'] >=
@@ -621,8 +628,12 @@ mixin _BookingConfirmationBookingControls
                                                           ['has_discount'] ==
                                                       false) ||
                                               (rentalOption.isNotEmpty &&
-                                                  rentalOption[choosenVehicle]['has_discount'] == true &&
-                                                  etaDetails[0]['user_wallet_balance'] >= rentalOption[choosenVehicle]['discounted_totel']) ||
+                                                  rentalOption[choosenVehicle]
+                                                          ['has_discount'] ==
+                                                      true &&
+                                                  etaDetails[0]['user_wallet_balance'] >=
+                                                      rentalOption[choosenVehicle]
+                                                          ['discounted_totel']) ||
                                               rentalOption.isNotEmpty && rentalOption[choosenVehicle]['payment_type'].toString().split(',').toList()[payingVia] != 'wallet')) {
                                         if (choosenVehicle != null) {
                                           setState(() {
@@ -650,8 +661,11 @@ mixin _BookingConfirmationBookingControls
                                     child: (!confirmRideLater)
                                         ? Container(
                                             decoration: BoxDecoration(
-                                              color: buttonColor.withValues(
-                                                  alpha: 0.78),
+                                              color: colors.primary
+                                                  .withValues(alpha: 0.08),
+                                              border: Border.all(
+                                                  color: colors.primary
+                                                      .withValues(alpha: 0.16)),
                                               borderRadius:
                                                   BorderRadius.circular(14.r),
                                             ),
@@ -668,7 +682,7 @@ mixin _BookingConfirmationBookingControls
                                                         Icons.access_time,
                                                         size: media.width *
                                                             sixteen,
-                                                        color: Colors.white,
+                                                        color: colors.primary,
                                                       ),
                                                       MyText(
                                                         text: languages[
@@ -676,7 +690,7 @@ mixin _BookingConfirmationBookingControls
                                                             ['text_ride_later'],
                                                         size: media.width *
                                                             twelve,
-                                                        color: Colors.white,
+                                                        color: colors.primary,
                                                       ),
                                                     ],
                                                   )
@@ -694,8 +708,11 @@ mixin _BookingConfirmationBookingControls
                                             decoration: BoxDecoration(
                                               borderRadius:
                                                   BorderRadius.circular(14.r),
-                                              color: buttonColor.withValues(
-                                                  alpha: 0.78),
+                                              color: colors.primary
+                                                  .withValues(alpha: 0.08),
+                                              border: Border.all(
+                                                  color: colors.primary
+                                                      .withValues(alpha: 0.16)),
                                             ),
                                             alignment: Alignment.center,
                                             child: Row(
@@ -719,7 +736,7 @@ mixin _BookingConfirmationBookingControls
                                                       fontSize: 12.sp,
                                                       fontWeight:
                                                           FontWeight.w400,
-                                                      color: Colors.white,
+                                                      color: colors.primary,
                                                     )),
                                                 SizedBox(
                                                   width: 10.w,
@@ -733,7 +750,7 @@ mixin _BookingConfirmationBookingControls
                                                       fontSize: 12.sp,
                                                       fontWeight:
                                                           FontWeight.w400,
-                                                      color: Colors.white,
+                                                      color: colors.primary,
                                                     )),
                                               ],
                                             ),
@@ -771,8 +788,12 @@ mixin _BookingConfirmationBookingControls
                                                   horizontal:
                                                       media.width * 0.05),
                                               decoration: BoxDecoration(
-                                                color: buttonColor.withValues(
-                                                    alpha: 0.78),
+                                                color: colors.primary
+                                                    .withValues(alpha: 0.08),
+                                                border: Border.all(
+                                                    color: colors.primary
+                                                        .withValues(
+                                                            alpha: 0.16)),
                                                 borderRadius:
                                                     BorderRadius.circular(14.r),
                                               ),
@@ -789,7 +810,7 @@ mixin _BookingConfirmationBookingControls
                                                     size:
                                                         media.width * fourteen,
                                                     fontweight: FontWeight.w600,
-                                                    color: Colors.white,
+                                                    color: colors.primary,
                                                   ),
                                                 ],
                                               ),

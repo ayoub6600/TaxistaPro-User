@@ -548,7 +548,9 @@ streamRide() {
       .handleError((onError) {
     rideStreamUpdate?.cancel();
   }).listen((DatabaseEvent event) async {
-    if (event.snapshot.key.toString() == 'modified_by_driver') {
+    if (event.snapshot.key.toString() == 'modified_by_driver' ||
+        event.snapshot.key.toString() == 'is_trip_start' ||
+        event.snapshot.key.toString() == 'is_driver_arrived') {
       await _refreshRequestFromApi(userRequestData['id'].toString());
     } else if (event.snapshot.key.toString() == 'message_by_driver') {
       getCurrentMessages();
@@ -576,7 +578,9 @@ streamRide() {
     if (event.snapshot.key.toString() == 'cancelled_by_driver') {
       requestCancelledByDriver = true;
       await refreshUserRequestState();
-    } else if (event.snapshot.key.toString() == 'modified_by_driver') {
+    } else if (event.snapshot.key.toString() == 'modified_by_driver' ||
+        event.snapshot.key.toString() == 'is_trip_start' ||
+        event.snapshot.key.toString() == 'is_driver_arrived') {
       await _refreshRequestFromApi(userRequestData['id'].toString());
     } else if (event.snapshot.key.toString() == 'total_waiting_time') {
       var val = event.snapshot.value.toString();

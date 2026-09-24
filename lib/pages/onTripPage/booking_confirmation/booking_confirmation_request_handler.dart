@@ -11,13 +11,17 @@ mixin _BookingConfirmationRequestHandler
     if ((widget.type == 2) ||
         (((rentalOption.isEmpty &&
                         (etaDetails[choosenVehicle]['user_wallet_balance'] >=
-                                etaDetails[choosenVehicle]['total'] &&
+                        payableFareForSelectedService(etaDetails[choosenVehicle],
+                                    scheduled: confirmRideLater && choosenTransportType == 0 && widget.type == null,
+                                    discounted: false) &&
                             etaDetails[choosenVehicle]['has_discount'] ==
                                 false) ||
                     (rentalOption.isEmpty &&
                         etaDetails[choosenVehicle]['has_discount'] == true &&
                         etaDetails[choosenVehicle]['user_wallet_balance'] >=
-                            etaDetails[choosenVehicle]['discounted_totel'])) ||
+                            payableFareForSelectedService(etaDetails[choosenVehicle],
+                                scheduled: confirmRideLater && choosenTransportType == 0 && widget.type == null,
+                                discounted: true))) ||
                 (rentalOption.isEmpty &&
                     etaDetails[choosenVehicle]['payment_type']
                             .toString()
@@ -125,6 +129,22 @@ mixin _BookingConfirmationRequestHandler
               });
         }
       } else {
+        double? riderOffer;
+        final eta = etaDetails[choosenVehicle];
+        if (canAdjustSelectedFare(choosenVehicle)) {
+          riderOffer = chosenFareForService(choosenVehicle);
+          if (riderOffer > 0) {
+            final paymentChoices = eta['payment_type'].toString().split(',');
+            final walletBalance = double.tryParse(
+                eta['user_wallet_balance']?.toString() ?? '') ?? 0;
+            if (payingVia < paymentChoices.length &&
+                paymentChoices[payingVia] == 'wallet' &&
+                riderOffer > walletBalance) {
+              setState(() => islowwalletbalance = true);
+              return;
+            }
+          }
+        }
         setState(() {
           isLoading = true;
         });
@@ -132,18 +152,16 @@ mixin _BookingConfirmationRequestHandler
         dynamic result;
         if (choosenVehicle != null) {
           if (confirmRideLater == true) {
-            await submitScheduledRide();
+            await submitScheduledRide(offerFare: riderOffer);
           } else {
-            result = await submitImmediateRide();
+            result = await submitImmediateRide(offerFare: riderOffer);
           }
           if (result == 'logout') {
             navigateLogout();
           } else if (result == 'success') {
             timer();
           }
-          setState(() {
-            isLoading = false;
-          });
+          if (mounted) setState(() => isLoading = false);
         }
       }
     } else {

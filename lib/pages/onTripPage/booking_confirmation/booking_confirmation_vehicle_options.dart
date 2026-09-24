@@ -210,20 +210,40 @@ mixin _BookingConfirmationVehicleOptions
         Expanded(
           child: VehicleServicesSection(
             title: languages[choosenLanguage]['text_availablerides'],
-            children: uniqueServices(etaDetails)
-                .map((i, value) => MapEntry(
-                      i,
-                      buildVehicleServiceOption(
-                        context: context,
-                        driverQuery: fdb,
-                        media: media,
-                        index: i,
-                        isOneWay: isOneWayTrip,
-                        bookingType: widget.type,
-                      ),
-                    ))
-                .values
-                .toList(),
+            subtitle: choosenLanguage == 'ar'
+                ? 'اختر السيارة والسعر الأنسب لرحلتك'
+                : 'Choose the best car and fare for your trip',
+            children: [
+              ...uniqueServices(etaDetails)
+                  .map((i, value) => MapEntry(
+                        i,
+                        buildVehicleServiceOption(
+                          context: context,
+                          driverQuery: fdb,
+                          media: media,
+                          index: i,
+                          isOneWay: isOneWayTrip,
+                          bookingType: widget.type,
+                        ),
+                      ))
+                  .values,
+              PromoTeaserCard(
+                title: choosenLanguage == 'ar'
+                    ? 'لديك كود خصم؟'
+                    : 'Have a discount code?',
+                subtitle: choosenLanguage == 'ar'
+                    ? 'أضف الكود واحصل على خصم مميز'
+                    : 'Add it now for a special discount',
+                onTap: () {
+                  showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      builder: (context) {
+                        return ApplyCouponsContainer(type: widget.type);
+                      });
+                },
+              ),
+            ],
           ),
         )
       else

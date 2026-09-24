@@ -28,6 +28,10 @@ Color topBar = const Color(0xffFFFFFF);
 Color page = const Color(0xffFFFFFF);
 Color buttonColor = Colors.white;
 Color theme = const Color(0xff0873FF);
+// Cyan companion to `theme`, used for gradients/accents on the booking
+// confirmation screen's redesign (blue -> cyan), never a standalone primary.
+Color themeCyan = const Color(0xff17C3E8);
+Color themePaleBlue = const Color(0xffEAF4FF);
 Color buttonText = const Color(0xffFFFFFF);
 Color inputFieldSeparator = const Color(0xff1DA1F2);
 Color termsCheckBox = const Color(0xff39BF4E);

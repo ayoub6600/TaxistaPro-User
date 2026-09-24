@@ -12,8 +12,10 @@ mixin _BookingConfirmationModalOverlays
         _BookingConfirmationActiveRide {
   List<Widget> buildModalOverlays(Size media, Query fdb, GeoHasher geo) {
     return [
-      if (!(userRequestData.isNotEmpty &&
-          userRequestData['accepted_at'] == null))
+      if (userRequestData.isEmpty ||
+          (userDetails['rider_active_ride_limit']?.toString() == '2' &&
+              userRequestData['accepted_at'] != null &&
+              userRequestData['is_completed'] != 1))
         PositionedDirectional(
           top: MediaQuery.of(context).padding.top + 12,
           start: 18,

@@ -415,6 +415,9 @@ List etaDetails = [];
 
 //eta request
 
+bool shouldSendStopsForEta(int addressCount, int stopCount) =>
+    addressCount > 2 && stopCount > 0;
+
 etaRequest({transport, outstation}) async {
   etaDetails.clear();
   dynamic result;
@@ -427,32 +430,24 @@ etaRequest({transport, outstation}) async {
         body: (addressList
                     .where((element) => element.type == 'drop')
                     .isNotEmpty &&
-                dropStopList.isEmpty)
+                !shouldSendStopsForEta(addressList.length, dropStopList.length))
             ? jsonEncode({
-                'pick_lat': (userRequestData.isNotEmpty)
-                    ? userRequestData['pick_lat']
-                    : addressList
-                        .firstWhere((e) => e.type == 'pickup')
-                        .latlng
-                        .latitude,
-                'pick_lng': (userRequestData.isNotEmpty)
-                    ? userRequestData['pick_lng']
-                    : addressList
-                        .firstWhere((e) => e.type == 'pickup')
-                        .latlng
-                        .longitude,
-                'drop_lat': (userRequestData.isNotEmpty)
-                    ? userRequestData['drop_lat']
-                    : addressList
-                        .lastWhere((e) => e.type == 'drop')
-                        .latlng
-                        .latitude,
-                'drop_lng': (userRequestData.isNotEmpty)
-                    ? userRequestData['drop_lng']
-                    : addressList
-                        .lastWhere((e) => e.type == 'drop')
-                        .latlng
-                        .longitude,
+                'pick_lat': addressList
+                    .firstWhere((e) => e.type == 'pickup')
+                    .latlng
+                    .latitude,
+                'pick_lng': addressList
+                    .firstWhere((e) => e.type == 'pickup')
+                    .latlng
+                    .longitude,
+                'drop_lat': addressList
+                    .lastWhere((e) => e.type == 'drop')
+                    .latlng
+                    .latitude,
+                'drop_lng': addressList
+                    .lastWhere((e) => e.type == 'drop')
+                    .latlng
+                    .longitude,
                 'ride_type': 1,
                 'transport_type': (transport == null)
                     ? (choosenTransportType == 0)
@@ -461,35 +456,27 @@ etaRequest({transport, outstation}) async {
                     : transport,
                 'is_outstation': outstation
               })
-            : (dropStopList.isNotEmpty &&
+            : (shouldSendStopsForEta(addressList.length, dropStopList.length) &&
                     addressList
                         .where((element) => element.type == 'drop')
                         .isNotEmpty)
                 ? jsonEncode({
-                    'pick_lat': (userRequestData.isNotEmpty)
-                        ? userRequestData['pick_lat']
-                        : addressList
-                            .firstWhere((e) => e.type == 'pickup')
-                            .latlng
-                            .latitude,
-                    'pick_lng': (userRequestData.isNotEmpty)
-                        ? userRequestData['pick_lng']
-                        : addressList
-                            .firstWhere((e) => e.type == 'pickup')
-                            .latlng
-                            .longitude,
-                    'drop_lat': (userRequestData.isNotEmpty)
-                        ? userRequestData['drop_lat']
-                        : addressList
-                            .lastWhere((e) => e.type == 'drop')
-                            .latlng
-                            .latitude,
-                    'drop_lng': (userRequestData.isNotEmpty)
-                        ? userRequestData['drop_lng']
-                        : addressList
-                            .lastWhere((e) => e.type == 'drop')
-                            .latlng
-                            .longitude,
+                    'pick_lat': addressList
+                        .firstWhere((e) => e.type == 'pickup')
+                        .latlng
+                        .latitude,
+                    'pick_lng': addressList
+                        .firstWhere((e) => e.type == 'pickup')
+                        .latlng
+                        .longitude,
+                    'drop_lat': addressList
+                        .lastWhere((e) => e.type == 'drop')
+                        .latlng
+                        .latitude,
+                    'drop_lng': addressList
+                        .lastWhere((e) => e.type == 'drop')
+                        .latlng
+                        .longitude,
                     'stops': jsonEncode(dropStopList),
                     'ride_type': 1,
                     'transport_type':
@@ -497,18 +484,14 @@ etaRequest({transport, outstation}) async {
                     'is_outstation': outstation
                   })
                 : jsonEncode({
-                    'pick_lat': (userRequestData.isNotEmpty)
-                        ? userRequestData['pick_lat']
-                        : addressList
-                            .firstWhere((e) => e.type == 'pickup')
-                            .latlng
-                            .latitude,
-                    'pick_lng': (userRequestData.isNotEmpty)
-                        ? userRequestData['pick_lng']
-                        : addressList
-                            .firstWhere((e) => e.type == 'pickup')
-                            .latlng
-                            .longitude,
+                    'pick_lat': addressList
+                        .firstWhere((e) => e.type == 'pickup')
+                        .latlng
+                        .latitude,
+                    'pick_lng': addressList
+                        .firstWhere((e) => e.type == 'pickup')
+                        .latlng
+                        .longitude,
                     'ride_type': 1,
                     'transport_type':
                         (choosenTransportType == 0) ? 'taxi' : 'delivery',

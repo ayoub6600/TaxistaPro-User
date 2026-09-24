@@ -6,6 +6,15 @@ Map<String, dynamic> userRequestData = {};
 
 //create request
 String tripError = '';
+
+String _bookingErrorMessage(String body) {
+  try {
+    final message = jsonDecode(body)['message']?.toString();
+    if (message != null && message.isNotEmpty) return message;
+  } catch (_) {}
+  return languages[choosenLanguage]['text_something_went_wrong'];
+}
+
 createRequest(value, api) async {
   waitingTime = 0;
   dynamic result;
@@ -92,6 +101,7 @@ createRequestLater(val, api) async {
       if (jsonDecode(response.body)['message'] == 'no drivers available') {
         noDriverFound = true;
       } else {
+        tripError = _bookingErrorMessage(response.body);
         tripReqError = true;
       }
 
@@ -102,6 +112,11 @@ createRequestLater(val, api) async {
     if (e is SocketException) {
       result = 'no internet';
       internet = false;
+    } else {
+      tripError = languages[choosenLanguage]['text_something_went_wrong'];
+      tripReqError = true;
+      result = 'failure';
+      valueNotifierBook.incrementNotifier();
     }
   }
   return result;
@@ -163,6 +178,7 @@ createRequestLaterPromo() async {
       if (jsonDecode(response.body)['message'] == 'no drivers available') {
         noDriverFound = true;
       } else {
+        tripError = _bookingErrorMessage(response.body);
         tripReqError = true;
       }
 
@@ -229,6 +245,7 @@ createRentalRequest() async {
       if (jsonDecode(response.body)['message'] == 'no drivers available') {
         noDriverFound = true;
       } else {
+        tripError = _bookingErrorMessage(response.body);
         tripReqError = true;
       }
 
@@ -293,6 +310,7 @@ RentalRequestWithPromo() async {
         noDriverFound = true;
       } else {
         debugPrint(response.body);
+        tripError = _bookingErrorMessage(response.body);
         tripReqError = true;
       }
 
@@ -354,6 +372,7 @@ createRentalRequestLater() async {
       if (jsonDecode(response.body)['message'] == 'no drivers available') {
         noDriverFound = true;
       } else {
+        tripError = _bookingErrorMessage(response.body);
         tripReqError = true;
       }
 
@@ -418,6 +437,7 @@ createRentalRequestLaterPromo() async {
         noDriverFound = true;
       } else {
         debugPrint(response.body);
+        tripError = _bookingErrorMessage(response.body);
         tripReqError = true;
       }
 

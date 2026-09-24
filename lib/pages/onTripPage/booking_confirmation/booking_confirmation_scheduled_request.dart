@@ -2,7 +2,7 @@ part of '../booking_confirmation.dart';
 
 mixin _BookingConfirmationScheduledRequest
     on State<BookingConfirmation>, _BookingConfirmationController {
-  Future<void> submitScheduledRide() async {
+  Future<void> submitScheduledRide({double? offerFare}) async {
     if (widget.type != 1) {
       if (etaDetails[choosenVehicle]['has_discount'] == false) {
         dynamic val;
@@ -24,11 +24,11 @@ mixin _BookingConfirmationScheduledRequest
                       .latlng
                       .longitude,
                   'drop_lat': addressList
-                      .firstWhere((e) => e.type == 'drop')
+                      .lastWhere((e) => e.type == 'drop')
                       .latlng
                       .latitude,
                   'drop_lng': addressList
-                      .firstWhere((e) => e.type == 'drop')
+                      .lastWhere((e) => e.type == 'drop')
                       .latlng
                       .longitude,
                   'poly_line': polyString,
@@ -50,12 +50,12 @@ mixin _BookingConfirmationScheduledRequest
                   'pick_address':
                       addressList.firstWhere((e) => e.type == 'pickup').address,
                   'drop_address':
-                      addressList.firstWhere((e) => e.type == 'drop').address,
+                      addressList.lastWhere((e) => e.type == 'drop').address,
                   'trip_start_time':
                       choosenDateTime.toString().substring(0, 19),
                   'is_later': 1,
                   'stops': jsonEncode(dropStopList),
-                  'request_eta_amount': etaDetails[choosenVehicle]['total'],
+                  'request_eta_amount': scheduledQuotedFare(etaDetails[choosenVehicle]),
                   'is_pet_available':
                       (addPetPreferences == false) ? false : true,
                   'is_luggage_available':
@@ -90,13 +90,21 @@ mixin _BookingConfirmationScheduledRequest
                   'trip_start_time':
                       choosenDateTime.toString().substring(0, 19),
                   'is_later': 1,
-                  'request_eta_amount': etaDetails[choosenVehicle]['total'],
+                  'request_eta_amount': scheduledQuotedFare(etaDetails[choosenVehicle]),
                   'is_pet_available':
                       (addPetPreferences == false) ? false : true,
                   'is_luggage_available':
                       (addLuggagePreferences == false) ? false : true
                 };
 
+          if (jsonPayload.containsKey('drop_lat') && offerFare != null &&
+              (offerFare - scheduledQuotedFare(etaDetails[choosenVehicle])).abs() > 0.01) {
+            jsonPayload['rider_proposed_fare'] = offerFare;
+          }
+          if (jsonPayload.containsKey('drop_lat') &&
+              etaDetails[choosenVehicle]['fare_quote_token'] != null) {
+            jsonPayload['fare_quote_token'] = etaDetails[choosenVehicle]['fare_quote_token'];
+          }
           print('JSON Payload: $jsonPayload');
 
           val = await createRequestLater(
@@ -224,11 +232,11 @@ mixin _BookingConfirmationScheduledRequest
                           .latlng
                           .longitude,
                       'drop_lat': addressList
-                          .firstWhere((e) => e.type == 'drop')
+                          .lastWhere((e) => e.type == 'drop')
                           .latlng
                           .latitude,
                       'drop_lng': addressList
-                          .firstWhere((e) => e.type == 'drop')
+                          .lastWhere((e) => e.type == 'drop')
                           .latlng
                           .longitude,
                       'vehicle_type': etaDetails[choosenVehicle]
@@ -252,14 +260,16 @@ mixin _BookingConfirmationScheduledRequest
                           .firstWhere((e) => e.type == 'pickup')
                           .address,
                       'drop_address': addressList
-                          .firstWhere((e) => e.type == 'drop')
+                          .lastWhere((e) => e.type == 'drop')
                           .address,
                       'promocode_id': etaDetails[choosenVehicle]
                           ['promocode_id'],
+                      'fare_quote_token': etaDetails[choosenVehicle]['fare_quote_token'],
+                      'stops': jsonEncode(dropStopList),
                       'trip_start_time':
                           choosenDateTime.toString().substring(0, 19),
                       'is_later': true,
-                      'request_eta_amount': etaDetails[choosenVehicle]['total'],
+                      'request_eta_amount': scheduledQuotedFare(etaDetails[choosenVehicle]),
                       'is_pet_available':
                           (addPetPreferences == false) ? false : true,
                       'is_luggage_available':
@@ -298,7 +308,7 @@ mixin _BookingConfirmationScheduledRequest
                       'trip_start_time':
                           choosenDateTime.toString().substring(0, 19),
                       'is_later': true,
-                      'request_eta_amount': etaDetails[choosenVehicle]['total'],
+                      'request_eta_amount': scheduledQuotedFare(etaDetails[choosenVehicle]),
                       'is_pet_available':
                           (addPetPreferences == false) ? false : true,
                       'is_luggage_available':

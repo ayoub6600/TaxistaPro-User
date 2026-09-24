@@ -3,6 +3,11 @@ part of '../booking_confirmation.dart';
 mixin _BookingConfirmationController
     on State<BookingConfirmation>, WidgetsBindingObserver, TickerProvider {
   void handleBookingBack(BuildContext context) {
+    if (userRequestData.isNotEmpty &&
+        userRequestData['accepted_at'] != null &&
+        userDetails['rider_active_ride_limit']?.toString() != '2') {
+      return;
+    }
     noDriverFound = false;
     stillSearchingForDriver = false;
     pendingRecoveryDriverOffer = null;
@@ -20,6 +25,14 @@ mixin _BookingConfirmationController
     }
 
     isRentalRide = false;
+    if (userRequestData['accepted_at'] != null &&
+        userDetails['rider_active_ride_limit']?.toString() == '2') {
+      userRequestData.clear();
+      rideStreamUpdate?.cancel();
+      rideStreamStart?.cancel();
+      rideStreamUpdate = null;
+      rideStreamStart = null;
+    }
     ismulitipleride = false;
     isOutStation = false;
     etaDetails.clear();
@@ -44,6 +57,98 @@ mixin _BookingConfirmationController
   TextEditingController instructions = TextEditingController();
   final ScrollController _cont = ScrollController();
   final Map minutes = {};
+  final Map<int, double> _fareOffers = {};
+  final Map<int, double> _offerFairQuotes = {};
+  bool? _offerScheduledMode;
+
+  bool canAdjustSelectedFare(int index) {
+    if (widget.type != null ||
+        choosenTransportType != 0 ||
+        rentalOption.isNotEmpty ||
+        isOutStation ||
+        !addressList.any((entry) => entry.type == 'drop') ||
+        index >= etaDetails.length) return false;
+    final eta = etaDetails[index];
+    if (eta['has_discount'] == true || eta['enable_bidding'] == true)
+      return false;
+    // Backend capability gate: the rider fare offer needs the server's signed
+    // fare quote (immediate rides) or its scheduled flexible-offer flag. A
+    // backend that does not send them cannot accept a proposal, so the
+    // stepper stays hidden and booking behaves exactly as before.
+    return confirmRideLater
+        ? eta['scheduled_flexible_offer'] == true
+        : eta['fare_quote_token'] != null;
+  }
+
+  double fairFareForService(int index) {
+    final eta = etaDetails[index];
+    if (confirmRideLater) return scheduledQuotedFare(eta).toDouble();
+    return double.tryParse(eta['total']?.toString() ?? '') ?? 0;
+  }
+
+  double minimumFareForService(int index) {
+    final fair = fairFareForService(index);
+    final eta = etaDetails[index];
+    if (confirmRideLater) {
+      final discount = double.tryParse(
+              eta['scheduled_offer_discount_amount']?.toString() ?? '') ??
+          0;
+      return ((fair - discount).clamp(0.01, fair) * 100).round() / 100;
+    }
+    final limit = double.tryParse(
+            eta['rider_offer_max_discount_percent']?.toString() ?? '') ??
+        10;
+    return minimumRiderOffer(fair, limit);
+  }
+
+  double? maximumFareForService(int index) {
+    if (!confirmRideLater) return null;
+    final fair = fairFareForService(index);
+    final percent = double.tryParse(
+            etaDetails[index]['scheduled_offer_markup_percent']?.toString() ??
+                '') ??
+        0;
+    return (fair * (1 + percent / 100) * 100).round() / 100;
+  }
+
+  double chosenFareForService(int index) {
+    final fair = fairFareForService(index);
+    if (_offerScheduledMode != confirmRideLater) {
+      _fareOffers.clear();
+      _offerFairQuotes.clear();
+      _offerScheduledMode = confirmRideLater;
+    }
+    if (_offerFairQuotes[index] != fair) {
+      _fareOffers.remove(index);
+      _offerFairQuotes[index] = fair;
+    }
+    final minimum = minimumFareForService(index);
+    final maximum = maximumFareForService(index);
+    return (_fareOffers[index] ?? fair)
+        .clamp(minimum, maximum ?? double.infinity)
+        .toDouble();
+  }
+
+  void changeFareOffer(int index, int direction) {
+    final current = chosenFareForService(index);
+    final minimum = minimumFareForService(index);
+    final maximum = maximumFareForService(index);
+    setState(() => _fareOffers[index] =
+        ((current + direction).clamp(minimum, maximum ?? double.infinity) * 100)
+                .round() /
+            100);
+  }
+
+  double payableFareForSelectedService(Map eta,
+      {required bool scheduled, required bool discounted}) {
+    if (choosenVehicle is int && canAdjustSelectedFare(choosenVehicle)) {
+      return chosenFareForService(choosenVehicle);
+    }
+    return quotedFareForPayment(eta,
+            scheduled: scheduled, discounted: discounted)
+        .toDouble();
+  }
+
   dynamic addressBottom;
   dynamic _addressBottom;
   List myMarker = [];
@@ -131,16 +236,23 @@ mixin _BookingConfirmationController
     _routeCameraFitScheduled = true;
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await Future<void>.delayed(const Duration(milliseconds: 260));
+      if (dropConfirmed || userRequestData.isNotEmpty) {
+        await Future<void>.delayed(const Duration(milliseconds: 260));
+      }
       _routeCameraFitScheduled = false;
       if (!mounted || _controller == null) return;
 
       try {
         final latitudeSpan = maxLatitude - minLatitude;
         final longitudeSpan = maxLongitude - minLongitude;
-        if (latitudeSpan.abs() < 0.00001 && longitudeSpan.abs() < 0.00001) {
+        if (max(latitudeSpan.abs(), longitudeSpan.abs()) < 0.015) {
+          final span = max(latitudeSpan.abs(), longitudeSpan.abs());
           await _controller!.animateCamera(
-            CameraUpdate.newLatLngZoom(points.first, 16),
+            CameraUpdate.newLatLngZoom(
+              LatLng((minLatitude + maxLatitude) / 2,
+                  (minLongitude + maxLongitude) / 2),
+              span < 0.003 ? 15 : 14,
+            ),
           );
         } else {
           await _controller!.animateCamera(
@@ -161,34 +273,16 @@ mixin _BookingConfirmationController
   }
 
   List<LatLng> _routeCameraPoints() {
-    final points = <LatLng>[];
-    if (polyList.isNotEmpty) points.addAll(polyList);
+    // polyList is global and can still be the previous trip both before and
+    // after booking. Fit the current booking's saved stops instead.
+    return bookingRequestCameraPoints(
+        userRequestData, addressList.map((address) => address.latlng).toList());
+  }
 
-    for (final address in addressList) {
-      final point = address.latlng;
-      if (!points.contains(point)) points.add(point);
-    }
-
-    if (userRequestData.isNotEmpty) {
-      final pickupLatitude = userRequestData['pick_lat'];
-      final pickupLongitude = userRequestData['pick_lng'];
-      final dropLatitude = userRequestData['drop_lat'];
-      final dropLongitude = userRequestData['drop_lng'];
-      if (pickupLatitude is num && pickupLongitude is num) {
-        points.add(LatLng(
-          pickupLatitude.toDouble(),
-          pickupLongitude.toDouble(),
-        ));
-      }
-      if (dropLatitude is num && dropLongitude is num) {
-        points.add(LatLng(
-          dropLatitude.toDouble(),
-          dropLongitude.toDouble(),
-        ));
-      }
-    }
-
-    return points;
+  CameraPosition initialBookingCameraPosition() {
+    final endpoints = bookingRequestCameraPoints(
+        userRequestData, addressList.map((address) => address.latlng).toList());
+    return initialBookingCameraForRoute(endpoints, _center, dropConfirmed);
   }
 
   @override
@@ -285,7 +379,7 @@ mixin _BookingConfirmationController
 //running timer
   timer() {
     _pendingRequestRefreshTick = 0;
-    if (userRequestData['is_bid_ride'] == 1) {
+    if (isLegacyBiddingSearchRequest(userRequestData, userDetails)) {
       timers?.cancel();
       timers = Timer.periodic(const Duration(seconds: 1), (timer) {
         valueNotifierTimer.incrementNotifier();
@@ -890,7 +984,9 @@ mixin _BookingConfirmationController
       pinLocationIcon2 = BitmapDescriptor.fromBytes(markerIcon2);
     }
 
-    choosenVehicle = null;
+    // ETA may finish while marker assets are loading. Never clear the chosen
+    // default service after the quote has already selected it.
+    if (etaDetails.isEmpty) choosenVehicle = null;
     _dist = null;
 
     if (widget.type == 2 || isOutStation == true) {

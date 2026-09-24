@@ -7,7 +7,7 @@ mixin _BookingConfirmationPendingRequest
             userRequestData['accepted_at'] == null &&
             (userRequestData['is_later'] == null ||
                 userRequestData['is_later'] == 0))
-        ? userRequestData.isNotEmpty && userRequestData['is_bid_ride'] == 1
+        ? isLegacyBiddingSearchRequest(userRequestData, userDetails)
             ? Positioned(
                 bottom: 0,
                 child: StreamBuilder<Object>(

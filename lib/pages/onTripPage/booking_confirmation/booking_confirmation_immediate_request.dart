@@ -2,7 +2,76 @@ part of '../booking_confirmation.dart';
 
 mixin _BookingConfirmationImmediateRequest
     on State<BookingConfirmation>, _BookingConfirmationController {
-  Future<dynamic> submitImmediateRide() async {
+  double? _riderOfferFare;
+
+  Future<dynamic> postImmediateRequest(String payload, String endpoint) async {
+    if (_riderOfferFare == null) return createRequest(payload, endpoint);
+    final fields = Map<String, dynamic>.from(jsonDecode(payload));
+    final fair =
+        double.tryParse(fields['request_eta_amount']?.toString() ?? '') ?? 0;
+    if (fields.containsKey('drop_lat') &&
+        fair > 0 &&
+        (_riderOfferFare! - fair).abs() > 0.01) {
+      final originalToken =
+          etaDetails[choosenVehicle]['fare_quote_token']?.toString();
+      if (currentImmediateFareQuote(originalToken, fields)) {
+        // Preserve the displayed fair fare. A valid signed quote is already
+        // sufficient; fetching ETA again may produce a different route price.
+        fields['fare_quote_token'] = originalToken;
+      } else {
+        // Refresh only an expired/route-changed quote using this booking's route.
+        final etaInput = immediateOfferQuoteInput(fields);
+        try {
+          final response =
+              await http.post(Uri.parse('${url}api/v1/request/eta'),
+                  headers: {
+                    'Authorization': 'Bearer ${bearerToken[0].token}',
+                    'Content-Type': 'application/json',
+                  },
+                  body: jsonEncode(etaInput));
+          if (response.statusCode != 200) {
+            tripError = languages[choosenLanguage]['text_something_went_wrong'];
+            tripReqError = true;
+            return 'quote_unavailable';
+          }
+          final quotes = jsonDecode(response.body)['data'] as List;
+          final selected = quotes.cast<Map>().where((quote) =>
+              quote['zone_type_id'].toString() ==
+              fields['vehicle_type'].toString());
+          if (selected.isEmpty || selected.first['fare_quote_token'] == null) {
+            tripError = languages[choosenLanguage]['text_something_went_wrong'];
+            tripReqError = true;
+            return 'quote_unavailable';
+          }
+          final fresh = selected.first;
+          final freshFair =
+              double.tryParse(fresh['total']?.toString() ?? '') ?? 0;
+          if ((freshFair - fair).abs() > 0.02) {
+            etaDetails[choosenVehicle] = fresh;
+            tripError = languageDirection == 'rtl'
+                ? 'تغيّر السعر العادل إلى ${freshFair.toStringAsFixed(2)}. راجع عرضك ثم اطلب الرحلة.'
+                : 'The fair fare changed to ${freshFair.toStringAsFixed(2)}. Review your offer and book again.';
+            tripReqError = true;
+            valueNotifierBook.incrementNotifier();
+            return 'quote_changed';
+          }
+          fields['fare_quote_token'] = fresh['fare_quote_token'];
+        } catch (error) {
+          debugPrint('Unable to refresh booking quote: $error');
+          tripError = languages[choosenLanguage]['text_something_went_wrong'];
+          tripReqError = true;
+          return 'quote_unavailable';
+        }
+      }
+      // This is a rider proposal on a normal realtime request, not the old
+      // bid-meta auction flow. The two workflows must not share is_bid_ride.
+      applyImmediateRiderProposal(fields, _riderOfferFare!);
+    }
+    return createRequest(jsonEncode(fields), endpoint);
+  }
+
+  Future<dynamic> submitImmediateRide({double? offerFare}) async {
+    _riderOfferFare = offerFare;
     dynamic result;
     print('isOutStation16');
 
@@ -21,7 +90,7 @@ mixin _BookingConfirmationImmediateRequest
               ));
             }
 
-            result = await createRequest(
+            result = await postImmediateRequest(
                 jsonEncode({
                   'pick_lat': addressList
                       .firstWhere((e) => e.type == 'pickup')
@@ -68,7 +137,7 @@ mixin _BookingConfirmationImmediateRequest
                 }),
                 'api/v1/request/create');
           } else {
-            result = await createRequest(
+            result = await postImmediateRequest(
                 (addressList
                         .where((element) => element.type == 'drop')
                         .isNotEmpty)
@@ -160,7 +229,7 @@ mixin _BookingConfirmationImmediateRequest
           }
         } else {
           if (dropStopList.isNotEmpty) {
-            result = await createRequest(
+            result = await postImmediateRequest(
                 jsonEncode({
                   'pick_lat': addressList[0].latlng.latitude,
                   'pick_lng': addressList[0].latlng.longitude,
@@ -200,7 +269,7 @@ mixin _BookingConfirmationImmediateRequest
                 }),
                 'api/v1/request/delivery/create');
           } else {
-            result = await createRequest(
+            result = await postImmediateRequest(
                 jsonEncode({
                   'pick_lat': addressList[0].latlng.latitude,
                   'pick_lng': addressList[0].latlng.longitude,
@@ -253,7 +322,7 @@ mixin _BookingConfirmationImmediateRequest
               ));
             }
 
-            result = await createRequest(
+            result = await postImmediateRequest(
                 jsonEncode({
                   'pick_lat': addressList
                       .firstWhere((e) => e.type == 'pickup')
@@ -303,7 +372,7 @@ mixin _BookingConfirmationImmediateRequest
                 }),
                 'api/v1/request/create');
           } else {
-            result = await createRequest(
+            result = await postImmediateRequest(
                 (addressList
                         .where((element) => element.type == 'drop')
                         .isNotEmpty)
@@ -403,7 +472,7 @@ mixin _BookingConfirmationImmediateRequest
           }
         } else {
           if (dropStopList.isNotEmpty) {
-            result = await createRequest(
+            result = await postImmediateRequest(
                 jsonEncode({
                   'pick_lat': addressList[0].latlng.latitude,
                   'pick_lng': addressList[0].latlng.longitude,
@@ -446,7 +515,7 @@ mixin _BookingConfirmationImmediateRequest
                 }),
                 'api/v1/request/delivery/create');
           } else {
-            result = await createRequest(
+            result = await postImmediateRequest(
                 jsonEncode({
                   'pick_lat': addressList[0].latlng.latitude,
                   'pick_lng': addressList[0].latlng.longitude,
@@ -494,7 +563,7 @@ mixin _BookingConfirmationImmediateRequest
       print('isOutStation17');
       if (rentalOption[choosenVehicle]['has_discount'] == false) {
         if (choosenTransportType == 0) {
-          result = await createRequest(
+          result = await postImmediateRequest(
               jsonEncode({
                 'pick_lat': addressList
                     .firstWhere((e) => e.type == 'pickup')
@@ -530,7 +599,7 @@ mixin _BookingConfirmationImmediateRequest
               }),
               'api/v1/request/create');
         } else {
-          result = await createRequest(
+          result = await postImmediateRequest(
               jsonEncode({
                 'pick_lat': addressList
                     .firstWhere((e) => e.type == 'pickup')
@@ -572,7 +641,7 @@ mixin _BookingConfirmationImmediateRequest
         print('isOutStation18');
         print("------>url ${url}api/v1/request/create");
         if (choosenTransportType == 0) {
-          result = await createRequest(
+          result = await postImmediateRequest(
               jsonEncode({
                 'pick_lat': addressList
                     .firstWhere((e) => e.type == 'pickup')
@@ -612,7 +681,7 @@ mixin _BookingConfirmationImmediateRequest
               'api/v1/request/create');
         } else {
           print('isOutStation19');
-          result = await createRequest(
+          result = await postImmediateRequest(
               jsonEncode({
                 'pick_lat': addressList
                     .firstWhere((e) => e.type == 'pickup')

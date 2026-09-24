@@ -29,6 +29,8 @@ import '../../translations/translation.dart';
 import '../../widgets/clippers.dart';
 import '../../widgets/widgets.dart';
 import '../NavigatorPages/notification.dart';
+import '../NavigatorPages/active_rider_bookings.dart';
+import 'ongoingrides.dart';
 import '../loadingPage/loading.dart';
 import '../login/login.dart';
 import '../navDrawer/nav_drawer.dart';
@@ -43,7 +45,6 @@ import 'map_page/widgets/map_recenter_button.dart';
 import 'map_page/widgets/trip_selection_panel.dart';
 import 'map_launch/map_launch_coordinator.dart';
 import 'map_launch/taxi_launch_overlay.dart';
-import 'ongoingrides.dart';
 import 'pick_loc_select.dart';
 // ignore: depend_on_referenced_packages
 
@@ -195,18 +196,6 @@ class _MapsState extends State<Maps>
     ));
   }
 
-  late final AnimationController _animationcontroller = AnimationController(
-    duration: const Duration(seconds: 1),
-    vsync: MyTickerProvider(),
-  )..repeat(reverse: true);
-  late final Animation<Offset> _offsetAnimation = Tween<Offset>(
-    begin: Offset.zero,
-    end: const Offset(2.5, 0.0),
-  ).animate(CurvedAnimation(
-    parent: _animationcontroller,
-    curve: Curves.linear,
-  ));
-
   @override
   void initState() {
     super.initState();
@@ -221,6 +210,7 @@ class _MapsState extends State<Maps>
     addressList.removeWhere((element) => element.type == 'drop');
 
     getLocs();
+    unawaited(getActiveRiderBookings());
     getadminCurrentMessages();
     unawaited(fetchPendingRecoveryOfferForRider().then((_) {
       if (mounted) setState(() {});
@@ -243,6 +233,7 @@ class _MapsState extends State<Maps>
       });
     }
     if (state == AppLifecycleState.resumed) {
+      unawaited(getActiveRiderBookings());
       unawaited(fetchPendingRecoveryOfferForRider().then((_) {
         if (mounted) setState(() {});
       }));
@@ -264,7 +255,6 @@ class _MapsState extends State<Maps>
     _controller?.dispose();
     _controller = null;
     animationController?.dispose();
-    _animationcontroller.dispose();
     _recoveryOfferTicker?.cancel();
     super.dispose();
   }

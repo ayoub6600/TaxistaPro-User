@@ -7,6 +7,19 @@ class _RideFareData {
   final String currency;
 }
 
+bool isLegacyBiddingSearchRequest(Map<dynamic, dynamic> request,
+    Map<dynamic, dynamic> profile) {
+  final isBid = request['is_bid_ride'] == 1 ||
+      request['is_bid_ride']?.toString() == '1';
+  if (!isBid) return false;
+  // The taxi module dispatches rider proposals as regular requests. Older
+  // pending taxi requests may still carry is_bid_ride, but have no bid-meta.
+  if (profile['enable_modules_for_applications'] == 'taxi') return false;
+  final proposal = double.tryParse(
+      request['rider_proposed_fare']?.toString() ?? '') ?? 0;
+  return proposal <= 0;
+}
+
 _RideFareData? _resolveRideFare(Map<dynamic, dynamic> request) {
   if (request.isEmpty) return null;
 
@@ -33,11 +46,13 @@ _RideFareData? _resolveRideFare(Map<dynamic, dynamic> request) {
       : isBidRide
           ? <dynamic>[
               request['accepted_ride_fare'],
+              request['rider_proposed_fare'],
               request['offerred_ride_fare'],
               request['request_eta_amount'],
               billData['total_amount'],
             ]
           : <dynamic>[
+              request['rider_proposed_fare'],
               request['discounted_total'],
               request['request_eta_amount'],
               request['accepted_ride_fare'],

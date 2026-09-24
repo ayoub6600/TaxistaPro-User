@@ -66,15 +66,39 @@ class _LoadingPageState extends State<LoadingPage> {
 
   //navigate
   navigate() async {
+    if (userDetails['rider_active_ride_limit']?.toString() == '2' &&
+        (int.tryParse(userDetails['rider_active_ride_count']?.toString() ??
+                    '0') ??
+                0) >=
+            2) {
+      // With two bookings there is no unique trip to force-open. Start on
+      // the home screen and let the rider select either booking by ID.
+      userRequestData.clear();
+      requestStreamStart?.cancel();
+      requestStreamEnd?.cancel();
+      rideStreamStart?.cancel();
+      rideStreamUpdate?.cancel();
+      requestStreamStart = null;
+      requestStreamEnd = null;
+      rideStreamStart = null;
+      rideStreamUpdate = null;
+      Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const Maps()),
+          (route) => false);
+      return;
+    }
     if (userRequestData.isNotEmpty && userRequestData['is_completed'] == 1) {
       //invoice page of ride
       Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const Invoice()),
           (route) => false);
-    } else if (userDetails['metaRequest'] != null) {
+    } else if (userDetails['onTripRequest'] != null ||
+        userDetails['metaRequest'] != null) {
       addressList.clear();
-      userRequestData = userDetails['metaRequest']['data'];
+      userRequestData =
+          (userDetails['onTripRequest'] ?? userDetails['metaRequest'])['data'];
       // selectedHistory = i;
       addressList.add(AddressList(
           id: '1',
@@ -211,8 +235,8 @@ class _LoadingPageState extends State<LoadingPage> {
         });
       } else {
         Future.delayed(const Duration(seconds: 2), () {
-          Navigator.pushReplacement(context,
-              MaterialPageRoute(builder: (_) => const Languages()));
+          Navigator.pushReplacement(
+              context, MaterialPageRoute(builder: (_) => const Languages()));
         });
       }
     } else {
@@ -262,8 +286,7 @@ class _LoadingPageState extends State<LoadingPage> {
                   child: Text(
                     languages[choosenLanguage]['text_update_optional_hint'],
                     textAlign: TextAlign.center,
-                    style:
-                        const TextStyle(fontSize: 14, color: Colors.black54),
+                    style: const TextStyle(fontSize: 14, color: Colors.black54),
                   ),
                 ),
             ],
@@ -284,8 +307,8 @@ class _LoadingPageState extends State<LoadingPage> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 24, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),

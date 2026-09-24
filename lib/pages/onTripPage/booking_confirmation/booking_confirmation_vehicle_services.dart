@@ -5,7 +5,7 @@ mixin _BookingConfirmationVehicleServices
   double vehicleSelectionSheetHeight(Size media) {
     final visibleServiceCount = uniqueServices(etaDetails).length;
     final additionalCards = max(0, visibleServiceCount - 2);
-    final compactHeight = media.height * 0.66 + additionalCards * 98.0;
+    final compactHeight = media.height * 0.66 + additionalCards * 98.0 + 50;
 
     return min(compactHeight, media.height * 0.90);
   }
@@ -80,14 +80,29 @@ mixin _BookingConfirmationVehicleServices
                 );
               },
               child: VehicleServiceCard(
-                service: Map<String, dynamic>.from(
-                  etaDetails[index] as Map,
-                ),
+                service: () {
+                  final service = Map<String, dynamic>.from(etaDetails[index] as Map);
+                  if (confirmRideLater && widget.type == null && choosenTransportType == 0 &&
+                      service['scheduled_total'] is num) {
+                    service['total'] = service['scheduled_total'];
+                    service['has_discount'] = service['scheduled_discounted_total'] is num;
+                    if (service['scheduled_discounted_total'] is num) {
+                      service['discounted_totel'] = service['scheduled_discounted_total'];
+                    }
+                  }
+                  return service;
+                }(),
                 selected: choosenVehicle == index,
                 arrivalText:
                     minutes[etaDetails[index]['type_id']]?.toString() ?? '',
                 offerFareLabel: languages[choosenLanguage]
                     ['text_offer_your_fare'],
+                fairFare: canAdjustSelectedFare(index) ? fairFareForService(index) : null,
+                chosenFare: canAdjustSelectedFare(index) ? chosenFareForService(index) : null,
+                minimumFare: canAdjustSelectedFare(index) ? minimumFareForService(index) : null,
+                maximumFare: canAdjustSelectedFare(index) ? maximumFareForService(index) : null,
+                onFareStep: canAdjustSelectedFare(index) ? (direction) => changeFareOffer(index, direction) : null,
+                isArabic: choosenLanguage == 'ar',
               ),
             ));
       },

@@ -191,73 +191,70 @@ extension _MapHomeOverlays on _MapsState {
         bottom: 246 + MediaQuery.paddingOf(context).bottom,
         child: MapRecenterButton(onTap: recenterMap),
       ),
-      ((_lastCenter == _centerLocation &&
-              !ischanged &&
-              userDetails['has_ongoing_ride'] == true))
+      // A booking belongs to the rider, not to the current map camera. Route
+      // preview/back changes _centerLocation and used to hide this card until
+      // a cold restart, even though the scheduled ride was still active.
+      (_bottom == 0 &&
+              (activeRiderBookings.isNotEmpty ||
+                  userDetails['has_ongoing_ride'] == true))
           ? Positioned(
               bottom: ((userDetails['show_rental_ride'] == true ||
                       userDetails['enable_modules_for_applications'] == 'both'))
-                  ? media.width * 0.6
-                  : media.width * 0.4,
+                  ? media.width * 0.85
+                  : media.width * 0.67,
               child: InkWell(
                 onTap: () async {
-                  Navigator.push(
+                  await Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const OnGoingRides()));
+                          builder: (context) => activeRiderBookings.isNotEmpty
+                              ? const ActiveRiderBookingsPage()
+                              : const OnGoingRides()));
+                  await getActiveRiderBookings();
                 },
                 child: Container(
-                  padding: EdgeInsets.all(media.width * 0.03),
-                  width: media.width * 1,
+                  width: media.width - 24,
+                  margin: const EdgeInsets.symmetric(horizontal: 12),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                      color: Colors.blue[200],
-                      borderRadius: BorderRadius.circular(media.width * 0.02)),
+                    gradient: const LinearGradient(colors: [Color(0xff102A56), Color(0xff1965BF)]),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 16, offset: Offset(0, 6))],
+                  ),
                   child: Row(
                     children: [
-                      SizedBox(
-                        width: media.width * 0.05,
+                      Container(
+                        width: 46,
+                        height: 46,
+                        decoration: BoxDecoration(color: Colors.white.withOpacity(0.16), borderRadius: BorderRadius.circular(14)),
+                        child: const Icon(Icons.calendar_month_rounded, color: Colors.white, size: 26),
                       ),
-                      Column(
-                        children: [
-                          MyText(
-                            text: languages[choosenLanguage]
-                                ['text_ongoing_rides'],
-                            size: media.width * fourteen,
-                            color: Colors.black,
-                          ),
-                          SizedBox(
-                            height: 10.h,
-                          ),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 10.w,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.grey,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: MyText(
-                              text: languages[choosenLanguage]
-                                  ['text_view_rides'],
-                              size: 14.sp,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
+                      const SizedBox(width: 12),
                       Expanded(
-                          child: Container(
-                        alignment: Alignment.centerLeft,
-                        height: media.width * 0.07,
-                        child: SlideTransition(
-                          position: _offsetAnimation,
-                          child: SizedBox(
-                            child: Image.asset(
-                              'assets/images/taxia.png',
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              activeRiderBookings.isNotEmpty &&
+                                      activeRiderBookings.every((item) => item is Map && (item['is_later'] == true || item['is_later'] == 1))
+                                  ? (languageDirection == 'rtl' ? 'رحلتك المجدولة' : 'Your scheduled ride')
+                                  : (languageDirection == 'rtl' ? 'حجوزاتك القائمة' : 'Your bookings'),
+                              style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800),
                             ),
-                          ),
+                            const SizedBox(height: 5),
+                            Text(
+                              activeRiderBookings.length == 1 && activeRiderBookings.first is Map &&
+                                      (activeRiderBookings.first['is_later'] == true || activeRiderBookings.first['is_later'] == 1)
+                                  ? '${activeRiderBookings.first['trip_start_time'] ?? ''} · ${activeRiderBookings.first['driver_id'] == null ? (languageDirection == 'rtl' ? 'متاحة للسائقين' : 'Available to drivers') : (languageDirection == 'rtl' ? 'أكدها السائق' : 'Driver confirmed')}'
+                                  : (languageDirection == 'rtl' ? '${activeRiderBookings.length} حجوزات · عرض التفاصيل' : '${activeRiderBookings.length} bookings · View details'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(color: Color(0xffDCEBFF), fontSize: 12),
+                            ),
+                          ],
                         ),
-                      )),
+                      ),
+                      const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 17),
                     ],
                   ),
                 ),

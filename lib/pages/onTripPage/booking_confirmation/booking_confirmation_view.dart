@@ -52,6 +52,19 @@ mixin _BookingConfirmationView
     return PopScope(
       canPop: popFunction(),
       onPopInvoked: (did) {
+        if (userRequestData.isNotEmpty &&
+            userRequestData['accepted_at'] != null &&
+            userRequestData['is_completed'] != 1 &&
+            userDetails['rider_active_ride_limit']?.toString() != '2') {
+          return;
+        }
+        if (!did &&
+            userRequestData.isNotEmpty &&
+            userRequestData['accepted_at'] != null &&
+            userDetails['rider_active_ride_limit']?.toString() == '2') {
+          handleBookingBack(context);
+          return;
+        }
         noDriverFound = false;
         tripReqError = false;
         serviceNotAvailable = false;
@@ -119,10 +132,13 @@ mixin _BookingConfirmationView
                   if (_controller != null) {
                     final isRegularDriverSearch = userRequestData.isNotEmpty &&
                         userRequestData['accepted_at'] == null &&
-                        userRequestData['is_bid_ride'] != 1;
-                    mapPadding = isRegularDriverSearch
-                        ? _searchingSheetHeight(media)
-                        : bookingSheetHeight(media);
+                        !isLegacyBiddingSearchRequest(userRequestData,
+                            userDetails);
+                    mapPadding = !dropConfirmed && userRequestData.isEmpty
+                        ? media.height * 0.50
+                        : isRegularDriverSearch
+                            ? _searchingSheetHeight(media)
+                            : bookingSheetHeight(media);
                     scheduleRouteCameraFit(media);
                   }
                   if (polyGot == false &&

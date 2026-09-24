@@ -139,10 +139,7 @@ class _RideLaterBottomSheetState extends State<RideLaterBottomSheet> {
   num? get _estimatedFare {
     try {
       final eta = etaDetails[choosenVehicle];
-      if (eta['has_discount'] == true && eta['discounted_totel'] != null) {
-        return eta['discounted_totel'];
-      }
-      return eta['total'];
+      return scheduledQuotedFare(eta);
     } catch (_) {
       return null;
     }
