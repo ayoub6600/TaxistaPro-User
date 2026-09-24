@@ -107,47 +107,6 @@ void main() {
     expect(result, 'something went wrong');
   });
 
-  group('forgot-password phone calls carry the country dial code', () {
-    test('validate-otp sends country alongside mobile and otp', () async {
-      await withBackend(
-        () => validateSmsOtp('1012345678', '123456', countryDialCode: '+20'),
-      );
-
-      expect(requests.single.url.path, endsWith('api/v1/validate-otp'));
-      expect(requests.single.bodyFields, {
-        'mobile': '1012345678',
-        'otp': '123456',
-        'country': '+20',
-      });
-    });
-
-    test('update-password sends country for a phone reset', () async {
-      await withBackend(
-        () => updatePassword('912345678', 'new-password', false,
-            countryDialCode: '+218'),
-      );
-
-      expect(requests.single.url.path, endsWith('api/v1/user/update-password'));
-      expect(requests.single.bodyFields, {
-        'mobile': '912345678',
-        'country': '+218',
-        'password': 'new-password',
-      });
-    });
-
-    test('update-password by email does not send a country', () async {
-      await withBackend(
-        () => updatePassword('rider@example.com', 'new-password', true,
-            countryDialCode: '+20'),
-      );
-
-      expect(requests.single.bodyFields, {
-        'email': 'rider@example.com',
-        'password': 'new-password',
-      });
-    });
-  });
-
   test('validate-mobile-for-login sends country with the mobile', () async {
     await withBackend(
       () => verifyUser('912345678', 0, '', '', false, false,

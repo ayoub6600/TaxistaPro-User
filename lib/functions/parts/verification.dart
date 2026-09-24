@@ -147,77 +147,8 @@ String _registrationOtpOutcome(http.Response response) {
   return 'something went wrong';
 }
 
-/// Legacy phone/email OTP endpoints. Registration no longer uses these (see
-/// [sendRegistrationOtp]); they remain only for the forgot-password flow,
-/// whose backend `user/update-password` still relies on them.
-sendOTPtoMobile(String mobile, String countryCode, {String? channel}) async {
-  dynamic result;
-  try {
-    var response = await http.post(Uri.parse('${url}api/v1/mobile-otp'), body: {
-      'mobile': mobile,
-      'country_code': countryCode,
-      if (channel != null) 'channel': channel,
-    });
-    if (response.statusCode == 200) {
-      if (jsonDecode(response.body)['success'] == true) {
-        result = 'success';
-      } else {
-        debugPrint(response.body);
-        result = 'something went wrong';
-      }
-    } else if (response.statusCode == 422) {
-      debugPrint(response.body);
-      var error = jsonDecode(response.body)['errors'];
-      result = error[error.keys.toList()[0]]
-          .toString()
-          .replaceAll('[', '')
-          .replaceAll(']', '')
-          .toString();
-    } else {
-      result = 'something went wrong';
-    }
-    return result;
-  } catch (e) {
-    if (e is SocketException) {
-      internet = false;
-    }
-  }
-}
-
-validateSmsOtp(String mobile, String otp, {String? countryDialCode}) async {
-  dynamic result;
-  try {
-    var response =
-        await http.post(Uri.parse('${url}api/v1/validate-otp'), body: {
-      'mobile': mobile,
-      'otp': otp,
-      if (countryDialCode != null) 'country': countryDialCode,
-    });
-    if (response.statusCode == 200) {
-      if (jsonDecode(response.body)['success'] == true) {
-        result = 'success';
-      } else {
-        debugPrint(response.body);
-        result = 'something went wrong';
-      }
-    } else if (response.statusCode == 422) {
-      debugPrint(response.body);
-      var error = jsonDecode(response.body)['errors'];
-      result = error[error.keys.toList()[0]]
-          .toString()
-          .replaceAll('[', '')
-          .replaceAll(']', '')
-          .toString();
-    } else {
-      result = 'something went wrong';
-    }
-  } catch (e) {
-    if (e is SocketException) {
-      internet = false;
-    }
-  }
-  return result;
-}
+// Forgot Password (the only non-registration OTP use) lives in
+// rider_password_reset.dart: password/rider/send-otp | verify-otp | reset.
 
 List outStationList = [];
 outStationListFun() async {

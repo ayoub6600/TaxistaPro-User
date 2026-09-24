@@ -570,8 +570,8 @@ otpCall() async {
 
 // verify user already exist
 
-verifyUser(String number, int login, String password, String email, isOtp,
-    forgot,
+verifyUser(
+    String number, int login, String password, String email, isOtp, forgot,
     {String? countryDialCode}) async {
   dynamic val;
   debugPrint('drops1 ${url}api/v1/user/validate-mobile-for-login');
@@ -611,7 +611,7 @@ verifyUser(String number, int login, String password, String email, isOtp,
           }
         } else {
           debugPrint('drops4 ');
-          var check = await userLogin(number, login, password, isOtp,
+          var check = await userLogin(number, login, password,
               countryDialCode: countryDialCode);
           if (check == true) {
             var uCheck = await getUserDetails();
@@ -689,54 +689,16 @@ acceptRequest(body) async {
   }
 }
 
-updatePassword(email, password, loginby, {String? countryDialCode}) async {
-  dynamic result;
-
-  try {
-    var response =
-        await http.post(Uri.parse('${url}api/v1/user/update-password'), body: {
-      if (loginby == true) 'email': email,
-      if (loginby == false) 'mobile': email,
-      if (loginby == false && countryDialCode != null)
-        'country': countryDialCode,
-      'password': password
-    });
-
-    print("------>url ${url}api/v1/user/update-password");
-    print("------>response ${response.body}");
-    if (response.statusCode == 200) {
-      if (jsonDecode(response.body)['success'] == true) {
-        result = true;
-      } else {
-        result = jsonDecode(response.body)['message'];
-      }
-    } else if (response.statusCode == 401) {
-      result = 'logout';
-    } else {
-      try {
-        final body = jsonDecode(response.body);
-        result = body is Map && body['message'] != null
-            ? body['message'].toString()
-            : 'تعذر تحديث كلمة المرور.';
-      } catch (_) {
-        result = 'تعذر تحديث كلمة المرور.';
-      }
-    }
-  } catch (e) {
-    if (e is SocketException) {
-      internet = false;
-      result = 'no internet';
-    }
-  }
-  return result;
-}
-
 //user login
 //
 // [countryDialCode] (e.g. "+218", "+20") must accompany a phone (login == 0)
 // login: the backend resolves accounts by country + number, since riders in
 // different countries can share the same local digits.
-userLogin(number, login, password, isOtp, {String? countryDialCode}) async {
+//
+// Normal sign-in is always phone/email + password. OTP is never a login
+// credential (it is Forgot Password only, and costs SMS), so there is no OTP or
+// mobile-only request shape here and the backend rejects both.
+userLogin(number, login, password, {String? countryDialCode}) async {
   bearerToken.clear();
   dynamic result;
   try {
@@ -766,34 +728,14 @@ userLogin(number, login, password, isOtp, {String? countryDialCode}) async {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: (isOtp == false)
-            ? jsonEncode({
-                if (login == 0) "mobile": number,
-                if (login == 0 && countryDialCode != null)
-                  'country': countryDialCode,
-                if (login == 1) "email": number,
-                'password': password,
-                'device_token': fcm,
-                "login_by":
-                    (platform == TargetPlatform.android) ? 'android' : 'ios',
-              })
-            : (login == 0)
-                ? jsonEncode({
-                    "mobile": number,
-                    if (countryDialCode != null) 'country': countryDialCode,
-                    'device_token': fcm,
-                    "login_by": (platform == TargetPlatform.android)
-                        ? 'android'
-                        : 'ios',
-                  })
-                : jsonEncode({
-                    "email": number,
-                    "otp": password,
-                    'device_token': fcm,
-                    "login_by": (platform == TargetPlatform.android)
-                        ? 'android'
-                        : 'ios',
-                  }));
+        body: jsonEncode({
+          if (login == 0) "mobile": number,
+          if (login == 0 && countryDialCode != null) 'country': countryDialCode,
+          if (login == 1) "email": number,
+          'password': password,
+          'device_token': fcm,
+          "login_by": (platform == TargetPlatform.android) ? 'android' : 'ios',
+        }));
     debugPrint('drops-login2 ${response.statusCode}');
     if (response.statusCode == 200) {
       debugPrint('drops-login3');

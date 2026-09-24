@@ -98,7 +98,6 @@ class _ModernLoginState extends State<ModernLogin> {
       identity,
       isEmail ? 1 : 0,
       _password.text,
-      false,
       // Phone accounts are resolved by country + number.
       countryDialCode: isEmail ? null : _country!.dialCode,
     );

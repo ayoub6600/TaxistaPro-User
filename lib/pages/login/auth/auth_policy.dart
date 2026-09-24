@@ -1,7 +1,7 @@
 /// The country's `signup_otp_channel` from the countries API. Registration no
 /// longer branches on this: every country verifies its phone number with the
-/// same Twilio Verify OTP. It still drives the sign-in method default and the
-/// forgot-password recovery channel.
+/// same Twilio Verify OTP. It only drives the sign-in method default (email vs
+/// phone field); forgot-password is phone-only for every country.
 enum SignupOtpChannel { sms, email, whatsapp, firebase }
 
 enum SignupField { name, country, area, email, password, phone, otp, gender }
