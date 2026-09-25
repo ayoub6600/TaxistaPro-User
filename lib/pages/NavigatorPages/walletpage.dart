@@ -9,6 +9,9 @@ import '../../widgets/widgets.dart';
 import '../loadingPage/loading.dart';
 import '../login/login.dart';
 import '../noInternet/nointernet.dart';
+import '../../payments/moamalat/moamalat_app_env.dart';
+import '../../payments/moamalat/moamalat_env.dart';
+import '../../payments/moamalat/moamalat_wallet_entry.dart';
 
 class WalletPage extends StatefulWidget {
   const WalletPage({super.key});
@@ -30,6 +33,9 @@ class _WalletPageState extends State<WalletPage> {
   bool _addingMoney = false;
   int ischeckmoneytransfer = 0;
   ScrollController custom = ScrollController();
+  late final MoamalatEnv _moamalatEnv = buildMoamalatEnv(onWalletChanged: () {
+    if (mounted) getWallet();
+  });
 
   @override
   void initState() {
@@ -916,6 +922,12 @@ class _WalletPageState extends State<WalletPage> {
                                     ),
                                   ],
                                 ),
+                              ),
+                              // Moamalat secure online payment - shown only
+                              // where the server says it is available.
+                              MoamalatWalletEntry(
+                                env: _moamalatEnv,
+                                width: media.width * 0.9,
                               ),
                               SizedBox(
                                 height: media.width * 0.1,

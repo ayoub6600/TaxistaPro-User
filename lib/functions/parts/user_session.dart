@@ -25,7 +25,7 @@ getUserDetails({id}) async {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${bearerToken[0].token}'
       },
-    );
+    ).timeout(const Duration(seconds: 12)); // a socket iOS suspended in the background must not hold every ride refresh hostage
     if (response.statusCode == 200) {
       userDetails =
           Map<String, dynamic>.from(jsonDecode(response.body)['data']);

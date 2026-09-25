@@ -228,8 +228,9 @@ class _MapsState extends State<Maps>
   // One reconcile per foreground return, however many lifecycle events the OS
   // delivers. Everything here is idempotent: no timer or listener is created
   // unless it does not already exist.
-  final SingleFlight<void> _resumeReconcile = SingleFlight<void>();
+  final ResumeReconciler _resume = ResumeReconciler();
   String? _appliedMapStyleKey;
+  bool _resumeRetryScheduled = false;
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -242,18 +243,45 @@ class _MapsState extends State<Maps>
       return;
     }
     if (state == AppLifecycleState.resumed) {
-      unawaited(_resumeReconcile.run(_reconcileAfterResume));
+      unawaited(_onResumed());
     }
+  }
+
+  /// Back from another app: make the page alive at once (no waiting on the
+  /// network), then reconcile once under a hard deadline. Home has nowhere
+  /// safer to reset to, so a failed reconcile just releases every lock and
+  /// tries again a little later.
+  Future<void> _onResumed() async {
+    _restoreAfterResume();
+    final outcome = await _resume.run(_reconcileAfterResume);
+    if (!mounted || outcome == ResumeOutcome.reconciled) return;
+    _restoreAfterResume();
+    if (_resumeRetryScheduled) return;
+    _resumeRetryScheduled = true;
+    Future<void>.delayed(
+        outcome == ResumeOutcome.needsReset
+            ? const Duration(seconds: 10)
+            : const Duration(seconds: 3), () {
+      _resumeRetryScheduled = false;
+      if (mounted) unawaited(_onResumed());
+    });
+  }
+
+  void _restoreAfterResume() {
+    if (!mounted) return;
+    // An "OK" acknowledgement left over from before the app was backgrounded
+    // must never keep a full-screen layer over the page.
+    if (cancelRequestByUser) cancelRequestByUser = false;
+    if (_recoveryOfferTicker == null) startRecoveryOfferTicker();
+    if (locationAllowed == true &&
+        (positionStream == null || positionStream!.isPaused)) {
+      positionStreamData();
+    }
+    setState(() {});
   }
 
   Future<void> _reconcileAfterResume() async {
     if (!mounted) return;
-    // An "OK" acknowledgement left over from before the app was backgrounded
-    // must never keep a full-screen layer over the page.
-    if (cancelRequestByUser) {
-      setState(() => cancelRequestByUser = false);
-    }
-    if (_recoveryOfferTicker == null) startRecoveryOfferTicker();
     await Future.wait<void>([
       getActiveRiderBookings().then<void>((_) {}, onError: (_) {}),
       fetchPendingRecoveryOfferForRider().then<void>((_) {}, onError: (_) {}),

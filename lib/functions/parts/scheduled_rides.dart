@@ -28,7 +28,7 @@ Future<String> getActiveRiderBookings() async {
     final response = await http.get(
       Uri.parse('${url}api/v1/request/active'),
       headers: {'Authorization': 'Bearer ${bearerToken[0].token}'},
-    );
+    ).timeout(const Duration(seconds: 12));
     if (response.statusCode == 200) {
       activeRiderBookings = jsonDecode(response.body)['data'] as List;
       userDetails['rider_active_ride_count'] = activeRiderBookings.length;

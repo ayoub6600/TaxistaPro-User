@@ -134,9 +134,7 @@ mixin _BookingConfirmationController
     final minimum = minimumFareForService(index);
     final maximum = maximumFareForService(index);
     setState(() => _fareOffers[index] =
-        ((current + direction).clamp(minimum, maximum ?? double.infinity) * 100)
-                .round() /
-            100);
+        steppedFareOffer(current, direction, minimum, maximum));
   }
 
   double payableFareForSelectedService(Map eta,
@@ -305,6 +303,15 @@ mixin _BookingConfirmationController
   void initState() {
     fmpoly.clear();
     WidgetsBinding.instance.addObserver(this);
+    // Weak or lost internet: when the connection comes back, reconcile the
+    // ride once (shared with any resume in flight) instead of waiting for the
+    // next poll tick.
+    _connectivitySub = Connectivity().onConnectivityChanged.listen((results) {
+      final online = !results.contains(ConnectivityResult.none);
+      if (online && mounted && userRequestData.isNotEmpty) {
+        unawaited(_resume.run(_reconcileAfterResume));
+      }
+    });
     promoCode = '';
     mapPadding = 0.0;
     promoStatus = null;
@@ -341,8 +348,10 @@ mixin _BookingConfirmationController
     super.initState();
   }
 
-  final SingleFlight<void> _resumeReconcile = SingleFlight<void>();
+  final ResumeReconciler _resume = ResumeReconciler();
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
   String? _appliedMapStyleKey;
+  bool _resumeRetryScheduled = false;
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -356,8 +365,98 @@ mixin _BookingConfirmationController
       return;
     }
     if (state == AppLifecycleState.resumed) {
-      unawaited(_resumeReconcile.run(_reconcileAfterResume));
+      unawaited(_onResumed());
     }
+  }
+
+  /// Coming back to the app (for example after using the Driver app):
+  /// 1. make the screen alive again straight away - locks released, polling
+  ///    and GPS restarted - without waiting for the network;
+  /// 2. reconcile with the server once, under a hard deadline;
+  /// 3. if that keeps failing, rebuild the screen from the server instead of
+  ///    leaving the rider on a frozen view.
+  Future<void> _onResumed() async {
+    _restoreAfterResume();
+    final outcome = await _resume.run(_reconcileAfterResume);
+    if (!mounted) return;
+    switch (outcome) {
+      case ResumeOutcome.reconciled:
+        break;
+      case ResumeOutcome.softFailure:
+        _restoreAfterResume();
+        _scheduleResumeRetry();
+        break;
+      case ResumeOutcome.needsReset:
+        _controlledStateReset();
+        break;
+    }
+  }
+
+  /// Instant, network-free part of a resume. Safe to run repeatedly: every
+  /// step is idempotent (one timer, one location stream, no stacked dialogs).
+  void _restoreAfterResume() {
+    if (!mounted) return;
+    // Busy flags left over from before the app was backgrounded would keep
+    // buttons disabled; a real in-flight cancel is single-flight anyway.
+    _cancelling = false;
+    if (pendingRecoveryOfferDialogShown && !_recoveryDialogOnTop) {
+      pendingRecoveryOfferDialogShown = false;
+    }
+    if (timers == null &&
+        userRequestData.isNotEmpty &&
+        userRequestData['accepted_at'] == null) {
+      timer();
+    }
+    if (locationAllowed == true &&
+        (positionStream == null || positionStream!.isPaused)) {
+      positionStreamData();
+    }
+    setState(() {});
+  }
+
+  bool get _recoveryDialogOnTop {
+    final route = ModalRoute.of(context);
+    return route != null && !route.isCurrent;
+  }
+
+  void _scheduleResumeRetry() {
+    if (_resumeRetryScheduled) return;
+    _resumeRetryScheduled = true;
+    Future<void>.delayed(const Duration(seconds: 3), () {
+      _resumeRetryScheduled = false;
+      if (mounted) unawaited(_onResumed());
+    });
+  }
+
+  /// The last resort: the server could not be reached or understood twice in a
+  /// row, so nothing on this screen can be trusted. Drop every timer and
+  /// listener and start over from the same place a cold start does, which
+  /// puts the rider on the right screen (Home, the active trip, or the
+  /// invoice) from whatever the server says. The app is never restarted.
+  void _controlledStateReset() {
+    timers?.cancel();
+    timers = null;
+    positionStream?.cancel();
+    positionStream = null;
+    requestStreamStart?.cancel();
+    requestStreamEnd?.cancel();
+    rideStreamStart?.cancel();
+    rideStreamUpdate?.cancel();
+    requestStreamStart = null;
+    requestStreamEnd = null;
+    rideStreamStart = null;
+    rideStreamUpdate = null;
+    _cancelling = false;
+    pendingRecoveryOfferDialogShown = false;
+    if (_leavingToHome) return;
+    _leavingToHome = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const LoadingPage()),
+          (route) => false);
+    });
   }
 
   /// One authoritative refresh of the ride from the server when the app comes
@@ -401,6 +500,8 @@ mixin _BookingConfirmationController
 
   @override
   void dispose() {
+    _connectivitySub?.cancel();
+    _connectivitySub = null;
     if (timers != null) {
       timers?.cancel();
       timers = null;

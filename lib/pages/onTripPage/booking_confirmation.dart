@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:ui' as ui;
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
@@ -38,6 +39,7 @@ import '../NavigatorPages/pickcontacts.dart';
 import '../NavigatorPages/support.dart';
 import '../chatPage/chat_page.dart';
 import '../loadingPage/loading.dart';
+import '../loadingPage/loadingpage.dart' show LoadingPage;
 import '../login/login.dart';
 import '../noInternet/noInternet.dart';
 import 'choosegoods.dart';

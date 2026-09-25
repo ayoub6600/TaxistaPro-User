@@ -9,12 +9,81 @@ class SingleFlight<T> {
 
   bool get busy => _inflight != null;
 
-  Future<T> run(Future<T> Function() task) {
+  /// With [timeout], a run that never finishes (a request stuck on a socket
+  /// iOS suspended in the background) is abandoned: the caller gets a
+  /// [TimeoutException] and the lock is released, so the NEXT call starts a
+  /// fresh run instead of joining a dead one forever.
+  Future<T> run(Future<T> Function() task, {Duration? timeout}) {
     final running = _inflight;
     if (running != null) return running;
-    final started = task();
+    final started = timeout == null ? task() : task().timeout(timeout);
     _inflight = started;
-    return started.whenComplete(() => _inflight = null);
+    return started.whenComplete(() {
+      if (identical(_inflight, started)) _inflight = null;
+    });
+  }
+}
+
+/// What a resume reconcile ended with.
+enum ResumeOutcome {
+  /// The server's state was fetched and applied.
+  reconciled,
+
+  /// It failed or timed out once: keep the screen, release every UI lock,
+  /// restart polling and try again shortly.
+  softFailure,
+
+  /// It failed repeatedly: the screen can no longer be trusted, so rebuild it
+  /// from the server (the same path as a cold start) instead of leaving the
+  /// rider on a frozen view.
+  needsReset,
+}
+
+/// One bounded reconcile per app resume.
+///
+/// Coming back from another app (Rider -> Driver -> Rider) the first request
+/// can hang on a dead socket. Without a deadline that request holds the
+/// reconcile lock, the polling timers never restart, and the screen looks
+/// frozen. This gives every reconcile a hard [timeout], shares one run between
+/// rapid resumes, and after [resetAfterFailures] consecutive failures asks the
+/// page to reset itself.
+class ResumeReconciler {
+  ResumeReconciler({
+    this.timeout = const Duration(seconds: 15),
+    this.resetAfterFailures = 2,
+  });
+
+  final Duration timeout;
+  final int resetAfterFailures;
+  Future<ResumeOutcome>? _current;
+  int _failures = 0;
+
+  bool get busy => _current != null;
+  int get consecutiveFailures => _failures;
+
+  Future<ResumeOutcome> run(Future<void> Function() reconcile) {
+    final running = _current;
+    if (running != null) return running;
+    final started = _attempt(reconcile);
+    _current = started;
+    return started.whenComplete(() {
+      if (identical(_current, started)) _current = null;
+    });
+  }
+
+  Future<ResumeOutcome> _attempt(Future<void> Function() reconcile) async {
+    try {
+      await reconcile().timeout(timeout);
+      _failures = 0;
+      return ResumeOutcome.reconciled;
+    } catch (_) {
+      _failures++;
+      if (_failures >= resetAfterFailures) {
+        _failures = 0;
+        return ResumeOutcome.needsReset;
+      }
+      return ResumeOutcome.softFailure;
+    }
   }
 }
 

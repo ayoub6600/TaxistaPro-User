@@ -106,4 +106,50 @@ void main() {
   test('the admin floor admits 29 from a fair 30', () {
     expect(29 >= minimumRiderOffer(30, 10), isTrue);
   });
+
+  group('per-market minimum offer (Libya 25%, Qena independent)', () {
+    test('a fair 13 with a 25% limit allows 9.75 and offers 10, 11, 12, 13, 15', () {
+      final floor = minimumRiderOffer(13, 25);
+      expect(floor, 9.75);
+      for (final offer in [10.0, 11.0, 12.0, 13.0, 15.0]) {
+        expect(offer >= floor, isTrue, reason: '$offer must be an acceptable offer');
+      }
+      expect(9.0 >= floor, isFalse);
+    });
+
+    test('the stepper walks 13 down to 10 and up to 15, and stops at the floor', () {
+      final floor = minimumRiderOffer(13, 25);
+      var offer = 13.0;
+      final down = <double>[];
+      for (var i = 0; i < 5; i++) {
+        offer = steppedFareOffer(offer, -1, floor, null);
+        down.add(offer);
+      }
+      expect(down, [12.0, 11.0, 10.0, 9.75, 9.75]);
+
+      offer = 13.0;
+      offer = steppedFareOffer(offer, 1, floor, null);
+      offer = steppedFareOffer(offer, 1, floor, null);
+      expect(offer, 15.0);
+    });
+
+    test('a market with no discount allowance can only raise the offer', () {
+      final floor = minimumRiderOffer(13, 0);
+      expect(steppedFareOffer(13, -1, floor, null), 13.0);
+      expect(steppedFareOffer(13, 1, floor, null), 14.0);
+    });
+
+    test('another market keeps its own limit', () {
+      final libya = minimumRiderOffer(13, 25);
+      final qena = minimumRiderOffer(13, 10);
+      expect(libya, 9.75);
+      expect(qena, 11.7);
+      expect(10.0 >= libya, isTrue);
+      expect(10.0 >= qena, isFalse);
+    });
+
+    test('a scheduled ride is capped by its ceiling when stepping up', () {
+      expect(steppedFareOffer(14, 1, 10, 14.5), 14.5);
+    });
+  });
 }

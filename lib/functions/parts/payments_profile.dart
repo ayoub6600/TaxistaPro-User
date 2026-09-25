@@ -454,19 +454,35 @@ bool userCancelled = false;
 bool _requestRefreshInFlight = false;
 bool _requestRefreshQueued = false;
 String? _queuedRefreshRequestId;
+DateTime? _requestRefreshStartedAt;
+int _requestRefreshGeneration = 0;
 
 bool _firebaseFlagEnabled(dynamic value) =>
     value == true || value == 1 || value?.toString() == '1';
 
+/// Longest a single ride refresh may hold the "one refresh at a time" gate.
+/// getUserDetails itself times out well before this; the watchdog only exists
+/// so that no future hang can ever leave the gate closed for good (every later
+/// refresh silently queued behind it, the ride never updating again).
+const Duration _requestRefreshWatchdog = Duration(seconds: 30);
+
 Future<void> refreshUserRequestState([String? requestId]) async {
   final normalizedId = requestId?.trim();
   if (_requestRefreshInFlight) {
-    _requestRefreshQueued = true;
-    _queuedRefreshRequestId = normalizedId;
-    return;
+    final started = _requestRefreshStartedAt;
+    final stuck = started != null &&
+        DateTime.now().difference(started) > _requestRefreshWatchdog;
+    if (!stuck) {
+      _requestRefreshQueued = true;
+      _queuedRefreshRequestId = normalizedId;
+      return;
+    }
+    // The previous refresh never came back: take the gate over.
   }
 
+  final generation = ++_requestRefreshGeneration;
   _requestRefreshInFlight = true;
+  _requestRefreshStartedAt = DateTime.now();
   var nextRequestId = normalizedId;
   try {
     do {
@@ -476,12 +492,18 @@ Future<void> refreshUserRequestState([String? requestId]) async {
       await getUserDetails(id: nextRequestId);
       ismulitipleride = false;
       nextRequestId = _queuedRefreshRequestId;
+      // A newer run took the gate over while this one was stuck: stand down.
+      if (generation != _requestRefreshGeneration) return;
     } while (_requestRefreshQueued);
   } finally {
-    ismulitipleride = false;
-    _requestRefreshInFlight = false;
-    _requestRefreshQueued = false;
-    _queuedRefreshRequestId = null;
+    // Only the run that currently owns the gate may release it.
+    if (generation == _requestRefreshGeneration) {
+      ismulitipleride = false;
+      _requestRefreshInFlight = false;
+      _requestRefreshStartedAt = null;
+      _requestRefreshQueued = false;
+      _queuedRefreshRequestId = null;
+    }
   }
 }
 

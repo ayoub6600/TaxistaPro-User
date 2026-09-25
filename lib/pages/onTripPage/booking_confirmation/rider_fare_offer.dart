@@ -5,6 +5,17 @@ double minimumRiderOffer(double fairFare, double discountPercent) {
   return (fairFare * (1 - bounded / 100) * 100).round() / 100;
 }
 
+/// One stepper tap: move [direction] whole units from [current], never below
+/// the market's floor [minimum] nor above [maximum] (null = no ceiling, as for
+/// an immediate ride where a rider may always offer more).
+double steppedFareOffer(
+    double current, int direction, double minimum, double? maximum) {
+  final next = (current + direction)
+      .clamp(minimum, maximum ?? double.infinity)
+      .toDouble();
+  return (next * 100).round() / 100;
+}
+
 // This is only a client-side freshness check. The backend still verifies the
 // signature, route and fare before it accepts the booking.
 bool currentImmediateFareQuote(String? token, Map<String, dynamic> booking,
