@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 DateTime? _lastGuardedPush;
@@ -44,18 +46,39 @@ class TapLock {
 /// location, navigating, waiting for a page to return), further calls are
 /// ignored. Used for the home "where to / home / work / recent" taps so a
 /// burst of taps cannot start the same work - or push the same page - twice.
+///
+/// The lock always comes off: when the action finishes, when it has run longer
+/// than [maxDuration] (a request stuck on a socket iOS suspended, a location
+/// lookup that never answers), or when [reset] is called - the app does that on
+/// every return from the background, so a lock can never outlive the trip that
+/// took it.
 class ExclusiveRunner {
+  ExclusiveRunner({this.maxDuration = const Duration(seconds: 25)});
+
+  final Duration maxDuration;
   bool _busy = false;
+  int _generation = 0;
 
   bool get busy => _busy;
 
   Future<void> run(Future<void> Function() action) async {
     if (_busy) return;
     _busy = true;
+    final generation = ++_generation;
     try {
-      await action();
+      await action().timeout(maxDuration);
+    } on TimeoutException {
+      // The action is abandoned: the lock is released below and the next tap
+      // starts fresh instead of joining a dead run.
     } finally {
-      _busy = false;
+      // A run that was reset (or replaced) must not release a newer run's lock.
+      if (generation == _generation) _busy = false;
     }
+  }
+
+  /// Drops the lock now (returning from the background).
+  void reset() {
+    _generation++;
+    _busy = false;
   }
 }

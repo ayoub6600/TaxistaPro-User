@@ -308,6 +308,9 @@ class _MapsState extends State<Maps>
 
   void _restoreAfterResume() {
     if (!mounted) return;
+    // A "where to / home / work" tap that was still waiting when the app went
+    // away must not keep the Home destination buttons dead.
+    _destinationEntry.reset();
     // A loader left over from before the app went away must never sit over a
     // map that is already showing.
     if (_loading == true && state == '3') _loading = false;

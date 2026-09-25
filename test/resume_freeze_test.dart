@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:taxista/functions/app_lifecycle.dart';
 import 'package:taxista/functions/live_queries.dart';
+import 'package:taxista/navigation/guarded_navigation.dart';
 
 /// Regression tests for the Rider "frozen after coming back to the app" bug.
 ///
@@ -370,6 +371,73 @@ void main() {
         coordinator.handle(AppLifecycleState.paused);
         expect(ran, isTrue);
       });
+    });
+  });
+
+  group('ExclusiveRunner never keeps a lock forever', () {
+    test('a normal action releases the lock when it finishes; a second tap during it is ignored', () async {
+      final runner = ExclusiveRunner();
+      final gate = Completer<void>();
+      var runs = 0;
+      final first = runner.run(() async {
+        runs++;
+        await gate.future;
+      });
+      expect(runner.busy, isTrue);
+      await runner.run(() async => runs++); // ignored
+      expect(runs, 1);
+      gate.complete();
+      await first;
+      expect(runner.busy, isFalse);
+      await runner.run(() async => runs++);
+      expect(runs, 2);
+    });
+
+    test('an action that never answers is abandoned after the deadline', () {
+      fakeAsync((async) {
+        final runner = ExclusiveRunner(maxDuration: const Duration(seconds: 25));
+        var second = 0;
+        runner.run(() => Completer<void>().future); // never completes
+        async.elapse(const Duration(seconds: 10));
+        runner.run(() async => second++);
+        expect(runner.busy, isTrue);
+        expect(second, 0, reason: 'still inside the deadline: taps are ignored');
+        async.elapse(const Duration(seconds: 20));
+        expect(runner.busy, isFalse, reason: 'the lock came off by itself');
+        runner.run(() async => second++);
+        async.flushMicrotasks();
+        expect(second, 1);
+      });
+    });
+
+    test('reset (returning from the background) frees the lock at once and the old run cannot re-lock', () {
+      fakeAsync((async) {
+        final runner = ExclusiveRunner();
+        final never = Completer<void>();
+        runner.run(() => never.future);
+        expect(runner.busy, isTrue);
+        runner.reset();
+        expect(runner.busy, isFalse);
+        var ran = 0;
+        final gate = Completer<void>();
+        runner.run(() async {
+          ran++;
+          await gate.future;
+        });
+        // the abandoned first run finishing late must not free the NEW run's lock
+        never.complete();
+        async.flushMicrotasks();
+        expect(runner.busy, isTrue);
+        gate.complete();
+        async.flushMicrotasks();
+        expect(runner.busy, isFalse);
+        expect(ran, 1);
+      });
+    });
+
+    test('Home resets it on every resume', () {
+      final home = File('lib/pages/onTripPage/map_page.dart').readAsStringSync();
+      expect(home.contains('_destinationEntry.reset()'), isTrue);
     });
   });
 
