@@ -351,8 +351,8 @@ class _ModernForgotPasswordState extends State<ModernForgotPassword> {
     final subtitle = switch (_step) {
       _Step.phone => _copy('أدخل رقم الهاتف المرتبط بحسابك وسنرسل لك رمز تحقق.',
           'Enter the phone number linked to your account and we will send you a verification code.'),
-      _Step.code => _copy('أرسلنا رمزًا مكوّنًا من 6 أرقام إلى {phone}.',
-              'We sent a 6-digit code to {phone}.')
+      _Step.code => _copy('أرسلنا رمزًا مكوّنًا من 6 أرقام إلى {phone} عبر واتساب.',
+              'We sent a 6-digit code to {phone} on WhatsApp.')
           .replaceAll('{phone}', '⁦$_displayPhone⁩'),
       _Step.password => _copy('اختر كلمة مرور جديدة. استخدم 8 أحرف على الأقل.',
           'Choose a new password. Use at least 8 characters.'),

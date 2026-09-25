@@ -464,8 +464,8 @@ class _ModernSignupState extends State<ModernSignup> {
             key: const ValueKey(4),
             icon: Icons.sms_outlined,
             title: _copy('أدخل رمز التحقق', 'Enter verification code'),
-            subtitle: _copy(
-                'أرسلنا الرمز إلى رقم هاتفك.', 'We sent the code to your phone.'),
+            subtitle: _copy('أرسلنا الرمز إلى واتساب على رقم هاتفك.',
+                'We sent the code to your phone on WhatsApp.'),
             child: _Field(
                 controller: _otp,
                 hint: '000000',
