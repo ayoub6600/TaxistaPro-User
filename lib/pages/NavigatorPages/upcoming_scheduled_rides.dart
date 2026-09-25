@@ -7,6 +7,7 @@ import 'package:taxista/pages/login/login.dart';
 import 'package:taxista/translations/translation.dart';
 
 import '../../functions/functions.dart';
+import '../../utils/scheduled_offers.dart';
 import '../../functions/schedule_time.dart';
 import '../../styles/styles.dart';
 import '../../widgets/widgets.dart';
@@ -26,7 +27,7 @@ class _UpcomingScheduledRidesPageState
   dynamic cancelId;
   String? actionError;
   Timer? _ticker;
-  String? _acceptingOfferId;
+  String? _answeringOfferId;
 
   bool get isRtl => languageDirection == 'rtl';
 
@@ -64,17 +65,88 @@ class _UpcomingScheduledRidesPageState
       navigateLogout();
       return;
     }
-    await _refreshOffers();
     if (mounted) setState(() {});
   }
 
+  Widget _buildOfferTile(Map item, ScheduledOffer offer) {
+    final busy = _answeringOfferId != null;
+    final mine = _answeringOfferId == offer.offerId.toString();
+    final currency = offer.currency.isNotEmpty
+        ? offer.currency
+        : '${item['requested_currency_symbol'] ?? ''}';
+    return Container(
+      key: ValueKey('offer-${offer.offerId}'),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.blue.withOpacity(0.07),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.blue.withOpacity(0.2)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(
+          '${isRtl ? 'السعر المرجعي' : 'Reference fare'}: ${moneyLabel(offer.referenceFare)} $currency',
+          style: TextStyle(color: Colors.grey[700]),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          '${isRtl ? 'عرض السائق' : 'Driver offer'}: ${moneyLabel(offer.proposedFare)} $currency',
+          key: ValueKey('offer-fare-${offer.offerId}'),
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+        ),
+        if ((offer.driverName ?? '').isNotEmpty || offer.vehicle != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(
+              [offer.driverName, offer.vehicle]
+                  .where((part) => part != null && part.isNotEmpty)
+                  .join(' · '),
+              style: TextStyle(color: Colors.grey[700]),
+            ),
+          ),
+        const SizedBox(height: 6),
+        Row(children: [
+          Expanded(
+            child: FilledButton(
+              key: ValueKey('accept-offer-${offer.offerId}'),
+              onPressed: busy ? null : () => _answerOffer(offer, accept: true),
+              child: Text(mine
+                  ? (isRtl ? 'جارٍ التأكيد…' : 'Confirming…')
+                  : (isRtl ? 'قبول العرض' : 'Accept offer')),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: OutlinedButton(
+              key: ValueKey('reject-offer-${offer.offerId}'),
+              onPressed: busy ? null : () => _answerOffer(offer, accept: false),
+              child: Text(isRtl ? 'رفض العرض' : 'Decline'),
+            ),
+          ),
+        ]),
+      ]),
+    );
+  }
+
+  Future<void> _answerOffer(ScheduledOffer offer, {required bool accept}) async {
+    setState(() {
+      _answeringOfferId = offer.offerId.toString();
+      actionError = null;
+    });
+    final result = accept
+        ? await acceptScheduledCounterOffer(offer)
+        : await rejectScheduledCounterOffer(offer);
+    if (!mounted) return;
+    if (result != 'success') actionError = result;
+    // Whatever the answer, the server is the truth: reload the list.
+    await getUpcomingScheduledRides();
+    if (mounted) setState(() => _answeringOfferId = null);
+  }
+
+  // Offers arrive with each ride in the upcoming payload, so refreshing them
+  // is just refreshing the list - one request, not one per ride.
   Future<void> _refreshOffers() async {
-    final ids = upcomingScheduledRides
-        .where((ride) => ride is Map && ride.isNotEmpty &&
-            ride['driver_id'] == null && ride['id'] != null)
-        .map((ride) => ride['id'].toString())
-        .toList();
-    await Future.wait(ids.map(getScheduledCounterOffers));
+    await getUpcomingScheduledRides();
     if (mounted) setState(() {});
   }
 
@@ -462,44 +534,9 @@ class _UpcomingScheduledRidesPageState
               (scheduledCounterOffers[item['id']?.toString()] ?? []).isNotEmpty) ...[
             const SizedBox(height: 12),
             for (final offer in scheduledCounterOffers[item['id']?.toString()]!)
-              Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.07),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.blue.withOpacity(0.2)),
-                ),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(isRtl
-                      ? '${offer['driver_name'] ?? 'سائق'} يقترح ${offer['currency'] ?? ''} ${offer['offered_fare']}'
-                      : '${offer['driver_name'] ?? 'Driver'} offers ${offer['currency'] ?? ''} ${offer['offered_fare']}',
-                    style: const TextStyle(fontWeight: FontWeight.w700)),
-                  Text(item['rider_proposed_fare'] != null
-                      ? (isRtl ? 'عرضك السابق: ${offer['base_fare']}' : 'Your previous offer: ${offer['base_fare']}')
-                      : (isRtl ? 'السعر العادل: ${offer['base_fare']}' : 'Fair fare: ${offer['base_fare']}'),
-                    style: TextStyle(color: Colors.grey[700])),
-                  Align(alignment: AlignmentDirectional.centerEnd, child: TextButton(
-                    onPressed: _acceptingOfferId != null ? null : () async {
-                      setState(() { _acceptingOfferId = item['id']?.toString(); actionError = null; });
-                      final result = await acceptScheduledCounterOffer(item['id'].toString(), offer);
-                      if (!mounted) return;
-                      if (result == 'success') {
-                        scheduledCounterOffers.remove(item['id'].toString());
-                        await load();
-                      } else {
-                        setState(() => actionError = result);
-                        await _refreshOffers();
-                      }
-                      if (mounted) setState(() => _acceptingOfferId = null);
-                    },
-                    child: Text(_acceptingOfferId == item['id']?.toString()
-                        ? (isRtl ? 'جارٍ التأكيد…' : 'Confirming…')
-                        : (isRtl ? 'اقبل العرض' : 'Accept offer')),
-                  )),
-                ]),
-              ),
-            if (actionError != null) Text(actionError!, style: const TextStyle(color: Colors.red)),
+              _buildOfferTile(item, offer),
+            if (actionError != null)
+              Text(actionError!, style: const TextStyle(color: Colors.red)),
           ],
           if (driver != null) ...[
             SizedBox(height: media.width * 0.02),

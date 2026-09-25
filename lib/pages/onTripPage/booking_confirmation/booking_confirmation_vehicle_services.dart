@@ -51,7 +51,7 @@ mixin _BookingConfirmationVehicleServices
     required dynamic bookingType,
   }) {
     return StreamBuilder<DatabaseEvent>(
-      stream: driverQuery.onValue,
+      stream: nearbyDriversStream(driverQuery),
       builder: (context, snapshot) {
         _updateArrivalEstimate(snapshot.data, index);
 

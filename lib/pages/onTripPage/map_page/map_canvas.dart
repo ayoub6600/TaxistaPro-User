@@ -6,13 +6,17 @@ extension _MapCanvas on _MapsState {
       height: media.height * 0.96,
       width: media.width * 1,
       child: StreamBuilder<DatabaseEvent>(
-        stream: FirebaseDatabase.instance
-            .ref('drivers')
-            .orderByChild('g')
-            .startAt(lower)
-            .endAt(higher)
-            .onValue
-            .asBroadcastStream(),
+        // A stable, shared stream: creating a query here made every rebuild
+        // tear the native listener down and open a new one (see LiveQueries).
+        stream: LiveQueries.watchQuery(
+          'drivers-near:$lower:$higher',
+          () => FirebaseDatabase.instance
+              .ref('drivers')
+              .orderByChild('g')
+              .startAt(lower)
+              .endAt(higher),
+          coalesce: const Duration(milliseconds: 800),
+        ),
         builder: (context, AsyncSnapshot<DatabaseEvent> event) {
           if (event.hasData) {
             List driverData = [];

@@ -4,6 +4,17 @@ extension _MapHomeOverlays on _MapsState {
   List<Widget> buildMapHomeOverlays(Size media) {
     return <Widget>[
       buildRecoveryOfferCard(media),
+      if (scheduledOfferSummary.hasOffers)
+        Positioned(
+          top: MediaQuery.of(context).padding.top + 68,
+          left: 16,
+          right: 16,
+          child: ScheduledOfferBanner(
+            summary: scheduledOfferSummary,
+            rtl: languageDirection == 'rtl',
+            onTap: _openScheduledOffers,
+          ),
+        ),
       Positioned(
           top: 0,
           child: Container(

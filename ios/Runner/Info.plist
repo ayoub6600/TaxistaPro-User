@@ -37,7 +37,7 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Allow access to camera to capture photos for updating profile picture</string>
+	<string>The camera is used to take a profile picture and, only if you choose to scan a bank card when adding money, to read the card number on your device. A card photo is never uploaded or stored.</string>
 	<key>NSContactsUsageDescription</key>
 	<string>Allow contact access to select your contacts for adding in SOS</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>

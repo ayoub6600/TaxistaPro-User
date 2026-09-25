@@ -11,11 +11,12 @@ mixin _BookingConfirmationPendingRequest
             ? Positioned(
                 bottom: 0,
                 child: StreamBuilder<Object>(
-                    stream: FirebaseDatabase.instance
-                        .ref()
-                        .child('bid-meta/${userRequestData["id"]}')
-                        .onValue
-                        .asBroadcastStream(),
+                    stream: LiveQueries.watchQuery(
+                      'bid-meta:${userRequestData["id"]}',
+                      () => FirebaseDatabase.instance
+                          .ref()
+                          .child('bid-meta/${userRequestData["id"]}'),
+                    ),
                     builder: (context, AsyncSnapshot event) {
                       List driverList = [];
                       Map rideList = {};
@@ -668,8 +669,8 @@ mixin _BookingConfirmationPendingRequest
         // Sequential dispatch and the legacy next-driver job still write a
         // single node at this exact path (flat, or nested one level under
         // the request id) - kept so neither regresses.
-        stream:
-            FirebaseDatabase.instance.ref('request-meta/$requestId').onValue,
+        stream: LiveQueries.watchQuery('request-meta:$requestId',
+            () => FirebaseDatabase.instance.ref('request-meta/$requestId')),
         builder: (context, singlePathSnapshot) {
           return StreamBuilder<DatabaseEvent>(
             // Broadcast dispatch gives each targeted driver their own
@@ -678,16 +679,16 @@ mixin _BookingConfirmationPendingRequest
             // field every dispatch path stamps on its entries is the only
             // way to collect them all without knowing the driver ids
             // up front.
-            stream: FirebaseDatabase.instance
-                .ref('request-meta')
-                .orderByChild('request_id')
-                .equalTo(requestId)
-                .onValue,
+            stream: LiveQueries.watchQuery(
+                'request-meta-by-request:$requestId',
+                () => FirebaseDatabase.instance
+                    .ref('request-meta')
+                    .orderByChild('request_id')
+                    .equalTo(requestId)),
             builder: (context, querySnapshot) {
               return StreamBuilder<DatabaseEvent>(
-                stream: FirebaseDatabase.instance
-                    .ref('bid-meta/$requestId/drivers')
-                    .onValue,
+                stream: LiveQueries.watchQuery('bid-offers:$requestId',
+                    () => FirebaseDatabase.instance.ref('bid-meta/$requestId/drivers')),
                 builder: (context, offersSnapshot) {
                   return _buildRegularDriverSearchContent(
                     media,

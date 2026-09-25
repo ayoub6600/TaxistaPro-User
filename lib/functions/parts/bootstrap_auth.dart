@@ -100,18 +100,37 @@ getCountryCode() async {
 
 //check internet connection
 
+StreamSubscription<List<ConnectivityResult>>? _connectivityWatch;
+Timer? _offlineDebounce;
+
+/// connectivity_plus 6 reports a LIST of results, so comparing the event with
+/// `ConnectivityResult.none` was always false and every flap of the radio only
+/// rebuilt the whole app root (two notifiers) for nothing. Now: online when any
+/// transport is up; a brief "none" while iOS re-attaches the radio on resume is
+/// ignored for a few seconds; and the notifiers fire only when the state really
+/// changes.
 checkInternetConnection() {
-  Connectivity().onConnectivityChanged.listen((connectionState) {
-    if (connectionState == ConnectivityResult.none) {
-      internet = false;
-      valueNotifierHome.incrementNotifier();
-      valueNotifierBook.incrementNotifier();
-    } else {
-      internet = true;
-      valueNotifierHome.incrementNotifier();
-      valueNotifierBook.incrementNotifier();
+  _connectivityWatch?.cancel();
+  _connectivityWatch = Connectivity().onConnectivityChanged.listen((results) {
+    final online = results.any((r) => r != ConnectivityResult.none);
+    if (online) {
+      _offlineDebounce?.cancel();
+      _offlineDebounce = null;
+      _setInternet(true);
+      return;
     }
+    _offlineDebounce ??= Timer(const Duration(seconds: 3), () {
+      _offlineDebounce = null;
+      _setInternet(false);
+    });
   });
+}
+
+void _setInternet(bool online) {
+  if (internet == online) return;
+  internet = online;
+  valueNotifierHome.incrementNotifier();
+  valueNotifierBook.incrementNotifier();
 }
 
 getDetailsOfDevice() async {

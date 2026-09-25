@@ -23,6 +23,8 @@ import 'package:taxista/translations/translation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api_guard.dart';
+import 'live_queries.dart';
+import '../utils/scheduled_offers.dart';
 
 import '../pages/NavigatorPages/editprofile.dart';
 import '../pages/NavigatorPages/history.dart';

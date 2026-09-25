@@ -359,7 +359,7 @@ mixin _BookingConfirmationVehicleOptions
                                             return MapEntry(
                                                 i,
                                                 StreamBuilder<DatabaseEvent>(
-                                                    stream: fdb.onValue,
+                                                    stream: nearbyDriversStream(fdb),
                                                     builder: (context,
                                                         AsyncSnapshot event) {
                                                       if (event.data != null) {

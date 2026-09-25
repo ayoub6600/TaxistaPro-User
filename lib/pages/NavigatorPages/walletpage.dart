@@ -11,7 +11,7 @@ import '../login/login.dart';
 import '../noInternet/nointernet.dart';
 import '../../payments/moamalat/moamalat_app_env.dart';
 import '../../payments/moamalat/moamalat_env.dart';
-import '../../payments/moamalat/moamalat_wallet_entry.dart';
+import '../../payments/moamalat/add_money_sheet.dart';
 
 class WalletPage extends StatefulWidget {
   const WalletPage({super.key});
@@ -96,6 +96,285 @@ class _WalletPageState extends State<WalletPage> {
   bool ispop = false;
 
   //show toast for copy
+
+  /// "Add money": the customer picks how - Qareeb recharge cards or the bank
+  /// card - from the methods THEIR market offers (asked of the server).
+  void _startAddMoney() {
+    showAddMoneySheet(
+      context,
+      env: _moamalatEnv,
+      onQareeb: _openQareebRecharge,
+    );
+  }
+
+  /// The existing recharge-card code entry, unchanged.
+  void _openQareebRecharge() {
+    if (!mounted) return;
+    final media = MediaQuery.of(context).size;
+    setState(() {
+      addMoneyController.text = '';
+      addMoney = null;
+    });
+    showModalBottomSheet(
+                                            context: context,
+                                            isScrollControlled: true,
+                                            builder: (context) {
+                                              return Container(
+                                                width: MediaQuery.of(context)
+                                                    .size
+                                                    .width,
+                                                height: MediaQuery.of(context)
+                                                        .size
+                                                        .height *
+                                                    0.8,
+                                                // width: media.width * 1,
+                                                // padding: MediaQuery.of(context)
+                                                //     .viewInsets,
+                                                decoration: BoxDecoration(
+                                                    color: page,
+                                                    borderRadius: BorderRadius
+                                                        .only(
+                                                            topLeft: Radius
+                                                                .circular(media
+                                                                        .width *
+                                                                    0.05),
+                                                            topRight: Radius
+                                                                .circular(media
+                                                                        .width *
+                                                                    0.05))),
+                                                // padding:
+                                                //     EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
+                                                child: Container(
+                                                  //  width: media.width * 1,
+                                                  padding: EdgeInsets.all(
+                                                      media.width * 0.05),
+                                                  child: Column(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .stretch,
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .all(8.0),
+                                                          child: MyText(
+                                                            textAlign: TextAlign
+                                                                .center,
+                                                            text: languages[
+                                                                    choosenLanguage]
+                                                                [
+                                                                'text_add_money_wallet'],
+                                                            size: media.width *
+                                                                sixteen,
+                                                            fontweight:
+                                                                FontWeight.w600,
+                                                            color: textColor,
+                                                          ),
+                                                        ),
+                                                        SizedBox(
+                                                          height: media.width *
+                                                              0.06,
+                                                        ),
+                                                        Container(
+                                                          height: media.width *
+                                                              0.128,
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        12),
+                                                            border: Border.all(
+                                                                color:
+                                                                    borderLines,
+                                                                width: 1.2),
+                                                          ),
+                                                          child: Row(children: [
+                                                            Expanded(
+                                                              child: Container(
+                                                                  width: media
+                                                                          .width *
+                                                                      0.1,
+                                                                  height: media
+                                                                          .width *
+                                                                      0.128,
+                                                                  decoration:
+                                                                      const BoxDecoration(
+                                                                          borderRadius: BorderRadius
+                                                                              .only(
+                                                                            topLeft:
+                                                                                Radius.circular(12),
+                                                                            bottomLeft:
+                                                                                Radius.circular(12),
+                                                                          ),
+                                                                          color: Color(
+                                                                              0xffF0F0F0)),
+                                                                  alignment:
+                                                                      Alignment
+                                                                          .center,
+                                                                  child: MyText(
+                                                                    text: walletBalance[
+                                                                        'currency_symbol'],
+                                                                    size: media
+                                                                            .width *
+                                                                        twelve,
+                                                                    fontweight:
+                                                                        FontWeight
+                                                                            .w600,
+                                                                    color: (isDarkTheme ==
+                                                                            true)
+                                                                        ? Colors
+                                                                            .black
+                                                                        : textColor,
+                                                                  )),
+                                                            ),
+                                                            SizedBox(
+                                                              width:
+                                                                  media.width *
+                                                                      0.05,
+                                                            ),
+                                                            Expanded(
+                                                              child: Container(
+                                                                height: media
+                                                                        .width *
+                                                                    0.128,
+                                                                width: media
+                                                                        .width *
+                                                                    0.6,
+                                                                alignment:
+                                                                    Alignment
+                                                                        .center,
+                                                                child:
+                                                                    TextField(
+                                                                  controller:
+                                                                      addMoneyController,
+                                                                  onChanged:
+                                                                      (val) {
+                                                                    setState(
+                                                                        () {
+                                                                      addMoney =
+                                                                          int.parse(
+                                                                              val);
+                                                                    });
+                                                                  },
+                                                                  keyboardType:
+                                                                      TextInputType
+                                                                          .number,
+                                                                  decoration:
+                                                                      InputDecoration(
+                                                                    border:
+                                                                        InputBorder
+                                                                            .none,
+                                                                    hintText:
+                                                                        "ادخل رقم الكود",
+                                                                    hintStyle:
+                                                                        GoogleFonts
+                                                                            .notoSans(
+                                                                      fontSize:
+                                                                          media.width *
+                                                                              fourteen,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .normal,
+                                                                      color: textColor
+                                                                          .withOpacity(
+                                                                              0.4),
+                                                                    ),
+                                                                  ),
+                                                                  style: GoogleFonts.notoSans(
+                                                                      fontSize:
+                                                                          media.width *
+                                                                              fourteen,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .normal,
+                                                                      color:
+                                                                          textColor),
+                                                                  maxLines: 1,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ]),
+                                                        ),
+                                                        SizedBox(
+                                                          height: media.width *
+                                                              0.05,
+                                                        ),
+                                                        SizedBox(
+                                                          height:
+                                                              media.width * 0.1,
+                                                        ),
+                                                        Button(
+                                                          onTap: () async {
+                                                            if (_addingMoney) {
+                                                              return;
+                                                            }
+                                                            _addingMoney = true;
+                                                            var result =
+                                                                await addBalance(
+                                                                    addMoneyController
+                                                                        .text);
+                                                            _addingMoney = false;
+                                                            if (!context
+                                                                .mounted) {
+                                                              return;
+                                                            }
+                                                            Navigator.pop(
+                                                                context);
+                                                            result ==
+                                                                    'Money added successfully'
+                                                                ? showSuccessToast(
+                                                                    msg: languages[
+                                                                            choosenLanguage]
+                                                                        [
+                                                                        'text_money_added'],
+                                                                  )
+                                                                : showErrorToast(
+                                                                    msg:
+                                                                        result);
+                                                            await getWallet();
+                                                            debugPrint(
+                                                                'drops $result');
+                                                          },
+                                                          text: languages[
+                                                                  choosenLanguage]
+                                                              ['text_addmoney'],
+                                                          // width:
+                                                          //     media.width * 0.4,
+                                                        ),
+                                                        SizedBox(
+                                                          height: media.width *
+                                                              0.02,
+                                                        ),
+                                                        Button(
+                                                          color: Colors.red,
+                                                          onTap: () {
+                                                            setState(() {
+                                                              addMoney = null;
+                                                              FocusManager
+                                                                  .instance
+                                                                  .primaryFocus
+                                                                  ?.unfocus();
+                                                              addMoneyController
+                                                                  .clear();
+                                                              Navigator.pop(
+                                                                  context);
+                                                            });
+                                                          },
+                                                          text: languages[
+                                                                  choosenLanguage]
+                                                              ['text_cancel'],
+                                                        ),
+                                                      ]),
+                                                ),
+                                              );
+                                            });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -634,271 +913,7 @@ class _WalletPageState extends State<WalletPage> {
                                       MainAxisAlignment.spaceEvenly,
                                   children: [
                                     InkWell(
-                                      onTap: () {
-                                        setState(() {
-                                          addMoneyController.text = '';
-                                          addMoney = null;
-                                        });
-                                        showModalBottomSheet(
-                                            context: context,
-                                            isScrollControlled: true,
-                                            builder: (context) {
-                                              return Container(
-                                                width: MediaQuery.of(context)
-                                                    .size
-                                                    .width,
-                                                height: MediaQuery.of(context)
-                                                        .size
-                                                        .height *
-                                                    0.8,
-                                                // width: media.width * 1,
-                                                // padding: MediaQuery.of(context)
-                                                //     .viewInsets,
-                                                decoration: BoxDecoration(
-                                                    color: page,
-                                                    borderRadius: BorderRadius
-                                                        .only(
-                                                            topLeft: Radius
-                                                                .circular(media
-                                                                        .width *
-                                                                    0.05),
-                                                            topRight: Radius
-                                                                .circular(media
-                                                                        .width *
-                                                                    0.05))),
-                                                // padding:
-                                                //     EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
-                                                child: Container(
-                                                  //  width: media.width * 1,
-                                                  padding: EdgeInsets.all(
-                                                      media.width * 0.05),
-                                                  child: Column(
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .stretch,
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .all(8.0),
-                                                          child: MyText(
-                                                            textAlign: TextAlign
-                                                                .center,
-                                                            text: languages[
-                                                                    choosenLanguage]
-                                                                [
-                                                                'text_add_money_wallet'],
-                                                            size: media.width *
-                                                                sixteen,
-                                                            fontweight:
-                                                                FontWeight.w600,
-                                                            color: textColor,
-                                                          ),
-                                                        ),
-                                                        SizedBox(
-                                                          height: media.width *
-                                                              0.06,
-                                                        ),
-                                                        Container(
-                                                          height: media.width *
-                                                              0.128,
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        12),
-                                                            border: Border.all(
-                                                                color:
-                                                                    borderLines,
-                                                                width: 1.2),
-                                                          ),
-                                                          child: Row(children: [
-                                                            Expanded(
-                                                              child: Container(
-                                                                  width: media
-                                                                          .width *
-                                                                      0.1,
-                                                                  height: media
-                                                                          .width *
-                                                                      0.128,
-                                                                  decoration:
-                                                                      const BoxDecoration(
-                                                                          borderRadius: BorderRadius
-                                                                              .only(
-                                                                            topLeft:
-                                                                                Radius.circular(12),
-                                                                            bottomLeft:
-                                                                                Radius.circular(12),
-                                                                          ),
-                                                                          color: Color(
-                                                                              0xffF0F0F0)),
-                                                                  alignment:
-                                                                      Alignment
-                                                                          .center,
-                                                                  child: MyText(
-                                                                    text: walletBalance[
-                                                                        'currency_symbol'],
-                                                                    size: media
-                                                                            .width *
-                                                                        twelve,
-                                                                    fontweight:
-                                                                        FontWeight
-                                                                            .w600,
-                                                                    color: (isDarkTheme ==
-                                                                            true)
-                                                                        ? Colors
-                                                                            .black
-                                                                        : textColor,
-                                                                  )),
-                                                            ),
-                                                            SizedBox(
-                                                              width:
-                                                                  media.width *
-                                                                      0.05,
-                                                            ),
-                                                            Expanded(
-                                                              child: Container(
-                                                                height: media
-                                                                        .width *
-                                                                    0.128,
-                                                                width: media
-                                                                        .width *
-                                                                    0.6,
-                                                                alignment:
-                                                                    Alignment
-                                                                        .center,
-                                                                child:
-                                                                    TextField(
-                                                                  controller:
-                                                                      addMoneyController,
-                                                                  onChanged:
-                                                                      (val) {
-                                                                    setState(
-                                                                        () {
-                                                                      addMoney =
-                                                                          int.parse(
-                                                                              val);
-                                                                    });
-                                                                  },
-                                                                  keyboardType:
-                                                                      TextInputType
-                                                                          .number,
-                                                                  decoration:
-                                                                      InputDecoration(
-                                                                    border:
-                                                                        InputBorder
-                                                                            .none,
-                                                                    hintText:
-                                                                        "ادخل رقم الكود",
-                                                                    hintStyle:
-                                                                        GoogleFonts
-                                                                            .notoSans(
-                                                                      fontSize:
-                                                                          media.width *
-                                                                              fourteen,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .normal,
-                                                                      color: textColor
-                                                                          .withOpacity(
-                                                                              0.4),
-                                                                    ),
-                                                                  ),
-                                                                  style: GoogleFonts.notoSans(
-                                                                      fontSize:
-                                                                          media.width *
-                                                                              fourteen,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .normal,
-                                                                      color:
-                                                                          textColor),
-                                                                  maxLines: 1,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ]),
-                                                        ),
-                                                        SizedBox(
-                                                          height: media.width *
-                                                              0.05,
-                                                        ),
-                                                        SizedBox(
-                                                          height:
-                                                              media.width * 0.1,
-                                                        ),
-                                                        Button(
-                                                          onTap: () async {
-                                                            if (_addingMoney) {
-                                                              return;
-                                                            }
-                                                            _addingMoney = true;
-                                                            var result =
-                                                                await addBalance(
-                                                                    addMoneyController
-                                                                        .text);
-                                                            _addingMoney = false;
-                                                            if (!context
-                                                                .mounted) {
-                                                              return;
-                                                            }
-                                                            Navigator.pop(
-                                                                context);
-                                                            result ==
-                                                                    'Money added successfully'
-                                                                ? showSuccessToast(
-                                                                    msg: languages[
-                                                                            choosenLanguage]
-                                                                        [
-                                                                        'text_money_added'],
-                                                                  )
-                                                                : showErrorToast(
-                                                                    msg:
-                                                                        result);
-                                                            await getWallet();
-                                                            debugPrint(
-                                                                'drops $result');
-                                                          },
-                                                          text: languages[
-                                                                  choosenLanguage]
-                                                              ['text_addmoney'],
-                                                          // width:
-                                                          //     media.width * 0.4,
-                                                        ),
-                                                        SizedBox(
-                                                          height: media.width *
-                                                              0.02,
-                                                        ),
-                                                        Button(
-                                                          color: Colors.red,
-                                                          onTap: () {
-                                                            setState(() {
-                                                              addMoney = null;
-                                                              FocusManager
-                                                                  .instance
-                                                                  .primaryFocus
-                                                                  ?.unfocus();
-                                                              addMoneyController
-                                                                  .clear();
-                                                              Navigator.pop(
-                                                                  context);
-                                                            });
-                                                          },
-                                                          text: languages[
-                                                                  choosenLanguage]
-                                                              ['text_cancel'],
-                                                        ),
-                                                      ]),
-                                                ),
-                                              );
-                                            });
-                                      },
+                                      onTap: _startAddMoney,
                                       child: Row(
                                         children: [
                                           Icon(
@@ -922,12 +937,6 @@ class _WalletPageState extends State<WalletPage> {
                                     ),
                                   ],
                                 ),
-                              ),
-                              // Moamalat secure online payment - shown only
-                              // where the server says it is available.
-                              MoamalatWalletEntry(
-                                env: _moamalatEnv,
-                                width: media.width * 0.9,
                               ),
                               SizedBox(
                                 height: media.width * 0.1,

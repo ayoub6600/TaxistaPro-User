@@ -45,59 +45,86 @@ Future<String> getActiveRiderBookings() async {
 
 List upcomingScheduledRides = [];
 Map<String, dynamic> upcomingScheduledRidesPage = {};
-Map<String, List<Map<String, dynamic>>> scheduledCounterOffers = {};
 
-Future<void> getScheduledCounterOffers(String requestId) async {
+/// Pending driver offers per scheduled ride id, read straight from the
+/// upcoming-rides payload (the server sends them with each ride, so opening the
+/// page costs no extra request per ride).
+Map<String, List<ScheduledOffer>> scheduledCounterOffers = {};
+
+/// What the Home banner shows: how many drivers have priced the rider's
+/// scheduled rides, the earliest such ride and the lowest price.
+ScheduledOfferSummary scheduledOfferSummary = ScheduledOfferSummary.none;
+
+/// Set by a tapped offer push; Home opens the scheduled rides page once.
+bool openScheduledOffersRequested = false;
+
+final PollGate _offerSummaryGate =
+    PollGate(minInterval: const Duration(seconds: 45));
+
+void _rebuildScheduledOfferState() {
+  scheduledCounterOffers = {
+    for (final ride in upcomingScheduledRides)
+      if (ride is Map && ride['id'] != null && ride['driver_id'] == null)
+        ride['id'].toString(): offersOfRide(ride),
+  };
+  scheduledOfferSummary = summarizeScheduledOffers(upcomingScheduledRides);
+}
+
+/// One light refresh of "does a driver have an offer for me?" - shared with a
+/// refresh already in flight, at most every 45 seconds unless [force]d by a
+/// push notification (which is the reason it costs nothing to keep Home
+/// current: no periodic polling).
+Future<void> refreshScheduledOfferSummary({bool force = false}) async {
+  if (bearerToken.isEmpty) return;
   try {
-    final response = await http.get(
-      Uri.parse('${url}api/v1/request/scheduled/$requestId/offers'),
-      headers: {'Authorization': 'Bearer ${bearerToken[0].token}'},
-    );
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body)['data'];
-      scheduledCounterOffers[requestId] = (data as List)
-          .whereType<Map>()
-          .map((item) => Map<String, dynamic>.from(item))
-          .toList();
-      valueNotifierBook.incrementNotifier();
-    }
+    await _offerSummaryGate.run(() async {
+      await getUpcomingScheduledRides();
+      valueNotifierHome.incrementNotifier();
+    }, force: force);
   } catch (_) {
-    // The scheduled list is still usable offline; refresh on reconnect.
+    // The banner is a convenience; the scheduled page still works on demand.
   }
 }
 
-Future<String> acceptScheduledCounterOffer(String requestId, Map offer) async {
+Future<String> _answerScheduledOffer(String action, ScheduledOffer offer) async {
   try {
     final response = await http.post(
-      Uri.parse('${url}api/v1/request/respond-for-bid'),
+      Uri.parse('${url}api/v1/request/scheduled/offers/$action'),
       headers: {
         'Authorization': 'Bearer ${bearerToken[0].token}',
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({
-        'request_id': requestId,
-        'driver_id': offer['driver_id'],
-        'accepted_ride_fare': offer['offered_fare'],
-      }),
-    );
-    final decoded = jsonDecode(response.body);
-    return response.statusCode == 200 && decoded['success'] == true
-        ? 'success'
-        : decoded['message']?.toString() ?? 'العرض لم يعد متاحاً';
+      body: jsonEncode({'offer_id': offer.offerId}),
+    ).timeout(const Duration(seconds: 20));
+    if (offerAnswerOf(response.statusCode) == OfferAnswer.done) return 'success';
+    try {
+      final message = jsonDecode(response.body)['message']?.toString();
+      if (message != null && message.isNotEmpty) return message;
+    } catch (_) {}
+    return 'العرض لم يعد متاحاً';
   } catch (_) {
-    return 'تعذر قبول العرض. تحقق من اتصالك.';
+    return 'تعذر إرسال ردك. تحقق من اتصالك.';
   }
 }
+
+Future<String> acceptScheduledCounterOffer(ScheduledOffer offer) =>
+    _answerScheduledOffer('accept', offer);
+
+Future<String> rejectScheduledCounterOffer(ScheduledOffer offer) =>
+    _answerScheduledOffer('reject', offer);
 
 getUpcomingScheduledRides() async {
   dynamic result;
   try {
     var response = await http.get(
         Uri.parse('${url}api/v1/request/scheduled/upcoming'),
-        headers: {'Authorization': 'Bearer ${bearerToken[0].token}'});
+        headers: {'Authorization': 'Bearer ${bearerToken[0].token}'})
+        .timeout(const Duration(seconds: 15));
     if (response.statusCode == 200) {
       upcomingScheduledRides = jsonDecode(response.body)['data'];
       upcomingScheduledRidesPage = jsonDecode(response.body)['meta'];
+      upcomingScheduledRides.removeWhere((element) => element.isEmpty);
+      _rebuildScheduledOfferState();
       result = 'success';
       valueNotifierBook.incrementNotifier();
     } else if (response.statusCode == 401) {
@@ -131,6 +158,8 @@ getUpcomingScheduledRidesPages(id) async {
         upcomingScheduledRides.add(element);
       });
       upcomingScheduledRidesPage = jsonDecode(response.body)['meta'];
+      upcomingScheduledRides.removeWhere((element) => element.isEmpty);
+      _rebuildScheduledOfferState();
       result = 'success';
       valueNotifierBook.incrementNotifier();
     } else if (response.statusCode == 401) {

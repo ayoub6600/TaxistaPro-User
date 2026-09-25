@@ -76,6 +76,8 @@ flutter {
 dependencies {
     implementation platform('com.google.firebase:firebase-bom:31.5.0')
     implementation 'com.google.firebase:firebase-analytics'
+    // Optional card scan: text recognition with the model bundled in the app.
+    implementation 'com.google.mlkit:text-recognition:16.0.1'
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
 
 }

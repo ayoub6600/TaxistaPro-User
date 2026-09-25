@@ -550,9 +550,9 @@ streamRequest() {
   });
 }
 
-StreamSubscription<DatabaseEvent>? rideStreamStart;
+StreamSubscription<RideLeaf>? rideStreamStart;
 
-StreamSubscription<DatabaseEvent>? rideStreamUpdate;
+StreamSubscription<RideLeaf>? rideStreamUpdate;
 
 streamRide() {
   waitingTime = 0;
@@ -564,54 +564,71 @@ streamRide() {
   requestStreamEnd = null;
   rideStreamUpdate = null;
   rideStreamStart = null;
-  rideStreamUpdate = FirebaseDatabase.instance
-      .ref('requests/${userRequestData['id']}')
-      .onChildChanged
-      .handleError((onError) {
+  final rideId = userRequestData['id'].toString();
+  // Only the handful of state flags the rider reacts to - never the whole
+  // request node, which also carries the Driver's GPS trail (see
+  // watchRideLeaves). Two groups keep the old two-subscription shape that the
+  // rest of the app checks for.
+  rideStreamUpdate = watchRideLeaves(
+    rideId,
+    const ['message_by_driver', 'total_waiting_time'],
+  ).handleError((onError) {
     rideStreamUpdate?.cancel();
-  }).listen((DatabaseEvent event) async {
-    if (event.snapshot.key.toString() == 'modified_by_driver' ||
-        event.snapshot.key.toString() == 'is_trip_start' ||
-        event.snapshot.key.toString() == 'is_driver_arrived') {
-      await _refreshRequestFromApi(userRequestData['id'].toString());
-    } else if (event.snapshot.key.toString() == 'message_by_driver') {
-      getCurrentMessages();
-    } else if (event.snapshot.key.toString() == 'cancelled_by_driver') {
-      requestCancelledByDriver = true;
-      await refreshUserRequestState();
-    } else if (event.snapshot.key.toString() == 'total_waiting_time') {
-      var val = event.snapshot.value.toString();
-      waitingTime = int.parse(val);
-      valueNotifierBook.incrementNotifier();
-    } else if (event.snapshot.key.toString() == 'is_accept') {
-      await _refreshRequestFromApi(userRequestData['id'].toString());
-    }
-  });
+  }).listen(_onRideLeaf);
 
-  rideStreamStart = FirebaseDatabase.instance
-      .ref('requests/${userRequestData['id']}')
-      .onChildAdded
-      .handleError((onError) {
+  rideStreamStart = watchRideLeaves(
+    rideId,
+    const [
+      'cancelled_by_driver',
+      'modified_by_driver',
+      'is_trip_start',
+      'is_driver_arrived',
+      'is_accept',
+    ],
+  ).handleError((onError) {
     rideStreamStart?.cancel();
-  }).listen((DatabaseEvent event) async {
-    // if (event.snapshot.key.toString() == 'message_by_driver') {
-    //   getCurrentMessages();
-    // } else
-    if (event.snapshot.key.toString() == 'cancelled_by_driver') {
+  }).listen(_onRideLeaf);
+}
+
+Future<void> _onRideLeaf(RideLeaf leaf) async {
+  final rideId = userRequestData['id']?.toString();
+  if (rideId == null || rideId.isEmpty) return;
+  switch (leaf.key) {
+    case 'modified_by_driver':
+    case 'is_trip_start':
+    case 'is_driver_arrived':
+    case 'is_accept':
+      await _refreshRequestFromApi(rideId);
+      break;
+    case 'message_by_driver':
+      getCurrentMessages();
+      break;
+    case 'cancelled_by_driver':
       requestCancelledByDriver = true;
       await refreshUserRequestState();
-    } else if (event.snapshot.key.toString() == 'modified_by_driver' ||
-        event.snapshot.key.toString() == 'is_trip_start' ||
-        event.snapshot.key.toString() == 'is_driver_arrived') {
-      await _refreshRequestFromApi(userRequestData['id'].toString());
-    } else if (event.snapshot.key.toString() == 'total_waiting_time') {
-      var val = event.snapshot.value.toString();
-      waitingTime = int.parse(val);
-      valueNotifierBook.incrementNotifier();
-    } else if (event.snapshot.key.toString() == 'is_accept') {
-      await _refreshRequestFromApi(userRequestData['id'].toString());
-    }
-  });
+      break;
+    case 'total_waiting_time':
+      final parsed = int.tryParse(leaf.value.toString());
+      if (parsed != null) {
+        waitingTime = parsed;
+        valueNotifierBook.incrementNotifier();
+      }
+      break;
+  }
+}
+
+/// Backgrounding: close every ride/request listener so nothing is delivered
+/// (and exported on the main thread) while the app is away. The reconcile on
+/// resume re-creates them through getUserDetails().
+void detachRideStreams() {
+  requestStreamStart?.cancel();
+  requestStreamEnd?.cancel();
+  rideStreamStart?.cancel();
+  rideStreamUpdate?.cancel();
+  requestStreamStart = null;
+  requestStreamEnd = null;
+  rideStreamStart = null;
+  rideStreamUpdate = null;
 }
 
 userDelete() async {

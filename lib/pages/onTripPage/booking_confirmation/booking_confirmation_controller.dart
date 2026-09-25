@@ -350,6 +350,17 @@ mixin _BookingConfirmationController
 
   final ResumeReconciler _resume = ResumeReconciler();
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
+
+  /// Identity of the nearby-drivers query for the current pickup. Every vehicle
+  /// card and the map read the SAME shared native listener through
+  /// [nearbyDriversStream]; before, each opened its own copy on every rebuild.
+  String _driversNearKey = '';
+  Stream<DatabaseEvent> nearbyDriversStream(Query query) =>
+      LiveQueries.watchQuery(
+        _driversNearKey,
+        () => query,
+        coalesce: const Duration(milliseconds: 800),
+      );
   String? _appliedMapStyleKey;
   bool _resumeRetryScheduled = false;
 
@@ -500,6 +511,7 @@ mixin _BookingConfirmationController
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _connectivitySub?.cancel();
     _connectivitySub = null;
     if (timers != null) {

@@ -35,6 +35,19 @@ void _handleRecoveryDriverReadyPush() {
   });
 }
 
+/// "A driver priced your scheduled ride": the push is only a nudge - the
+/// upcoming-rides API is the truth. Refresh the Home banner now (past the poll
+/// gate); a TAPPED push also opens the scheduled rides page once.
+void _handleScheduledOfferPush({bool opened = false}) {
+  if (opened) openScheduledOffersRequested = true;
+  refreshScheduledOfferSummary(force: true).then((_) {
+    valueNotifierHome.incrementNotifier();
+  });
+}
+
+bool _isScheduledOfferPush(Map<String, dynamic>? data) =>
+    data?['push_type']?.toString() == 'scheduled-ride-offer';
+
 var androidDetails = const AndroidNotificationDetails(
   '54321',
   'normal_notification',
@@ -79,6 +92,9 @@ Future<void> initMessaging() async {
       if (message?.data['push_type'] == 'recovery_driver_ready') {
         _handleRecoveryDriverReadyPush();
       }
+      if (_isScheduledOfferPush(message?.data)) {
+        _handleScheduledOfferPush(opened: true);
+      }
     }
   });
 
@@ -86,6 +102,9 @@ Future<void> initMessaging() async {
     RemoteNotification? notification = message.notification;
     if (message.data['push_type'].toString() == 'recovery_driver_ready') {
       _handleRecoveryDriverReadyPush();
+    }
+    if (_isScheduledOfferPush(message.data)) {
+      _handleScheduledOfferPush();
     }
     if (notification != null) {
       if (message.data['push_type'].toString() == 'general') {
@@ -109,6 +128,9 @@ Future<void> initMessaging() async {
     }
     if (message.data['push_type'].toString() == 'recovery_driver_ready') {
       _handleRecoveryDriverReadyPush();
+    }
+    if (_isScheduledOfferPush(message.data)) {
+      _handleScheduledOfferPush(opened: true);
     }
   });
 }

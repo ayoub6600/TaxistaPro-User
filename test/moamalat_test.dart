@@ -13,7 +13,6 @@ import 'package:taxista/payments/moamalat/moamalat_api.dart';
 import 'package:taxista/payments/moamalat/moamalat_checkout_page.dart';
 import 'package:taxista/payments/moamalat/moamalat_env.dart';
 import 'package:taxista/payments/moamalat/moamalat_topup_page.dart';
-import 'package:taxista/payments/moamalat/moamalat_wallet_entry.dart';
 import 'package:taxista/payments/moamalat/saved_card.dart';
 import 'package:taxista/payments/moamalat/saved_cards_page.dart';
 import 'package:taxista/payments/moamalat/secure_clipboard.dart';
@@ -30,6 +29,18 @@ class FakeApi implements MoamalatApi {
   final List<double> initiated = [];
   int statusCalls = 0;
   bool failStatusWithNetwork = false;
+
+  List<PaymentMethodOption> methodList = const [
+    PaymentMethodOption(key: 'qareeb_card', labelAr: 'كروت شحن قريب', labelEn: 'Qareeb recharge cards'),
+    PaymentMethodOption(key: 'bank_card', labelAr: 'البطاقة البنكية', labelEn: 'Bank card'),
+  ];
+  bool failMethods = false;
+
+  @override
+  Future<List<PaymentMethodOption>> methods() async {
+    if (failMethods) throw const MoamalatException(MoamalatErrorKind.network);
+    return methodList;
+  }
 
   @override
   Future<MoamalatOptions> options() async => MoamalatOptions(available: available, currency: 'LYD', minAmount: 5, maxAmount: 2000);
@@ -381,28 +392,7 @@ void main() {
     });
   });
 
-  group('wallet entry and top-up flow', () {
-    testWidgets('the Moamalat row is hidden where the server says it is unavailable (e.g. Qena EGP)', (tester) async {
-      final env = makeEnv(api: FakeApi(available: false));
-      await tester.pumpWidget(MaterialApp(home: Scaffold(body: MoamalatWalletEntry(env: env))));
-      await tester.pumpAndSettle();
-      expect(find.byKey(const Key('moamalat-entry')), findsNothing);
-    });
-
-    testWidgets('the Moamalat row shows for Libya and opens the amount screen with saved cards', (tester) async {
-      final env = makeEnv();
-      await env.vault.add(holderName: 'Ali', number: visa, expMonth: 12, expYear: 2028);
-      await tester.pumpWidget(MaterialApp(home: Scaffold(body: MoamalatWalletEntry(env: env))));
-      await tester.pumpAndSettle();
-      expect(find.text('معاملات'), findsOneWidget);
-
-      await tester.tap(find.byKey(const Key('moamalat-entry')));
-      await tester.pumpAndSettle();
-      expect(find.text('البطاقات المحفوظة'), findsOneWidget);
-      expect(find.text('**** **** **** 1111'), findsOneWidget);
-      expect(find.text('LYD'), findsOneWidget); // amount suffix from the server's currency
-    });
-
+  group('top-up flow', () {
     testWidgets('an amount outside the server limits is refused before any request', (tester) async {
       final api = FakeApi();
       final env = makeEnv(api: api);

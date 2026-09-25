@@ -4,6 +4,25 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
+/// One way of adding money that the customer's market offers.
+class PaymentMethodOption {
+  const PaymentMethodOption({required this.key, required this.labelAr, required this.labelEn});
+
+  /// `qareeb_card` (recharge cards) or `bank_card` (the bank card gateway).
+  final String key;
+  final String labelAr;
+  final String labelEn;
+
+  static const String qareebCard = 'qareeb_card';
+  static const String bankCard = 'bank_card';
+
+  /// What every market had before methods were asked of the server: the manual
+  /// recharge-card entry only. Used when the server cannot be reached.
+  static const List<PaymentMethodOption> offlineFallback = [
+    PaymentMethodOption(key: qareebCard, labelAr: 'كروت شحن قريب', labelEn: 'Qareeb recharge cards'),
+  ];
+}
+
 class MoamalatOptions {
   const MoamalatOptions({
     required this.available,
@@ -59,6 +78,8 @@ class MoamalatException implements Exception {
 }
 
 abstract class MoamalatApi {
+  /// The wallet top-up methods this market offers (`GET payment/methods`).
+  Future<List<PaymentMethodOption>> methods();
   Future<MoamalatOptions> options();
   Future<MoamalatTopUp> initiate(double amount);
   Future<MoamalatStatus> status(String topUpId);
@@ -110,6 +131,24 @@ class HttpMoamalatApi implements MoamalatApi {
     } catch (_) {
       return <String, dynamic>{};
     }
+  }
+
+  @override
+  Future<List<PaymentMethodOption>> methods() async {
+    final response = await _send(() => _client.get(Uri.parse('${baseUrl}api/v1/payment/methods'), headers: _headers));
+    if (response.statusCode != 200) throw const MoamalatException(MoamalatErrorKind.server);
+    final data = _body(response)['data'];
+    final list = data is Map ? data['methods'] : null;
+    if (list is! List) throw const MoamalatException(MoamalatErrorKind.server);
+    return [
+      for (final item in list)
+        if (item is Map && item['key'] != null)
+          PaymentMethodOption(
+            key: item['key'].toString(),
+            labelAr: (item['label_ar'] ?? item['key']).toString(),
+            labelEn: (item['label_en'] ?? item['key']).toString(),
+          ),
+    ];
   }
 
   @override

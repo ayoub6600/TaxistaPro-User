@@ -8,7 +8,9 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:taxista/firebase_options.dart';
 
+import 'functions/app_lifecycle.dart';
 import 'functions/functions.dart';
+import 'functions/live_queries.dart';
 import 'functions/notifications.dart';
 import 'local_firebase.dart';
 import 'navigation/taxista_page_transitions.dart';
@@ -41,6 +43,17 @@ Future<void> main() async {
   }
 
   checkInternetConnection();
+
+  // One owner for app-wide background/foreground work: shared Firebase
+  // listeners and the ride listeners are closed while the app is away and
+  // reopened once when it returns (see AppLifecycleCoordinator).
+  AppLifecycleCoordinator.instance
+    ..onBackground.addAll([
+      LiveQueries.instance.pauseAll,
+      detachRideStreams,
+    ])
+    ..onForeground.add(LiveQueries.instance.resumeAll)
+    ..attach();
 
   runApp(const MyApp());
 }

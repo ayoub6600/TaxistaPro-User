@@ -117,6 +117,7 @@ class _PickupLocationState extends State<PickupLocation>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _controller?.dispose();
     _controller = null;
 

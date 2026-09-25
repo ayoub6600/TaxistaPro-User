@@ -31,6 +31,12 @@ extension _MapPageView on _MapsState {
                 _controller!.setMapStyle(mapStyle);
                 _isDarkTheme = isDarkTheme;
               }
+              if (openScheduledOffersRequested) {
+                openScheduledOffersRequested = false;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) _openScheduledOffers();
+                });
+              }
               if (isGeneral == true) {
                 isGeneral = false;
                 if (lastNotification != latestNotification) {

@@ -38,6 +38,7 @@ mixin _BookingConfirmationView
         .orderByChild('g')
         .startAt(lower)
         .endAt(higher);
+    _driversNearKey = 'drivers-near:$lower:$higher';
 
     popFunction() {
       if (userRequestData.isNotEmpty &&
@@ -401,7 +402,7 @@ mixin _BookingConfirmationView
                   return StreamBuilder<DatabaseEvent>(
                       stream: (userRequestData['driverDetail'] == null &&
                               pinLocationIcon != null)
-                          ? fdb.onValue.asBroadcastStream()
+                          ? nearbyDriversStream(fdb)
                           : null,
                       builder: (context, AsyncSnapshot<DatabaseEvent> event) {
                         if (event.hasData) {
@@ -689,11 +690,11 @@ mixin _BookingConfirmationView
                         return StreamBuilder<DatabaseEvent>(
                             stream: (userRequestData['driverDetail'] != null &&
                                     pinLocationIcon != null)
-                                ? FirebaseDatabase.instance
-                                    .ref(
-                                        'drivers/driver_${userRequestData['driverDetail']['data']['id']}')
-                                    .onValue
-                                    .asBroadcastStream()
+                                ? LiveQueries.watchQuery(
+                                    'driver-node:${userRequestData['driverDetail']['data']['id']}',
+                                    () => FirebaseDatabase.instance.ref(
+                                        'drivers/driver_${userRequestData['driverDetail']['data']['id']}'),
+                                  )
                                 : null,
                             builder:
                                 (context, AsyncSnapshot<DatabaseEvent> event) {

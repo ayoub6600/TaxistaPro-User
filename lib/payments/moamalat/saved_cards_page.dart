@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:permission_handler/permission_handler.dart' show openAppSettings;
+
+import 'card_scanner.dart';
+import 'card_text_parser.dart';
 import 'moamalat_env.dart';
 import 'saved_card.dart';
 
@@ -266,10 +270,13 @@ class SavedCardTile extends StatelessWidget {
 
 /// Add or edit a card. There is no security-code field on purpose.
 class CardForm extends StatefulWidget {
-  const CardForm({super.key, required this.env, this.existing});
+  const CardForm({super.key, required this.env, this.existing, this.scanner});
 
   final MoamalatEnv env;
   final SavedCard? existing;
+
+  /// Replaces the real camera + on-device OCR (tests only).
+  final CardScanner? scanner;
 
   @override
   State<CardForm> createState() => _CardFormState();
@@ -283,6 +290,14 @@ class _CardFormState extends State<CardForm> {
   String? _holderError, _numberError, _expiryError;
   bool _saving = false;
 
+  // Scanning is only an input convenience: what it reads lands in these fields
+  // for the user to read and correct, and saving stays locked until they say
+  // they checked it.
+  bool _scanning = false;
+  bool _fromScan = false;
+  bool _confirmed = false;
+  Set<CardField> _review = const <CardField>{};
+
   MoamalatEnv get env => widget.env;
   bool get _editing => widget.existing != null;
 
@@ -295,8 +310,82 @@ class _CardFormState extends State<CardForm> {
     super.dispose();
   }
 
+  Future<void> _scan() async {
+    if (_scanning) return;
+    final agreed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => Directionality(
+        textDirection: env.direction,
+        child: AlertDialog(
+          key: const Key('scan-explainer'),
+          title: Text(env.t('تصوير البطاقة', 'Scan your card'), style: env.style(size: 16, weight: FontWeight.w800)),
+          content: Text(
+            env.t(
+                'سنفتح الكاميرا لقراءة رقم البطاقة واسم حاملها وتاريخ الانتهاء من الوجه الأمامي فقط. تتم القراءة على جهازك، ولا تُرفع الصورة ولا تُحفظ. ستراجع البيانات وتصحّحها قبل الحفظ، ولن نقرأ رمز الأمان (CVV).',
+                'We will open the camera to read the number, name and expiry from the FRONT of the card. Reading happens on your phone; the photo is never uploaded or kept. You review and correct everything before saving, and we never read the security code (CVV).'),
+            style: env.style(size: 13, weight: FontWeight.w500, color: env.muted),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(env.t('إلغاء', 'Cancel'))),
+            FilledButton(
+              key: const Key('scan-continue'),
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(env.t('متابعة', 'Continue')),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (agreed != true || !mounted) return;
+
+    setState(() => _scanning = true);
+    final outcome = await (widget.scanner ?? CardScanner()).scan();
+    if (!mounted) return;
+    setState(() => _scanning = false);
+
+    switch (outcome.status) {
+      case CardScanStatus.success:
+        _applyScan(outcome.card);
+        break;
+      case CardScanStatus.cancelled:
+        break;
+      case CardScanStatus.denied:
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          key: const Key('scan-denied'),
+          content: Text(env.t('لم يُسمح باستخدام الكاميرا. يمكنك إدخال بيانات البطاقة يدوياً.',
+              'Camera access is off. You can still type the card details.')),
+          action: SnackBarAction(label: env.t('الإعدادات', 'Settings'), onPressed: () => openAppSettings()),
+        ));
+        break;
+      case CardScanStatus.unreadable:
+      case CardScanStatus.failed:
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          key: const Key('scan-failed'),
+          content: Text(env.t('تعذّرت قراءة البطاقة. جرّب إضاءة أفضل أو أدخل البيانات يدوياً.',
+              'Could not read the card. Try better light, or type the details.')),
+        ));
+        break;
+    }
+  }
+
+  void _applyScan(ScannedCard card) {
+    setState(() {
+      if (card.holder != null) _holder.text = card.holder!;
+      if (card.number != null) _number.text = CardRules.groupNumber(card.number!);
+      if (card.expiryText != null) _expiry.text = card.expiryText!;
+      _review = card.review;
+      _fromScan = true;
+      _confirmed = false;
+      _holderError = _numberError = _expiryError = null;
+    });
+  }
+
+  String? _helperFor(CardField field) =>
+      _fromScan && _review.contains(field) ? env.t('تحقق من هذا الحقل — قد لا تكون القراءة دقيقة', 'Check this field — the reading may be wrong') : null;
+
   Future<void> _save() async {
     if (_saving) return;
+    if (_fromScan && !_confirmed) return;
     final replacingNumber = !_editing || _number.text.trim().isNotEmpty;
     setState(() {
       _holderError = CardRules.isHolderValid(_holder.text) ? null : env.t('أدخل اسم حامل البطاقة', 'Enter the cardholder name');
@@ -339,10 +428,13 @@ class _CardFormState extends State<CardForm> {
     }
   }
 
-  InputDecoration _decoration(String label, {String? error, String? hint}) => InputDecoration(
+  InputDecoration _decoration(String label, {String? error, String? hint, String? helper}) => InputDecoration(
         labelText: label,
         hintText: hint,
         errorText: error,
+        helperText: helper,
+        helperMaxLines: 2,
+        helperStyle: const TextStyle(color: Color(0xffB26A00), fontWeight: FontWeight.w600),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         isDense: true,
       );
@@ -357,7 +449,16 @@ class _CardFormState extends State<CardForm> {
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Text(_editing ? env.t('تعديل البطاقة', 'Edit card') : env.t('إضافة بطاقة', 'Add card'),
                 textAlign: TextAlign.center, style: env.style(size: 17, weight: FontWeight.w800)),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              key: const Key('scan-card'),
+              onPressed: _scanning ? null : _scan,
+              icon: _scanning
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.photo_camera_outlined),
+              label: Text(env.t('تصوير البطاقة', 'Scan card')),
+            ),
+            const SizedBox(height: 14),
             TextField(
               key: const Key('card-holder'),
               controller: _holder,
@@ -365,7 +466,7 @@ class _CardFormState extends State<CardForm> {
               autocorrect: false,
               enableSuggestions: false,
               autofillHints: const <String>[],
-              decoration: _decoration(env.t('اسم حامل البطاقة', 'Cardholder name'), error: _holderError),
+              decoration: _decoration(env.t('اسم حامل البطاقة', 'Cardholder name'), error: _holderError, helper: _helperFor(CardField.holder)),
             ),
             const SizedBox(height: 12),
             Directionality(
@@ -381,6 +482,7 @@ class _CardFormState extends State<CardForm> {
                 decoration: _decoration(
                   env.t('رقم البطاقة', 'Card number'),
                   error: _numberError,
+                  helper: _helperFor(CardField.number),
                   hint: _editing ? '${widget.existing!.masked}  (${env.t('اتركه فارغاً للإبقاء عليه', 'leave empty to keep')})' : '0000 0000 0000 0000',
                 ),
               ),
@@ -396,7 +498,7 @@ class _CardFormState extends State<CardForm> {
                 enableSuggestions: false,
                 autofillHints: const <String>[],
                 inputFormatters: [ExpiryFormatter()],
-                decoration: _decoration(env.t('تاريخ الانتهاء (شهر/سنة)', 'Expiry (MM/YY)'), error: _expiryError, hint: 'MM/YY'),
+                decoration: _decoration(env.t('تاريخ الانتهاء (شهر/سنة)', 'Expiry (MM/YY)'), error: _expiryError, hint: 'MM/YY', helper: _helperFor(CardField.expiry)),
               ),
             ),
             const SizedBox(height: 12),
@@ -411,11 +513,23 @@ class _CardFormState extends State<CardForm> {
                   'We never ask for or store the security code (CVV). You enter it yourself on the payment page.'),
               style: env.style(size: 11.5, weight: FontWeight.w500, color: env.muted),
             ),
+            if (_fromScan) ...[
+              const SizedBox(height: 6),
+              CheckboxListTile(
+                key: const Key('confirm-scan'),
+                value: _confirmed,
+                onChanged: (v) => setState(() => _confirmed = v == true),
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                title: Text(env.t('راجعت البيانات أعلاه وصحّحتها', 'I checked the details above and corrected them'),
+                    style: env.style(size: 13, weight: FontWeight.w700)),
+              ),
+            ],
             const SizedBox(height: 14),
             FilledButton(
               key: const Key('save-card'),
               style: FilledButton.styleFrom(backgroundColor: env.accent, minimumSize: const Size.fromHeight(48)),
-              onPressed: _saving ? null : _save,
+              onPressed: (_saving || (_fromScan && !_confirmed)) ? null : _save,
               child: Text(env.t('حفظ', 'Save'), style: env.style(size: 15, weight: FontWeight.w800, color: Colors.white)),
             ),
           ]),

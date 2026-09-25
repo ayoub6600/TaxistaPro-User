@@ -23,6 +23,7 @@ import 'package:vector_math/vector_math.dart' as vector;
 
 import '../../functions/functions.dart';
 import '../../functions/api_guard.dart';
+import '../../functions/live_queries.dart';
 import '../../functions/geohash.dart';
 import '../../functions/notifications.dart';
 import '../../styles/styles.dart';
@@ -31,6 +32,8 @@ import '../../widgets/clippers.dart';
 import '../../widgets/widgets.dart';
 import '../NavigatorPages/notification.dart';
 import '../NavigatorPages/active_rider_bookings.dart';
+import '../NavigatorPages/upcoming_scheduled_rides.dart';
+import 'map_page/widgets/scheduled_offer_banner.dart';
 import 'ongoingrides.dart';
 import '../loadingPage/loading.dart';
 import '../login/login.dart';
@@ -215,6 +218,9 @@ class _MapsState extends State<Maps>
 
     getLocs();
     unawaited(getActiveRiderBookings());
+    // "A driver priced your scheduled ride": one light check on arrival; after
+    // that it is kept current by the push notification and the resume reconcile.
+    unawaited(refreshScheduledOfferSummary());
     getadminCurrentMessages();
     unawaited(fetchPendingRecoveryOfferForRider().then((_) {
       if (mounted) setState(() {});
@@ -228,6 +234,15 @@ class _MapsState extends State<Maps>
   // One reconcile per foreground return, however many lifecycle events the OS
   // delivers. Everything here is idempotent: no timer or listener is created
   // unless it does not already exist.
+  void _openScheduledOffers() {
+    guardedPush(context,
+            MaterialPageRoute(builder: (_) => const UpcomingScheduledRidesPage()))
+        .then((_) {
+      // Coming back from the page: the answer may have changed the banner.
+      if (mounted) unawaited(refreshScheduledOfferSummary(force: true));
+    });
+  }
+
   final ResumeReconciler _resume = ResumeReconciler();
   String? _appliedMapStyleKey;
   bool _resumeRetryScheduled = false;
@@ -255,7 +270,11 @@ class _MapsState extends State<Maps>
     _restoreAfterResume();
     final outcome = await _resume.run(_reconcileAfterResume);
     if (!mounted || outcome == ResumeOutcome.reconciled) return;
-    _restoreAfterResume();
+    if (outcome == ResumeOutcome.needsReset) {
+      _recoverHome();
+    } else {
+      _restoreAfterResume();
+    }
     if (_resumeRetryScheduled) return;
     _resumeRetryScheduled = true;
     Future<void>.delayed(
@@ -267,8 +286,31 @@ class _MapsState extends State<Maps>
     });
   }
 
+  /// Controlled in-app recovery (never a restart): two reconciles in a row
+  /// failed, so nothing transient on this page can be trusted. Drop the shared
+  /// and ride listeners, clear every flag that puts a layer over the map, and
+  /// let the next reconcile rebuild the state once.
+  void _recoverHome() {
+    if (!mounted) return;
+    LiveQueries.instance.reset();
+    detachRideStreams();
+    _loading = false;
+    cancelRequestByUser = false;
+    favAddressAdd = false;
+    _showLaunchOverlay = false;
+    _recoveryOfferTicker?.cancel();
+    _recoveryOfferTicker = null;
+    positionStream?.cancel();
+    positionStream = null;
+    _restoreAfterResume();
+    valueNotifierHome.incrementNotifier();
+  }
+
   void _restoreAfterResume() {
     if (!mounted) return;
+    // A loader left over from before the app went away must never sit over a
+    // map that is already showing.
+    if (_loading == true && state == '3') _loading = false;
     // An "OK" acknowledgement left over from before the app was backgrounded
     // must never keep a full-screen layer over the page.
     if (cancelRequestByUser) cancelRequestByUser = false;
@@ -285,6 +327,7 @@ class _MapsState extends State<Maps>
     await Future.wait<void>([
       getActiveRiderBookings().then<void>((_) {}, onError: (_) {}),
       fetchPendingRecoveryOfferForRider().then<void>((_) {}, onError: (_) {}),
+      refreshScheduledOfferSummary().then<void>((_) {}, onError: (_) {}),
     ]);
     if (!mounted) return;
     await _applyMapStyleIfChanged();
@@ -309,6 +352,9 @@ class _MapsState extends State<Maps>
 
   @override
   void dispose() {
+    // A State that stays registered keeps itself (and its map, markers and
+    // lists) alive for the life of the app and runs on every lifecycle event.
+    WidgetsBinding.instance.removeObserver(this);
     _pickupSearchController.dispose();
     _controller?.dispose();
     _controller = null;
