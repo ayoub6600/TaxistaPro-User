@@ -177,16 +177,20 @@ LocationSettings locationSettings = (platform == TargetPlatform.android)
       );
 
 positionStreamData() {
+  // Never two live location subscriptions: replace, don't accumulate.
+  positionStream?.cancel();
+  positionStream = null;
   positionStream =
       Geolocator.getPositionStream(locationSettings: locationSettings)
           .handleError((error) {
-    positionStream = null;
     positionStream?.cancel();
+    positionStream = null;
   }).listen((Position? position) {
     if (position != null) {
       currentLocation = LatLng(position.latitude, position.longitude);
     } else {
-      positionStream!.cancel();
+      positionStream?.cancel();
+      positionStream = null;
     }
   });
 }

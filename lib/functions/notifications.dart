@@ -30,7 +30,7 @@ void notificationTapBackground(NotificationResponse notificationResponse) {
 /// appear immediately instead of waiting for the next periodic poll,
 /// including while the app is already open in the foreground.
 void _handleRecoveryDriverReadyPush() {
-  fetchPendingRecoveryOfferForRider().then((_) {
+  fetchPendingRecoveryOfferForRider(force: true).then((_) {
     valueNotifierHome.incrementNotifier();
   });
 }

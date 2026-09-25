@@ -28,6 +28,7 @@ import 'package:taxista/pages/onTripPage/bookingwidgets.dart';
 import 'package:taxista/pages/onTripPage/call_wats.dart';
 import 'package:vector_math/vector_math.dart' as vector;
 
+import '../../functions/api_guard.dart';
 import '../../functions/functions.dart';
 import '../../functions/geohash.dart';
 import '../../styles/styles.dart';

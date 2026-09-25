@@ -285,6 +285,22 @@ mixin _BookingConfirmationController
     return initialBookingCameraForRoute(endpoints, _center, dropConfirmed);
   }
 
+  bool _leavingToHome = false;
+
+  /// Replaces the whole stack with Home, once. Called from build(), so it has
+  /// to tolerate being asked on every rebuild while the cancel flag is set.
+  void _goHomeOnce() {
+    if (_leavingToHome) return;
+    _leavingToHome = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const Maps()),
+          (route) => false);
+    });
+  }
+
   @override
   void initState() {
     fmpoly.clear();
@@ -325,41 +341,62 @@ mixin _BookingConfirmationController
     super.initState();
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) async {
-    if (state == AppLifecycleState.resumed) {
-      if (isDarkTheme == true) {
-        await rootBundle.loadString('assets/dark.json').then((value) {
-          mapStyle = value;
-        });
-      } else {
-        await rootBundle
-            .loadString('assets/map_style_black.json')
-            .then((value) {
-          mapStyle = value;
-        });
-      }
-      if (_controller != null) {
-        _controller?.setMapStyle(mapStyle);
-      }
-      if (userRequestData.isNotEmpty) {
-        ismulitipleride = true;
-        getUserDetails(id: userRequestData['id']);
-      } else {
-        getUserDetails();
-      }
+  final SingleFlight<void> _resumeReconcile = SingleFlight<void>();
+  String? _appliedMapStyleKey;
 
-      if (timers == null &&
-          userRequestData.isNotEmpty &&
-          userRequestData['accepted_at'] == null) {
-        timer();
-      }
-      if (locationAllowed == true) {
-        if (positionStream == null || positionStream!.isPaused) {
-          positionStreamData();
-        }
-      }
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      // No search countdown or GPS work while in the background; both restart
+      // (once) when the app returns.
+      timers?.cancel();
+      timers = null;
+      positionStream?.cancel();
+      positionStream = null;
+      return;
     }
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_resumeReconcile.run(_reconcileAfterResume));
+    }
+  }
+
+  /// One authoritative refresh of the ride from the server when the app comes
+  /// back, then the UI follows the server: a ride that was cancelled or taken
+  /// while away ends the search screen instead of "searching" on stale flags.
+  Future<void> _reconcileAfterResume() async {
+    if (!mounted) return;
+    final key = isDarkTheme == true ? 'assets/dark.json' : 'assets/map_style_black.json';
+    if (key != _appliedMapStyleKey) {
+      mapStyle = await rootBundle.loadString(key);
+      _appliedMapStyleKey = key;
+      _controller?.setMapStyle(mapStyle);
+    }
+    final wasSearching = userRequestData.isNotEmpty &&
+        userRequestData['accepted_at'] == null;
+    if (userRequestData.isNotEmpty) {
+      await refreshUserRequestState(userRequestData['id']?.toString());
+    } else {
+      await getUserDetails();
+    }
+    if (!mounted) return;
+    if (wasSearching && userRequestData.isEmpty) {
+      // The server no longer has this ride (cancelled, expired): stop
+      // searching and go Home once, instead of "searching" on stale flags.
+      timers?.cancel();
+      timers = null;
+      _goHomeOnce();
+      return;
+    }
+    if (timers == null &&
+        userRequestData.isNotEmpty &&
+        userRequestData['accepted_at'] == null) {
+      timer();
+    }
+    if (locationAllowed == true &&
+        (positionStream == null || positionStream!.isPaused)) {
+      positionStreamData();
+    }
+    if (mounted) setState(() {});
   }
 
   @override

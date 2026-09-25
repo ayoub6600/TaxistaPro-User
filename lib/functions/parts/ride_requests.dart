@@ -496,30 +496,51 @@ class RequestCreate {
 
 //user cancel request
 
-cancelRequest() async {
-  dynamic result;
-  debugPrint('drops1 ${url}api/v1/request/cancel');
-  try {
-    var response = await http.post(Uri.parse('${url}api/v1/request/cancel'),
-        headers: {
-          'Authorization': 'Bearer ${bearerToken[0].token}',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({'request_id': userRequestData['id']}));
-    print("------>url ${url}api/v1/request/cancel");
-    debugPrint('drops1 ${response.statusCode}');
+// One cancel at a time. A second tap (or the search timer firing while the
+// rider is already cancelling) joins the request in flight instead of sending
+// another; the backend is idempotent too, so a retry after a timeout is safe.
+final SingleFlight<dynamic> _cancelFlight = SingleFlight<dynamic>();
 
-    if (response.statusCode == 200) {
+/// POST /request/cancel with a timeout and, for a 429, exactly one retry after
+/// the server's Retry-After (when it is short). Never loops.
+Future<http.Response> _postCancel(Map<String, dynamic> body) async {
+  Future<http.Response> send() => http
+      .post(Uri.parse('${url}api/v1/request/cancel'),
+          headers: {
+            'Authorization': 'Bearer ${bearerToken[0].token}',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode(body))
+      .timeout(const Duration(seconds: 15));
+  var response = await send();
+  if (response.statusCode == 429) {
+    final wait = retryAfterOf(response.headers) ?? const Duration(seconds: 2);
+    if (wait <= const Duration(seconds: 8)) {
+      await Future<void>.delayed(wait);
+      response = await send();
+    }
+  }
+  return response;
+}
+
+Future<dynamic> cancelRequest() => _cancelFlight.run(_cancelRequest);
+
+Future<dynamic> _cancelRequest() async {
+  dynamic result;
+  try {
+    final response = await _postCancel({'request_id': userRequestData['id']});
+    debugPrint('cancel ${response.statusCode}');
+
+    // 200 = cancelled; 410 = the ride is already gone (cancelled elsewhere or
+    // finished) - either way the search is over for this rider.
+    final answer = rideAnswerOf(response.statusCode, response.body);
+    if (answer == RideAnswer.ok || answer == RideAnswer.gone) {
       userCancelled = true;
       if (userRequestData['is_bid_ride'] == 1) {
         FirebaseDatabase.instance
             .ref('bid-meta/${userRequestData["id"]}')
             .remove();
       }
-      // FirebaseDatabase.instance
-      //     .ref('requests')
-      //     .child(userRequestData['id'])
-      //     .update({'cancelled_by_user': true});
       userRequestData = {};
       if (requestStreamStart?.isPaused == false ||
           requestStreamEnd?.isPaused == false) {
@@ -530,16 +551,18 @@ cancelRequest() async {
       }
       result = 'success';
       valueNotifierBook.incrementNotifier();
-    } else if (response.statusCode == 401) {
+    } else if (answer == RideAnswer.unauthorized) {
       result = 'logout';
     } else {
       debugPrint(response.body);
-      result = 'failed';
+      result = answer == RideAnswer.throttled ? 'throttled' : 'failed';
     }
-  } catch (e) {
-    if (e is SocketException) {
-      internet = false;
-    }
+  } on SocketException {
+    internet = false;
+  } on TimeoutException {
+    result = 'failed';
+  } catch (_) {
+    result = 'failed';
   }
   return result;
 }
@@ -583,24 +606,19 @@ cancelLaterRequest(val) async {
 
 //user cancel request with reason
 
-cancelRequestWithReason(reason) async {
-  dynamic result;
-  debugPrint('drops3 ${url}api/v1/request/cancel');
-  try {
-    var response = await http.post(Uri.parse('${url}api/v1/request/cancel'),
-        headers: {
-          'Authorization': 'Bearer ${bearerToken[0].token}',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode(
-            {'request_id': userRequestData['id'], 'reason': reason}));
-    debugPrint('drops3 ${response.statusCode}');
+Future<dynamic> cancelRequestWithReason(reason) =>
+    _cancelFlight.run(() => _cancelRequestWithReason(reason));
 
-    if (response.statusCode == 200) {
+Future<dynamic> _cancelRequestWithReason(reason) async {
+  dynamic result;
+  try {
+    final response =
+        await _postCancel({'request_id': userRequestData['id'], 'reason': reason});
+    debugPrint('cancel(reason) ${response.statusCode}');
+
+    final answer = rideAnswerOf(response.statusCode, response.body);
+    if (answer == RideAnswer.ok || answer == RideAnswer.gone) {
       cancelRequestByUser = true;
-      // FirebaseDatabase.instance
-      //     .ref('requests/${userRequestData['id']}')
-      //     .update({'cancelled_by_user': true});
       userRequestData = {};
       if (rideStreamUpdate?.isPaused == false ||
           rideStreamStart?.isPaused == false) {
@@ -612,18 +630,20 @@ cancelRequestWithReason(reason) async {
       await getUserDetails();
       result = 'success';
       valueNotifierBook.incrementNotifier();
-    } else if (response.statusCode == 401) {
+    } else if (answer == RideAnswer.unauthorized) {
       result = 'logout';
     } else {
-      result = 'failed';
       debugPrint(response.body);
+      result = answer == RideAnswer.throttled ? 'throttled' : 'failed';
     }
-    return result;
-  } catch (e) {
-    if (e is SocketException) {
-      internet = false;
-    }
+  } on SocketException {
+    internet = false;
+  } on TimeoutException {
+    result = 'failed';
+  } catch (_) {
+    result = 'failed';
   }
+  return result;
 }
 
 //making call to user

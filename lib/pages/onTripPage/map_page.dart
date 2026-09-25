@@ -22,6 +22,7 @@ import 'package:uuid/uuid.dart';
 import 'package:vector_math/vector_math.dart' as vector;
 
 import '../../functions/functions.dart';
+import '../../functions/api_guard.dart';
 import '../../functions/geohash.dart';
 import '../../functions/notifications.dart';
 import '../../styles/styles.dart';
@@ -224,32 +225,58 @@ class _MapsState extends State<Maps>
     });
   }
 
+  // One reconcile per foreground return, however many lifecycle events the OS
+  // delivers. Everything here is idempotent: no timer or listener is created
+  // unless it does not already exist.
+  final SingleFlight<void> _resumeReconcile = SingleFlight<void>();
+  String? _appliedMapStyleKey;
+
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) async {
-    if (isDarkTheme == true) {
-      await rootBundle.loadString('assets/dark.json').then((value) {
-        mapStyle = value;
-      });
-    } else {
-      await rootBundle.loadString('assets/map_style_black.json').then((value) {
-        mapStyle = value;
-      });
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      // Nothing in the background needs this page's polling or the GPS.
+      _recoveryOfferTicker?.cancel();
+      _recoveryOfferTicker = null;
+      positionStream?.cancel();
+      positionStream = null;
+      return;
     }
     if (state == AppLifecycleState.resumed) {
-      unawaited(getActiveRiderBookings());
-      unawaited(fetchPendingRecoveryOfferForRider().then((_) {
-        if (mounted) setState(() {});
-      }));
-      if (_controller != null) {
-        _controller?.setMapStyle(mapStyle);
-        valueNotifierHome.incrementNotifier();
-      }
-      if (locationAllowed == true) {
-        if (positionStream == null || positionStream!.isPaused) {
-          positionStreamData();
-        }
-      }
+      unawaited(_resumeReconcile.run(_reconcileAfterResume));
     }
+  }
+
+  Future<void> _reconcileAfterResume() async {
+    if (!mounted) return;
+    // An "OK" acknowledgement left over from before the app was backgrounded
+    // must never keep a full-screen layer over the page.
+    if (cancelRequestByUser) {
+      setState(() => cancelRequestByUser = false);
+    }
+    if (_recoveryOfferTicker == null) startRecoveryOfferTicker();
+    await Future.wait<void>([
+      getActiveRiderBookings().then<void>((_) {}, onError: (_) {}),
+      fetchPendingRecoveryOfferForRider().then<void>((_) {}, onError: (_) {}),
+    ]);
+    if (!mounted) return;
+    await _applyMapStyleIfChanged();
+    if (locationAllowed == true &&
+        (positionStream == null || positionStream!.isPaused)) {
+      positionStreamData();
+    }
+    if (mounted) setState(() {});
+    valueNotifierHome.incrementNotifier();
+  }
+
+  /// Loads the map style JSON only when the theme actually changed, instead of
+  /// re-reading and re-applying it on every lifecycle event.
+  Future<void> _applyMapStyleIfChanged() async {
+    final key = isDarkTheme == true ? 'assets/dark.json' : 'assets/map_style_black.json';
+    if (key == _appliedMapStyleKey && _controller != null) return;
+    mapStyle = await rootBundle.loadString(key);
+    if (!mounted) return;
+    _appliedMapStyleKey = key;
+    _controller?.setMapStyle(mapStyle);
   }
 
   @override

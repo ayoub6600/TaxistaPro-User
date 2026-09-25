@@ -9,6 +9,11 @@ part of '../map_page.dart';
 /// this can happen - polling here, not push delivery alone, is the source
 /// of truth.
 extension _MapRecoveryOffer on _MapsState {
+  /// The Home recovery card's countdown and refresh. There is exactly one
+  /// ticker per page (starting it again replaces it), it counts the visible
+  /// offer down locally, and it only talks to the backend when recovery is
+  /// enabled - at most every 20 seconds, and never more than the poll gate
+  /// allows (an expired offer is re-checked once, not once a second).
   void startRecoveryOfferTicker() {
     _recoveryOfferTicker?.cancel();
     _recoveryOfferTickCount = 0;
@@ -22,13 +27,14 @@ extension _MapRecoveryOffer on _MapsState {
             : 0;
         if (remaining <= 0) {
           // Never trust the client clock alone for expiry - re-check with
-          // the backend, which is the sole authority on whether the window
-          // (and any pending offer in it) is actually still open.
-          await fetchPendingRecoveryOfferForRider();
+          // the backend (gated: one request, not one per tick).
+          unawaited(fetchPendingRecoveryOfferForRider().then((_) {
+            if (mounted) setState(() {});
+          }));
         } else {
           offer['expires_in_seconds'] = remaining - 1;
+          if (mounted) setState(() {});
         }
-        if (mounted) setState(() {});
       }
 
       _recoveryOfferTickCount++;

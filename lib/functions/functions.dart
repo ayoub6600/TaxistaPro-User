@@ -22,6 +22,8 @@ import 'package:taxista/functions/notifications.dart';
 import 'package:taxista/translations/translation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'api_guard.dart';
+
 import '../pages/NavigatorPages/editprofile.dart';
 import '../pages/NavigatorPages/history.dart';
 import '../pages/NavigatorPages/historydetails.dart';

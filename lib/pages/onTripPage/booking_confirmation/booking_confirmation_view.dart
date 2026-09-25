@@ -159,12 +159,10 @@ mixin _BookingConfirmationView
                     addressList
                         .removeWhere((element) => element.type == 'drop');
                     ismulitipleride = false;
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(builder: (context) => const Maps()),
-                          (route) => false);
-                    });
+                    // This runs on every rebuild (the search timer rebuilds
+                    // it each second): leave for Home exactly once, never one
+                    // route push per rebuild.
+                    _goHomeOnce();
                   } else if (requestCancelledByDriver == true) {
                     if (polyGot == false &&
                         polyline.isEmpty &&
