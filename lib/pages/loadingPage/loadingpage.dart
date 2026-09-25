@@ -1,14 +1,10 @@
 import 'dart:async';
-import 'dart:io';
-import 'package:firebase_database/firebase_database.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:package_info_plus/package_info_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../functions/functions.dart';
-import '../../translations/translation.dart';
-import '../../utils/version.dart';
+import '../../update/update_checker.dart';
+import '../../update/update_gate.dart';
+import '../../update/update_policy.dart';
 import '../language/languages.dart';
 import '../login/login.dart';
 import '../noInternet/noInternet.dart';
@@ -28,9 +24,6 @@ dynamic package;
 
 class _LoadingPageState extends State<LoadingPage> {
   String dot = '.';
-  bool updateAvailable = false;
-  dynamic _package;
-  bool _error = false;
   bool _isLoading = false;
 
   @override
@@ -168,49 +161,51 @@ class _LoadingPageState extends State<LoadingPage> {
     }
   }
 
-  getData() async {
-    for (var i = 0; _error == true; i++) {
-      await getLanguageDone();
+  bool _checkingUpdate = false;
+  bool _updateShown = false;
+
+  /// The startup version gate. Every path ends in exactly one state: the app
+  /// opens (no update needed, or the check could not be completed in time),
+  /// the mandatory update screen, or the optional one whose "Later" resumes
+  /// the normal flow. The check itself is bounded (timeout, cache, one retry),
+  /// so this can never hang the loading screen.
+  Future<void> getLanguageDone() async {
+    if (_checkingUpdate) return;
+    _checkingUpdate = true;
+    try {
+      final result = await checkRiderUpdate();
+      if (!mounted) return;
+      if (result.decision != UpdateDecision.none) {
+        _showUpdateScreen(result);
+        return;
+      }
+      await _continueAfterUpdateCheck();
+    } finally {
+      _checkingUpdate = false;
     }
   }
 
-  Future<void> getLanguageDone() async {
-    _package = await PackageInfo.fromPlatform();
-    try {
-      final snapshot = await FirebaseDatabase.instance
-          .ref()
-          .child('force_update_user')
-          .get();
-
-      _error = false;
-
-      if (snapshot.exists) {
-        final data = snapshot.value as Map<dynamic, dynamic>;
-
-        final latestVersion = data['version']?.toString() ?? '';
-        final isMandatory = data['is_mandatory'] == true;
-        final currentVersion = _package.version;
-
-        setState(() {
-          updateAvailable = isVersionOutdated(currentVersion, latestVersion);
-        });
-
-        if (updateAvailable) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            _showUpdateDialog(data: data, isMandatory: isMandatory);
-          });
-          return;
-        }
-      }
-
-      await _continueAfterUpdateCheck();
-    } catch (e) {
-      if (internet == true && !_error) {
-        setState(() => _error = true);
-        await getData();
-      } else {
-        setState(() {});
-      }
+  void _showUpdateScreen(UpdateCheckResult result) {
+    if (_updateShown) return; // never a second update page
+    _updateShown = true;
+    final mandatory = result.decision == UpdateDecision.mandatory;
+    final page = RiderUpdateScreen(
+      result: result,
+      chosenLanguage: choosenLanguage,
+      onLater: mandatory
+          ? null
+          : () {
+              if (!mounted) return;
+              _updateShown = false;
+              Navigator.of(context).pop();
+              _continueAfterUpdateCheck();
+            },
+    );
+    final route = MaterialPageRoute(builder: (_) => page);
+    if (mandatory) {
+      Navigator.pushAndRemoveUntil(context, route, (_) => false);
+    } else {
+      Navigator.push(context, route);
     }
   }
 
@@ -244,102 +239,6 @@ class _LoadingPageState extends State<LoadingPage> {
     } else {
       setState(() {});
     }
-  }
-
-  void _showUpdateDialog({
-    required Map<dynamic, dynamic> data,
-    required bool isMandatory,
-  }) {
-    showDialog(
-      context: context,
-      barrierDismissible: !isMandatory,
-      barrierColor: Colors.black.withOpacity(0.85),
-      builder: (_) => WillPopScope(
-        onWillPop: () async => !isMandatory,
-        child: AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.0),
-          ),
-          title: Text(
-            languages[choosenLanguage]['text_update_required_title'],
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Colors.redAccent,
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.system_update_rounded,
-                  size: 48, color: Colors.blue),
-              const SizedBox(height: 16),
-              Text(
-                (data['release_notes']?.toString().isNotEmpty ?? false)
-                    ? data['release_notes'].toString()
-                    : languages[choosenLanguage]['text_update_available'],
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 16, height: 1.5),
-              ),
-              if (!isMandatory)
-                Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: Text(
-                    languages[choosenLanguage]['text_update_optional_hint'],
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 14, color: Colors.black54),
-                  ),
-                ),
-            ],
-          ),
-          actionsAlignment: MainAxisAlignment.center,
-          actions: [
-            if (!isMandatory)
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _continueAfterUpdateCheck();
-                },
-                child: Text(languages[choosenLanguage]['text_later']),
-              ),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.download_rounded),
-              label: Text(languages[choosenLanguage]['text_update']),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-              ),
-              onPressed: () async {
-                final updateUrl = Platform.isAndroid
-                    ? data['url'] ?? ''
-                    : data['url_ios'] ?? '';
-                try {
-                  if (await canLaunchUrl(Uri.parse(updateUrl))) {
-                    await launchUrl(Uri.parse(updateUrl),
-                        mode: LaunchMode.externalApplication);
-                  }
-                } catch (e) {
-                  debugPrint('Error launching URL: $e');
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(languages[choosenLanguage]
-                          ['text_update_store_open_failed']),
-                    ),
-                  );
-                }
-              },
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
