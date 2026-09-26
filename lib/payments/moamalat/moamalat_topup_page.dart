@@ -48,7 +48,8 @@ class _MoamalatTopUpPageState extends State<MoamalatTopUpPage> {
     final cards = await env.vault.load();
     if (!mounted) return;
     setState(() {
-      _cards = cards;
+      // Only the last four digits stay in screen state; the vault is asked again when a fill is tapped.
+      _cards = cards.map((c) => c.redacted()).toList();
       final stillThere = keepSelection && cards.any((c) => c.id == _selectedCardId);
       if (!stillThere) _selectedCardId = cards.isEmpty ? null : cards.first.id; // default card is first
     });

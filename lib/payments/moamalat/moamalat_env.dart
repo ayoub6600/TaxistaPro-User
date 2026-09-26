@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'card_vault.dart';
 import 'moamalat_api.dart';
 import 'secure_clipboard.dart';
+import 'smart_fill_controller.dart';
 
 /// Everything the Moamalat screens need from the host app, so the screens
 /// themselves stay identical in the Rider and Driver apps.
@@ -14,6 +15,7 @@ class MoamalatEnv {
     required this.clipboard,
     required this.isRtl,
     this.onWalletChanged,
+    this.smartFill,
     this.accent = const Color(0xff1677FF),
     this.background = const Color(0xffF6F8FC),
     this.surface = Colors.white,
@@ -30,6 +32,9 @@ class MoamalatEnv {
   /// Called after a top-up is confirmed, so the wallet balance and history
   /// reload from the server.
   final VoidCallback? onWalletChanged;
+
+  /// Smart Fill (card fill + terms in one tap) when this platform supports it; null keeps the classic helper.
+  final SmartFillSupport? smartFill;
 
   final Color accent;
   final Color background;

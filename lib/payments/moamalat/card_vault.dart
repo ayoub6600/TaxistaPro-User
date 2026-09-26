@@ -97,6 +97,14 @@ class CardVault {
     return sorted;
   }
 
+  /// One card by id (null when it was deleted meanwhile).
+  Future<SavedCard?> byId(String id) async {
+    for (final card in await load()) {
+      if (card.id == id) return card;
+    }
+    return null;
+  }
+
   Future<SavedCard?> defaultCard() async {
     final cards = await load();
     return cards.isEmpty ? null : cards.first;

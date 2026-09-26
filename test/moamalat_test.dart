@@ -709,8 +709,9 @@ void main() {
     testWidgets('leaving the payment screen clears a copied card number from the clipboard', (tester) async {
       final log = <String>[];
       final env = makeEnv(clipboardLog: log);
-      const card = SavedCard(id: 'a', holderName: 'Ali', number: visa, expMonth: 12, expYear: 2028);
-      await open(tester, env: env, card: card);
+      // The checkout only keeps a redacted copy; the real number is read from the vault on the tap.
+      final saved = await env.vault.add(holderName: 'Ali', number: visa, expMonth: 12, expYear: 2028);
+      await open(tester, env: env, card: saved.redacted());
 
       await tester.tap(find.byKey(const Key('copy-number')));
       await tester.pump();

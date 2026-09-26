@@ -2,11 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
+import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 
 import 'card_helper_panel.dart';
 import 'moamalat_api.dart';
 import 'moamalat_env.dart';
 import 'saved_card.dart';
+import 'smart_fill_assistant.dart';
+import 'smart_fill_controller.dart';
 import 'topup_flow.dart';
 
 /// Builds the payment page view. The default is a real WebView; tests inject
@@ -31,6 +35,8 @@ class MoamalatCheckoutPage extends StatefulWidget {
     required this.topUp,
     this.card,
     this.cardOnFile = false,
+    this.smartFill,
+    this.allowedMainFrameSchemes = const {'https', 'about'},
     this.viewBuilder,
     this.settleTimeout = const Duration(seconds: 30),
     this.loadTimeout = const Duration(seconds: 30),
@@ -39,7 +45,16 @@ class MoamalatCheckoutPage extends StatefulWidget {
 
   final MoamalatEnv env;
   final MoamalatTopUp topUp;
+  /// The selected saved card as a redacted copy (last four digits only). The
+  /// real number is read from the vault only when the customer taps a fill action.
   final SavedCard? card;
+
+  /// Tests inject a ready-made controller; the app builds its own from [MoamalatEnv.smartFill].
+  final SmartFillController? smartFill;
+
+  /// Schemes the payment page itself may navigate to. Always https in the app; the
+  /// local test rig widens it.
+  final Set<String> allowedMainFrameSchemes;
 
   /// The bank keeps cards for our customers: the payment page offers the saved
   /// ones, so the customer is told to pick theirs instead of typing a card.
@@ -64,12 +79,20 @@ class _MoamalatCheckoutPageState extends State<MoamalatCheckoutPage> {
   int _attempt = 0; // bumped to rebuild the web view on retry
   Timer? _loadTimer;
   Timer? _autoCloseTimer;
+  SmartFillController? _smart;
+  bool _ownsSmart = false;
 
   MoamalatEnv get env => widget.env;
 
   @override
   void initState() {
     super.initState();
+    _smart = widget.smartFill;
+    if (_smart == null && widget.card != null && env.smartFill != null) {
+      final card = widget.card!;
+      _smart = SmartFillController(support: env.smartFill!, fetchCard: () => env.vault.byId(card.id));
+      _ownsSmart = true;
+    }
     _armLoadTimer();
   }
 
@@ -77,6 +100,7 @@ class _MoamalatCheckoutPageState extends State<MoamalatCheckoutPage> {
   void dispose() {
     _loadTimer?.cancel();
     _autoCloseTimer?.cancel();
+    if (_ownsSmart) _smart?.dispose();
     // Never leave a card number on the clipboard after the payment screen.
     env.clipboard.clearNow();
     super.dispose();
@@ -195,10 +219,19 @@ class _MoamalatCheckoutPageState extends State<MoamalatCheckoutPage> {
   }
 
   Widget _paying() {
-    final builder = widget.viewBuilder ?? _platformView;
+    final builder = widget.viewBuilder ?? _realView;
     return Stack(children: [
       Column(children: [
-        if (widget.card != null) CardHelperPanel(env: env, card: widget.card!),
+        if (_smart != null)
+          AnimatedBuilder(
+            animation: _smart!,
+            builder: (context, _) => Column(mainAxisSize: MainAxisSize.min, children: [
+              SmartFillAssistant(env: env, controller: _smart!),
+              if (widget.card != null && _smart!.showFallbackHelper) _helper(),
+            ]),
+          )
+        else if (widget.card != null)
+          _helper(),
         if (widget.card == null && widget.cardOnFile) _cardOnFileHint(),
         Expanded(
           child: ClipRRect(
@@ -260,6 +293,11 @@ class _MoamalatCheckoutPageState extends State<MoamalatCheckoutPage> {
           ),
         ),
     ]);
+  }
+
+  Widget _helper() {
+    final card = widget.card!;
+    return CardHelperPanel(env: env, card: card, fetchCard: () => env.vault.byId(card.id));
   }
 
   Widget _cardOnFileHint() {
@@ -348,21 +386,31 @@ class _MoamalatCheckoutPageState extends State<MoamalatCheckoutPage> {
   }
 
   /// The real payment view: a WebView with a JS channel the hosted page uses
-  /// to say what the gateway reported. Only https pages are allowed.
-  static Widget _platformView(
-    BuildContext context, {
-    required String url,
-    required void Function(String message) onMessage,
-    required VoidCallback onLoaded,
-    required void Function(String description) onLoadError,
-  }) {
-    return _PlatformPaymentView(url: url, onMessage: onMessage, onLoaded: onLoaded, onLoadError: onLoadError);
+  /// to say what the gateway reported (and, for Smart Fill, the native frame bridge).
+  Widget _realView(BuildContext context, {required String url, required void Function(String message) onMessage, required VoidCallback onLoaded, required void Function(String description) onLoadError}) {
+    return _PlatformPaymentView(
+      url: url,
+      onMessage: onMessage,
+      onLoaded: onLoaded,
+      onLoadError: onLoadError,
+      smart: _smart,
+      allowedSchemes: widget.allowedMainFrameSchemes,
+    );
   }
 }
 
 class _PlatformPaymentView extends StatefulWidget {
-  const _PlatformPaymentView({required this.url, required this.onMessage, required this.onLoaded, required this.onLoadError});
+  const _PlatformPaymentView({
+    required this.url,
+    required this.onMessage,
+    required this.onLoaded,
+    required this.onLoadError,
+    this.smart,
+    this.allowedSchemes = const {'https', 'about'},
+  });
 
+  final SmartFillController? smart;
+  final Set<String> allowedSchemes;
   final String url;
   final void Function(String message) onMessage;
   final VoidCallback onLoaded;
@@ -391,10 +439,33 @@ class _PlatformPaymentViewState extends State<_PlatformPaymentView> {
           // page itself may only ever move to https.
           if (!request.isMainFrame) return NavigationDecision.navigate;
           final scheme = Uri.tryParse(request.url)?.scheme ?? '';
-          return (scheme == 'https' || scheme == 'about') ? NavigationDecision.navigate : NavigationDecision.prevent;
+          return widget.allowedSchemes.contains(scheme) ? NavigationDecision.navigate : NavigationDecision.prevent;
         },
-      ))
-      ..loadRequest(Uri.parse(widget.url));
+      ));
+    _start();
+  }
+
+  /// Smart Fill's frame script must be in place BEFORE the page loads, so the
+  /// native side is connected first and the page is requested afterwards.
+  Future<void> _start() async {
+    final smart = widget.smart;
+    if (smart != null) {
+      final id = _nativeId(_controller);
+      if (id == null) {
+        smart.markUnsupported();
+      } else {
+        await smart.attach(id);
+      }
+    }
+    if (!mounted) return;
+    await _controller.loadRequest(Uri.parse(widget.url));
+  }
+
+  static int? _nativeId(WebViewController controller) {
+    final platform = controller.platform;
+    if (platform is WebKitWebViewController) return platform.webViewIdentifier;
+    if (platform is AndroidWebViewController) return platform.webViewIdentifier;
+    return null;
   }
 
   @override

@@ -78,6 +78,8 @@ dependencies {
     implementation 'com.google.firebase:firebase-analytics'
     // Optional card scan: text recognition with the model bundled in the app.
     implementation 'com.google.mlkit:text-recognition:16.0.1'
+    // Smart Fill: frame-scoped script injection + messaging (exact origin rules, isolated world).
+    implementation 'androidx.webkit:webkit:1.16.0'
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
 
 }

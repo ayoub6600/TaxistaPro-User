@@ -66,6 +66,9 @@ dependencies:
   uuid: ^4.4.2
   vector_math: ^2.1.4
   webview_flutter: ^4.2.4
+  # Smart Fill reaches the platform web view through these plugins\' official native APIs.
+  webview_flutter_android: ^4.3.4
+  webview_flutter_wkwebview: ^3.18.5
   flutter_secure_storage: ^9.2.4
 dev_dependencies:
   fake_async: ^1.3.1

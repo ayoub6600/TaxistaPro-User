@@ -36,6 +36,11 @@ class SavedCard {
   String get expiryText =>
       '${expMonth.toString().padLeft(2, '0')}/${(expYear % 100).toString().padLeft(2, '0')}';
 
+  /// The same card with the number blanked out except its last four digits - safe to keep in
+  /// screen state. The real number is fetched from the vault again only when the
+  /// customer explicitly asks for it (Smart Fill / copy).
+  SavedCard redacted() => copyWith(number: '${'*' * 12}$last4');
+
   /// Name to show in lists: the nickname if there is one, else the holder.
   String get title => (nickname != null && nickname!.trim().isNotEmpty) ? nickname!.trim() : holderName;
 

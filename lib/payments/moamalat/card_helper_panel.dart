@@ -11,10 +11,15 @@ import 'saved_card.dart';
 /// single tap. The card is only ever shown masked, the clipboard is cleared
 /// again automatically, and the CVV is never handled here.
 class CardHelperPanel extends StatefulWidget {
-  const CardHelperPanel({super.key, required this.env, required this.card});
+  const CardHelperPanel({super.key, required this.env, required this.card, this.fetchCard});
 
   final MoamalatEnv env;
+
+  /// What is shown (masked). May be a redacted copy.
   final SavedCard card;
+
+  /// Reads the real card from the vault on the customer's tap; null uses [card] as it is.
+  final Future<SavedCard?> Function()? fetchCard;
 
   @override
   State<CardHelperPanel> createState() => _CardHelperPanelState();
@@ -36,8 +41,10 @@ class _CardHelperPanelState extends State<CardHelperPanel> {
     return null;
   }
 
-  Future<void> _copy(String kind, String value) async {
-    await env.clipboard.copy(value);
+  Future<void> _copy(String kind, String Function(SavedCard card) pick) async {
+    final card = widget.fetchCard == null ? widget.card : await widget.fetchCard!();
+    if (card == null) return;
+    await env.clipboard.copy(pick(card));
     if (mounted) setState(() => _copied.add(kind));
   }
 
@@ -76,12 +83,12 @@ class _CardHelperPanelState extends State<CardHelperPanel> {
         Padding(
           padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
           child: Row(children: [
-            Expanded(child: _copyButton('number', const Key('copy-number'), env.t('الرقم', 'Number'), card.number)),
+            Expanded(child: _copyButton('number', const Key('copy-number'), env.t('الرقم', 'Number'), (c) => c.number)),
             const SizedBox(width: 6),
-            Expanded(child: _copyButton('expiry', const Key('copy-expiry'), env.t('الانتهاء', 'Expiry'), card.expiryText)),
+            Expanded(child: _copyButton('expiry', const Key('copy-expiry'), env.t('الانتهاء', 'Expiry'), (c) => c.expiryText)),
             if (card.holderName.trim().isNotEmpty) ...[
               const SizedBox(width: 6),
-              Expanded(child: _copyButton('name', const Key('copy-name'), env.t('الاسم', 'Name'), card.holderName.trim())),
+              Expanded(child: _copyButton('name', const Key('copy-name'), env.t('الاسم', 'Name'), (c) => c.holderName.trim())),
             ],
           ]),
         ),
@@ -113,7 +120,7 @@ class _CardHelperPanelState extends State<CardHelperPanel> {
     );
   }
 
-  Widget _copyButton(String kind, Key key, String label, String value) {
+  Widget _copyButton(String kind, Key key, String label, String Function(SavedCard card) pick) {
     final done = _copied.contains(kind);
     final isNext = _next == kind;
     final color = isNext ? Colors.white : env.accent;
@@ -131,14 +138,14 @@ class _CardHelperPanelState extends State<CardHelperPanel> {
       return FilledButton(
         key: key,
         style: FilledButton.styleFrom(backgroundColor: env.accent, padding: padding, minimumSize: const Size(0, 38)),
-        onPressed: () => _copy(kind, value),
+        onPressed: () => _copy(kind, pick),
         child: content,
       );
     }
     return OutlinedButton(
       key: key,
       style: OutlinedButton.styleFrom(padding: padding, minimumSize: const Size(0, 38)),
-      onPressed: () => _copy(kind, value),
+      onPressed: () => _copy(kind, pick),
       child: content,
     );
   }
