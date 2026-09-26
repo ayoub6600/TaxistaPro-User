@@ -48,6 +48,7 @@ class SmartFillController extends ChangeNotifier {
     required this.fetchCard,
     this.formTimeout = const Duration(seconds: 20),
     this.collapseAfterSuccess = const Duration(milliseconds: 3500),
+    this.fillTimeout = const Duration(seconds: 15),
   });
 
   final SmartFillSupport support;
@@ -56,6 +57,7 @@ class SmartFillController extends ChangeNotifier {
   final Future<SavedCard?> Function() fetchCard;
   final Duration formTimeout;
   final Duration collapseAfterSuccess;
+  final Duration fillTimeout;
 
   SmartFillPhase _phase = SmartFillPhase.waiting;
   SmartFillPhase get phase => _phase;
@@ -141,13 +143,15 @@ class SmartFillController extends ChangeNotifier {
       if (card == null) {
         result = SmartFillResult.error;
       } else {
-        result = await support.bridge.fill(
-          webViewId: _webViewId!,
-          pan: card.number,
-          exp: card.expiryText,
-          name: card.holderName,
-          acceptTerms: true,
-        );
+        result = await support.bridge
+            .fill(
+              webViewId: _webViewId!,
+              pan: card.number,
+              exp: card.expiryText,
+              name: card.holderName,
+              acceptTerms: true,
+            )
+            .timeout(fillTimeout, onTimeout: () => SmartFillResult.error); // a stuck page never leaves the spinner
         card = null; // drop our reference
       }
     } catch (_) {

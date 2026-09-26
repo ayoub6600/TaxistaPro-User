@@ -232,6 +232,8 @@ const String _template = r'''
     if (state !== last) { last = state; post({ t: state, origin: W.location.origin }); }
   }
   function schedule() { if (!timer) timer = W.setTimeout(report, 250); }
+  // The frame is leaving (the bank moved on to its next step, or the page reloads): the form is gone.
+  W.addEventListener('pagehide', function () { last = 'gone'; post({ t: 'gone', origin: W.location.origin }); });
   function start() {
     schedule();
     new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class', 'hidden', 'disabled'] });

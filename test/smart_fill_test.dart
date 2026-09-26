@@ -86,6 +86,10 @@ void main() {
       expect(s, contains('ORIGINS.indexOf(W.location.origin) < 0) return;'));
     });
 
+    test('tells native the moment its frame is leaving, so the offer never outlives the form', () {
+      expect(buildCardFillScript(kMoamalatGatewayOrigins), contains("addEventListener('pagehide'"));
+    });
+
     test('never handles the CVV, never submits, never sends or stores anything', () {
       final s = buildCardFillScript(kMoamalatGatewayOrigins);
       // The CVV field is only ever used to recognise the form, never written to.
@@ -234,6 +238,21 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 60));
       expect(c.showFallbackHelper, isTrue);
       bridge.emit(7, SmartFillFrameState.ready);
+      expect(c.showFallbackHelper, isFalse);
+      c.dispose();
+    });
+
+    test('a page that never answers ends as a retryable failure, not an endless spinner', () async {
+      final bridge = FakeBridge()..gate = Completer<void>();
+      final c = SmartFillController(
+        support: SmartFillSupport(bridge: bridge, assistantAsset: 'assets/images/rider_mascot.png'),
+        fetchCard: () async => card,
+        fillTimeout: const Duration(milliseconds: 30),
+      );
+      await c.attach(7);
+      bridge.emit(7, SmartFillFrameState.ready);
+      await c.fill();
+      expect(c.phase, SmartFillPhase.failed);
       expect(c.showFallbackHelper, isFalse);
       c.dispose();
     });
