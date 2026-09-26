@@ -337,7 +337,7 @@ void main() {
       await tester.tap(find.byKey(const Key('method-bank_card')));
       await tester.pumpAndSettle();
       expect(find.byType(MoamalatTopUpPage), findsOneWidget);
-      expect(find.text('البطاقات المحفوظة'), findsOneWidget);
+      expect(find.text('بطاقاتي'), findsOneWidget);
       expect(find.text('**** **** **** 1111'), findsOneWidget);
     });
 

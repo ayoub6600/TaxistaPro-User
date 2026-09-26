@@ -92,7 +92,7 @@ class _MoamalatTopUpPageState extends State<MoamalatTopUpPage> {
       final topUp = await env.api.initiate(amount);
       if (!mounted) return;
       final outcome = await Navigator.of(context).push<TopUpOutcome>(
-        MaterialPageRoute(builder: (_) => MoamalatCheckoutPage(env: env, topUp: topUp, card: _selected, viewBuilder: widget.checkoutViewBuilder)),
+        MaterialPageRoute(builder: (_) => MoamalatCheckoutPage(env: env, topUp: topUp, card: _selected, cardOnFile: widget.options.cardOnFile, viewBuilder: widget.checkoutViewBuilder)),
       );
       if (!mounted) return;
       if (outcome == TopUpOutcome.paid) {
@@ -176,7 +176,7 @@ class _MoamalatTopUpPageState extends State<MoamalatTopUpPage> {
               ],
               const SizedBox(height: 22),
               Row(children: [
-                Expanded(child: Text(env.t('البطاقات المحفوظة', 'Saved cards'), style: env.style(size: 14.5, weight: FontWeight.w800))),
+                Expanded(child: Text(env.t('بطاقاتي', 'My cards'), style: env.style(size: 14.5, weight: FontWeight.w800))),
                 TextButton(
                   key: const Key('manage-cards'),
                   onPressed: () async {
@@ -189,8 +189,13 @@ class _MoamalatTopUpPageState extends State<MoamalatTopUpPage> {
               ]),
               const SizedBox(height: 6),
               if (_cards.isEmpty)
-                Text(env.t('يمكنك حفظ بطاقتك على هذا الجهاز لنسخ بياناتها بسهولة في صفحة الدفع.',
-                    'Save your card on this device to copy its details easily on the payment page.'),
+                Text(
+                    widget.options.cardOnFile
+                        ? env.t('لدفع أسرع في المرة القادمة: فعّل «حفظ البطاقة» في صفحة الدفع الآمنة وستجد بطاقتك جاهزة.',
+                            'For faster payments next time, turn on “Save card” on the secure payment page and your card will be ready.')
+                        : env.t('يمكنك حفظ بطاقتك على هذا الجهاز لنسخ بياناتها بسهولة في صفحة الدفع.',
+                            'Save your card on this device to copy its details easily on the payment page.'),
+                    key: const Key('cards-empty-note'),
                     style: env.style(size: 12.5, weight: FontWeight.w500, color: env.muted))
               else ...[
                 for (final card in _cards)

@@ -30,17 +30,27 @@ class MoamalatCheckoutPage extends StatefulWidget {
     required this.env,
     required this.topUp,
     this.card,
+    this.cardOnFile = false,
     this.viewBuilder,
     this.settleTimeout = const Duration(seconds: 30),
     this.loadTimeout = const Duration(seconds: 30),
+    this.autoCloseAfter = const Duration(milliseconds: 2500),
   });
 
   final MoamalatEnv env;
   final MoamalatTopUp topUp;
   final SavedCard? card;
+
+  /// The bank keeps cards for our customers: the payment page offers the saved
+  /// ones, so the customer is told to pick theirs instead of typing a card.
+  final bool cardOnFile;
   final PaymentViewBuilder? viewBuilder;
   final Duration settleTimeout;
   final Duration loadTimeout;
+
+  /// After a confirmed payment the success screen shows this long, then the
+  /// customer is returned to the wallet on their own.
+  final Duration autoCloseAfter;
 
   @override
   State<MoamalatCheckoutPage> createState() => _MoamalatCheckoutPageState();
@@ -53,6 +63,7 @@ class _MoamalatCheckoutPageState extends State<MoamalatCheckoutPage> {
   bool _loadFailed = false;
   int _attempt = 0; // bumped to rebuild the web view on retry
   Timer? _loadTimer;
+  Timer? _autoCloseTimer;
 
   MoamalatEnv get env => widget.env;
 
@@ -65,6 +76,7 @@ class _MoamalatCheckoutPageState extends State<MoamalatCheckoutPage> {
   @override
   void dispose() {
     _loadTimer?.cancel();
+    _autoCloseTimer?.cancel();
     // Never leave a card number on the clipboard after the payment screen.
     env.clipboard.clearNow();
     super.dispose();
@@ -113,7 +125,14 @@ class _MoamalatCheckoutPageState extends State<MoamalatCheckoutPage> {
       _outcome = outcome;
       _phase = _Phase.done;
     });
-    if (outcome == TopUpOutcome.paid) env.clipboard.clearNow();
+    if (outcome == TopUpOutcome.paid) {
+      env.clipboard.clearNow();
+      // Money is in the wallet: show it, then go back without another tap.
+      _autoCloseTimer?.cancel();
+      _autoCloseTimer = Timer(widget.autoCloseAfter, () {
+        if (mounted && _phase == _Phase.done) Navigator.of(context).pop(_outcome);
+      });
+    }
   }
 
   Future<void> _recheck() async {
@@ -180,6 +199,7 @@ class _MoamalatCheckoutPageState extends State<MoamalatCheckoutPage> {
     return Stack(children: [
       Column(children: [
         if (widget.card != null) CardHelperPanel(env: env, card: widget.card!),
+        if (widget.card == null && widget.cardOnFile) _cardOnFileHint(),
         Expanded(
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
@@ -242,6 +262,26 @@ class _MoamalatCheckoutPageState extends State<MoamalatCheckoutPage> {
     ]);
   }
 
+  Widget _cardOnFileHint() {
+    return Container(
+      key: const Key('card-on-file-hint'),
+      margin: const EdgeInsets.fromLTRB(12, 6, 12, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(color: env.accent.withOpacity(0.08), borderRadius: BorderRadius.circular(12)),
+      child: Row(children: [
+        Icon(Icons.credit_score_rounded, size: 18, color: env.accent),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            env.t('إن ظهرت بطاقتك المحفوظة لدى البنك فاخترها وأدخل رمز الأمان (CVV) فقط.',
+                'If your card saved with the bank appears, pick it and enter only the security code (CVV).'),
+            style: env.style(size: 12, weight: FontWeight.w600, color: env.text),
+          ),
+        ),
+      ]),
+    );
+  }
+
   Widget _result() {
     final outcome = _outcome ?? TopUpOutcome.unconfirmed;
     final IconData icon;
@@ -280,6 +320,11 @@ class _MoamalatCheckoutPageState extends State<MoamalatCheckoutPage> {
           const SizedBox(height: 8),
           Text(body, key: const Key('result-body'), textAlign: TextAlign.center, style: env.style(size: 13.5, weight: FontWeight.w500, color: env.muted)),
           const SizedBox(height: 24),
+          if (outcome == TopUpOutcome.paid) ...[
+            Text(env.t('نعيدك إلى المحفظة…', 'Taking you back to your wallet…'),
+                key: const Key('auto-return-note'), style: env.style(size: 12, weight: FontWeight.w600, color: env.muted)),
+            const SizedBox(height: 12),
+          ],
           if (outcome == TopUpOutcome.unconfirmed)
             OutlinedButton(
               key: const Key('recheck'),

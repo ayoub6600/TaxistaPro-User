@@ -29,6 +29,7 @@ class FakeApi implements MoamalatApi {
   final List<double> initiated = [];
   int statusCalls = 0;
   bool failStatusWithNetwork = false;
+  bool cardOnFile = false;
 
   List<PaymentMethodOption> methodList = const [
     PaymentMethodOption(key: 'qareeb_card', labelAr: 'كروت شحن قريب', labelEn: 'Qareeb recharge cards'),
@@ -43,7 +44,7 @@ class FakeApi implements MoamalatApi {
   }
 
   @override
-  Future<MoamalatOptions> options() async => MoamalatOptions(available: available, currency: 'LYD', minAmount: 5, maxAmount: 2000);
+  Future<MoamalatOptions> options() async => MoamalatOptions(available: available, currency: 'LYD', minAmount: 5, maxAmount: 2000, cardOnFile: cardOnFile);
 
   @override
   Future<MoamalatTopUp> initiate(double amount) async {
@@ -246,6 +247,14 @@ void main() {
   group('http api', () {
     HttpMoamalatApi apiWith(MockClient client) => HttpMoamalatApi(baseUrl: 'https://api.example/', token: () => 'tok', client: client);
 
+    test('options carry the server\'s card-on-file switch, off unless the server says true', () async {
+      Future<MoamalatOptions> read(String body) => apiWith(MockClient((_) async => http.Response(body, 200))).options();
+      expect((await read('{"data":{"available":true,"currency":"LYD","min_amount":5,"max_amount":2000,"card_on_file":true}}')).cardOnFile, isTrue);
+      expect((await read('{"data":{"available":true,"currency":"LYD","card_on_file":false}}')).cardOnFile, isFalse);
+      expect((await read('{"data":{"available":true,"currency":"LYD"}}')).cardOnFile, isFalse, reason: 'an older server says nothing');
+      expect((await read('{"data":{"available":true,"card_on_file":"true"}}')).cardOnFile, isFalse, reason: 'only a real true counts');
+    });
+
     test('reads options and sends the bearer token', () async {
       late http.Request seen;
       final api = apiWith(MockClient((request) async {
@@ -368,15 +377,18 @@ void main() {
   });
 
   group('card helper panel', () {
+    const card = SavedCard(id: 'a', holderName: 'Ali Ben', number: visa, expMonth: 12, expYear: 2028);
+
+    Future<void> pumpPanel(WidgetTester tester, MoamalatEnv env, {SavedCard c = card}) =>
+        tester.pumpWidget(MaterialApp(home: Scaffold(body: CardHelperPanel(env: env, card: c))));
+
     testWidgets('shows only the masked number and copies the real values on request', (tester) async {
       final log = <String>[];
       final env = makeEnv(clipboardLog: log);
-      const card = SavedCard(id: 'a', holderName: 'Ali Ben', number: visa, expMonth: 12, expYear: 2028);
-      await tester.pumpWidget(MaterialApp(home: Scaffold(body: CardHelperPanel(env: env, card: card))));
+      await pumpPanel(tester, env);
 
       expect(find.text('بطاقتك المحفوظة'), findsOneWidget);
       expect(find.text('**** **** **** 1111'), findsWidgets);
-      expect(find.text('12/28'), findsOneWidget);
       expect(find.textContaining(visa), findsNothing);
 
       await tester.tap(find.byKey(const Key('copy-number')));
@@ -389,6 +401,79 @@ void main() {
       expect(env.clipboard.holdsSecret, isTrue);
       await env.clipboard.clearNow();
       expect(log.last, '');
+    });
+
+    testWidgets('is one slim bar by default and shows the masked details only when opened', (tester) async {
+      final env = makeEnv();
+      await pumpPanel(tester, env);
+
+      expect(find.text('12/28'), findsNothing);
+      expect(find.byKey(const Key('copy-number')), findsOneWidget);
+      expect(find.byKey(const Key('copy-expiry')), findsOneWidget);
+      expect(find.byKey(const Key('copy-name')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('helper-toggle')));
+      await tester.pump();
+      expect(find.text('12/28'), findsOneWidget);
+      expect(find.text('Ali Ben'), findsWidgets);
+      expect(find.textContaining(visa), findsNothing);
+    });
+
+    testWidgets('one tap copies each detail and the next one is offered: number, expiry, name', (tester) async {
+      final log = <String>[];
+      final env = makeEnv(clipboardLog: log);
+      await pumpPanel(tester, env);
+
+      Widget button(String key) => tester.widget(find.byKey(Key(key)));
+      expect(button('copy-number'), isA<FilledButton>());
+      expect(button('copy-expiry'), isA<OutlinedButton>());
+
+      await tester.tap(find.byKey(const Key('copy-number')));
+      await tester.pump();
+      expect(button('copy-expiry'), isA<FilledButton>());
+      expect(button('copy-number'), isA<OutlinedButton>());
+
+      await tester.tap(find.byKey(const Key('copy-expiry')));
+      await tester.pump();
+      expect(button('copy-name'), isA<FilledButton>());
+
+      await tester.tap(find.byKey(const Key('copy-name')));
+      await tester.pump();
+      expect(log, [visa, '12/28', 'Ali Ben']);
+      for (final key in ['copy-number', 'copy-expiry', 'copy-name']) {
+        expect(button(key), isA<OutlinedButton>(), reason: 'nothing left to suggest');
+      }
+      await env.clipboard.clearNow();
+    });
+
+    testWidgets('fits a narrow phone in both languages, with and without the details open', (tester) async {
+      tester.view.devicePixelRatio = 3;
+      tester.view.physicalSize = const Size(320 * 3, 640 * 3);
+      addTearDown(tester.view.reset);
+      for (final rtl in [true, false]) {
+        final env = MoamalatEnv(
+          api: FakeApi(),
+          vault: CardVault(store: MemorySecretStore(), ownerId: '27'),
+          clipboard: SecureClipboard(writer: (_) async {}),
+          isRtl: rtl,
+        );
+        await pumpPanel(tester, env);
+        await tester.tap(find.byKey(const Key('copy-number')));
+        await tester.pump();
+        await tester.tap(find.byKey(const Key('helper-toggle')));
+        await tester.pump();
+        final problem = tester.takeException();
+        expect(problem, isNull, reason: 'no overflow at 320 dp (rtl=$rtl): ${problem is FlutterError ? problem.toStringDeep() : problem}');
+        expect(tester.getSize(find.byType(CardHelperPanel)).width, lessThanOrEqualTo(320));
+        await env.clipboard.clearNow(); // cancels the auto-clear timer
+      }
+    });
+
+    testWidgets('a card with no holder name offers no name button', (tester) async {
+      final env = makeEnv();
+      await pumpPanel(tester, env, c: const SavedCard(id: 'b', holderName: '', number: visa, expMonth: 12, expYear: 2028));
+      expect(find.byKey(const Key('copy-name')), findsNothing);
+      expect(find.byKey(const Key('copy-number')), findsOneWidget);
     });
   });
 
@@ -442,7 +527,7 @@ void main() {
           return Container(key: const Key('payment-view'), color: Colors.grey);
         };
 
-    Future<TopUpOutcome?> open(WidgetTester tester, {required MoamalatEnv env, SavedCard? card, bool loads = true, Duration? settle}) async {
+    Future<TopUpOutcome?> open(WidgetTester tester, {required MoamalatEnv env, SavedCard? card, bool loads = true, Duration? settle, bool cardOnFile = false, Duration? autoClose}) async {
       TopUpOutcome? result;
       await tester.pumpWidget(MaterialApp(
         home: Builder(
@@ -454,6 +539,8 @@ void main() {
                   builder: (_) => MoamalatCheckoutPage(
                     env: env,
                     card: card,
+                    cardOnFile: cardOnFile,
+                    autoCloseAfter: autoClose ?? const Duration(hours: 1),
                     viewBuilder: fakeView(loads: loads),
                     settleTimeout: settle ?? Duration.zero,
                     loadTimeout: const Duration(seconds: 2),
@@ -553,6 +640,70 @@ void main() {
 
       expect(api.statusCalls, 1);
       expect(find.byKey(const Key('open')), findsOneWidget, reason: 'returned to the previous screen');
+    });
+
+    testWidgets('after a confirmed payment the customer is returned to the wallet on their own', (tester) async {
+      final api = FakeApi(statuses: const [MoamalatStatus(status: 'paid', credited: true)]);
+      final env = makeEnv(api: api);
+      await open(tester, env: env, autoClose: const Duration(seconds: 2));
+
+      send('done');
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('result-title')), findsOneWidget);
+      expect(find.byKey(const Key('auto-return-note')), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('result-title')), findsNothing);
+      expect(find.byKey(const Key('open')), findsOneWidget, reason: 'back on the previous screen');
+    });
+
+    testWidgets('a payment that is not confirmed stays on screen until the customer decides', (tester) async {
+      final api = FakeApi(statuses: const [MoamalatStatus(status: 'needs_review', credited: false)]);
+      final env = makeEnv(api: api);
+      await open(tester, env: env, autoClose: const Duration(seconds: 1));
+
+      send('done');
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 5));
+
+      expect(find.byKey(const Key('result-title')), findsOneWidget);
+      expect(find.byKey(const Key('auto-return-note')), findsNothing);
+      expect(find.byKey(const Key('recheck')), findsOneWidget);
+    });
+
+    testWidgets('the Done button still returns immediately and the timer does not pop twice', (tester) async {
+      final api = FakeApi(statuses: const [MoamalatStatus(status: 'paid', credited: true)]);
+      final env = makeEnv(api: api);
+      await open(tester, env: env, autoClose: const Duration(seconds: 2));
+
+      send('done');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('result-done')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('open')), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 5)); // a late timer must not pop the screen underneath
+      expect(find.byKey(const Key('open')), findsOneWidget);
+    });
+
+    testWidgets('when the bank keeps cards, a customer with no saved card is told to pick theirs on the page', (tester) async {
+      final env = makeEnv();
+      await open(tester, env: env, cardOnFile: true);
+      expect(find.byKey(const Key('card-on-file-hint')), findsOneWidget);
+      expect(find.byType(CardHelperPanel), findsNothing);
+    });
+
+    testWidgets('no hint when the bank does not keep cards, and no hint next to the device helper', (tester) async {
+      await open(tester, env: makeEnv(), cardOnFile: false);
+      expect(find.byKey(const Key('card-on-file-hint')), findsNothing);
+    });
+
+    testWidgets('a device-saved card keeps its helper even when the bank keeps cards', (tester) async {
+      const card = SavedCard(id: 'a', holderName: 'Ali', number: visa, expMonth: 12, expYear: 2028);
+      await open(tester, env: makeEnv(), card: card, cardOnFile: true);
+      expect(find.byType(CardHelperPanel), findsOneWidget);
+      expect(find.byKey(const Key('card-on-file-hint')), findsNothing);
     });
 
     testWidgets('leaving the payment screen clears a copied card number from the clipboard', (tester) async {

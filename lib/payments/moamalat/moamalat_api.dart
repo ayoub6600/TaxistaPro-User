@@ -29,12 +29,18 @@ class MoamalatOptions {
     this.currency,
     this.minAmount = 0,
     this.maxAmount = 0,
+    this.cardOnFile = false,
   });
 
   final bool available;
   final String? currency;
   final double minAmount;
   final double maxAmount;
+
+  /// The server says the bank keeps cards for its customers (card-on-file is
+  /// on for our terminal). The payment page itself then offers "save card" and
+  /// lists the saved ones; the app only tells the customer to use it.
+  final bool cardOnFile;
 
   static const unavailable = MoamalatOptions(available: false);
 }
@@ -162,6 +168,7 @@ class HttpMoamalatApi implements MoamalatApi {
       currency: data['currency']?.toString(),
       minAmount: double.tryParse(data['min_amount']?.toString() ?? '') ?? 0,
       maxAmount: double.tryParse(data['max_amount']?.toString() ?? '') ?? 0,
+      cardOnFile: data['card_on_file'] == true,
     );
   }
 
