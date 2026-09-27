@@ -277,10 +277,10 @@ class _ConsentCard extends StatelessWidget {
                 children: [
                   TextSpan(text: rtl ? 'أوافق على ' : 'I agree to the '),
                   _link(rtl ? 'شروط الاستخدام' : 'Terms of Use',
-                      'terms and conditions url'),
+                      '${url}terms'),
                   TextSpan(text: rtl ? ' و' : ' and '),
                   _link(rtl ? 'سياسة الخصوصية' : 'Privacy Policy',
-                      'privacy policy url'),
+                      '${url}privacy'),
                 ],
               ),
             ),

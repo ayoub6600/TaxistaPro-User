@@ -49,10 +49,9 @@ class _EditProfileState extends State<EditProfile> {
 
         /// use [Permissions.storage.status]
       } else {
-        status = await Permission.photos.status;
-        if (status != PermissionStatus.granted) {
-          status = await Permission.photos.request();
-        }
+        // Android 13+: image_picker uses the system photo picker, which needs no
+        // media permission (and the app no longer declares READ_MEDIA_IMAGES).
+        status = PermissionStatus.granted;
       }
     } else {
       status = await Permission.photos.status;

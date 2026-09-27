@@ -72,7 +72,7 @@ class _AboutState extends State<About> {
                       //terms and condition
                       InkWell(
                           onTap: () {
-                            openBrowser('terms and conditions url');
+                            openBrowser('${url}terms');
                           },
                           child: MyText(
                             text: languages[choosenLanguage]
@@ -87,22 +87,10 @@ class _AboutState extends State<About> {
                       //privacy policy
                       InkWell(
                           onTap: () {
-                            openBrowser('privacy policy url');
+                            openBrowser('${url}privacy');
                           },
                           child: MyText(
                             text: languages[choosenLanguage]['text_privacy'],
-                            size: media.width * sixteen,
-                            fontweight: FontWeight.w600,
-                          )),
-                      SizedBox(
-                        height: media.width * 0.05,
-                      ),
-                      InkWell(
-                          onTap: () {
-                            openBrowser('website url');
-                          },
-                          child: MyText(
-                            text: languages[choosenLanguage]['text_about'],
                             size: media.width * sixteen,
                             fontweight: FontWeight.w600,
                           )),
