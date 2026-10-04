@@ -52,10 +52,12 @@ android {
 
     signingConfigs {
         release {
-            storeFile file('my-release-key.jks')
-            storePassword '000000'
-            keyAlias 'my-key-alias'
-            keyPassword '000000'
+            if (keystorePropertiesFile.exists()) {
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
         }
     }
 
