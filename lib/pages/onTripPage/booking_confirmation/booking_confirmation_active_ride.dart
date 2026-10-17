@@ -889,11 +889,10 @@ mixin _BookingConfirmationActiveRide
                                                       : (userRequestData[
                                                                   'payment_opt'] ==
                                                               '2')
-                                                          ? languages[
-                                                                  choosenLanguage]
+                                                          ? languages[choosenLanguage]
                                                               ['text_wallet']
-                                                          : (userRequestData[
-                                                                      'payment_opt'] ==
+                                                          : (userRequestData['payment_opt']
+                                                                      .toString() ==
                                                                   '3')
                                                               ? languages[
                                                                       choosenLanguage]
@@ -927,7 +926,8 @@ mixin _BookingConfirmationActiveRide
                                                     MyText(
                                                       textAlign: TextAlign.end,
                                                       text: userRequestData[
-                                                                  'payment_opt'] ==
+                                                                      'payment_opt']
+                                                                  .toString() ==
                                                               '3'
                                                           ? '${userRequestData['requested_currency_symbol'] ?? 'LYD'} ${userRequestData['cash_due_amount'] ?? 0}'
                                                           : _resolvedRideFareText(
