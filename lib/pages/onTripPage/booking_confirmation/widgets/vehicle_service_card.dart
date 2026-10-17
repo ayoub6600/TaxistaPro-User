@@ -177,15 +177,48 @@ class VehicleServiceCard extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           if (mode == RidePricingMode.riderOffer)
-            _PricingBadge(label: offerFareLabel)
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                _PricingBadge(label: offerFareLabel),
+                if (service['signup_bonus_available'] == true &&
+                    service['signup_bonus_amount'] is num) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    isArabic
+                        ? 'هدية أول رحلة حتى ${service['signup_bonus_amount']} دينار'
+                        : 'First ride gift up to ${service['signup_bonus_amount']} LYD',
+                    maxLines: 1,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ],
+            )
           else
             _Fare(
               currency: service['currency']?.toString() ?? '',
-              total: chosenFare != null
-                  ? _formatFare(chosenFare!)
-                  : service['total']?.toString() ?? '--',
-              discountedTotal:
-                  hasDiscount ? service['discounted_totel']?.toString() : null,
+              total: service['automatic_gift_discount'] is num
+                  ? (service['automatic_gift_fare_before']?.toString() ??
+                      (service['has_discount'] == true
+                          ? service['discounted_totel']?.toString() ?? '--'
+                          : chosenFare != null
+                              ? _formatFare(chosenFare!)
+                              : service['total']?.toString() ?? '--'))
+                  : chosenFare != null
+                      ? _formatFare(chosenFare!)
+                      : service['total']?.toString() ?? '--',
+              discountedTotal: service['automatic_gift_discount'] is num
+                  ? service['signup_bonus_payable']?.toString()
+                  : hasDiscount
+                      ? service['discounted_totel']?.toString()
+                      : null,
+              giftDiscount: service['automatic_gift_discount']?.toString(),
+              giftLabel: isArabic ? 'هدية أول رحلة' : 'First ride gift',
             ),
         ]),
         if (selected &&
@@ -355,11 +388,15 @@ class _Fare extends StatelessWidget {
     required this.currency,
     required this.total,
     this.discountedTotal,
+    this.giftDiscount,
+    this.giftLabel,
   });
 
   final String currency;
   final String total;
   final String? discountedTotal;
+  final String? giftDiscount;
+  final String? giftLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -386,6 +423,18 @@ class _Fare extends StatelessWidget {
             fontWeight: FontWeight.w800,
           ),
         ),
+        if (giftDiscount != null) ...[
+          const SizedBox(height: 2),
+          Text(
+            '${giftLabel ?? ''} −$currency $giftDiscount'.trim(),
+            maxLines: 1,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.primary,
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ],
     );
   }

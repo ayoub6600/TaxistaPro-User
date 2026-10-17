@@ -17,6 +17,7 @@ import 'package:latlong2/latlong.dart' as fmlt;
 import 'package:location/location.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart' as perm;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:taxista/pages/onTripPage/debouncer.dart';
 import 'package:uuid/uuid.dart';
 import 'package:vector_math/vector_math.dart' as vector;
@@ -219,7 +220,10 @@ class _MapsState extends State<Maps>
     getLocs();
     unawaited(getActiveRiderBookings());
     unawaited(refreshPromotionCampaigns().then((_) {
-      if (mounted) setState(() {});
+      if (mounted) {
+        setState(() {});
+        unawaited(_showSignupWelcomeGiftOnce());
+      }
     }));
     // "A driver priced your scheduled ride": one light check on arrival; after
     // that it is kept current by the push notification and the resume reconcile.
@@ -272,7 +276,10 @@ class _MapsState extends State<Maps>
   /// tries again a little later.
   Future<void> _onResumed() async {
     unawaited(refreshPromotionCampaigns().then((_) {
-      if (mounted) setState(() {});
+      if (mounted) {
+        setState(() {});
+        unawaited(_showSignupWelcomeGiftOnce());
+      }
     }));
     _restoreAfterResume();
     final outcome = await _resume.run(_reconcileAfterResume);
@@ -290,6 +297,80 @@ class _MapsState extends State<Maps>
             : const Duration(seconds: 3), () {
       _resumeRetryScheduled = false;
       if (mounted) unawaited(_onResumed());
+    });
+  }
+
+  Future<void> _showSignupWelcomeGiftOnce() async {
+    Map<String, dynamic>? campaign;
+    for (final item in activePromotionCampaigns) {
+      if (item['type'] == 'signup_bonus' &&
+          item['signup_bonus_credited'] == true &&
+          item['signup_bonus_consumed'] != true) {
+        campaign = item;
+        break;
+      }
+    }
+    if (campaign == null) return;
+
+    final campaignId = campaign['id']?.toString();
+    final userId = userDetails['id']?.toString() ??
+        userDetails['user_id']?.toString() ??
+        'current-user';
+    if (campaignId == null || campaignId.isEmpty) return;
+    final preferences = await SharedPreferences.getInstance();
+    final seenKey = 'taxista_signup_gift_seen_${userId}_$campaignId';
+    if (preferences.getBool(seenKey) == true) return;
+    await preferences.setBool(seenKey, true);
+    if (!mounted) return;
+
+    final reward =
+        (campaign['reward_amount'] as num?)?.toStringAsFixed(0) ?? '10';
+    final isArabic = languageDirection == 'rtl';
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showGeneralDialog<void>(
+        context: context,
+        barrierDismissible: true,
+        barrierLabel: 'Welcome gift',
+        barrierColor: Colors.black54,
+        transitionDuration: const Duration(milliseconds: 360),
+        pageBuilder: (context, animation, secondaryAnimation) => AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.card_giftcard_rounded,
+                  color: Color(0xff18A874), size: 56),
+              const SizedBox(height: 14),
+              Text(
+                isArabic ? 'مرحبًا بك في تاكسيستا!' : 'Welcome to Taxista!',
+                textAlign: TextAlign.center,
+                style:
+                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+              ),
+              Text(
+                isArabic
+                    ? 'ربحت $reward دينار. سيُخصم تلقائيًا من أول رحلة لك.'
+                    : 'You got $reward LYD. It will be applied automatically to your first ride.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 15, height: 1.45),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(isArabic ? 'رائع!' : 'Great!'),
+            ),
+          ],
+        ),
+        transitionBuilder: (context, animation, secondaryAnimation, child) =>
+            ScaleTransition(
+          scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+          child: child,
+        ),
+      );
     });
   }
 

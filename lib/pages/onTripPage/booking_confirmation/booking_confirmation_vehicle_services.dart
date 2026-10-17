@@ -119,6 +119,33 @@ mixin _BookingConfirmationVehicleServices
                           service['scheduled_discounted_total'];
                     }
                   }
+                  // Use only the server's first-ride gift quote for display.
+                  // Keep the canonical fare/quote untouched in etaDetails so
+                  // booking still sends the original fare to backend validation.
+                  if (service['signup_bonus_available'] == true &&
+                      service['signup_bonus_amount'] is num) {
+                    final fareBeforeGift = double.tryParse(
+                          (service['has_discount'] == true
+                                      ? service['discounted_totel']
+                                      : service['total'])
+                                  ?.toString() ??
+                              '',
+                        ) ??
+                        0;
+                    final gift = min(
+                      fareBeforeGift,
+                      (service['signup_bonus_amount'] as num).toDouble(),
+                    );
+                    if (gift > 0) {
+                      service['automatic_gift_fare_before'] = fareBeforeGift;
+                      service['signup_bonus_payable'] =
+                          max(0, fareBeforeGift - gift);
+                      service['has_discount'] = true;
+                      service['discounted_totel'] =
+                          service['signup_bonus_payable'];
+                      service['automatic_gift_discount'] = gift;
+                    }
+                  }
                   return service;
                 }(),
                 selected: choosenVehicle == index,

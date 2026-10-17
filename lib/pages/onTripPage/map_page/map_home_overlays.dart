@@ -463,7 +463,7 @@ class _RiderPromotionHomeCard extends StatelessWidget {
     final isSignup = campaign['type'] == 'signup_bonus';
     final reward =
         (campaign['reward_amount'] as num?)?.toStringAsFixed(0) ?? '0';
-    final currency = campaign['currency_symbol']?.toString() ?? 'د.ل';
+    final currency = rtl ? 'دينار' : 'LYD';
     final rides = (campaign['completed_rides'] as num?)?.toInt() ?? 0;
     final target = (campaign['required_rides'] as num?)?.toInt() ?? 0;
     final credited = campaign['signup_bonus_credited'] == true;
@@ -481,8 +481,8 @@ class _RiderPromotionHomeCard extends StatelessWidget {
     final subtitle = isSignup
         ? (credited
             ? (rtl
-                ? 'استخدم رصيدك في رحلتك القادمة'
-                : 'Use your credit on your next ride')
+                ? 'سيُخصم تلقائيًا من أول رحلة'
+                : 'Applied automatically to your first ride')
             : (rtl
                 ? 'عرض خاص للحسابات الجديدة'
                 : 'A special offer for new accounts'))
