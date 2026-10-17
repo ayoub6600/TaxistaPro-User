@@ -271,6 +271,9 @@ class _MapsState extends State<Maps>
   /// safer to reset to, so a failed reconcile just releases every lock and
   /// tries again a little later.
   Future<void> _onResumed() async {
+    unawaited(refreshPromotionCampaigns().then((_) {
+      if (mounted) setState(() {});
+    }));
     _restoreAfterResume();
     final outcome = await _resume.run(_reconcileAfterResume);
     if (!mounted || outcome == ResumeOutcome.reconciled) return;

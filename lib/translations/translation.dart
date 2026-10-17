@@ -302,7 +302,7 @@ Map<String, dynamic> languages = {
     "Cancellation Fee": "رسوم الإلغاء",
     "Money Deposited By Admin": "فلوس تم ايداعها عن طريق الأدمن",
     "Referral Commission": "عمولة الإحالة",
-    "Spent For Trip Request": "قضى لطلب الرحلة",
+    "Spent For Trip Request": "المبلغ المستخدم للرحلة",
     "Withdrawn From Wallet": "انسحب من المحفظة",
     "text_user_cancelled_request": "الراكب ألغى الطلب",
     "text_low_balance":

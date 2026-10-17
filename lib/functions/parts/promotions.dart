@@ -18,6 +18,9 @@ Future<void> refreshPromotionCampaigns() async {
       activePromotionCampaigns = campaigns
           .whereType<Map>()
           .map((item) => Map<String, dynamic>.from(item))
+          // Signup credit is consumed automatically through wallet payment.
+          // Once the API confirms a wallet debit, remove the welcome banner.
+          .where((item) => item['signup_bonus_consumed'] != true)
           .toList(growable: false);
     }
   } catch (_) {
