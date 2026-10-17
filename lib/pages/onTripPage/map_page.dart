@@ -218,6 +218,9 @@ class _MapsState extends State<Maps>
 
     getLocs();
     unawaited(getActiveRiderBookings());
+    unawaited(refreshPromotionCampaigns().then((_) {
+      if (mounted) setState(() {});
+    }));
     // "A driver priced your scheduled ride": one light check on arrival; after
     // that it is kept current by the push notification and the resume reconcile.
     unawaited(refreshScheduledOfferSummary());
@@ -235,9 +238,10 @@ class _MapsState extends State<Maps>
   // delivers. Everything here is idempotent: no timer or listener is created
   // unless it does not already exist.
   void _openScheduledOffers() {
-    guardedPush(context,
-            MaterialPageRoute(builder: (_) => const UpcomingScheduledRidesPage()))
-        .then((_) {
+    guardedPush(
+        context,
+        MaterialPageRoute(
+            builder: (_) => const UpcomingScheduledRidesPage())).then((_) {
       // Coming back from the page: the answer may have changed the banner.
       if (mounted) unawaited(refreshScheduledOfferSummary(force: true));
     });
@@ -345,7 +349,9 @@ class _MapsState extends State<Maps>
   /// Loads the map style JSON only when the theme actually changed, instead of
   /// re-reading and re-applying it on every lifecycle event.
   Future<void> _applyMapStyleIfChanged() async {
-    final key = isDarkTheme == true ? 'assets/dark.json' : 'assets/map_style_black.json';
+    final key = isDarkTheme == true
+        ? 'assets/dark.json'
+        : 'assets/map_style_black.json';
     if (key == _appliedMapStyleKey && _controller != null) return;
     mapStyle = await rootBundle.loadString(key);
     if (!mounted) return;

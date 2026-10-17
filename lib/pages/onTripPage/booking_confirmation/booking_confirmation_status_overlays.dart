@@ -128,6 +128,8 @@ mixin _BookingConfirmationStatusOverlays
       copy: Map<String, dynamic>.from(languages[choosenLanguage]),
       promoController: promoKey,
       promoStatus: promoStatus is int ? promoStatus as int : null,
+      allowCoupons: widget.type == 1 ||
+          etaDetails[choosenVehicle]['coupon_supported'] != false,
       onClose: () {
         setState(() {
           _choosePayment = false;

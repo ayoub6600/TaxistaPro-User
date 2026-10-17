@@ -15,6 +15,17 @@ extension _MapHomeOverlays on _MapsState {
             onTap: _openScheduledOffers,
           ),
         ),
+      if (activePromotionCampaigns.isNotEmpty && _bottom == 0)
+        Positioned(
+          top: MediaQuery.of(context).padding.top +
+              (scheduledOfferSummary.hasOffers ? 126 : 72),
+          left: 16,
+          right: 16,
+          child: _RiderPromotionHomeCard(
+            campaign: activePromotionCampaigns.first,
+            rtl: languageDirection == 'rtl',
+          ),
+        ),
       Positioned(
           top: 0,
           child: Container(
@@ -228,17 +239,26 @@ extension _MapHomeOverlays on _MapsState {
                   margin: const EdgeInsets.symmetric(horizontal: 12),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(colors: [Color(0xff102A56), Color(0xff1965BF)]),
+                    gradient: const LinearGradient(
+                        colors: [Color(0xff102A56), Color(0xff1965BF)]),
                     borderRadius: BorderRadius.circular(20),
-                    boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 16, offset: Offset(0, 6))],
+                    boxShadow: const [
+                      BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 16,
+                          offset: Offset(0, 6))
+                    ],
                   ),
                   child: Row(
                     children: [
                       Container(
                         width: 46,
                         height: 46,
-                        decoration: BoxDecoration(color: Colors.white.withOpacity(0.16), borderRadius: BorderRadius.circular(14)),
-                        child: const Icon(Icons.calendar_month_rounded, color: Colors.white, size: 26),
+                        decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.16),
+                            borderRadius: BorderRadius.circular(14)),
+                        child: const Icon(Icons.calendar_month_rounded,
+                            color: Colors.white, size: 26),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -247,25 +267,44 @@ extension _MapHomeOverlays on _MapsState {
                           children: [
                             Text(
                               activeRiderBookings.isNotEmpty &&
-                                      activeRiderBookings.every((item) => item is Map && (item['is_later'] == true || item['is_later'] == 1))
-                                  ? (languageDirection == 'rtl' ? 'رحلتك المجدولة' : 'Your scheduled ride')
-                                  : (languageDirection == 'rtl' ? 'حجوزاتك القائمة' : 'Your bookings'),
-                              style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800),
+                                      activeRiderBookings.every((item) =>
+                                          item is Map &&
+                                          (item['is_later'] == true ||
+                                              item['is_later'] == 1))
+                                  ? (languageDirection == 'rtl'
+                                      ? 'رحلتك المجدولة'
+                                      : 'Your scheduled ride')
+                                  : (languageDirection == 'rtl'
+                                      ? 'حجوزاتك القائمة'
+                                      : 'Your bookings'),
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w800),
                             ),
                             const SizedBox(height: 5),
                             Text(
-                              activeRiderBookings.length == 1 && activeRiderBookings.first is Map &&
-                                      (activeRiderBookings.first['is_later'] == true || activeRiderBookings.first['is_later'] == 1)
+                              activeRiderBookings.length == 1 &&
+                                      activeRiderBookings.first is Map &&
+                                      (activeRiderBookings.first['is_later'] ==
+                                              true ||
+                                          activeRiderBookings
+                                                  .first['is_later'] ==
+                                              1)
                                   ? '${activeRiderBookings.first['trip_start_time'] ?? ''} · ${activeRiderBookings.first['driver_id'] == null ? (languageDirection == 'rtl' ? 'متاحة للسائقين' : 'Available to drivers') : (languageDirection == 'rtl' ? 'أكدها السائق' : 'Driver confirmed')}'
-                                  : (languageDirection == 'rtl' ? '${activeRiderBookings.length} حجوزات · عرض التفاصيل' : '${activeRiderBookings.length} bookings · View details'),
+                                  : (languageDirection == 'rtl'
+                                      ? '${activeRiderBookings.length} حجوزات · عرض التفاصيل'
+                                      : '${activeRiderBookings.length} bookings · View details'),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(color: Color(0xffDCEBFF), fontSize: 12),
+                              style: const TextStyle(
+                                  color: Color(0xffDCEBFF), fontSize: 12),
                             ),
                           ],
                         ),
                       ),
-                      const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 17),
+                      const Icon(Icons.arrow_forward_ios_rounded,
+                          color: Colors.white, size: 17),
                     ],
                   ),
                 ),
@@ -406,6 +445,108 @@ extension _MapHomeOverlays on _MapsState {
                 text: languages[choosenLanguage]['text_confirm'],
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RiderPromotionHomeCard extends StatelessWidget {
+  const _RiderPromotionHomeCard({required this.campaign, required this.rtl});
+
+  final Map<String, dynamic> campaign;
+  final bool rtl;
+
+  @override
+  Widget build(BuildContext context) {
+    final isSignup = campaign['type'] == 'signup_bonus';
+    final reward =
+        (campaign['reward_amount'] as num?)?.toStringAsFixed(0) ?? '0';
+    final currency = campaign['currency_symbol']?.toString() ?? 'د.ل';
+    final rides = (campaign['completed_rides'] as num?)?.toInt() ?? 0;
+    final target = (campaign['required_rides'] as num?)?.toInt() ?? 0;
+    final credited = campaign['signup_bonus_credited'] == true;
+    final title = isSignup
+        ? (credited
+            ? (rtl
+                ? 'أضفنا $reward $currency إلى محفظتك'
+                : '$reward LYD added to your wallet')
+            : (rtl
+                ? 'عرض ترحيبي بقيمة $reward $currency'
+                : 'Welcome offer: $reward LYD'))
+        : (rtl
+            ? 'مكافأة الرحلات: $reward $currency'
+            : 'Ride reward: $reward $currency');
+    final subtitle = isSignup
+        ? (credited
+            ? (rtl
+                ? 'استخدم رصيدك في رحلتك القادمة'
+                : 'Use your credit on your next ride')
+            : (rtl
+                ? 'عرض خاص للحسابات الجديدة'
+                : 'A special offer for new accounts'))
+        : (rtl
+            ? 'أكملت $rides من $target رحلة'
+            : '$rides of $target rides completed');
+
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: .97),
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: const [
+            BoxShadow(
+                color: Colors.black26, blurRadius: 12, offset: Offset(0, 4))
+          ],
+          border: Border.all(color: const Color(0xffDCEBFF)),
+        ),
+        child: Row(
+          children: [
+            const CircleAvatar(
+              radius: 19,
+              backgroundColor: Color(0xffE8F5EE),
+              child: Icon(Icons.card_giftcard_rounded,
+                  color: Color(0xff159668), size: 21),
+            ),
+            const SizedBox(width: 11),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xff10264A),
+                          fontSize: 13)),
+                  const SizedBox(height: 2),
+                  Text(subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          color: Color(0xff687994), fontSize: 11)),
+                  if (!isSignup && target > 0) ...[
+                    const SizedBox(height: 6),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                          value: (rides / target).clamp(0, 1),
+                          minHeight: 4,
+                          backgroundColor: const Color(0xffE7EFFA),
+                          color: const Color(0xff1677F8)),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(rtl ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
+                color: const Color(0xff1677F8)),
           ],
         ),
       ),

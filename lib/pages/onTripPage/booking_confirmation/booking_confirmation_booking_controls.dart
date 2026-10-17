@@ -760,6 +760,10 @@ mixin _BookingConfirmationBookingControls
                                 (choosenVehicle != null &&
                                         (widget.type == 1 ||
                                             etaDetails[choosenVehicle]
+                                                    ['coupon_supported'] !=
+                                                false) &&
+                                        (widget.type == 1 ||
+                                            etaDetails[choosenVehicle]
                                                     ['enable_bidding'] ==
                                                 null ||
                                             etaDetails[choosenVehicle]

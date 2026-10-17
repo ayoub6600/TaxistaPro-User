@@ -553,7 +553,17 @@ etaRequest({transport, outstation}) async {
 
 etaRequestWithPromo({outstation}) async {
   dynamic result;
-  // etaDetails.clear();
+  final selectedZoneTypeId = choosenVehicle != null && etaDetails.isNotEmpty
+      ? etaDetails[choosenVehicle]['zone_type_id']
+      : null;
+  if (choosenVehicle != null &&
+      etaDetails.isNotEmpty &&
+      etaDetails[choosenVehicle]['coupon_supported'] == false) {
+    promoStatus = 2;
+    couponerror = true;
+    valueNotifierBook.incrementNotifier();
+    return false;
+  }
   try {
     var response = await http.post(Uri.parse('${url}api/v1/request/eta'),
         headers: {
@@ -563,7 +573,7 @@ etaRequestWithPromo({outstation}) async {
         body: (addressList
                     .where((element) => element.type == 'drop')
                     .isNotEmpty &&
-                dropStopList.isEmpty)
+                !shouldSendStopsForEta(addressList.length, dropStopList.length))
             ? jsonEncode({
                 'pick_lat': addressList
                     .firstWhere((e) => e.type == 'pickup')
@@ -574,11 +584,11 @@ etaRequestWithPromo({outstation}) async {
                     .latlng
                     .longitude,
                 'drop_lat': addressList
-                    .firstWhere((e) => e.type == 'drop')
+                    .lastWhere((e) => e.type == 'drop')
                     .latlng
                     .latitude,
                 'drop_lng': addressList
-                    .firstWhere((e) => e.type == 'drop')
+                    .lastWhere((e) => e.type == 'drop')
                     .latlng
                     .longitude,
                 'ride_type': 1,
@@ -587,7 +597,7 @@ etaRequestWithPromo({outstation}) async {
                     (choosenTransportType == 0) ? 'taxi' : 'delivery',
                 'is_outstation': outstation
               })
-            : (dropStopList.isNotEmpty &&
+            : (shouldSendStopsForEta(addressList.length, dropStopList.length) &&
                     addressList
                         .where((element) => element.type == 'drop')
                         .isNotEmpty)
@@ -601,11 +611,11 @@ etaRequestWithPromo({outstation}) async {
                         .latlng
                         .longitude,
                     'drop_lat': addressList
-                        .firstWhere((e) => e.type == 'drop')
+                        .lastWhere((e) => e.type == 'drop')
                         .latlng
                         .latitude,
                     'drop_lng': addressList
-                        .firstWhere((e) => e.type == 'drop')
+                        .lastWhere((e) => e.type == 'drop')
                         .latlng
                         .longitude,
                     'stops': jsonEncode(dropStopList),
@@ -633,6 +643,11 @@ etaRequestWithPromo({outstation}) async {
 
     if (response.statusCode == 200) {
       etaDetails = jsonDecode(response.body)['data'];
+      if (selectedZoneTypeId != null) {
+        final selectedIndex = etaDetails.indexWhere(
+            (service) => service['zone_type_id'] == selectedZoneTypeId);
+        if (selectedIndex >= 0) choosenVehicle = selectedIndex;
+      }
       promoCode = '';
       promoStatus = 1;
       valueNotifierBook.incrementNotifier();

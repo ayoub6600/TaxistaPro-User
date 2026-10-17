@@ -13,6 +13,7 @@ class PaymentMethodSheet extends StatelessWidget {
     required this.copy,
     required this.promoController,
     required this.promoStatus,
+    required this.allowCoupons,
     required this.onClose,
     required this.onMethodSelected,
     required this.onPromoChanged,
@@ -25,6 +26,7 @@ class PaymentMethodSheet extends StatelessWidget {
   final Map<String, dynamic> copy;
   final TextEditingController promoController;
   final int? promoStatus;
+  final bool allowCoupons;
   final VoidCallback onClose;
   final ValueChanged<int> onMethodSelected;
   final ValueChanged<String> onPromoChanged;
@@ -107,47 +109,49 @@ class PaymentMethodSheet extends StatelessWidget {
                         onTap: () => onMethodSelected(entry.$1),
                       ),
                     ),
-                    SizedBox(height: 12.h),
-                    TextField(
-                      controller: promoController,
-                      onChanged: onPromoChanged,
-                      enabled: promoStatus == null,
-                      decoration: InputDecoration(
-                        prefixIcon: const Icon(Icons.local_offer_outlined),
-                        hintText: _text('text_enterpromo'),
-                        filled: true,
-                        fillColor: textColor.withValues(alpha: 0.035),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14.r),
-                          borderSide: BorderSide(color: borderLines),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14.r),
-                          borderSide: BorderSide(color: borderLines),
-                        ),
-                        suffixIcon: promoStatus == null
-                            ? null
-                            : IconButton(
-                                onPressed: onPromoRemoved,
-                                tooltip: _text('text_remove'),
-                                icon: const Icon(Icons.close_rounded),
-                              ),
-                      ),
-                    ),
-                    if (promoStatus != null) ...[
-                      SizedBox(height: 8.h),
-                      Text(
-                        promoStatus == 1
-                            ? _text('text_promoaccepted')
-                            : _text('text_promorejected'),
-                        style: GoogleFonts.cairo(
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w600,
-                          color: promoStatus == 1
-                              ? const Color(0xff16875A)
-                              : const Color(0xffDC2626),
+                    if (allowCoupons) ...[
+                      SizedBox(height: 12.h),
+                      TextField(
+                        controller: promoController,
+                        onChanged: onPromoChanged,
+                        enabled: promoStatus == null,
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.local_offer_outlined),
+                          hintText: _text('text_enterpromo'),
+                          filled: true,
+                          fillColor: textColor.withValues(alpha: 0.035),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14.r),
+                            borderSide: BorderSide(color: borderLines),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14.r),
+                            borderSide: BorderSide(color: borderLines),
+                          ),
+                          suffixIcon: promoStatus == null
+                              ? null
+                              : IconButton(
+                                  onPressed: onPromoRemoved,
+                                  tooltip: _text('text_remove'),
+                                  icon: const Icon(Icons.close_rounded),
+                                ),
                         ),
                       ),
+                      if (promoStatus != null) ...[
+                        SizedBox(height: 8.h),
+                        Text(
+                          promoStatus == 1
+                              ? _text('text_promoaccepted')
+                              : _text('text_promorejected'),
+                          style: GoogleFonts.cairo(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w600,
+                            color: promoStatus == 1
+                                ? const Color(0xff16875A)
+                                : const Color(0xffDC2626),
+                          ),
+                        ),
+                      ],
                     ],
                     SizedBox(height: 18.h),
                     Button(
