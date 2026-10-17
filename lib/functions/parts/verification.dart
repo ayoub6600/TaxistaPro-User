@@ -2,6 +2,29 @@
 
 part of '../functions.dart';
 
+int paymentOptForSelection(dynamic configuredMethods, int selectedIndex) {
+  final methods = configuredMethods
+      .toString()
+      .split(',')
+      .map((method) => method.trim())
+      .where((method) => method.isNotEmpty)
+      .toList();
+  if (selectedIndex < 0 || selectedIndex >= methods.length) return 2;
+
+  switch (methods[selectedIndex]) {
+    case 'card':
+      return 0;
+    case 'cash':
+      return 1;
+    case 'wallet_and_cash':
+      return 3;
+    case 'wallet':
+      return 2;
+    default:
+      return 4;
+  }
+}
+
 paymentMethod(payment) async {
   dynamic result;
   try {
@@ -13,13 +36,7 @@ paymentMethod(payment) async {
             },
             body: jsonEncode({
               'request_id': userRequestData['id'],
-              'payment_opt': (payment == 'card')
-                  ? 0
-                  : (payment == 'cash')
-                      ? 1
-                      : (payment == 'wallet')
-                          ? 2
-                          : 4
+              'payment_opt': paymentOptForSelection(payment, 0)
             }));
     if (response.statusCode == 200) {
       FirebaseDatabase.instance

@@ -40,13 +40,20 @@ class _InvoiceState extends State<Invoice> {
             : (isArabic ? 'تعديل السعر المتفق عليه' : 'Agreed fare adjustment');
     return Column(children: [
       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        MyText(text: label, size: media.width * twelve,
+        MyText(
+            text: label,
+            size: media.width * twelve,
             color: value < 0 ? Colors.red : null),
-        MyText(text: '${bill['requested_currency_symbol']} ${value.toStringAsFixed(2)}',
-            size: media.width * twelve, color: value < 0 ? Colors.red : null),
+        MyText(
+            text:
+                '${bill['requested_currency_symbol']} ${value.toStringAsFixed(2)}',
+            size: media.width * twelve,
+            color: value < 0 ? Colors.red : null),
       ]),
-      Container(margin: EdgeInsets.symmetric(vertical: media.width * 0.03),
-          height: 1.5, color: const Color(0xffE0E0E0)),
+      Container(
+          margin: EdgeInsets.symmetric(vertical: media.width * 0.03),
+          height: 1.5,
+          color: const Color(0xffE0E0E0)),
     ]);
   }
 
@@ -79,6 +86,12 @@ class _InvoiceState extends State<Invoice> {
         child: ValueListenableBuilder(
             valueListenable: valueNotifierHome.value,
             builder: (context, value, child) {
+              final distanceKm = double.tryParse(
+                  userRequestData['total_distance']?.toString() ?? '');
+              final distanceLabel = distanceKm == null || distanceKm <= 0
+                  ? '— ${userRequestData['unit'] ?? ''}'.trim()
+                  : '${distanceKm.toStringAsFixed(2)} ${userRequestData['unit'] ?? ''}'
+                      .trim();
               return Stack(
                 children: [
                   if (userRequestData.isNotEmpty)
@@ -241,10 +254,7 @@ class _InvoiceState extends State<Invoice> {
                                                   height: media.width * 0.02,
                                                 ),
                                                 MyText(
-                                                  text: userRequestData[
-                                                          'total_distance'] +
-                                                      ' ' +
-                                                      userRequestData['unit'],
+                                                  text: distanceLabel,
                                                   size: media.width * twelve,
                                                   fontweight: FontWeight.w700,
                                                 )
@@ -676,8 +686,12 @@ class _InvoiceState extends State<Invoice> {
                                                               ),
                                                             ],
                                                           ),
-                                                          billAdjustmentRow(media, 'negotiated_fare_adjustment'),
-                                                          billAdjustmentRow(media, 'fare_floor_adjustment'),
+                                                          billAdjustmentRow(
+                                                              media,
+                                                              'negotiated_fare_adjustment'),
+                                                          billAdjustmentRow(
+                                                              media,
+                                                              'fare_floor_adjustment'),
                                                           (userRequestData[
                                                                           'requestBill'] !=
                                                                       null &&
@@ -1015,9 +1029,15 @@ class _InvoiceState extends State<Invoice> {
 
                                                             Text(
                                                               (userRequestData[
-                                                                          'payment_opt'] ==
-                                                                      '2')
-                                                                  ? "تم الدفع عبر"
+                                                                              'payment_opt'] ==
+                                                                          '2' ||
+                                                                      userRequestData[
+                                                                              'payment_opt'] ==
+                                                                          '3')
+                                                                  ? languages[
+                                                                          choosenLanguage]
+                                                                      [
+                                                                      'text_paid_via']
                                                                   : "ادفع للسائق",
                                                               style: GoogleFonts.cairo(
                                                                   fontSize: media
@@ -1034,10 +1054,14 @@ class _InvoiceState extends State<Invoice> {
                                                             ),
                                                             Text(
                                                               (userRequestData[
-                                                                          'payment_opt'] ==
-                                                                      '1')
+                                                                              'payment_opt'] ==
+                                                                          '1' ||
+                                                                      userRequestData[
+                                                                              'payment_opt'] ==
+                                                                          '3')
                                                                   ? languages[
-                                                                          choosenLanguage][
+                                                                          choosenLanguage]
+                                                                      [
                                                                       'text_cash']
                                                                   : (userRequestData[
                                                                               'payment_opt'] ==
@@ -1073,8 +1097,11 @@ class _InvoiceState extends State<Invoice> {
                                                                   Colors.blue,
                                                             ),
                                                             MyText(
-                                                              text:
-                                                                  ' ${userRequestData['requestBill']['data']['total_amount']}',
+                                                              text: userRequestData[
+                                                                          'payment_opt'] ==
+                                                                      '3'
+                                                                  ? ' ${userRequestData['requestBill']['data']['cash_due_amount'] ?? 0}'
+                                                                  : ' ${userRequestData['requestBill']['data']['total_amount']}',
                                                               size:
                                                                   media.width *
                                                                       twenty,
@@ -1087,6 +1114,25 @@ class _InvoiceState extends State<Invoice> {
                                                           ],
                                                         ),
                                                       ),
+                                                if (userRequestData[
+                                                        'payment_opt'] ==
+                                                    '3')
+                                                  Padding(
+                                                    padding: EdgeInsets.only(
+                                                        bottom: 14.h),
+                                                    child: Text(
+                                                      '${languages[choosenLanguage]['text_wallet_paid']}: ${userRequestData['requestBill']['data']['requested_currency_symbol']} ${userRequestData['requestBill']['data']['wallet_paid_amount'] ?? 0}',
+                                                      style: GoogleFonts.cairo(
+                                                        fontSize: media.width *
+                                                            twelve,
+                                                        color: textColor,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                    ),
+                                                  ),
                                               ],
                                             )
                                           : Container()
@@ -1102,7 +1148,9 @@ class _InvoiceState extends State<Invoice> {
                                       onTap: () async {
                                         if (userRequestData['is_paid'] == 0 &&
                                             userRequestData['payment_opt'] !=
-                                                '2') {
+                                                '2' &&
+                                            userRequestData['payment_opt'] !=
+                                                '3') {
                                           setState(() {
                                             myPaymentMethod = userRequestData[
                                                         'payment_opt'] ==
@@ -1125,7 +1173,9 @@ class _InvoiceState extends State<Invoice> {
                                       },
                                       text: (userRequestData['is_paid'] == 0 &&
                                               userRequestData['payment_opt'] !=
-                                                  '2')
+                                                  '2' &&
+                                              userRequestData['payment_opt'] !=
+                                                  '3')
                                           ? languages[choosenLanguage]
                                               ['text_choose_payment']
                                           : languages[choosenLanguage]

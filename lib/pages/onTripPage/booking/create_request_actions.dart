@@ -66,19 +66,9 @@ mixin _CreateRequestActions on State<CreateRequestBottomSheet> {
                           (addPetPreferences == false) ? false : true,
                       'is_luggage_available':
                           (addLuggagePreferences == false) ? false : true,
-                      'payment_opt': (etaDetails[choosenVehicle]['payment_type']
-                                  .toString()
-                                  .split(',')
-                                  .toList()[payingVia] ==
-                              'card')
-                          ? 0
-                          : (etaDetails[choosenVehicle]['payment_type']
-                                      .toString()
-                                      .split(',')
-                                      .toList()[payingVia] ==
-                                  'cash')
-                              ? 1
-                              : 2,
+                      'payment_opt': paymentOptForSelection(
+                          etaDetails[choosenVehicle]['payment_type'],
+                          payingVia),
                       'pick_address': addressList
                           .firstWhere((e) => e.type == 'pickup')
                           .address,
@@ -118,19 +108,9 @@ mixin _CreateRequestActions on State<CreateRequestBottomSheet> {
                           (addPetPreferences == false) ? false : true,
                       'is_luggage_available':
                           (addLuggagePreferences == false) ? false : true,
-                      'payment_opt': (etaDetails[choosenVehicle]['payment_type']
-                                  .toString()
-                                  .split(',')
-                                  .toList()[payingVia] ==
-                              'card')
-                          ? 0
-                          : (etaDetails[choosenVehicle]['payment_type']
-                                      .toString()
-                                      .split(',')
-                                      .toList()[payingVia] ==
-                                  'cash')
-                              ? 1
-                              : 2,
+                      'payment_opt': paymentOptForSelection(
+                          etaDetails[choosenVehicle]['payment_type'],
+                          payingVia),
                       'pick_address': addressList[0].address,
                       'drop_address':
                           addressList[addressList.length - 1].address,
@@ -200,21 +180,9 @@ mixin _CreateRequestActions on State<CreateRequestBottomSheet> {
                                     (addLuggagePreferences == false)
                                         ? false
                                         : true,
-                                'payment_opt': (etaDetails[choosenVehicle]
-                                                ['payment_type']
-                                            .toString()
-                                            .split(',')
-                                            .toList()[payingVia] ==
-                                        'card')
-                                    ? 0
-                                    : (etaDetails[choosenVehicle]
-                                                    ['payment_type']
-                                                .toString()
-                                                .split(',')
-                                                .toList()[payingVia] ==
-                                            'cash')
-                                        ? 1
-                                        : 2,
+                                'payment_opt': paymentOptForSelection(
+                                    etaDetails[choosenVehicle]['payment_type'],
+                                    payingVia),
                                 'pick_address': addressList
                                     .firstWhere((e) => e.type == 'pickup')
                                     .address,
@@ -245,21 +213,9 @@ mixin _CreateRequestActions on State<CreateRequestBottomSheet> {
                                     (addLuggagePreferences == false)
                                         ? false
                                         : true,
-                                'payment_opt': (etaDetails[choosenVehicle]
-                                                ['payment_type']
-                                            .toString()
-                                            .split(',')
-                                            .toList()[payingVia] ==
-                                        'card')
-                                    ? 0
-                                    : (etaDetails[choosenVehicle]
-                                                    ['payment_type']
-                                                .toString()
-                                                .split(',')
-                                                .toList()[payingVia] ==
-                                            'cash')
-                                        ? 1
-                                        : 2,
+                                'payment_opt': paymentOptForSelection(
+                                    etaDetails[choosenVehicle]['payment_type'],
+                                    payingVia),
                                 'pick_address': addressList
                                     .firstWhere((e) => e.type == 'pickup')
                                     .address,
@@ -289,20 +245,9 @@ mixin _CreateRequestActions on State<CreateRequestBottomSheet> {
                                 (addPetPreferences == false) ? false : true,
                             'is_luggage_available':
                                 (addLuggagePreferences == false) ? false : true,
-                            'payment_opt': (etaDetails[choosenVehicle]
-                                            ['payment_type']
-                                        .toString()
-                                        .split(',')
-                                        .toList()[payingVia] ==
-                                    'card')
-                                ? 0
-                                : (etaDetails[choosenVehicle]['payment_type']
-                                            .toString()
-                                            .split(',')
-                                            .toList()[payingVia] ==
-                                        'cash')
-                                    ? 1
-                                    : 2,
+                            'payment_opt': paymentOptForSelection(
+                                etaDetails[choosenVehicle]['payment_type'],
+                                payingVia),
                             'pick_address': addressList[0].address,
                             'drop_address':
                                 addressList[addressList.length - 1].address,
@@ -348,20 +293,9 @@ mixin _CreateRequestActions on State<CreateRequestBottomSheet> {
                                 (addPetPreferences == false) ? false : true,
                             'is_luggage_available':
                                 (addLuggagePreferences == false) ? false : true,
-                            'payment_opt': (etaDetails[choosenVehicle]
-                                            ['payment_type']
-                                        .toString()
-                                        .split(',')
-                                        .toList()[payingVia] ==
-                                    'card')
-                                ? 0
-                                : (etaDetails[choosenVehicle]['payment_type']
-                                            .toString()
-                                            .split(',')
-                                            .toList()[payingVia] ==
-                                        'cash')
-                                    ? 1
-                                    : 2,
+                            'payment_opt': paymentOptForSelection(
+                                etaDetails[choosenVehicle]['payment_type'],
+                                payingVia),
                             'pick_address': addressList[0].address,
                             'drop_address':
                                 addressList[addressList.length - 1].address,
@@ -422,21 +356,9 @@ mixin _CreateRequestActions on State<CreateRequestBottomSheet> {
                                     (addLuggagePreferences == false)
                                         ? false
                                         : true,
-                                'payment_opt': (etaDetails[choosenVehicle]
-                                                ['payment_type']
-                                            .toString()
-                                            .split(',')
-                                            .toList()[payingVia] ==
-                                        'card')
-                                    ? 0
-                                    : (etaDetails[choosenVehicle]
-                                                    ['payment_type']
-                                                .toString()
-                                                .split(',')
-                                                .toList()[payingVia] ==
-                                            'cash')
-                                        ? 1
-                                        : 2,
+                                'payment_opt': paymentOptForSelection(
+                                    etaDetails[choosenVehicle]['payment_type'],
+                                    payingVia),
                                 'pick_address': addressList
                                     .firstWhere((e) => e.type == 'pickup')
                                     .address,
@@ -467,21 +389,9 @@ mixin _CreateRequestActions on State<CreateRequestBottomSheet> {
                                     (addLuggagePreferences == false)
                                         ? false
                                         : true,
-                                'payment_opt': (etaDetails[choosenVehicle]
-                                                ['payment_type']
-                                            .toString()
-                                            .split(',')
-                                            .toList()[payingVia] ==
-                                        'card')
-                                    ? 0
-                                    : (etaDetails[choosenVehicle]
-                                                    ['payment_type']
-                                                .toString()
-                                                .split(',')
-                                                .toList()[payingVia] ==
-                                            'cash')
-                                        ? 1
-                                        : 2,
+                                'payment_opt': paymentOptForSelection(
+                                    etaDetails[choosenVehicle]['payment_type'],
+                                    payingVia),
                                 'pick_address': addressList
                                     .firstWhere((e) => e.type == 'pickup')
                                     .address,
@@ -511,20 +421,9 @@ mixin _CreateRequestActions on State<CreateRequestBottomSheet> {
                                 (addPetPreferences == false) ? false : true,
                             'is_luggage_available':
                                 (addLuggagePreferences == false) ? false : true,
-                            'payment_opt': (etaDetails[choosenVehicle]
-                                            ['payment_type']
-                                        .toString()
-                                        .split(',')
-                                        .toList()[payingVia] ==
-                                    'card')
-                                ? 0
-                                : (etaDetails[choosenVehicle]['payment_type']
-                                            .toString()
-                                            .split(',')
-                                            .toList()[payingVia] ==
-                                        'cash')
-                                    ? 1
-                                    : 2,
+                            'payment_opt': paymentOptForSelection(
+                                etaDetails[choosenVehicle]['payment_type'],
+                                payingVia),
                             'pick_address': addressList[0].address,
                             'drop_address':
                                 addressList[addressList.length - 1].address,
@@ -570,20 +469,9 @@ mixin _CreateRequestActions on State<CreateRequestBottomSheet> {
                                 (addPetPreferences == false) ? false : true,
                             'is_luggage_available':
                                 (addLuggagePreferences == false) ? false : true,
-                            'payment_opt': (etaDetails[choosenVehicle]
-                                            ['payment_type']
-                                        .toString()
-                                        .split(',')
-                                        .toList()[payingVia] ==
-                                    'card')
-                                ? 0
-                                : (etaDetails[choosenVehicle]['payment_type']
-                                            .toString()
-                                            .split(',')
-                                            .toList()[payingVia] ==
-                                        'cash')
-                                    ? 1
-                                    : 2,
+                            'payment_opt': paymentOptForSelection(
+                                etaDetails[choosenVehicle]['payment_type'],
+                                payingVia),
                             'pick_address': addressList[0].address,
                             'drop_address':
                                 addressList[addressList.length - 1].address,
@@ -633,20 +521,9 @@ mixin _CreateRequestActions on State<CreateRequestBottomSheet> {
                               (addPetPreferences == false) ? false : true,
                           'is_luggage_available':
                               (addLuggagePreferences == false) ? false : true,
-                          'payment_opt': (rentalOption[choosenVehicle]
-                                          ['payment_type']
-                                      .toString()
-                                      .split(',')
-                                      .toList()[payingVia] ==
-                                  'card')
-                              ? 0
-                              : (rentalOption[choosenVehicle]['payment_type']
-                                          .toString()
-                                          .split(',')
-                                          .toList()[payingVia] ==
-                                      'cash')
-                                  ? 1
-                                  : 2,
+                          'payment_opt': paymentOptForSelection(
+                              rentalOption[choosenVehicle]['payment_type'],
+                              payingVia),
                           'pick_address': addressList
                               .firstWhere((e) => e.type == 'pickup')
                               .address,
@@ -677,20 +554,9 @@ mixin _CreateRequestActions on State<CreateRequestBottomSheet> {
                               (addPetPreferences == false) ? false : true,
                           'is_luggage_available':
                               (addLuggagePreferences == false) ? false : true,
-                          'payment_opt': (rentalOption[choosenVehicle]
-                                          ['payment_type']
-                                      .toString()
-                                      .split(',')
-                                      .toList()[payingVia] ==
-                                  'card')
-                              ? 0
-                              : (rentalOption[choosenVehicle]['payment_type']
-                                          .toString()
-                                          .split(',')
-                                          .toList()[payingVia] ==
-                                      'cash')
-                                  ? 1
-                                  : 2,
+                          'payment_opt': paymentOptForSelection(
+                              rentalOption[choosenVehicle]['payment_type'],
+                              payingVia),
                           'pick_address': addressList
                               .firstWhere((e) => e.type == 'pickup')
                               .address,
@@ -731,20 +597,9 @@ mixin _CreateRequestActions on State<CreateRequestBottomSheet> {
                               (addPetPreferences == false) ? false : true,
                           'is_luggage_available':
                               (addLuggagePreferences == false) ? false : true,
-                          'payment_opt': (rentalOption[choosenVehicle]
-                                          ['payment_type']
-                                      .toString()
-                                      .split(',')
-                                      .toList()[payingVia] ==
-                                  'card')
-                              ? 0
-                              : (rentalOption[choosenVehicle]['payment_type']
-                                          .toString()
-                                          .split(',')
-                                          .toList()[payingVia] ==
-                                      'cash')
-                                  ? 1
-                                  : 2,
+                          'payment_opt': paymentOptForSelection(
+                              rentalOption[choosenVehicle]['payment_type'],
+                              payingVia),
                           'pick_address': addressList
                               .firstWhere((e) => e.type == 'pickup')
                               .address,
@@ -777,20 +632,9 @@ mixin _CreateRequestActions on State<CreateRequestBottomSheet> {
                               (addPetPreferences == false) ? false : true,
                           'is_luggage_available':
                               (addLuggagePreferences == false) ? false : true,
-                          'payment_opt': (rentalOption[choosenVehicle]
-                                          ['payment_type']
-                                      .toString()
-                                      .split(',')
-                                      .toList()[payingVia] ==
-                                  'card')
-                              ? 0
-                              : (rentalOption[choosenVehicle]['payment_type']
-                                          .toString()
-                                          .split(',')
-                                          .toList()[payingVia] ==
-                                      'cash')
-                                  ? 1
-                                  : 2,
+                          'payment_opt': paymentOptForSelection(
+                              rentalOption[choosenVehicle]['payment_type'],
+                              payingVia),
                           'pick_address': addressList
                               .firstWhere((e) => e.type == 'pickup')
                               .address,
@@ -854,19 +698,9 @@ mixin _CreateRequestActions on State<CreateRequestBottomSheet> {
                           (addPetPreferences == false) ? false : true,
                       'is_luggage_available':
                           (addLuggagePreferences == false) ? false : true,
-                      'payment_opt': (etaDetails[choosenVehicle]['payment_type']
-                                  .toString()
-                                  .split(',')
-                                  .toList()[payingVia] ==
-                              'card')
-                          ? 0
-                          : (etaDetails[choosenVehicle]['payment_type']
-                                      .toString()
-                                      .split(',')
-                                      .toList()[payingVia] ==
-                                  'cash')
-                              ? 1
-                              : 2,
+                      'payment_opt': paymentOptForSelection(
+                          etaDetails[choosenVehicle]['payment_type'],
+                          payingVia),
                       'pick_address': addressList
                           .firstWhere((e) => e.type == 'pickup')
                           .address,
@@ -905,19 +739,9 @@ mixin _CreateRequestActions on State<CreateRequestBottomSheet> {
                           (addPetPreferences == false) ? false : true,
                       'is_luggage_available':
                           (addLuggagePreferences == false) ? false : true,
-                      'payment_opt': (etaDetails[choosenVehicle]['payment_type']
-                                  .toString()
-                                  .split(',')
-                                  .toList()[payingVia] ==
-                              'card')
-                          ? 0
-                          : (etaDetails[choosenVehicle]['payment_type']
-                                      .toString()
-                                      .split(',')
-                                      .toList()[payingVia] ==
-                                  'cash')
-                              ? 1
-                              : 2,
+                      'payment_opt': paymentOptForSelection(
+                          etaDetails[choosenVehicle]['payment_type'],
+                          payingVia),
                       'pick_address': addressList[0].address,
                       'drop_address':
                           addressList[addressList.length - 1].address,

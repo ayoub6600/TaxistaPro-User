@@ -38,6 +38,7 @@ class PaymentMethodSheet extends StatelessWidget {
   String _methodDescription(String method) => switch (method) {
         'cash' => _text('text_paycash'),
         'wallet' => _text('text_paywallet'),
+        'wallet_and_cash' => _text('text_wallet_plus_cash'),
         'card' => _text('text_paycard'),
         'upi' => _text('text_payupi'),
         _ => method,
@@ -46,6 +47,7 @@ class PaymentMethodSheet extends StatelessWidget {
   String _methodAsset(String method) => switch (method) {
         'cash' => 'assets/images/cash.png',
         'wallet' => 'assets/images/wallet.png',
+        'wallet_and_cash' => 'assets/images/wallet.png',
         'card' => 'assets/images/card.png',
         'upi' => 'assets/images/upi.png',
         _ => 'assets/images/cash.png',

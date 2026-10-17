@@ -9,6 +9,29 @@ class ApplyCouponsContainer extends StatefulWidget {
 }
 
 class _ApplyCouponsContainerState extends State<ApplyCouponsContainer> {
+  double? _appliedCouponSavings() {
+    if (promoStatus != 1 || choosenVehicle is! int) return null;
+    final services = widget.type == 1 ? rentalOption : etaDetails;
+    final index = choosenVehicle as int;
+    if (index < 0 || index >= services.length || services[index] is! Map) {
+      return null;
+    }
+    final service = services[index] as Map;
+    final direct =
+        double.tryParse(service['discount_amount']?.toString() ?? '');
+    if (direct != null && direct > 0) return direct;
+    final total = double.tryParse(service['total']?.toString() ?? '');
+    final discounted = double.tryParse(
+      service['discounted_totel']?.toString() ??
+          service['scheduled_discounted_total']?.toString() ??
+          '',
+    );
+    if (total != null && discounted != null && total > discounted) {
+      return total - discounted;
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     var media = MediaQuery.of(context).size;
@@ -77,17 +100,31 @@ class _ApplyCouponsContainerState extends State<ApplyCouponsContainer> {
                       },
                     ),
                   ),
-                  (promoStatus == 1)
-                      ? MyText(
-                          text: languages[choosenLanguage]
-                              ['text_promoaccepted'],
-                          size: media.width * twelve,
-                          color: online,
-                        )
-                      : Container(),
+                  const SizedBox.shrink(),
                 ],
               ),
             ),
+            if (promoStatus == 1) ...[
+              SizedBox(height: media.width * 0.025),
+              Builder(builder: (context) {
+                final savings = _appliedCouponSavings();
+                final displaySavings = savings == null
+                    ? null
+                    : savings == savings.roundToDouble()
+                        ? savings.toStringAsFixed(0)
+                        : savings.toStringAsFixed(2);
+                final message = savings == null
+                    ? languages[choosenLanguage]['text_promoaccepted']
+                    : choosenLanguage == 'ar'
+                        ? 'تم الخصم، وفّرت $displaySavings دينار في هذه الرحلة'
+                        : 'Coupon applied — you saved ${userDetails['currency_code'] ?? 'LYD'} $displaySavings on this ride';
+                return MyText(
+                  text: message,
+                  size: media.width * twelve,
+                  color: online,
+                );
+              }),
+            ],
             if (promoStatus != null && promoStatus == 2 && couponerror == true)
               Container(
                 width: media.width * 0.9,

@@ -85,12 +85,19 @@ class _ChoosePaymentMethodContainerState
                                                     height: media.width * 0.06,
                                                     fit: BoxFit.contain,
                                                   )
-                                                : (etaDetails[choosenVehicle]
-                                                                ['payment_type']
-                                                            .toString()
-                                                            .split(',')
-                                                            .toList()[i] ==
-                                                        'wallet')
+                                                : (etaDetails[choosenVehicle][
+                                                                    'payment_type']
+                                                                .toString()
+                                                                .split(',')
+                                                                .toList()[i] ==
+                                                            'wallet' ||
+                                                        etaDetails[choosenVehicle]
+                                                                    [
+                                                                    'payment_type']
+                                                                .toString()
+                                                                .split(',')
+                                                                .toList()[i] ==
+                                                            'wallet_and_cash')
                                                     ? Image.asset(
                                                         'assets/images/wallet (1).png',
                                                         width:
@@ -310,6 +317,8 @@ class _ChoosePaymentMethodContainerState
         return languages[choosenLanguage]['text_cash'];
       case 'wallet':
         return languages[choosenLanguage]['text_wallet'];
+      case 'wallet_and_cash':
+        return languages[choosenLanguage]['text_wallet_plus_cash'];
       case 'card':
         return languages[choosenLanguage]['text_card'];
       case 'upi':

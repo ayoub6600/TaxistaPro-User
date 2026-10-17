@@ -39,7 +39,31 @@ mixin _BookingConfirmationVehicleServices
       if (seen.add(key)) result[entry.key] = entry.value;
     }
 
-    return result;
+    final ordered = result.entries.toList();
+    int priority(dynamic service) {
+      if (service is! Map) return 2;
+      final name = (service['name'] ?? service['service_name'] ?? '')
+          .toString()
+          .trim()
+          .toLowerCase();
+      if (name.contains('عادي') ||
+          name.contains('normal') ||
+          name.contains('standard')) {
+        return 0;
+      }
+      if (name.contains('اقتصادي') ||
+          name.contains('economy') ||
+          name.contains('economic')) {
+        return 1;
+      }
+      return 2;
+    }
+
+    ordered.sort((a, b) {
+      final byPriority = priority(a.value).compareTo(priority(b.value));
+      return byPriority != 0 ? byPriority : a.key.compareTo(b.key);
+    });
+    return Map<int, dynamic>.fromEntries(ordered);
   }
 
   Widget buildVehicleServiceOption({
@@ -81,13 +105,18 @@ mixin _BookingConfirmationVehicleServices
               },
               child: VehicleServiceCard(
                 service: () {
-                  final service = Map<String, dynamic>.from(etaDetails[index] as Map);
-                  if (confirmRideLater && widget.type == null && choosenTransportType == 0 &&
+                  final service =
+                      Map<String, dynamic>.from(etaDetails[index] as Map);
+                  if (confirmRideLater &&
+                      widget.type == null &&
+                      choosenTransportType == 0 &&
                       service['scheduled_total'] is num) {
                     service['total'] = service['scheduled_total'];
-                    service['has_discount'] = service['scheduled_discounted_total'] is num;
+                    service['has_discount'] =
+                        service['scheduled_discounted_total'] is num;
                     if (service['scheduled_discounted_total'] is num) {
-                      service['discounted_totel'] = service['scheduled_discounted_total'];
+                      service['discounted_totel'] =
+                          service['scheduled_discounted_total'];
                     }
                   }
                   return service;
@@ -97,11 +126,21 @@ mixin _BookingConfirmationVehicleServices
                     minutes[etaDetails[index]['type_id']]?.toString() ?? '',
                 offerFareLabel: languages[choosenLanguage]
                     ['text_offer_your_fare'],
-                fairFare: canAdjustSelectedFare(index) ? fairFareForService(index) : null,
-                chosenFare: canAdjustSelectedFare(index) ? chosenFareForService(index) : null,
-                minimumFare: canAdjustSelectedFare(index) ? minimumFareForService(index) : null,
-                maximumFare: canAdjustSelectedFare(index) ? maximumFareForService(index) : null,
-                onFareStep: canAdjustSelectedFare(index) ? (direction) => changeFareOffer(index, direction) : null,
+                fairFare: canAdjustSelectedFare(index)
+                    ? fairFareForService(index)
+                    : null,
+                chosenFare: canAdjustSelectedFare(index)
+                    ? chosenFareForService(index)
+                    : null,
+                minimumFare: canAdjustSelectedFare(index)
+                    ? minimumFareForService(index)
+                    : null,
+                maximumFare: canAdjustSelectedFare(index)
+                    ? maximumFareForService(index)
+                    : null,
+                onFareStep: canAdjustSelectedFare(index)
+                    ? (direction) => changeFareOffer(index, direction)
+                    : null,
                 isArabic: choosenLanguage == 'ar',
               ),
             ));

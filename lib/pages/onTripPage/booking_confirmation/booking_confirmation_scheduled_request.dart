@@ -34,19 +34,8 @@ mixin _BookingConfirmationScheduledRequest
                   'poly_line': polyString,
                   'vehicle_type': etaDetails[choosenVehicle]['zone_type_id'],
                   'ride_type': 1,
-                  'payment_opt': (etaDetails[choosenVehicle]['payment_type']
-                              .toString()
-                              .split(',')
-                              .toList()[payingVia] ==
-                          'card')
-                      ? 0
-                      : (etaDetails[choosenVehicle]['payment_type']
-                                  .toString()
-                                  .split(',')
-                                  .toList()[payingVia] ==
-                              'cash')
-                          ? 1
-                          : 2,
+                  'payment_opt': paymentOptForSelection(
+                      etaDetails[choosenVehicle]['payment_type'], payingVia),
                   'pick_address':
                       addressList.firstWhere((e) => e.type == 'pickup').address,
                   'drop_address':
@@ -55,7 +44,8 @@ mixin _BookingConfirmationScheduledRequest
                       choosenDateTime.toString().substring(0, 19),
                   'is_later': 1,
                   'stops': jsonEncode(dropStopList),
-                  'request_eta_amount': scheduledQuotedFare(etaDetails[choosenVehicle]),
+                  'request_eta_amount':
+                      scheduledQuotedFare(etaDetails[choosenVehicle]),
                   'is_pet_available':
                       (addPetPreferences == false) ? false : true,
                   'is_luggage_available':
@@ -72,38 +62,32 @@ mixin _BookingConfirmationScheduledRequest
                       .longitude,
                   'vehicle_type': etaDetails[choosenVehicle]['zone_type_id'],
                   'ride_type': 1,
-                  'payment_opt': (etaDetails[choosenVehicle]['payment_type']
-                              .toString()
-                              .split(',')
-                              .toList()[payingVia] ==
-                          'card')
-                      ? 0
-                      : (etaDetails[choosenVehicle]['payment_type']
-                                  .toString()
-                                  .split(',')
-                                  .toList()[payingVia] ==
-                              'cash')
-                          ? 1
-                          : 2,
+                  'payment_opt': paymentOptForSelection(
+                      etaDetails[choosenVehicle]['payment_type'], payingVia),
                   'pick_address':
                       addressList.firstWhere((e) => e.type == 'pickup').address,
                   'trip_start_time':
                       choosenDateTime.toString().substring(0, 19),
                   'is_later': 1,
-                  'request_eta_amount': scheduledQuotedFare(etaDetails[choosenVehicle]),
+                  'request_eta_amount':
+                      scheduledQuotedFare(etaDetails[choosenVehicle]),
                   'is_pet_available':
                       (addPetPreferences == false) ? false : true,
                   'is_luggage_available':
                       (addLuggagePreferences == false) ? false : true
                 };
 
-          if (jsonPayload.containsKey('drop_lat') && offerFare != null &&
-              (offerFare - scheduledQuotedFare(etaDetails[choosenVehicle])).abs() > 0.01) {
+          if (jsonPayload.containsKey('drop_lat') &&
+              offerFare != null &&
+              (offerFare - scheduledQuotedFare(etaDetails[choosenVehicle]))
+                      .abs() >
+                  0.01) {
             jsonPayload['rider_proposed_fare'] = offerFare;
           }
           if (jsonPayload.containsKey('drop_lat') &&
               etaDetails[choosenVehicle]['fare_quote_token'] != null) {
-            jsonPayload['fare_quote_token'] = etaDetails[choosenVehicle]['fare_quote_token'];
+            jsonPayload['fare_quote_token'] =
+                etaDetails[choosenVehicle]['fare_quote_token'];
           }
           print('JSON Payload: $jsonPayload');
 
@@ -125,19 +109,8 @@ mixin _BookingConfirmationScheduledRequest
                   'poly_line': polyString,
                   'vehicle_type': etaDetails[choosenVehicle]['zone_type_id'],
                   'ride_type': 1,
-                  'payment_opt': (etaDetails[choosenVehicle]['payment_type']
-                              .toString()
-                              .split(',')
-                              .toList()[payingVia] ==
-                          'card')
-                      ? 0
-                      : (etaDetails[choosenVehicle]['payment_type']
-                                  .toString()
-                                  .split(',')
-                                  .toList()[payingVia] ==
-                              'cash')
-                          ? 1
-                          : 2,
+                  'payment_opt': paymentOptForSelection(
+                      etaDetails[choosenVehicle]['payment_type'], payingVia),
                   'pick_address': addressList[0].address,
                   'drop_address': addressList[addressList.length - 1].address,
                   'trip_start_time':
@@ -168,19 +141,8 @@ mixin _BookingConfirmationScheduledRequest
                   'poly_line': polyString,
                   'vehicle_type': etaDetails[choosenVehicle]['zone_type_id'],
                   'ride_type': 1,
-                  'payment_opt': (etaDetails[choosenVehicle]['payment_type']
-                              .toString()
-                              .split(',')
-                              .toList()[payingVia] ==
-                          'card')
-                      ? 0
-                      : (etaDetails[choosenVehicle]['payment_type']
-                                  .toString()
-                                  .split(',')
-                                  .toList()[payingVia] ==
-                              'cash')
-                          ? 1
-                          : 2,
+                  'payment_opt': paymentOptForSelection(
+                      etaDetails[choosenVehicle]['payment_type'], payingVia),
                   'pick_address': addressList[0].address,
                   'drop_address': addressList[addressList.length - 1].address,
                   'trip_start_time':
@@ -243,19 +205,9 @@ mixin _BookingConfirmationScheduledRequest
                           ['zone_type_id'],
                       'poly_line': polyString,
                       'ride_type': 1,
-                      'payment_opt': (etaDetails[choosenVehicle]['payment_type']
-                                  .toString()
-                                  .split(',')
-                                  .toList()[payingVia] ==
-                              'card')
-                          ? 0
-                          : (etaDetails[choosenVehicle]['payment_type']
-                                      .toString()
-                                      .split(',')
-                                      .toList()[payingVia] ==
-                                  'cash')
-                              ? 1
-                              : 2,
+                      'payment_opt': paymentOptForSelection(
+                          etaDetails[choosenVehicle]['payment_type'],
+                          payingVia),
                       'pick_address': addressList
                           .firstWhere((e) => e.type == 'pickup')
                           .address,
@@ -264,12 +216,14 @@ mixin _BookingConfirmationScheduledRequest
                           .address,
                       'promocode_id': etaDetails[choosenVehicle]
                           ['promocode_id'],
-                      'fare_quote_token': etaDetails[choosenVehicle]['fare_quote_token'],
+                      'fare_quote_token': etaDetails[choosenVehicle]
+                          ['fare_quote_token'],
                       'stops': jsonEncode(dropStopList),
                       'trip_start_time':
                           choosenDateTime.toString().substring(0, 19),
                       'is_later': true,
-                      'request_eta_amount': scheduledQuotedFare(etaDetails[choosenVehicle]),
+                      'request_eta_amount':
+                          scheduledQuotedFare(etaDetails[choosenVehicle]),
                       'is_pet_available':
                           (addPetPreferences == false) ? false : true,
                       'is_luggage_available':
@@ -287,19 +241,9 @@ mixin _BookingConfirmationScheduledRequest
                       'vehicle_type': etaDetails[choosenVehicle]
                           ['zone_type_id'],
                       'ride_type': 1,
-                      'payment_opt': (etaDetails[choosenVehicle]['payment_type']
-                                  .toString()
-                                  .split(',')
-                                  .toList()[payingVia] ==
-                              'card')
-                          ? 0
-                          : (etaDetails[choosenVehicle]['payment_type']
-                                      .toString()
-                                      .split(',')
-                                      .toList()[payingVia] ==
-                                  'cash')
-                              ? 1
-                              : 2,
+                      'payment_opt': paymentOptForSelection(
+                          etaDetails[choosenVehicle]['payment_type'],
+                          payingVia),
                       'pick_address': addressList
                           .firstWhere((e) => e.type == 'pickup')
                           .address,
@@ -308,7 +252,8 @@ mixin _BookingConfirmationScheduledRequest
                       'trip_start_time':
                           choosenDateTime.toString().substring(0, 19),
                       'is_later': true,
-                      'request_eta_amount': scheduledQuotedFare(etaDetails[choosenVehicle]),
+                      'request_eta_amount':
+                          scheduledQuotedFare(etaDetails[choosenVehicle]),
                       'is_pet_available':
                           (addPetPreferences == false) ? false : true,
                       'is_luggage_available':
@@ -328,19 +273,8 @@ mixin _BookingConfirmationScheduledRequest
                   'vehicle_type': etaDetails[choosenVehicle]['zone_type_id'],
                   'ride_type': 1,
                   'poly_line': polyString,
-                  'payment_opt': (etaDetails[choosenVehicle]['payment_type']
-                              .toString()
-                              .split(',')
-                              .toList()[payingVia] ==
-                          'card')
-                      ? 0
-                      : (etaDetails[choosenVehicle]['payment_type']
-                                  .toString()
-                                  .split(',')
-                                  .toList()[payingVia] ==
-                              'cash')
-                          ? 1
-                          : 2,
+                  'payment_opt': paymentOptForSelection(
+                      etaDetails[choosenVehicle]['payment_type'], payingVia),
                   'pick_address': addressList[0].address,
                   'drop_address': addressList[addressList.length - 1].address,
                   'promocode_id': etaDetails[choosenVehicle]['promocode_id'],
@@ -371,19 +305,8 @@ mixin _BookingConfirmationScheduledRequest
                   'poly_line': polyString,
                   'vehicle_type': etaDetails[choosenVehicle]['zone_type_id'],
                   'ride_type': 1,
-                  'payment_opt': (etaDetails[choosenVehicle]['payment_type']
-                              .toString()
-                              .split(',')
-                              .toList()[payingVia] ==
-                          'card')
-                      ? 0
-                      : (etaDetails[choosenVehicle]['payment_type']
-                                  .toString()
-                                  .split(',')
-                                  .toList()[payingVia] ==
-                              'cash')
-                          ? 1
-                          : 2,
+                  'payment_opt': paymentOptForSelection(
+                      etaDetails[choosenVehicle]['payment_type'], payingVia),
                   'pick_address': addressList[0].address,
                   'drop_address': addressList[addressList.length - 1].address,
                   'promocode_id': etaDetails[choosenVehicle]['promocode_id'],
@@ -436,19 +359,8 @@ mixin _BookingConfirmationScheduledRequest
                     .longitude,
                 'vehicle_type': rentalOption[choosenVehicle]['zone_type_id'],
                 'ride_type': 1,
-                'payment_opt': (rentalOption[choosenVehicle]['payment_type']
-                            .toString()
-                            .split(',')
-                            .toList()[payingVia] ==
-                        'card')
-                    ? 0
-                    : (rentalOption[choosenVehicle]['payment_type']
-                                .toString()
-                                .split(',')
-                                .toList()[payingVia] ==
-                            'cash')
-                        ? 1
-                        : 2,
+                'payment_opt': paymentOptForSelection(
+                    rentalOption[choosenVehicle]['payment_type'], payingVia),
                 'pick_address':
                     addressList.firstWhere((e) => e.type == 'pickup').address,
                 'trip_start_time': choosenDateTime.toString().substring(0, 19),
@@ -474,19 +386,8 @@ mixin _BookingConfirmationScheduledRequest
                     .longitude,
                 'vehicle_type': rentalOption[choosenVehicle]['zone_type_id'],
                 'ride_type': 1,
-                'payment_opt': (rentalOption[choosenVehicle]['payment_type']
-                            .toString()
-                            .split(',')
-                            .toList()[payingVia] ==
-                        'card')
-                    ? 0
-                    : (rentalOption[choosenVehicle]['payment_type']
-                                .toString()
-                                .split(',')
-                                .toList()[payingVia] ==
-                            'cash')
-                        ? 1
-                        : 2,
+                'payment_opt': paymentOptForSelection(
+                    rentalOption[choosenVehicle]['payment_type'], payingVia),
                 'pick_address':
                     addressList.firstWhere((e) => e.type == 'pickup').address,
                 'trip_start_time': choosenDateTime.toString().substring(0, 19),
@@ -538,19 +439,8 @@ mixin _BookingConfirmationScheduledRequest
                     .longitude,
                 'vehicle_type': rentalOption[choosenVehicle]['zone_type_id'],
                 'ride_type': 1,
-                'payment_opt': (rentalOption[choosenVehicle]['payment_type']
-                            .toString()
-                            .split(',')
-                            .toList()[payingVia] ==
-                        'card')
-                    ? 0
-                    : (rentalOption[choosenVehicle]['payment_type']
-                                .toString()
-                                .split(',')
-                                .toList()[payingVia] ==
-                            'cash')
-                        ? 1
-                        : 2,
+                'payment_opt': paymentOptForSelection(
+                    rentalOption[choosenVehicle]['payment_type'], payingVia),
                 'pick_address':
                     addressList.firstWhere((e) => e.type == 'pickup').address,
                 'promocode_id': rentalOption[choosenVehicle]['promocode_id'],
@@ -577,19 +467,8 @@ mixin _BookingConfirmationScheduledRequest
                     .longitude,
                 'vehicle_type': rentalOption[choosenVehicle]['zone_type_id'],
                 'ride_type': 1,
-                'payment_opt': (rentalOption[choosenVehicle]['payment_type']
-                            .toString()
-                            .split(',')
-                            .toList()[payingVia] ==
-                        'card')
-                    ? 0
-                    : (rentalOption[choosenVehicle]['payment_type']
-                                .toString()
-                                .split(',')
-                                .toList()[payingVia] ==
-                            'cash')
-                        ? 1
-                        : 2,
+                'payment_opt': paymentOptForSelection(
+                    rentalOption[choosenVehicle]['payment_type'], payingVia),
                 'pick_address':
                     addressList.firstWhere((e) => e.type == 'pickup').address,
                 'promocode_id': rentalOption[choosenVehicle]['promocode_id'],

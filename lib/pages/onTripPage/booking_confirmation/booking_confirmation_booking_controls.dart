@@ -5,6 +5,35 @@ mixin _BookingConfirmationBookingControls
         State<BookingConfirmation>,
         _BookingConfirmationController,
         _BookingConfirmationRequestAction {
+  String _selectedPaymentType({required bool rental}) {
+    final source = rental ? rentalOption : etaDetails;
+    if (choosenVehicle == null ||
+        choosenVehicle < 0 ||
+        choosenVehicle >= source.length) {
+      return '';
+    }
+    final methods = source[choosenVehicle]['payment_type']
+        .toString()
+        .split(',')
+        .map((method) => method.trim())
+        .toList();
+    return payingVia >= 0 && payingVia < methods.length
+        ? methods[payingVia]
+        : '';
+  }
+
+  String _selectedPaymentLabel({required bool rental}) {
+    final method = _selectedPaymentType(rental: rental);
+    final key = switch (method) {
+      'cash' => 'text_cash',
+      'wallet' => 'text_wallet',
+      'wallet_and_cash' => 'text_wallet_plus_cash',
+      'card' => 'text_card',
+      _ => 'text_upi',
+    };
+    return languages[choosenLanguage][key];
+  }
+
   Widget buildBookingControls(Size media, GeoHasher geo) {
     // NOT Theme.of(context).colorScheme here - see bookingBrandColorScheme()
     // doc comment in booking_confirmation.dart for why that silently misses
@@ -214,83 +243,26 @@ mixin _BookingConfirmationBookingControls
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                (etaDetails[choosenVehicle]['payment_type']
-                                            .toString()
-                                            .split(',')
-                                            .toList()[payingVia] ==
-                                        'cash')
-                                    ? Image.asset(
-                                        'assets/images/cash-on-delivery.png',
-                                        width: media.width * 0.07,
-                                        height: media.width * 0.7,
-                                        fit: BoxFit.contain,
-                                      )
-                                    : (etaDetails[choosenVehicle]
-                                                    ['payment_type']
-                                                .toString()
-                                                .split(',')
-                                                .toList()[payingVia] ==
-                                            'wallet')
-                                        ? Image.asset(
-                                            'assets/images/wallet (1).png',
-                                            width: media.width * 0.07,
-                                            height: media.width * 0.07,
-                                            fit: BoxFit.contain,
-                                          )
-                                        : (etaDetails[choosenVehicle]
-                                                        ['payment_type']
-                                                    .toString()
-                                                    .split(',')
-                                                    .toList()[payingVia] ==
-                                                'card')
-                                            ? Image.asset(
-                                                "assets/images/debit-card.png",
-                                                width: media.width * 0.07,
-                                                height: media.width * 0.07,
-                                                fit: BoxFit.contain,
-                                              )
-                                            : (etaDetails[choosenVehicle]
-                                                            ['payment_type']
-                                                        .toString()
-                                                        .split(',')
-                                                        .toList()[payingVia] ==
-                                                    'upi')
-                                                ? Image.asset(
-                                                    'assets/images/upi.png',
-                                                    width: media.width * 0.07,
-                                                    height: media.width * 0.07,
-                                                    fit: BoxFit.contain,
-                                                  )
-                                                : Container(),
+                                Image.asset(
+                                  _selectedPaymentType(rental: false) == 'cash'
+                                      ? 'assets/images/cash-on-delivery.png'
+                                      : _selectedPaymentType(rental: false) ==
+                                              'card'
+                                          ? 'assets/images/debit-card.png'
+                                          : _selectedPaymentType(
+                                                      rental: false) ==
+                                                  'upi'
+                                              ? 'assets/images/upi.png'
+                                              : 'assets/images/wallet (1).png',
+                                  width: media.width * 0.07,
+                                  height: media.width * 0.07,
+                                  fit: BoxFit.contain,
+                                ),
                                 SizedBox(
                                   width: media.width * 0.02,
                                 ),
                                 MyText(
-                                  text: (etaDetails[choosenVehicle]
-                                                  ['payment_type']
-                                              .toString()
-                                              .split(',')
-                                              .toList()[payingVia] ==
-                                          'cash')
-                                      ? languages[choosenLanguage]['text_cash']
-                                      : (etaDetails[choosenVehicle]
-                                                      ['payment_type']
-                                                  .toString()
-                                                  .split(',')
-                                                  .toList()[payingVia] ==
-                                              'wallet')
-                                          ? languages[choosenLanguage]
-                                              ['text_wallet']
-                                          : (etaDetails[choosenVehicle]
-                                                          ['payment_type']
-                                                      .toString()
-                                                      .split(',')
-                                                      .toList()[payingVia] ==
-                                                  'card')
-                                              ? languages[choosenLanguage]
-                                                  ['text_card']
-                                              : languages[choosenLanguage]
-                                                  ['text_upi'],
+                                  text: _selectedPaymentLabel(rental: false),
                                   size: media.width * sixteen,
                                   fontweight: FontWeight.w600,
                                   color: colors.primary,
@@ -336,85 +308,26 @@ mixin _BookingConfirmationBookingControls
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  (rentalOption[choosenVehicle]['payment_type']
-                                              .toString()
-                                              .split(',')
-                                              .toList()[payingVia] ==
-                                          'cash')
-                                      ? Image.asset(
-                                          'assets/images/cash.png',
-                                          width: media.width * 0.07,
-                                          height: media.width * 0.07,
-                                          fit: BoxFit.contain,
-                                        )
-                                      : (rentalOption[choosenVehicle]
-                                                      ['payment_type']
-                                                  .toString()
-                                                  .split(',')
-                                                  .toList()[payingVia] ==
-                                              'wallet')
-                                          ? Image.asset(
-                                              'assets/images/wallet.png',
-                                              width: media.width * 0.07,
-                                              height: media.width * 0.07,
-                                              fit: BoxFit.contain,
-                                            )
-                                          : (rentalOption[choosenVehicle]
-                                                          ['payment_type']
-                                                      .toString()
-                                                      .split(',')
-                                                      .toList()[payingVia] ==
-                                                  'card')
-                                              ? Image.asset(
-                                                  'assets/images/card.png',
-                                                  width: media.width * 0.07,
-                                                  height: media.width * 0.07,
-                                                  fit: BoxFit.contain,
-                                                )
-                                              : (rentalOption[choosenVehicle]
-                                                              ['payment_type']
-                                                          .toString()
-                                                          .split(',')
-                                                          .toList()[payingVia] ==
-                                                      'upi')
-                                                  ? Image.asset(
-                                                      'assets/images/upi.png',
-                                                      width: media.width * 0.07,
-                                                      height:
-                                                          media.width * 0.07,
-                                                      fit: BoxFit.contain,
-                                                    )
-                                                  : Container(),
+                                  Image.asset(
+                                    _selectedPaymentType(rental: true) == 'cash'
+                                        ? 'assets/images/cash.png'
+                                        : _selectedPaymentType(rental: true) ==
+                                                'card'
+                                            ? 'assets/images/card.png'
+                                            : _selectedPaymentType(
+                                                        rental: true) ==
+                                                    'upi'
+                                                ? 'assets/images/upi.png'
+                                                : 'assets/images/wallet.png',
+                                    width: media.width * 0.07,
+                                    height: media.width * 0.07,
+                                    fit: BoxFit.contain,
+                                  ),
                                   SizedBox(
                                     width: media.width * 0.02,
                                   ),
                                   MyText(
-                                    text: (rentalOption[choosenVehicle]
-                                                    ['payment_type']
-                                                .toString()
-                                                .split(',')
-                                                .toList()[payingVia] ==
-                                            'cash')
-                                        ? languages[choosenLanguage]
-                                            ['text_cash']
-                                        : (rentalOption[choosenVehicle]
-                                                        ['payment_type']
-                                                    .toString()
-                                                    .split(',')
-                                                    .toList()[payingVia] ==
-                                                'wallet')
-                                            ? languages[choosenLanguage]
-                                                ['text_wallet']
-                                            : (rentalOption[choosenVehicle]
-                                                            ['payment_type']
-                                                        .toString()
-                                                        .split(',')
-                                                        .toList()[payingVia] ==
-                                                    'card')
-                                                ? languages[choosenLanguage]
-                                                    ['text_card']
-                                                : languages[choosenLanguage]
-                                                    ['text_upi'],
+                                    text: _selectedPaymentLabel(rental: true),
                                     size: media.width * sixteen,
                                     fontweight: FontWeight.w600,
                                     color: (isDarkTheme == true)

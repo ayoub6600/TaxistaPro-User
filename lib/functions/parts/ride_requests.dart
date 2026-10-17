@@ -7,10 +7,28 @@ Map<String, dynamic> userRequestData = {};
 //create request
 String tripError = '';
 
+String _localizedBookingMessage(String? message) {
+  final normalized = message?.trim().toLowerCase() ?? '';
+  if (normalized == 'no drivers available' ||
+      normalized == 'no drivers found' ||
+      normalized.contains('no driver available') ||
+      normalized.contains('no drivers found')) {
+    return languages[choosenLanguage]['text_no_driver_found'];
+  }
+  if (normalized.isEmpty ||
+      normalized.contains('unknown error occurred') ||
+      normalized.contains('something went wrong')) {
+    return languages[choosenLanguage]['text_something_went_wrong'];
+  }
+  return message!.trim();
+}
+
 String _bookingErrorMessage(String body) {
   try {
     final message = jsonDecode(body)['message']?.toString();
-    if (message != null && message.isNotEmpty) return message;
+    if (message != null && message.isNotEmpty) {
+      return _localizedBookingMessage(message);
+    }
   } catch (_) {}
   return languages[choosenLanguage]['text_something_went_wrong'];
 }
@@ -51,9 +69,7 @@ createRequest(value, api) async {
       if (message == 'no drivers available') {
         noDriverFound = true;
       } else {
-        tripError = (message == null || message.isEmpty)
-            ? languages[choosenLanguage]['text_something_went_wrong']
-            : message;
+        tripError = _localizedBookingMessage(message);
         tripReqError = true;
       }
 
@@ -145,19 +161,8 @@ createRequestLaterPromo() async {
               addressList.firstWhere((e) => e.id == 'drop').latlng.longitude,
           'vehicle_type': etaDetails[choosenVehicle]['zone_type_id'],
           'ride_type': 1,
-          'payment_opt': (etaDetails[choosenVehicle]['payment_type']
-                      .toString()
-                      .split(',')
-                      .toList()[payingVia] ==
-                  'card')
-              ? 0
-              : (etaDetails[choosenVehicle]['payment_type']
-                          .toString()
-                          .split(',')
-                          .toList()[payingVia] ==
-                      'cash')
-                  ? 1
-                  : 2,
+          'payment_opt': paymentOptForSelection(
+              etaDetails[choosenVehicle]['payment_type'], payingVia),
           'pick_address':
               addressList.firstWhere((e) => e.id == 'pickup').address,
           'drop_address': addressList.firstWhere((e) => e.id == 'drop').address,
@@ -214,19 +219,8 @@ createRentalRequest() async {
               addressList.firstWhere((e) => e.id == 'pickup').latlng.longitude,
           'vehicle_type': rentalOption[choosenVehicle]['zone_type_id'],
           'ride_type': 1,
-          'payment_opt': (rentalOption[choosenVehicle]['payment_type']
-                      .toString()
-                      .split(',')
-                      .toList()[payingVia] ==
-                  'card')
-              ? 0
-              : (rentalOption[choosenVehicle]['payment_type']
-                          .toString()
-                          .split(',')
-                          .toList()[payingVia] ==
-                      'cash')
-                  ? 1
-                  : 2,
+          'payment_opt': paymentOptForSelection(
+              rentalOption[choosenVehicle]['payment_type'], payingVia),
           'pick_address':
               addressList.firstWhere((e) => e.id == 'pickup').address,
           'request_eta_amount': rentalOption[choosenVehicle]['fare_amount'],
@@ -278,19 +272,8 @@ RentalRequestWithPromo() async {
               addressList.firstWhere((e) => e.id == 'pickup').latlng.longitude,
           'vehicle_type': rentalOption[choosenVehicle]['zone_type_id'],
           'ride_type': 1,
-          'payment_opt': (rentalOption[choosenVehicle]['payment_type']
-                      .toString()
-                      .split(',')
-                      .toList()[payingVia] ==
-                  'card')
-              ? 0
-              : (rentalOption[choosenVehicle]['payment_type']
-                          .toString()
-                          .split(',')
-                          .toList()[payingVia] ==
-                      'cash')
-                  ? 1
-                  : 2,
+          'payment_opt': paymentOptForSelection(
+              rentalOption[choosenVehicle]['payment_type'], payingVia),
           'pick_address':
               addressList.firstWhere((e) => e.id == 'pickup').address,
           'promocode_id': rentalOption[choosenVehicle]['promocode_id'],
@@ -341,19 +324,8 @@ createRentalRequestLater() async {
               addressList.firstWhere((e) => e.id == 'pickup').latlng.longitude,
           'vehicle_type': rentalOption[choosenVehicle]['zone_type_id'],
           'ride_type': 1,
-          'payment_opt': (rentalOption[choosenVehicle]['payment_type']
-                      .toString()
-                      .split(',')
-                      .toList()[payingVia] ==
-                  'card')
-              ? 0
-              : (rentalOption[choosenVehicle]['payment_type']
-                          .toString()
-                          .split(',')
-                          .toList()[payingVia] ==
-                      'cash')
-                  ? 1
-                  : 2,
+          'payment_opt': paymentOptForSelection(
+              rentalOption[choosenVehicle]['payment_type'], payingVia),
           'pick_address':
               addressList.firstWhere((e) => e.id == 'pickup').address,
           'trip_start_time': choosenDateTime.toString().substring(0, 19),
@@ -403,19 +375,8 @@ createRentalRequestLaterPromo() async {
               addressList.firstWhere((e) => e.id == 'pickup').latlng.longitude,
           'vehicle_type': rentalOption[choosenVehicle]['zone_type_id'],
           'ride_type': 1,
-          'payment_opt': (rentalOption[choosenVehicle]['payment_type']
-                      .toString()
-                      .split(',')
-                      .toList()[payingVia] ==
-                  'card')
-              ? 0
-              : (rentalOption[choosenVehicle]['payment_type']
-                          .toString()
-                          .split(',')
-                          .toList()[payingVia] ==
-                      'cash')
-                  ? 1
-                  : 2,
+          'payment_opt': paymentOptForSelection(
+              rentalOption[choosenVehicle]['payment_type'], payingVia),
           'pick_address':
               addressList.firstWhere((e) => e.id == 'pickup').address,
           'promocode_id': rentalOption[choosenVehicle]['promocode_id'],
@@ -612,8 +573,8 @@ Future<dynamic> cancelRequestWithReason(reason) =>
 Future<dynamic> _cancelRequestWithReason(reason) async {
   dynamic result;
   try {
-    final response =
-        await _postCancel({'request_id': userRequestData['id'], 'reason': reason});
+    final response = await _postCancel(
+        {'request_id': userRequestData['id'], 'reason': reason});
     debugPrint('cancel(reason) ${response.statusCode}');
 
     final answer = rideAnswerOf(response.statusCode, response.body);

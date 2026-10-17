@@ -151,9 +151,11 @@ Map<String, dynamic> languages = {
     "text_feedback": "خبرنا بملاحظاتك",
     "text testing": "تجربة",
     "text_cancel_reason": "سبب الإلغاء",
-    "text_recovery_cancel_notice": "سنوقف البحث الحالي. إذا توفر سائق قريب خلال وقت قصير قد نخبرك لتأكيد ما إذا كنت ما زلت تحتاج الرحلة.",
+    "text_recovery_cancel_notice":
+        "سنوقف البحث الحالي. إذا توفر سائق قريب خلال وقت قصير قد نخبرك لتأكيد ما إذا كنت ما زلت تحتاج الرحلة.",
     "text_recovery_card_title": "سائق متاح الآن",
-    "text_recovery_card_body": "وجدنا سائقًا متاحًا لرحلتك السابقة. هل ما زلت تحتاج الرحلة؟",
+    "text_recovery_card_body":
+        "وجدنا سائقًا متاحًا لرحلتك السابقة. هل ما زلت تحتاج الرحلة؟",
     "text_recovery_card_confirm": "نعم، أريد الرحلة",
     "text_recovery_card_decline": "لا، شكرًا",
     "text_recovery_card_pickup": "نقطة الانطلاق",
@@ -176,11 +178,15 @@ Map<String, dynamic> languages = {
     "text_paycard": "الدفع بدون لمس",
     "text_payupi": "للدفع بطريقة أسرع",
     "text_paywallet": "للدفع الفوري",
+    "text_wallet_plus_cash": "المحفظة + نقدًا",
+    "text_paid_via": "تم الدفع عبر",
+    "text_wallet_paid": "المبلغ المدفوع من المحفظة",
+    "text_cash_due": "المبلغ النقدي المستحق للسائق",
     "text_payingvia": "ادفع عن طريق",
     "text_enterpromo": "اكتب رمز الخصم",
     "text_remove": "امسح",
     "text_edit": "تعديل",
-    "text_promoaccepted": "تم اضافة الكوبون",
+    "text_promoaccepted": "تم تطبيق الخصم",
     "text_promorejected": "رمز الكوبون خطأ !",
     "text_findingdriver": "جار البحث عن أقرب كابتن متاح",
     "text_finddriverdesc":
@@ -382,7 +388,7 @@ Map<String, dynamic> languages = {
     "text_assign_new_driver": "تعيين سائق جديد +",
     "text_select_driver": "الرجاء تحديد السائق",
     "text_fleet_not_assigned": "لم يتم تعيين الأسطول",
-    "text_no_driver_found": "لم يتم العثور على برامج تشغيل",
+    "text_no_driver_found": "لا يوجد سائق متاح لهذه الخدمة حاليًا",
     "text_select_date": "اختر التاريخ",
     "text_user": "مستخدم",
     "text_driver": "سائق",
@@ -785,7 +791,8 @@ Map<String, dynamic> languages = {
     "text_new_trip_req": "رحلة جديدة مطلوبة",
     "text_new_trip_req_bid": "تم طلب رحلة جديدة، يمكنك تقديم الطلب أو رفضه",
     "text_update_required_title": "تحديث متوفر",
-    "text_update_optional_hint": "يمكنك متابعة استخدام التطبيق بدون التحديث الآن.",
+    "text_update_optional_hint":
+        "يمكنك متابعة استخدام التطبيق بدون التحديث الآن.",
     "text_update_store_open_failed": "فشل في فتح متجر التطبيقات. حاول لاحقاً."
   },
   "en": {
@@ -922,9 +929,11 @@ Map<String, dynamic> languages = {
     "text_feedback": "Give your Feedback",
     "text testing": "Testing",
     "text_cancel_reason": "Cancel Reason",
-    "text_recovery_cancel_notice": "We'll stop the current search. If a nearby driver becomes available shortly, we may let you know so you can confirm whether you still need the ride.",
+    "text_recovery_cancel_notice":
+        "We'll stop the current search. If a nearby driver becomes available shortly, we may let you know so you can confirm whether you still need the ride.",
     "text_recovery_card_title": "A driver is available now",
-    "text_recovery_card_body": "We found an available driver for your previous ride. Do you still need it?",
+    "text_recovery_card_body":
+        "We found an available driver for your previous ride. Do you still need it?",
     "text_recovery_card_confirm": "Yes, I need the ride",
     "text_recovery_card_decline": "No, thanks",
     "text_recovery_card_pickup": "Pickup",
@@ -947,12 +956,16 @@ Map<String, dynamic> languages = {
     "text_paycard": "For seamless and contact less payment",
     "text_payupi": "For faster payment",
     "text_paywallet": "For Instant payment",
+    "text_wallet_plus_cash": "Wallet + cash",
+    "text_paid_via": "Paid via",
+    "text_wallet_paid": "Paid from wallet",
+    "text_cash_due": "Cash due to driver",
     "text_payingvia": "Paying via",
     "text_enterpromo": "Enter Promo Code",
     "text_remove": "Remove",
     "text_phoneـnumber": "Phone Number",
     "text_edit": "Edit",
-    "text_promoaccepted": " Coupon Applied",
+    "text_promoaccepted": "Discount applied",
     "text_promorejected": "Invalid Coupon Code",
     "text_findingdriver": "Looking for nearby drivers",
     "text_finddriverdesc":
@@ -1172,7 +1185,7 @@ Map<String, dynamic> languages = {
     "text_assign_new_driver": "Assign new Driver +",
     "text_select_driver": "Please Select Driver",
     "text_fleet_not_assigned": "Fleet Not Assigned",
-    "text_no_driver_found": "No Drivers Found",
+    "text_no_driver_found": "No driver is currently available for this service",
     "text_select_date": "Select Date",
     "text_user": "User",
     "text_driver": "Driver",
@@ -1581,7 +1594,9 @@ Map<String, dynamic> languages = {
     "text_fast_and_easy_desc":
         "Seamless journeys with just one click; explore without any hassle every step of the way",
     "text_update_required_title": "Update Available",
-    "text_update_optional_hint": "You can keep using the app without updating right now.",
-    "text_update_store_open_failed": "Failed to open the app store. Please try again later."
+    "text_update_optional_hint":
+        "You can keep using the app without updating right now.",
+    "text_update_store_open_failed":
+        "Failed to open the app store. Please try again later."
   },
 };
