@@ -850,9 +850,9 @@ mixin _BookingConfirmationActiveRide
                                                           )
                                                         : (userRequestData[
                                                                     'payment_opt'] ==
-                                                                '0')
+                                                                '3')
                                                             ? Image.asset(
-                                                                'assets/images/card.png',
+                                                                'assets/images/wallet.png',
                                                                 width: media
                                                                         .width *
                                                                     0.07,
@@ -862,7 +862,21 @@ mixin _BookingConfirmationActiveRide
                                                                 fit: BoxFit
                                                                     .contain,
                                                               )
-                                                            : Container(),
+                                                            : (userRequestData[
+                                                                        'payment_opt'] ==
+                                                                    '0')
+                                                                ? Image.asset(
+                                                                    'assets/images/card.png',
+                                                                    width: media
+                                                                            .width *
+                                                                        0.07,
+                                                                    height: media
+                                                                            .width *
+                                                                        0.07,
+                                                                    fit: BoxFit
+                                                                        .contain,
+                                                                  )
+                                                                : Container(),
                                                 SizedBox(
                                                   width: media.width * 0.02,
                                                 ),
@@ -870,8 +884,7 @@ mixin _BookingConfirmationActiveRide
                                                   text: (userRequestData[
                                                               'payment_opt'] ==
                                                           '1')
-                                                      ? languages[
-                                                              choosenLanguage]
+                                                      ? languages[choosenLanguage]
                                                           ['text_cash']
                                                       : (userRequestData[
                                                                   'payment_opt'] ==
@@ -879,9 +892,19 @@ mixin _BookingConfirmationActiveRide
                                                           ? languages[
                                                                   choosenLanguage]
                                                               ['text_wallet']
-                                                          : languages[
-                                                                  choosenLanguage]
-                                                              ['text_card'],
+                                                          : (userRequestData[
+                                                                      'payment_opt'] ==
+                                                                  '3')
+                                                              ? languages[
+                                                                      choosenLanguage]
+                                                                  [
+                                                                  userRequestData['wallet_split_is_estimate'] ==
+                                                                          true
+                                                                      ? 'text_cash_expected'
+                                                                      : 'text_cash_due']
+                                                              : languages[
+                                                                      choosenLanguage]
+                                                                  ['text_card'],
                                                   size: media.width * sixteen,
                                                   fontweight: FontWeight.w600,
                                                   color: (isDarkTheme == true)
@@ -903,10 +926,13 @@ mixin _BookingConfirmationActiveRide
                                                   children: [
                                                     MyText(
                                                       textAlign: TextAlign.end,
-                                                      text:
-                                                          _resolvedRideFareText(
-                                                        userRequestData,
-                                                      ),
+                                                      text: userRequestData[
+                                                                  'payment_opt'] ==
+                                                              '3'
+                                                          ? '${userRequestData['requested_currency_symbol'] ?? 'LYD'} ${userRequestData['cash_due_amount'] ?? 0}'
+                                                          : _resolvedRideFareText(
+                                                              userRequestData,
+                                                            ),
                                                       size:
                                                           media.width * sixteen,
                                                       fontweight:
@@ -924,6 +950,22 @@ mixin _BookingConfirmationActiveRide
                                     ],
                                   ),
                                 ),
+                              if (userRequestData['payment_opt'].toString() ==
+                                  '3') ...[
+                                SizedBox(height: media.width * 0.015),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    MyText(
+                                      text:
+                                          '${languages[choosenLanguage][userRequestData['wallet_split_is_estimate'] == true ? 'text_wallet_expected' : 'text_wallet_paid']}: ${userRequestData['requested_currency_symbol'] ?? 'LYD'} ${userRequestData['wallet_paid_amount'] ?? 0}',
+                                      size: media.width * twelve,
+                                      color: greyText,
+                                    ),
+                                  ],
+                                ),
+                              ],
                               SizedBox(
                                 height: media.width * 0.05,
                               ),

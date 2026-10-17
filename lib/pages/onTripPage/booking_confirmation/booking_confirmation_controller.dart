@@ -147,6 +147,21 @@ mixin _BookingConfirmationController
         .toDouble();
   }
 
+  /// Wallet is a valid choice for a partial balance only when this service
+  /// also exposes the server-supported wallet/cash settlement.
+  bool walletCanCoverOrSplit(Map service,
+      {required double fare, required double walletBalance}) {
+    final methods = service['payment_type']
+        .toString()
+        .split(',')
+        .map((method) => method.trim())
+        .where((method) => method.isNotEmpty)
+        .toList();
+    if (payingVia < 0 || payingVia >= methods.length) return false;
+    if (methods[payingVia] != 'wallet') return true;
+    return walletBalance >= fare || methods.contains('wallet_and_cash');
+  }
+
   dynamic addressBottom;
   dynamic _addressBottom;
   List myMarker = [];
@@ -475,14 +490,16 @@ mixin _BookingConfirmationController
   /// while away ends the search screen instead of "searching" on stale flags.
   Future<void> _reconcileAfterResume() async {
     if (!mounted) return;
-    final key = isDarkTheme == true ? 'assets/dark.json' : 'assets/map_style_black.json';
+    final key = isDarkTheme == true
+        ? 'assets/dark.json'
+        : 'assets/map_style_black.json';
     if (key != _appliedMapStyleKey) {
       mapStyle = await rootBundle.loadString(key);
       _appliedMapStyleKey = key;
       _controller?.setMapStyle(mapStyle);
     }
-    final wasSearching = userRequestData.isNotEmpty &&
-        userRequestData['accepted_at'] == null;
+    final wasSearching =
+        userRequestData.isNotEmpty && userRequestData['accepted_at'] == null;
     if (userRequestData.isNotEmpty) {
       await refreshUserRequestState(userRequestData['id']?.toString());
     } else {
@@ -548,10 +565,10 @@ mixin _BookingConfirmationController
       // and self-cancels the ride before the backend has even had a chance
       // to flip recovery_active, defeating recovery every time.
       final recoveryEnabled = (int.tryParse(
-              userDetails['missed_ride_recovery_window_seconds']
-                      ?.toString() ??
-                  '') ??
-          0) >
+                  userDetails['missed_ride_recovery_window_seconds']
+                          ?.toString() ??
+                      '') ??
+              0) >
           0;
       if (recoveryEnabled && timing > 0) {
         timing = timing + 90;
@@ -587,10 +604,10 @@ mixin _BookingConfirmationController
               if (requestId != null && requestId.isNotEmpty) {
                 await refreshUserRequestState(requestId);
               }
-              final recoveryWindowSeconds = int.tryParse(userDetails[
-                              'missed_ride_recovery_window_seconds']
-                          ?.toString() ??
-                      '') ??
+              final recoveryWindowSeconds = int.tryParse(
+                      userDetails['missed_ride_recovery_window_seconds']
+                              ?.toString() ??
+                          '') ??
                   0;
               if (userRequestData['recovery_active'] == true &&
                   recoveryWindowSeconds > 0 &&
@@ -648,7 +665,8 @@ mixin _BookingConfirmationController
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
-        title: Text(choosenLanguage == 'ar' ? 'لقينالك سواق' : 'We found a driver'),
+        title: Text(
+            choosenLanguage == 'ar' ? 'لقينالك سواق' : 'We found a driver'),
         content: Text(choosenLanguage == 'ar'
             ? 'السواق ${offer['driver_name'] ?? ''} مستعد يوصلك. تأكده؟'
             : 'Driver ${offer['driver_name'] ?? ''} is ready to pick you up. Confirm?'),

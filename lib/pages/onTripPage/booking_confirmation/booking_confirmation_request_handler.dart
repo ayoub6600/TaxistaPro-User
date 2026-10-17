@@ -8,40 +8,32 @@ mixin _BookingConfirmationRequestHandler
         _BookingConfirmationImmediateRequest {
   Future<void> handleRideRequest(Size media, GeoHasher geo) async {
     if (isLoading) return;
-    if ((widget.type == 2) ||
-        (((rentalOption.isEmpty &&
-                        (etaDetails[choosenVehicle]['user_wallet_balance'] >=
-                        payableFareForSelectedService(etaDetails[choosenVehicle],
-                                    scheduled: confirmRideLater && choosenTransportType == 0 && widget.type == null,
-                                    discounted: false) &&
-                            etaDetails[choosenVehicle]['has_discount'] ==
-                                false) ||
-                    (rentalOption.isEmpty &&
-                        etaDetails[choosenVehicle]['has_discount'] == true &&
-                        etaDetails[choosenVehicle]['user_wallet_balance'] >=
-                            payableFareForSelectedService(etaDetails[choosenVehicle],
-                                scheduled: confirmRideLater && choosenTransportType == 0 && widget.type == null,
-                                discounted: true))) ||
-                (rentalOption.isEmpty &&
-                    etaDetails[choosenVehicle]['payment_type']
-                            .toString()
-                            .split(',')
-                            .toList()[payingVia] !=
-                        'wallet')) ||
-            ((rentalOption.isNotEmpty &&
-                    (etaDetails[0]['user_wallet_balance'] >=
-                        rentalOption[choosenVehicle]['fare_amount']) &&
-                    rentalOption[choosenVehicle]['has_discount'] == false) ||
-                (rentalOption.isNotEmpty &&
-                    rentalOption[choosenVehicle]['has_discount'] == true &&
-                    etaDetails[0]['user_wallet_balance'] >=
-                        rentalOption[choosenVehicle]['discounted_totel']) ||
-                rentalOption.isNotEmpty &&
-                    rentalOption[choosenVehicle]['payment_type']
-                            .toString()
-                            .split(',')
-                            .toList()[payingVia] !=
-                        'wallet'))) {
+    if (choosenVehicle == null) return;
+    final eta = etaDetails[choosenVehicle];
+    final selectedService =
+        rentalOption.isEmpty ? eta : rentalOption[choosenVehicle];
+    final selectedFare = rentalOption.isEmpty
+        ? payableFareForSelectedService(
+            eta,
+            scheduled: confirmRideLater &&
+                choosenTransportType == 0 &&
+                widget.type == null,
+            discounted: eta['has_discount'] == true,
+          )
+        : (double.tryParse((selectedService['has_discount'] == true
+                        ? selectedService['discounted_totel']
+                        : selectedService['fare_amount'])
+                    ?.toString() ??
+                '') ??
+            0);
+    final walletBalance = rentalOption.isEmpty
+        ? (double.tryParse(eta['user_wallet_balance']?.toString() ?? '') ?? 0)
+        : (double.tryParse(
+                etaDetails[0]['user_wallet_balance']?.toString() ?? '') ??
+            0);
+    if (widget.type == 2 ||
+        walletCanCoverOrSplit(selectedService,
+            fare: selectedFare, walletBalance: walletBalance)) {
       if (((widget.type == null)
               ? (etaDetails[choosenVehicle]['enable_bidding'] == true)
               : false) ||
@@ -135,11 +127,13 @@ mixin _BookingConfirmationRequestHandler
           riderOffer = chosenFareForService(choosenVehicle);
           if (riderOffer > 0) {
             final paymentChoices = eta['payment_type'].toString().split(',');
-            final walletBalance = double.tryParse(
-                eta['user_wallet_balance']?.toString() ?? '') ?? 0;
+            final walletBalance =
+                double.tryParse(eta['user_wallet_balance']?.toString() ?? '') ??
+                    0;
             if (payingVia < paymentChoices.length &&
                 paymentChoices[payingVia] == 'wallet' &&
-                riderOffer > walletBalance) {
+                riderOffer > walletBalance &&
+                !paymentChoices.contains('wallet_and_cash')) {
               setState(() => islowwalletbalance = true);
               return;
             }

@@ -525,29 +525,47 @@ mixin _BookingConfirmationBookingControls
                                 Expanded(
                                   child: InkWell(
                                     onTap: () async {
+                                      final eta = etaDetails[choosenVehicle];
+                                      final service = rentalOption.isEmpty
+                                          ? eta
+                                          : rentalOption[choosenVehicle];
+                                      final fare = (rentalOption.isEmpty
+                                              ? quotedFareForPayment(eta,
+                                                  scheduled:
+                                                      choosenTransportType ==
+                                                              0 &&
+                                                          widget.type == null,
+                                                  discounted:
+                                                      eta['has_discount'] ==
+                                                          true)
+                                              : (double.tryParse((service[
+                                                                      'has_discount'] ==
+                                                                  true
+                                                              ? service[
+                                                                  'discounted_totel']
+                                                              : service[
+                                                                  'fare_amount'])
+                                                          ?.toString() ??
+                                                      '') ??
+                                                  0))
+                                          .toDouble();
+                                      final walletBalance = rentalOption.isEmpty
+                                          ? (double.tryParse(
+                                                  eta['user_wallet_balance']
+                                                          ?.toString() ??
+                                                      '') ??
+                                              0)
+                                          : (double.tryParse(etaDetails[0][
+                                                          'user_wallet_balance']
+                                                      ?.toString() ??
+                                                  '') ??
+                                              0);
                                       if ((widget.type == null &&
                                               choosenTransportType == 0 &&
                                               rentalOption.isEmpty) ||
-                                          ((rentalOption.isEmpty && (etaDetails[choosenVehicle]['user_wallet_balance'] >= quotedFareForPayment(etaDetails[choosenVehicle], scheduled: choosenTransportType == 0 && widget.type == null, discounted: false) && etaDetails[choosenVehicle]['has_discount'] == false) || (rentalOption.isEmpty && etaDetails[choosenVehicle]['has_discount'] == true && etaDetails[choosenVehicle]['user_wallet_balance'] >= quotedFareForPayment(etaDetails[choosenVehicle], scheduled: choosenTransportType == 0 && widget.type == null, discounted: true))) ||
-                                              (rentalOption.isEmpty &&
-                                                  etaDetails[choosenVehicle]['payment_type'].toString().split(',').toList()[
-                                                          payingVia] !=
-                                                      'wallet')) ||
-                                          ((rentalOption.isNotEmpty &&
-                                                  (etaDetails[0]['user_wallet_balance'] >=
-                                                      rentalOption[choosenVehicle]
-                                                          ['fare_amount']) &&
-                                                  rentalOption[choosenVehicle]
-                                                          ['has_discount'] ==
-                                                      false) ||
-                                              (rentalOption.isNotEmpty &&
-                                                  rentalOption[choosenVehicle]
-                                                          ['has_discount'] ==
-                                                      true &&
-                                                  etaDetails[0]['user_wallet_balance'] >=
-                                                      rentalOption[choosenVehicle]
-                                                          ['discounted_totel']) ||
-                                              rentalOption.isNotEmpty && rentalOption[choosenVehicle]['payment_type'].toString().split(',').toList()[payingVia] != 'wallet')) {
+                                          walletCanCoverOrSplit(service,
+                                              fare: fare,
+                                              walletBalance: walletBalance)) {
                                         if (choosenVehicle != null) {
                                           setState(() {
                                             choosenDateTime = DateTime.now()
