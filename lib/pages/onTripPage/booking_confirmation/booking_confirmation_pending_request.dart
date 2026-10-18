@@ -687,8 +687,10 @@ mixin _BookingConfirmationPendingRequest
                     .equalTo(requestId)),
             builder: (context, querySnapshot) {
               return StreamBuilder<DatabaseEvent>(
-                stream: LiveQueries.watchQuery('bid-offers:$requestId',
-                    () => FirebaseDatabase.instance.ref('bid-meta/$requestId/drivers')),
+                stream: LiveQueries.watchQuery(
+                    'bid-offers:$requestId',
+                    () => FirebaseDatabase.instance
+                        .ref('bid-meta/$requestId/drivers')),
                 builder: (context, offersSnapshot) {
                   return _buildRegularDriverSearchContent(
                     media,
@@ -780,6 +782,7 @@ mixin _BookingConfirmationPendingRequest
     return _SearchingDriverOverlay(
       drivers: candidates,
       fare: _resolveRideFare(userRequestData),
+      signupBonusAmount: _signupBonusAmountForCounterOffers(userRequestData),
       remainingSeconds: max(remaining, 0),
       totalSeconds: max(configuredDuration, 1),
       isRtl: languageDirection == 'rtl',
@@ -792,6 +795,15 @@ mixin _BookingConfirmationPendingRequest
       },
       onAcceptOffer: _acceptRegularCounterOffer,
     );
+  }
+
+  double _signupBonusAmountForCounterOffers(Map<dynamic, dynamic> request) {
+    final available = request['signup_bonus_available'] == true ||
+        request['signup_bonus_available'] == 1 ||
+        request['signup_bonus_available']?.toString() == '1';
+    if (!available) return 0;
+    return double.tryParse(request['signup_bonus_amount']?.toString() ?? '') ??
+        0;
   }
 
   Future<bool> _acceptRegularCounterOffer(

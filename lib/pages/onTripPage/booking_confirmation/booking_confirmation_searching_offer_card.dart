@@ -10,6 +10,7 @@ class _OfferCard extends StatelessWidget {
   const _OfferCard({
     required this.driver,
     required this.isRtl,
+    required this.signupBonusAmount,
     required this.isAccepting,
     required this.onAccept,
     required this.onTap,
@@ -17,6 +18,7 @@ class _OfferCard extends StatelessWidget {
 
   final NearbyDriverCandidate driver;
   final bool isRtl;
+  final double signupBonusAmount;
   final bool isAccepting;
   final VoidCallback onAccept;
   final VoidCallback onTap;
@@ -25,6 +27,8 @@ class _OfferCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final offer = driver.counterOffer ?? 0;
     final currency = driver.counterOfferCurrency;
+    final giftApplied = signupBonusAmount.clamp(0.0, offer).toDouble();
+    final remainingCash = cashDueAfterSignupGift(offer, giftApplied);
     return TweenAnimationBuilder<double>(
       key: ValueKey('offer-card-${driver.revealKey}-$offer'),
       duration: const Duration(milliseconds: 360),
@@ -40,7 +44,7 @@ class _OfferCard extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          width: 136,
+          width: 154,
           padding: const EdgeInsets.fromLTRB(8, 10, 8, 8),
           decoration: BoxDecoration(
             color: Colors.white,
@@ -62,6 +66,23 @@ class _OfferCard extends StatelessWidget {
                     ? 'أقدر أوصلك بـ ${_formatMoney(offer)} $currency'
                     : 'I can get you there for ${_formatMoney(offer)} $currency',
               ),
+              if (giftApplied > 0) ...[
+                const SizedBox(height: 3),
+                Text(
+                  isRtl
+                      ? 'هدية ${_formatMoney(giftApplied)} · تدفع ${_formatMoney(remainingCash)} $currency'
+                      : 'Gift ${_formatMoney(giftApplied)} · you pay ${_formatMoney(remainingCash)} $currency',
+                  maxLines: 2,
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.cairo(
+                    color: const Color(0xff087F65),
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w800,
+                    height: 1.1,
+                  ),
+                ),
+              ],
               const SizedBox(height: 4),
               SizedBox(
                 height: 46,

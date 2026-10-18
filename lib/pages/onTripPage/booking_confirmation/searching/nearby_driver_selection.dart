@@ -24,6 +24,11 @@ typedef DistanceBetween = double Function(
   double lon2,
 );
 
+/// The signup gift is applied to the agreed counter-offer, not to the
+/// driver's displayed offer itself. The rider pays only the uncovered part.
+double cashDueAfterSignupGift(double agreedFare, double giftAmount) =>
+    (agreedFare - giftAmount).clamp(0.0, agreedFare).toDouble();
+
 class NearbyDriverCandidate {
   const NearbyDriverCandidate({
     required this.data,

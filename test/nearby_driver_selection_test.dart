@@ -57,6 +57,20 @@ List<NearbyDriverCandidate> _nearby(List<Map<String, dynamic>> drivers) {
 }
 
 void main() {
+  group('cashDueAfterSignupGift', () {
+    test('subtracts the gift from an accepted higher driver offer', () {
+      expect(cashDueAfterSignupGift(12, 10), 2);
+    });
+
+    test('never returns a negative amount when the gift covers the fare', () {
+      expect(cashDueAfterSignupGift(9, 10), 0);
+    });
+
+    test('keeps the full offer payable when no gift is available', () {
+      expect(cashDueAfterSignupGift(12, 0), 12);
+    });
+  });
+
   group('nearbySearchCandidates', () {
     test('keeps fresh, active, matching drivers sorted by distance', () {
       final result = _nearby([

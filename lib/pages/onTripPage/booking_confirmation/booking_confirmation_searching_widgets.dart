@@ -13,6 +13,7 @@ class _SearchingDriverOverlay extends StatefulWidget {
   const _SearchingDriverOverlay({
     required this.drivers,
     required this.fare,
+    required this.signupBonusAmount,
     required this.remainingSeconds,
     required this.totalSeconds,
     required this.isRtl,
@@ -23,6 +24,7 @@ class _SearchingDriverOverlay extends StatefulWidget {
 
   final List<NearbyDriverCandidate> drivers;
   final _RideFareData? fare;
+  final double signupBonusAmount;
   final int remainingSeconds;
   final int totalSeconds;
   final bool isRtl;
@@ -361,7 +363,7 @@ class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
                                   ),
                                   SizedBox(height: compact ? 6 : 8),
                                   SizedBox(
-                                    height: compact ? 158 : 168,
+                                    height: compact ? 188 : 198,
                                     child: offeringDrivers.length <= 3
                                         ? Center(
                                             child: Row(
@@ -377,6 +379,8 @@ class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
                                                     driver:
                                                         offeringDrivers[index],
                                                     isRtl: widget.isRtl,
+                                                    signupBonusAmount: widget
+                                                        .signupBonusAmount,
                                                     isAccepting:
                                                         _acceptingOfferKey ==
                                                             offeringDrivers[
@@ -407,6 +411,8 @@ class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
                                               return _OfferCard(
                                                 driver: driver,
                                                 isRtl: widget.isRtl,
+                                                signupBonusAmount:
+                                                    widget.signupBonusAmount,
                                                 isAccepting:
                                                     _acceptingOfferKey ==
                                                         driver.revealKey,
