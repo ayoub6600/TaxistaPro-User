@@ -48,6 +48,7 @@ import 'map_page/widgets/map_advertisement_banner.dart';
 import 'map_page/widgets/map_floating_menu_button.dart';
 import 'map_page/widgets/map_recenter_button.dart';
 import 'map_page/widgets/trip_selection_panel.dart';
+import 'widgets/signup_welcome_gift_dialog.dart';
 import 'map_launch/map_launch_coordinator.dart';
 import 'map_launch/taxi_launch_overlay.dart';
 import 'pick_loc_select.dart';
@@ -334,37 +335,8 @@ class _MapsState extends State<Maps>
         barrierLabel: 'Welcome gift',
         barrierColor: Colors.black54,
         transitionDuration: const Duration(milliseconds: 360),
-        pageBuilder: (context, animation, secondaryAnimation) => AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.card_giftcard_rounded,
-                  color: Color(0xff18A874), size: 56),
-              const SizedBox(height: 14),
-              Text(
-                isArabic ? 'مرحبًا بك في تاكسيستا!' : 'Welcome to Taxista!',
-                textAlign: TextAlign.center,
-                style:
-                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
-              ),
-              Text(
-                isArabic
-                    ? 'ربحت $reward دينار. سيُخصم تلقائيًا من أول رحلة لك.'
-                    : 'You got $reward LYD. It will be applied automatically to your first ride.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 15, height: 1.45),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(isArabic ? 'رائع!' : 'Great!'),
-            ),
-          ],
-        ),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            SignupWelcomeGiftDialog(reward: reward, isArabic: isArabic),
         transitionBuilder: (context, animation, secondaryAnimation, child) =>
             ScaleTransition(
           scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
