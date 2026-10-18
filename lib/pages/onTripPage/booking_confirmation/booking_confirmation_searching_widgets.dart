@@ -13,6 +13,7 @@ class _SearchingDriverOverlay extends StatefulWidget {
   const _SearchingDriverOverlay({
     required this.drivers,
     required this.fare,
+    required this.originalFare,
     required this.signupBonusAmount,
     required this.remainingSeconds,
     required this.totalSeconds,
@@ -24,6 +25,7 @@ class _SearchingDriverOverlay extends StatefulWidget {
 
   final List<NearbyDriverCandidate> drivers;
   final _RideFareData? fare;
+  final double originalFare;
   final double signupBonusAmount;
   final int remainingSeconds;
   final int totalSeconds;
@@ -379,6 +381,8 @@ class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
                                                     driver:
                                                         offeringDrivers[index],
                                                     isRtl: widget.isRtl,
+                                                    originalFare:
+                                                        widget.originalFare,
                                                     signupBonusAmount: widget
                                                         .signupBonusAmount,
                                                     isAccepting:
@@ -411,6 +415,8 @@ class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
                                               return _OfferCard(
                                                 driver: driver,
                                                 isRtl: widget.isRtl,
+                                                originalFare:
+                                                    widget.originalFare,
                                                 signupBonusAmount:
                                                     widget.signupBonusAmount,
                                                 isAccepting:

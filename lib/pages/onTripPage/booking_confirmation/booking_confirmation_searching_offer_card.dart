@@ -10,6 +10,7 @@ class _OfferCard extends StatelessWidget {
   const _OfferCard({
     required this.driver,
     required this.isRtl,
+    required this.originalFare,
     required this.signupBonusAmount,
     required this.isAccepting,
     required this.onAccept,
@@ -18,6 +19,7 @@ class _OfferCard extends StatelessWidget {
 
   final NearbyDriverCandidate driver;
   final bool isRtl;
+  final double originalFare;
   final double signupBonusAmount;
   final bool isAccepting;
   final VoidCallback onAccept;
@@ -29,6 +31,9 @@ class _OfferCard extends StatelessWidget {
     final currency = driver.counterOfferCurrency;
     final giftApplied = signupBonusAmount.clamp(0.0, offer).toDouble();
     final remainingCash = cashDueAfterSignupGift(offer, giftApplied);
+    final reportedBase = driver.counterOfferBase;
+    final previousFare =
+        reportedBase != null && reportedBase > 0 ? reportedBase : originalFare;
     return TweenAnimationBuilder<double>(
       key: ValueKey('offer-card-${driver.revealKey}-$offer'),
       duration: const Duration(milliseconds: 360),
@@ -66,12 +71,29 @@ class _OfferCard extends StatelessWidget {
                     ? 'أقدر أوصلك بـ ${_formatMoney(offer)} $currency'
                     : 'I can get you there for ${_formatMoney(offer)} $currency',
               ),
+              if (previousFare > 0 &&
+                  (previousFare - offer).abs() >= 0.005) ...[
+                const SizedBox(height: 2),
+                Text(
+                  isRtl
+                      ? 'السعر الأساسي ${_formatMoney(previousFare)} $currency'
+                      : 'Base fare ${_formatMoney(previousFare)} $currency',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.cairo(
+                    color: const Color(0xff8492A8),
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.w700,
+                    decoration: TextDecoration.lineThrough,
+                  ),
+                ),
+              ],
               if (giftApplied > 0) ...[
                 const SizedBox(height: 3),
                 Text(
                   isRtl
-                      ? 'هدية ${_formatMoney(giftApplied)} · تدفع ${_formatMoney(remainingCash)} $currency'
-                      : 'Gift ${_formatMoney(giftApplied)} · you pay ${_formatMoney(remainingCash)} $currency',
+                      ? 'من الهدية ${_formatMoney(giftApplied)} · نقدًا ${_formatMoney(remainingCash)} $currency'
+                      : 'Gift ${_formatMoney(giftApplied)} · cash ${_formatMoney(remainingCash)} $currency',
                   maxLines: 2,
                   textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,

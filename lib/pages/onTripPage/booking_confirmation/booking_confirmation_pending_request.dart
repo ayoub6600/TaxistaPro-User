@@ -782,6 +782,10 @@ mixin _BookingConfirmationPendingRequest
     return _SearchingDriverOverlay(
       drivers: candidates,
       fare: _resolveRideFare(userRequestData),
+      originalFare: double.tryParse(
+            _resolveRideFare(userRequestData)?.amount ?? '',
+          ) ??
+          0,
       signupBonusAmount: _signupBonusAmountForCounterOffers(userRequestData),
       remainingSeconds: max(remaining, 0),
       totalSeconds: max(configuredDuration, 1),
