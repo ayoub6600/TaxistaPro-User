@@ -5,13 +5,69 @@ mixin _BookingConfirmationImmediateRequest
   double? _riderOfferFare;
 
   Future<dynamic> postImmediateRequest(String payload, String endpoint) async {
-    if (_riderOfferFare == null) return createRequest(payload, endpoint);
     final fields = Map<String, dynamic>.from(jsonDecode(payload));
+    if (endpoint == 'api/v1/request/create' && fields.containsKey('drop_lat')) {
+      final token = etaDetails[choosenVehicle]['fare_quote_token']?.toString();
+      if (currentImmediateFareQuote(token, fields)) {
+        fields['fare_quote_token'] = token;
+      }
+    }
+    if (_riderOfferFare == null) {
+      if (endpoint == 'api/v1/request/create' &&
+          fields.containsKey('drop_lat') &&
+          !fields.containsKey('fare_quote_token') &&
+          etaDetails[choosenVehicle]['enable_bidding'] != true) {
+        try {
+          final response = await http.post(
+            Uri.parse('${url}api/v1/request/eta'),
+            headers: {
+              'Authorization': 'Bearer ${bearerToken[0].token}',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode(immediateOfferQuoteInput(fields)),
+          );
+          if (response.statusCode != 200)
+            throw const FormatException('ETA unavailable');
+          final quotes = jsonDecode(response.body)['data'] as List;
+          final matching = quotes.cast<Map>().where((quote) =>
+              quote['zone_type_id'].toString() ==
+              fields['vehicle_type'].toString());
+          if (matching.isEmpty || matching.first['fare_quote_token'] == null) {
+            throw const FormatException('Fare quote unavailable');
+          }
+          final fresh = matching.first;
+          final originalFare =
+              double.tryParse(fields['request_eta_amount']?.toString() ?? '') ??
+                  0;
+          final freshFare =
+              double.tryParse(fresh['total']?.toString() ?? '') ?? 0;
+          if ((freshFare - originalFare).abs() > 0.02) {
+            etaDetails[choosenVehicle] = fresh;
+            tripError = languageDirection == 'rtl'
+                ? 'تغيّر سعر الرحلة إلى ${freshFare.toStringAsFixed(2)} دينار. راجع السعر ثم اطلب مجددًا.'
+                : 'The fare changed to ${freshFare.toStringAsFixed(2)} LYD. Review it and book again.';
+            tripReqError = true;
+            valueNotifierBook.incrementNotifier();
+            return 'quote_changed';
+          }
+          fields['fare_quote_token'] = fresh['fare_quote_token'];
+        } catch (error) {
+          debugPrint('Unable to refresh fixed ride quote: $error');
+          tripError = languageDirection == 'rtl'
+              ? 'تعذر تأكيد سعر الرحلة الآن. حاول مرة أخرى.'
+              : 'Could not confirm the fare. Please try again.';
+          tripReqError = true;
+          return 'quote_unavailable';
+        }
+      }
+      return createRequest(jsonEncode(fields), endpoint);
+    }
     final fair =
         double.tryParse(fields['request_eta_amount']?.toString() ?? '') ?? 0;
+    final biddingService = etaDetails[choosenVehicle]['enable_bidding'] == true;
     if (fields.containsKey('drop_lat') &&
         fair > 0 &&
-        (_riderOfferFare! - fair).abs() > 0.01) {
+        (biddingService || (_riderOfferFare! - fair).abs() > 0.01)) {
       final originalToken =
           etaDetails[choosenVehicle]['fare_quote_token']?.toString();
       if (currentImmediateFareQuote(originalToken, fields)) {
@@ -63,8 +119,9 @@ mixin _BookingConfirmationImmediateRequest
           return 'quote_unavailable';
         }
       }
-      // This is a rider proposal on a normal realtime request, not the old
-      // bid-meta auction flow. The two workflows must not share is_bid_ride.
+      // The server derives bidding mode from the selected service and keeps
+      // its legacy bid fields in sync for driver clients. Always send the
+      // opening fare for a bidding service, even when it equals the quote.
       applyImmediateRiderProposal(fields, _riderOfferFare!);
     }
     return createRequest(jsonEncode(fields), endpoint);

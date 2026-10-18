@@ -15,6 +15,8 @@ class VehicleInfoBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final details = type != 1 ? etaDetails[i] : rentalOption[choosenVehicle];
+    final iconUrl = details['icon']?.toString().trim() ?? '';
     return Container(
       width: width * 1,
       padding: EdgeInsets.all(width * 0.05),
@@ -28,16 +30,19 @@ class VehicleInfoBottomSheet extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
-            child: Image.network(
-              (type != 1)
-                  ? etaDetails[i]['icon']
-                  : rentalOption[choosenVehicle]['icon'],
-              width: 60,
-              height: 60,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.car_rental, size: 60, color: Colors.grey),
-            ),
+            child: iconUrl.isEmpty
+                ? const Icon(Icons.local_taxi_rounded,
+                    size: 60, color: Colors.blue)
+                : Image.network(
+                    iconUrl,
+                    width: 60,
+                    height: 60,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.local_taxi_rounded,
+                        size: 60,
+                        color: Colors.blue),
+                  ),
           ),
 
           SizedBox(
@@ -46,7 +51,7 @@ class VehicleInfoBottomSheet extends StatelessWidget {
           //name
           MyText(
             text: (type != 1)
-                ? etaDetails[i]['name']
+                ? (etaDetails[i]['name']?.toString() ?? '')
                 : '${rentalOption[choosenVehicle]['name']} (${etaDetails[rentalChoosenOption]['package_name']})',
             // : '${etaDetails[i]['typesWithPrice']['data'][0]['name']} (${etaDetails[i]['package_name']})',
             size: 16.sp,
@@ -60,8 +65,10 @@ class VehicleInfoBottomSheet extends StatelessWidget {
 
           MyText(
             text: ((type != 1))
-                ? etaDetails[i]['short_description']
-                : rentalOption[choosenVehicle]['short_description'],
+                ? (etaDetails[i]['short_description']?.toString() ?? '')
+                : (rentalOption[choosenVehicle]['short_description']
+                        ?.toString() ??
+                    ''),
             size: 12.sp,
             color: Colors.grey,
           ),
@@ -84,7 +91,11 @@ class VehicleInfoBottomSheet extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             if (type != 2)
-                              MyText(text: 'Fare', size: width * fourteen),
+                              MyText(
+                                  text: choosenLanguage == 'ar'
+                                      ? 'الأجرة'
+                                      : 'Fare',
+                                  size: width * fourteen),
                             if (type != 2)
                               (etaDetails[i]['has_discount'] != true)
                                   ? Row(
@@ -180,7 +191,9 @@ class VehicleInfoBottomSheet extends StatelessWidget {
                         ),
                         FareBreakupDetails(
                             width: width,
-                            heading: 'Time Price',
+                            heading: choosenLanguage == 'ar'
+                                ? 'سعر الدقيقة'
+                                : 'Time Price',
                             value: (type != 1)
                                 ? '${etaDetails[i]['currency']} ${etaDetails[i]['price_per_time']} / min'
                                 : '${etaDetails[choosenVehicle]['currency']} ${rentalOption[choosenVehicle]['time_price_per_min'].toString()} / min'),
@@ -189,7 +202,9 @@ class VehicleInfoBottomSheet extends StatelessWidget {
                         ),
                         FareBreakupDetails(
                             width: width,
-                            heading: 'Distance Price',
+                            heading: choosenLanguage == 'ar'
+                                ? 'سعر المسافة'
+                                : 'Distance Price',
                             value: (type != 1)
                                 ? '${etaDetails[i]['currency']} ${etaDetails[i]['price_per_distance']} / ${etaDetails[i]['unit_in_words']}'
                                 : '${etaDetails[choosenVehicle]['currency']} ${rentalOption[choosenVehicle]['distance_price_per_km'].toString()} / ${rentalOption[choosenVehicle]['unit_in_words']}'),
@@ -198,11 +213,17 @@ class VehicleInfoBottomSheet extends StatelessWidget {
                         ),
                         FareBreakupDetails(
                             width: width,
-                            heading: 'Payment Types',
+                            heading: choosenLanguage == 'ar'
+                                ? 'طرق الدفع'
+                                : 'Payment Types',
                             value: (type != 1)
-                                ? etaDetails[i]['payment_type'].toString()
-                                : rentalOption[choosenVehicle]['payment_type']
-                                    .toString()),
+                                ? _paymentMethodsLabel(
+                                    etaDetails[i]['payment_type']?.toString() ??
+                                        '')
+                                : _paymentMethodsLabel(
+                                    rentalOption[choosenVehicle]['payment_type']
+                                            ?.toString() ??
+                                        '')),
                       ],
                     ),
                   ),
@@ -216,8 +237,10 @@ class VehicleInfoBottomSheet extends StatelessWidget {
               Expanded(
                 child: MyText(
                     text: ((type != 1))
-                        ? etaDetails[i]['description']
-                        : rentalOption[choosenVehicle]['description'],
+                        ? (etaDetails[i]['description']?.toString() ?? '')
+                        : (rentalOption[choosenVehicle]['description']
+                                ?.toString() ??
+                            ''),
                     color: textColor.withValues(alpha: 0.6),
                     size: width * fourteen),
               )
@@ -242,5 +265,17 @@ class VehicleInfoBottomSheet extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _paymentMethodsLabel(String raw) {
+    if (choosenLanguage != 'ar') return raw.replaceAll('_', ' ');
+    final methods = raw.split(',').toSet();
+    return [
+      if (methods.contains('cash') || methods.contains('wallet_and_cash'))
+        'نقدًا',
+      if (methods.contains('wallet') || methods.contains('wallet_and_cash'))
+        'المحفظة',
+      if (methods.contains('card')) 'البطاقة',
+    ].join('، ');
   }
 }

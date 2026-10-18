@@ -49,7 +49,6 @@ import 'invoice.dart';
 import 'map_page.dart';
 import 'widgets/booking_status_sheet.dart';
 import 'booking_confirmation/widgets/booking_back_button.dart';
-import 'booking_confirmation/widgets/promo_teaser_card.dart';
 import 'booking_confirmation/widgets/vehicle_service_card.dart';
 import 'booking_confirmation/widgets/vehicle_services_section.dart';
 import 'widgets/cancellation_sheet.dart';
@@ -103,8 +102,8 @@ part 'booking_confirmation/booking_confirmation_polyline.dart';
 // methods would still miss it and keep resolving to the ambient (purple)
 // app theme. Calling this function directly for `colors` in those methods
 // sidesteps that entirely. The separate widget CLASSES under
-// booking_confirmation/widgets/ (VehicleServiceCard, VehicleServicesSection,
-// PromoTeaserCard) don't have this problem - they get their own fresh
+// booking_confirmation/widgets/ (VehicleServiceCard, VehicleServicesSection)
+// don't have this problem - they get their own fresh
 // BuildContext at their actual mount position - and still use
 // Theme.of(context).colorScheme, picked up correctly via the Theme(...)
 // wrapper in _BookingConfirmationState.build() below.

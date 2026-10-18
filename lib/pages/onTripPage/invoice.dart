@@ -28,6 +28,93 @@ class _InvoiceState extends State<Invoice> {
   String _error = '';
   String myPaymentMethod = '';
 
+  Widget _bidRidePaymentSummary(Size media) {
+    final bill = userRequestData['requestBill']?['data'];
+    final estimated = userRequestData['wallet_split_is_estimate'] == true;
+    final currency = choosenLanguage == 'ar'
+        ? 'دينار'
+        : (userRequestData['requested_currency_symbol']?.toString() ?? 'LYD');
+    final gross = double.tryParse(((estimated ? null : bill?['total_amount']) ??
+                    userRequestData['accepted_ride_fare'] ??
+                    bill?['total_amount'])
+                ?.toString() ??
+            '') ??
+        0;
+    final wallet = double.tryParse(
+            ((estimated ? null : bill?['wallet_paid_amount']) ??
+                        userRequestData['wallet_paid_amount'] ??
+                        bill?['wallet_paid_amount'])
+                    ?.toString() ??
+                '') ??
+        0;
+    final cash = double.tryParse(
+            ((estimated ? null : bill?['cash_due_amount']) ??
+                        userRequestData['cash_due_amount'] ??
+                        bill?['cash_due_amount'])
+                    ?.toString() ??
+                '') ??
+        0;
+    final split = userRequestData['payment_opt'].toString() == '3';
+
+    if (!split) {
+      final payment = userRequestData['payment_opt'].toString() == '1'
+          ? languages[choosenLanguage]['text_cash']
+          : userRequestData['payment_opt'].toString() == '2'
+              ? languages[choosenLanguage]['text_wallet']
+              : languages[choosenLanguage]['text_card'];
+      return Column(children: [
+        Text(payment,
+            style: GoogleFonts.notoSans(
+                fontSize: media.width * twentyeight,
+                color: buttonColor,
+                fontWeight: FontWeight.bold)),
+        SizedBox(height: media.width * 0.05),
+        Text('${gross.toStringAsFixed(2)} $currency',
+            style: GoogleFonts.notoSans(
+                fontSize: media.width * twentysix,
+                color: textColor,
+                fontWeight: FontWeight.bold)),
+      ]);
+    }
+
+    final walletLabel = userRequestData['wallet_split_is_estimate'] == true
+        ? (choosenLanguage == 'ar'
+            ? 'سيُخصم من محفظتك'
+            : 'From your wallet at trip completion')
+        : (choosenLanguage == 'ar'
+            ? 'دُفع من محفظتك'
+            : 'Paid from your wallet');
+    return Column(children: [
+      Text(
+        choosenLanguage == 'ar' ? 'ادفع للسائق نقدًا' : 'Pay the driver cash',
+        style: GoogleFonts.notoSans(
+            fontSize: media.width * twentyeight,
+            color: buttonColor,
+            fontWeight: FontWeight.bold),
+      ),
+      SizedBox(height: media.width * 0.025),
+      Text('$currency ${cash.toStringAsFixed(2)}',
+          style: GoogleFonts.notoSans(
+              fontSize: media.width * twentysix,
+              color: textColor,
+              fontWeight: FontWeight.bold)),
+      SizedBox(height: media.width * 0.025),
+      Text('$walletLabel: $currency ${wallet.toStringAsFixed(2)}',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.notoSans(
+              fontSize: media.width * fourteen,
+              color: buttonColor,
+              fontWeight: FontWeight.w600)),
+      SizedBox(height: media.width * 0.015),
+      Text(
+          choosenLanguage == 'ar'
+              ? 'إجمالي الأجرة: $currency ${gross.toStringAsFixed(2)}'
+              : 'Total fare: $currency ${gross.toStringAsFixed(2)}',
+          style: GoogleFonts.notoSans(
+              fontSize: media.width * twelve, color: textColor)),
+    ]);
+  }
+
   Widget billAdjustmentRow(Size media, String field) {
     final bill = userRequestData['requestBill']?['data'];
     final value = double.tryParse(bill?[field]?.toString() ?? '') ?? 0;
@@ -431,50 +518,7 @@ class _InvoiceState extends State<Invoice> {
                                     height: media.height * 0.03,
                                   ),
                                   userRequestData['is_bid_ride'] == 1
-                                      ? Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Text(
-                                              (userRequestData['payment_opt'] ==
-                                                      '1')
-                                                  ? languages[choosenLanguage]
-                                                      ['text_cash']
-                                                  : (userRequestData[
-                                                              'payment_opt'] ==
-                                                          '2')
-                                                      ? languages[
-                                                              choosenLanguage]
-                                                          ['text_wallet']
-                                                      : languages[
-                                                              choosenLanguage]
-                                                          ['text_card'],
-                                              style: GoogleFonts.notoSans(
-                                                  fontSize:
-                                                      media.width * twentyeight,
-                                                  color: buttonColor,
-                                                  fontWeight: FontWeight.bold),
-                                            ),
-                                            SizedBox(
-                                              height: media.width * 0.05,
-                                            ),
-                                            Text(
-                                              userRequestData['requestBill']
-                                                          ['data'][
-                                                      'requested_currency_symbol'] +
-                                                  ' ' +
-                                                  userRequestData['requestBill']
-                                                              ['data']
-                                                          ['total_amount']
-                                                      .toString(),
-                                              style: GoogleFonts.notoSans(
-                                                  fontSize:
-                                                      media.width * twentysix,
-                                                  color: textColor,
-                                                  fontWeight: FontWeight.bold),
-                                            ),
-                                          ],
-                                        )
+                                      ? _bidRidePaymentSummary(media)
                                       : (userRequestData['requestBill'] != null)
                                           ? Column(
                                               children: [

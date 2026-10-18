@@ -15,11 +15,12 @@ class FareBreakupDetails extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        MyText(text: heading, size: width * fourteen),
-        MyText(
-            text: value.toString(),
-            fontweight: FontWeight.bold,
-            size: width * fourteen)
+        Flexible(child: MyText(text: heading, size: width * fourteen)),
+        const SizedBox(width: 8),
+        Flexible(
+          child: MyText(
+              text: value, fontweight: FontWeight.bold, size: width * fourteen),
+        ),
       ],
     );
   }

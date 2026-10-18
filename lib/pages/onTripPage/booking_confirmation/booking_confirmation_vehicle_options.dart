@@ -227,22 +227,6 @@ mixin _BookingConfirmationVehicleOptions
                         ),
                       ))
                   .values,
-              PromoTeaserCard(
-                title: choosenLanguage == 'ar'
-                    ? 'لديك كود خصم؟'
-                    : 'Have a discount code?',
-                subtitle: choosenLanguage == 'ar'
-                    ? 'أضف الكود واحصل على خصم مميز'
-                    : 'Add it now for a special discount',
-                onTap: () {
-                  showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      builder: (context) {
-                        return ApplyCouponsContainer(type: widget.type);
-                      });
-                },
-              ),
             ],
           ),
         )
@@ -359,7 +343,8 @@ mixin _BookingConfirmationVehicleOptions
                                             return MapEntry(
                                                 i,
                                                 StreamBuilder<DatabaseEvent>(
-                                                    stream: nearbyDriversStream(fdb),
+                                                    stream: nearbyDriversStream(
+                                                        fdb),
                                                     builder: (context,
                                                         AsyncSnapshot event) {
                                                       if (event.data != null) {

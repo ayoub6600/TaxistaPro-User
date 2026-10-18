@@ -149,8 +149,8 @@ mixin _BookingConfirmationVehicleServices
                   return service;
                 }(),
                 selected: choosenVehicle == index,
-                arrivalText:
-                    minutes[etaDetails[index]['type_id']]?.toString() ?? '',
+                arrivalText: _localizedArrivalEstimate(
+                    minutes[etaDetails[index]['type_id']]?.toString() ?? ''),
                 offerFareLabel: languages[choosenLanguage]
                     ['text_offer_your_fare'],
                 fairFare: canAdjustSelectedFare(index)
@@ -229,5 +229,12 @@ mixin _BookingConfirmationVehicleServices
     if (distanceKm <= 7) return '11 mins';
     if (distanceKm <= 10) return '14 mins';
     return '15 mins';
+  }
+
+  String _localizedArrivalEstimate(String estimate) {
+    if (estimate.isEmpty) return '';
+    if (choosenLanguage != 'ar') return 'Nearest $estimate';
+    final value = RegExp(r'\d+').firstMatch(estimate)?.group(0);
+    return value == null ? '' : 'الأقرب $value د';
   }
 }

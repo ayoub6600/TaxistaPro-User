@@ -181,9 +181,19 @@ class VehicleServiceCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
+                Text(
+                  '${service['currency'] ?? ''} ${_formatFare(chosenFare ?? (double.tryParse(service['total']?.toString() ?? '') ?? 0))}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: colors.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 4),
                 _PricingBadge(label: offerFareLabel),
                 if (service['signup_bonus_available'] == true &&
-                    service['signup_bonus_amount'] is num) ...[
+                    service['signup_bonus_amount'] is num &&
+                    (service['signup_bonus_amount'] as num) > 0) ...[
                   const SizedBox(height: 4),
                   Text(
                     isArabic
@@ -282,6 +292,35 @@ class VehicleServiceCard extends StatelessWidget {
                   colors),
             ]),
           ),
+          if (mode == RidePricingMode.riderOffer &&
+              service['signup_bonus_available'] == true &&
+              service['signup_bonus_amount'] is num &&
+              (service['signup_bonus_amount'] as num) > 0) ...[
+            const SizedBox(height: 7),
+            Text(
+              isArabic
+                  ? 'المتبقي نقدًا بعد الهدية: ${_formatFare((chosenFare! - (service['signup_bonus_amount'] as num).toDouble()).clamp(0, double.infinity))} دينار'
+                  : 'Cash after gift: ${_formatFare((chosenFare! - (service['signup_bonus_amount'] as num).toDouble()).clamp(0, double.infinity))} LYD',
+              style: TextStyle(
+                color: accent,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+          if (mode == RidePricingMode.fixedFare &&
+              (chosenFare! - fairFare!).abs() <= 0.01) ...[
+            const SizedBox(height: 6),
+            Text(
+              isArabic
+                  ? 'عدّل السعر لإرسال عرض للسائق'
+                  : 'Change the fare to send a driver offer',
+              style: TextStyle(
+                color: colors.onSurfaceVariant,
+                fontSize: 10.5,
+              ),
+            ),
+          ],
         ],
       ]),
     );

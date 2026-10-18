@@ -69,8 +69,8 @@ mixin _BookingConfirmationController
         !addressList.any((entry) => entry.type == 'drop') ||
         index >= etaDetails.length) return false;
     final eta = etaDetails[index];
-    if (eta['has_discount'] == true || eta['enable_bidding'] == true)
-      return false;
+    if (eta['has_discount'] == true) return false;
+    if (eta['rider_offer_supported'] != true) return false;
     // Backend capability gate: the rider fare offer needs the server's signed
     // fare quote (immediate rides) or its scheduled flexible-offer flag. A
     // backend that does not send them cannot accept a proposal, so the

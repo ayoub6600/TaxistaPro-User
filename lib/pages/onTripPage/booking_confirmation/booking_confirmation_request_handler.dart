@@ -34,13 +34,52 @@ mixin _BookingConfirmationRequestHandler
     if (widget.type == 2 ||
         walletCanCoverOrSplit(selectedService,
             fare: selectedFare, walletBalance: walletBalance)) {
-      if (((widget.type == null)
-              ? (etaDetails[choosenVehicle]['enable_bidding'] == true)
-              : false) ||
-          isOutStation) {
-        if (isOutStation) {
-          print('isOutStation11');
-          if (isOneWayTrip && nofromdate) {
+      // Codex/refactor: the older CreateRequestBottomSheet still handles
+      // outstation scheduling. In-city taxi rides must use the current
+      // signed-quote request flow below, including bidding services.
+      if (isOutStation) {
+        print('isOutStation11');
+        if (isOneWayTrip && nofromdate) {
+          setState(() {
+            _showInfoInt = choosenVehicle;
+            showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                builder: (context) {
+                  return CreateRequestBottomSheet(
+                    type: widget.type,
+                    showInfoInt: _showInfoInt,
+                    fromDate: fromDate,
+                    geo: geo,
+                    isOneWayTrip: isOneWayTrip,
+                    toDate: toDate,
+                    amount: etaDetails[choosenVehicle]['total'].toString(),
+                  );
+                });
+          });
+        } else {
+          print('isOutStation12');
+          if (!nofromdate || toDate == null) {
+            setState(() {
+              _isDateTimebottom = 0;
+              if (!nofromdate) {
+                isFromDate = true;
+              } else {
+                isFromDate = false;
+                toDate = fromDate.add(const Duration(days: 1, minutes: 2));
+              }
+            });
+            Future.delayed(const Duration(milliseconds: 200), () {
+              setState(() {
+                if (isOneWayTrip) {
+                  _dateTimeHeight = media.height * 0.45;
+                } else {
+                  _dateTimeHeight = media.height * 0.5;
+                }
+              });
+            });
+          } else {
+            print('isOutStation13');
             setState(() {
               _showInfoInt = choosenVehicle;
               showModalBottomSheet(
@@ -58,67 +97,7 @@ mixin _BookingConfirmationRequestHandler
                     );
                   });
             });
-          } else {
-            print('isOutStation12');
-            if (!nofromdate || toDate == null) {
-              setState(() {
-                _isDateTimebottom = 0;
-                if (!nofromdate) {
-                  isFromDate = true;
-                } else {
-                  isFromDate = false;
-                  toDate = fromDate.add(const Duration(days: 1, minutes: 2));
-                }
-              });
-              Future.delayed(const Duration(milliseconds: 200), () {
-                setState(() {
-                  if (isOneWayTrip) {
-                    _dateTimeHeight = media.height * 0.45;
-                  } else {
-                    _dateTimeHeight = media.height * 0.5;
-                  }
-                });
-              });
-            } else {
-              print('isOutStation13');
-              setState(() {
-                _showInfoInt = choosenVehicle;
-                showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    builder: (context) {
-                      return CreateRequestBottomSheet(
-                        type: widget.type,
-                        showInfoInt: _showInfoInt,
-                        fromDate: fromDate,
-                        geo: geo,
-                        isOneWayTrip: isOneWayTrip,
-                        toDate: toDate,
-                        amount: etaDetails[choosenVehicle]['total'].toString(),
-                      );
-                    });
-              });
-            }
           }
-        } else {
-          print('isOutStation14');
-          setState(() {
-            _showInfoInt = choosenVehicle;
-          });
-          showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              builder: (context) {
-                return CreateRequestBottomSheet(
-                  type: widget.type,
-                  showInfoInt: _showInfoInt,
-                  fromDate: fromDate,
-                  geo: geo,
-                  isOneWayTrip: isOneWayTrip,
-                  toDate: toDate,
-                  amount: etaDetails[choosenVehicle]['total'].toString(),
-                );
-              });
         }
       } else {
         double? riderOffer;
