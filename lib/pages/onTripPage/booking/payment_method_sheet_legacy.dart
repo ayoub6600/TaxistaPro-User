@@ -19,6 +19,15 @@ class _ChoosePaymentMethodContainerState
   void initState() {
     // choosenInPopUp = 0;
     choosenInPopUp = payingVia;
+    if (widget.type != 1 && choosenVehicle != null) {
+      final methods =
+          etaDetails[choosenVehicle]['payment_type'].toString().split(',');
+      if (choosenInPopUp < methods.length &&
+          methods[choosenInPopUp] == 'wallet_and_cash' &&
+          methods.contains('wallet')) {
+        choosenInPopUp = methods.indexOf('wallet');
+      }
+    }
     super.initState();
   }
 
@@ -56,6 +65,14 @@ class _ChoosePaymentMethodContainerState
                           .toList()
                           .asMap()
                           .map((i, value) {
+                            final methods = etaDetails[choosenVehicle]
+                                    ['payment_type']
+                                .toString()
+                                .split(',');
+                            if (value == 'wallet_and_cash' &&
+                                methods.contains('wallet')) {
+                              return MapEntry(i, const SizedBox.shrink());
+                            }
                             return MapEntry(
                                 i,
                                 InkWell(
@@ -121,11 +138,9 @@ class _ChoosePaymentMethodContainerState
                                           flex: 6,
                                           child: MyText(
                                             text: _getTranslatedPaymentType(
-                                                etaDetails[choosenVehicle]
-                                                        ['payment_type']
-                                                    .toString()
-                                                    .split(',')
-                                                    .toList()[i]),
+                                                value == 'wallet_and_cash'
+                                                    ? 'wallet'
+                                                    : value),
                                             size: media.width * fourteen,
                                             color: (isDarkTheme == true)
                                                 ? Colors.white

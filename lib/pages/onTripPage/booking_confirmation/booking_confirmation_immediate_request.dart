@@ -16,7 +16,8 @@ mixin _BookingConfirmationImmediateRequest
       if (endpoint == 'api/v1/request/create' &&
           fields.containsKey('drop_lat') &&
           !fields.containsKey('fare_quote_token') &&
-          etaDetails[choosenVehicle]['enable_bidding'] != true) {
+          RidePricingMode.fromService(etaDetails[choosenVehicle]) !=
+              RidePricingMode.riderOffer) {
         try {
           final response = await http.post(
             Uri.parse('${url}api/v1/request/eta'),
@@ -64,10 +65,9 @@ mixin _BookingConfirmationImmediateRequest
     }
     final fair =
         double.tryParse(fields['request_eta_amount']?.toString() ?? '') ?? 0;
-    final biddingService = etaDetails[choosenVehicle]['enable_bidding'] == true;
     if (fields.containsKey('drop_lat') &&
-        fair > 0 &&
-        (biddingService || (_riderOfferFare! - fair).abs() > 0.01)) {
+        shouldSendImmediateRiderProposal(
+            etaDetails[choosenVehicle], fair, _riderOfferFare)) {
       final originalToken =
           etaDetails[choosenVehicle]['fare_quote_token']?.toString();
       if (currentImmediateFareQuote(originalToken, fields)) {

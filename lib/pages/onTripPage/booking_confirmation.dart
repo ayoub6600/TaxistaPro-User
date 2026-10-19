@@ -49,6 +49,7 @@ import 'invoice.dart';
 import 'map_page.dart';
 import 'widgets/booking_status_sheet.dart';
 import 'booking_confirmation/widgets/booking_back_button.dart';
+import 'booking_confirmation/models/ride_pricing_mode.dart';
 import 'booking_confirmation/widgets/vehicle_service_card.dart';
 import 'booking_confirmation/widgets/vehicle_services_section.dart';
 import 'widgets/cancellation_sheet.dart';

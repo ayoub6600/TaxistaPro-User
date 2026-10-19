@@ -70,6 +70,9 @@ mixin _BookingConfirmationController
         index >= etaDetails.length) return false;
     final eta = etaDetails[index];
     if (eta['has_discount'] == true) return false;
+    if (RidePricingMode.fromService(eta) != RidePricingMode.riderOffer) {
+      return false;
+    }
     if (eta['rider_offer_supported'] != true) return false;
     // Backend capability gate: the rider fare offer needs the server's signed
     // fare quote (immediate rides) or its scheduled flexible-offer flag. A
@@ -231,6 +234,28 @@ mixin _BookingConfirmationController
     final points = _routeCameraPoints();
     if (points.length < 2) return;
 
+    // The service chooser shows only a narrow map strip. Fitting both ends
+    // can zoom out to a whole continent when an address geocodes badly.
+    // Keep the preview centered on the rider's city; the full route can be
+    // shown again once the request is underway.
+    if (dropConfirmed && userRequestData.isEmpty && !isOutStation) {
+      final pickup = addressList.firstWhere(
+          (address) => address.type == 'pickup',
+          orElse: () => addressList.first);
+      final signature = 'service:${pickup.latlng.latitude.toStringAsFixed(5)}:'
+          '${pickup.latlng.longitude.toStringAsFixed(5)}';
+      if (_lastRouteCameraSignature != signature) {
+        _lastRouteCameraSignature = signature;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _controller != null) {
+            _controller!
+                .animateCamera(CameraUpdate.newLatLngZoom(pickup.latlng, 14));
+          }
+        });
+      }
+      return;
+    }
+
     final minLatitude = points.map((point) => point.latitude).reduce(min);
     final maxLatitude = points.map((point) => point.latitude).reduce(max);
     final minLongitude = points.map((point) => point.longitude).reduce(min);
@@ -293,6 +318,15 @@ mixin _BookingConfirmationController
   }
 
   CameraPosition initialBookingCameraPosition() {
+    if (dropConfirmed &&
+        userRequestData.isEmpty &&
+        !isOutStation &&
+        addressList.isNotEmpty) {
+      final pickup = addressList.firstWhere(
+          (address) => address.type == 'pickup',
+          orElse: () => addressList.first);
+      return CameraPosition(target: pickup.latlng, zoom: 14);
+    }
     final endpoints = bookingRequestCameraPoints(
         userRequestData, addressList.map((address) => address.latlng).toList());
     return initialBookingCameraForRoute(endpoints, _center, dropConfirmed);

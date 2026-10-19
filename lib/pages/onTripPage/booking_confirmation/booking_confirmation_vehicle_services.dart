@@ -3,11 +3,9 @@ part of '../booking_confirmation.dart';
 mixin _BookingConfirmationVehicleServices
     on State<BookingConfirmation>, _BookingConfirmationController {
   double vehicleSelectionSheetHeight(Size media) {
-    final visibleServiceCount = uniqueServices(etaDetails).length;
-    final additionalCards = max(0, visibleServiceCount - 2);
-    final compactHeight = media.height * 0.66 + additionalCards * 98.0 + 50;
-
-    return min(compactHeight, media.height * 0.90);
+    // Service cards already scroll inside VehicleServicesSection. Keep the
+    // sheet below the middle so the city map remains useful above it.
+    return media.height * 0.62;
   }
 
   double bookingSheetHeight(Size media) {

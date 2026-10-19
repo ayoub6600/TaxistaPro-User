@@ -27,7 +27,7 @@ mixin _BookingConfirmationBookingControls
     final key = switch (method) {
       'cash' => 'text_cash',
       'wallet' => 'text_wallet',
-      'wallet_and_cash' => 'text_wallet_plus_cash',
+      'wallet_and_cash' => 'text_wallet',
       'card' => 'text_card',
       _ => 'text_upi',
     };
@@ -202,293 +202,109 @@ mixin _BookingConfirmationBookingControls
                   ),
                 )
               : Container(),
-          Column(
+          Row(
+            textDirection: ui.TextDirection.ltr,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              (choosenVehicle != null && widget.type != 1)
-                  ? Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: media.width * 0.035,
-                        vertical: media.width * 0.015,
-                      ),
+              if (choosenTransportType == 0 &&
+                  (userDetails['enable_driver_preference_for_user'] == '1' ||
+                      userDetails['enable_pet_preference_for_user'] == '1' ||
+                      userDetails['enable_luggage_preference_for_user'] == '1'))
+                Tooltip(
+                  message: languages[choosenLanguage]['text_ride_preference'],
+                  child: InkWell(
+                    onTap: () {
+                      choosePets = addPetPreferences;
+                      chooseLuggages = addLuggagePreferences;
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        builder: (context) => ChoosePreferencesContainer(
+                          type: widget.type,
+                          onTap: () {
+                            setState(() {
+                              addPetPreferences = choosePets;
+                              addLuggagePreferences = chooseLuggages;
+                            });
+                            Navigator.pop(context);
+                          },
+                        ),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(12.r),
+                    child: Container(
+                      width: 42.w,
+                      height: 42.h,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(14.r),
                         color: colors.primary.withValues(alpha: 0.09),
                         border: Border.all(
                             color: colors.primary.withValues(alpha: 0.18)),
+                        borderRadius: BorderRadius.circular(12.r),
                       ),
-                      height: media.width * 0.10,
-                      width: media.width * 0.52,
-                      alignment: Alignment.center,
-                      child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: InkWell(
-                            onTap: () {
-                              showModalBottomSheet(
-                                  context: context,
-                                  isScrollControlled: true,
-                                  builder: (context) {
-                                    return ChoosePaymentMethodContainer(
-                                      type: widget.type,
-                                      onTap: () {
-                                        setState(() {
-                                          payingVia = choosenInPopUp;
-                                        });
-                                        Navigator.pop(context);
-                                      },
-                                    );
-                                  });
-                            },
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Image.asset(
-                                  _selectedPaymentType(rental: false) == 'cash'
-                                      ? 'assets/images/cash-on-delivery.png'
-                                      : _selectedPaymentType(rental: false) ==
-                                              'card'
-                                          ? 'assets/images/debit-card.png'
-                                          : _selectedPaymentType(
-                                                      rental: false) ==
-                                                  'upi'
-                                              ? 'assets/images/upi.png'
-                                              : 'assets/images/wallet (1).png',
-                                  width: media.width * 0.07,
-                                  height: media.width * 0.07,
-                                  fit: BoxFit.contain,
-                                ),
-                                SizedBox(
-                                  width: media.width * 0.02,
-                                ),
-                                MyText(
-                                  text: _selectedPaymentLabel(rental: false),
-                                  size: media.width * sixteen,
-                                  fontweight: FontWeight.w600,
-                                  color: colors.primary,
-                                ),
-                                SizedBox(
-                                  width: media.width * 0.03,
-                                ),
-                                RotatedBox(
-                                  quarterTurns: 1,
-                                  child: Icon(
-                                    Icons.arrow_forward_ios,
-                                    color: colors.primary,
-                                    size: media.width * 0.03,
-                                  ),
-                                )
-                              ],
-                            ),
-                          )),
-                    )
-                  : (choosenVehicle != null && widget.type == 1)
-                      ? InkWell(
-                          onTap: () {
-                            showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                builder: (context) {
-                                  return ChoosePaymentMethodContainer(
-                                    type: widget.type,
-                                    onTap: () {
-                                      setState(() {
-                                        payingVia = choosenInPopUp;
-                                      });
-                                      Navigator.pop(context);
-                                    },
-                                  );
-                                });
-                          },
-                          child: SizedBox(
-                            height: media.width * 0.106,
-                            width: media.width * 0.4,
-                            child: SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Image.asset(
-                                    _selectedPaymentType(rental: true) == 'cash'
-                                        ? 'assets/images/cash.png'
-                                        : _selectedPaymentType(rental: true) ==
-                                                'card'
-                                            ? 'assets/images/card.png'
-                                            : _selectedPaymentType(
-                                                        rental: true) ==
-                                                    'upi'
-                                                ? 'assets/images/upi.png'
-                                                : 'assets/images/wallet.png',
-                                    width: media.width * 0.07,
-                                    height: media.width * 0.07,
-                                    fit: BoxFit.contain,
-                                  ),
-                                  SizedBox(
-                                    width: media.width * 0.02,
-                                  ),
-                                  MyText(
-                                    text: _selectedPaymentLabel(rental: true),
-                                    size: media.width * sixteen,
-                                    fontweight: FontWeight.w600,
-                                    color: (isDarkTheme == true)
-                                        ? Colors.white
-                                        : Colors.black,
-                                  ),
-                                  SizedBox(
-                                    width: media.width * 0.03,
-                                  ),
-                                  RotatedBox(
-                                    quarterTurns: 1,
-                                    child: Icon(
-                                      Icons.arrow_forward_ios,
-                                      color: textColor,
-                                      size: media.width * 0.03,
-                                    ),
-                                  )
-                                ],
-                              ),
-                            ),
-                          ),
-                        )
-                      : Container(),
-            ],
-          ),
-          SizedBox(
-            height: 10.h,
-          ),
-          ((userDetails['enable_driver_preference_for_user'] != '1' &&
-                      userDetails['enable_pet_preference_for_user'] != '1' &&
-                      userDetails['enable_luggage_preference_for_user'] !=
-                          '1') ||
-                  choosenTransportType == 1 ||
-                  userDetails['enable_modules_for_applications'] == 'delivery')
-              ? Container()
-              : Container(
-                  width: media.width * 0.56,
-                  padding:
-                      EdgeInsets.symmetric(vertical: 7.h, horizontal: 10.w),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(14.r),
-                    color: colors.primary.withValues(alpha: 0.09),
-                    border: Border.all(
-                        color: colors.primary.withValues(alpha: 0.18)),
+                      child: Icon(Icons.tune_rounded,
+                          color: colors.primary, size: 20.sp),
+                    ),
                   ),
-                  alignment: Alignment.center,
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                )
+              else
+                const SizedBox(width: 42),
+              if (choosenVehicle != null)
+                InkWell(
+                  onTap: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      builder: (context) => ChoosePaymentMethodContainer(
+                        type: widget.type,
+                        onTap: () {
+                          setState(() => payingVia = choosenInPopUp);
+                          Navigator.pop(context);
+                        },
+                      ),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(12.r),
+                  child: Container(
+                    constraints: BoxConstraints(maxWidth: media.width * 0.38),
+                    height: 42.h,
+                    padding: EdgeInsets.symmetric(horizontal: 10.w),
+                    decoration: BoxDecoration(
+                      color: colors.primary.withValues(alpha: 0.09),
+                      border: Border.all(
+                          color: colors.primary.withValues(alpha: 0.18)),
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            InkWell(
-                              onTap: () {
-                                if (addPetPreferences == true) {
-                                  choosePets = true;
-                                } else {
-                                  choosePets = false;
-                                }
-                                if (addLuggagePreferences == true) {
-                                  chooseLuggages = true;
-                                } else {
-                                  chooseLuggages = false;
-                                }
-                                showModalBottomSheet(
-                                    context: context,
-                                    isScrollControlled: true,
-                                    builder: (context) {
-                                      return ChoosePreferencesContainer(
-                                        type: widget.type,
-                                        onTap: () {
-                                          setState(() {
-                                            addLuggagePreferences =
-                                                chooseLuggages;
-                                            addPetPreferences = choosePets;
-                                          });
-                                          Navigator.pop(context);
-                                        },
-                                      );
-                                    });
-                              },
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  SizedBox(
-                                    height: media.width * 0.05,
-                                    width: media.width * 0.075,
-                                    child: Image.asset(
-                                      'assets/images/Tune.png',
-                                      color: colors.primary,
-                                    ),
-                                  ),
-                                  MyText(
-                                    text: languages[choosenLanguage]
-                                        ['text_ride_preference'],
-                                    size: 14.sp,
-                                    fontweight: FontWeight.w600,
-                                    color: colors.primary,
-                                  ),
-                                  if (addPetPreferences == true ||
-                                      addLuggagePreferences == true)
-                                    MyText(
-                                      text: ' :- ',
-                                      size: media.width * fourteen,
-                                      fontweight: FontWeight.w600,
-                                      color: colors.primary,
-                                    ),
-                                  SizedBox(
-                                    width: media.width * 0.025,
-                                  ),
-                                  if (addPetPreferences == true)
-                                    MyText(
-                                      text: languages[choosenLanguage]
-                                          ['text_pets'],
-                                      size: media.width * fourteen,
-                                      fontweight: FontWeight.w600,
-                                      color: Colors.grey,
-                                    ),
-                                  if (addPetPreferences == true &&
-                                      addLuggagePreferences == true)
-                                    MyText(
-                                      text: ', ',
-                                      size: media.width * fourteen,
-                                      fontweight: FontWeight.w600,
-                                      color: Colors.grey,
-                                    ),
-                                  if (addLuggagePreferences == true)
-                                    MyText(
-                                      text: languages[choosenLanguage]
-                                          ['text_luggages'],
-                                      size: media.width * fourteen,
-                                      fontweight: FontWeight.w600,
-                                      color: Colors.grey,
-                                    ),
-                                  SizedBox(
-                                    width: media.width * 0.025,
-                                  ),
-                                  (addPetPreferences == false &&
-                                          addLuggagePreferences == false)
-                                      ? Container()
-                                      : Icon(
-                                          Icons.edit,
-                                          size: media.width * 0.03,
-                                          color: Colors.grey,
-                                        )
-                                ],
-                              ),
-                            ),
-                          ],
+                        Icon(
+                            _selectedPaymentType(rental: widget.type == 1) ==
+                                    'cash'
+                                ? Icons.payments_outlined
+                                : Icons.account_balance_wallet_outlined,
+                            color: colors.primary,
+                            size: 18.sp),
+                        SizedBox(width: 5.w),
+                        Flexible(
+                          child: Text(
+                            _selectedPaymentLabel(rental: widget.type == 1),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.cairo(
+                                color: colors.primary,
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.w600),
+                          ),
                         ),
+                        Icon(Icons.keyboard_arrow_down_rounded,
+                            color: colors.primary, size: 17.sp),
                       ],
                     ),
                   ),
                 ),
-          SizedBox(
-            height: 10.h,
+            ],
           ),
+          SizedBox(height: 8.h),
           (selectedGoodsId == '' && choosenTransportType == 1)
               ? Button(
                   width: media.width * 0.9,

@@ -72,3 +72,10 @@ void applyImmediateRiderProposal(Map<String, dynamic> booking, double amount) {
   booking.remove('offerred_ride_fare');
   booking['rider_proposed_fare'] = amount;
 }
+
+bool shouldSendImmediateRiderProposal(
+    Map service, double fairFare, double? offerFare) {
+  return offerFare != null &&
+      fairFare > 0 &&
+      RidePricingMode.fromService(service) == RidePricingMode.riderOffer;
+}

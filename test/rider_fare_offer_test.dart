@@ -3,8 +3,33 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:taxista/functions/functions.dart';
 import 'package:taxista/pages/onTripPage/booking_confirmation.dart';
+import 'package:taxista/pages/onTripPage/booking_confirmation/models/ride_pricing_mode.dart';
 
 void main() {
+  test('only a bidding service sends an opening fare, even when unchanged', () {
+    expect(
+        shouldSendImmediateRiderProposal(
+            {'pricing_mode': 'bidding', 'rider_offer_supported': true}, 17, 17),
+        isTrue);
+    expect(
+        shouldSendImmediateRiderProposal(
+            {'pricing_mode': 'fixed', 'rider_offer_supported': true}, 17, 17),
+        isFalse);
+    expect(
+        shouldSendImmediateRiderProposal(
+            {'pricing_mode': 'fixed', 'rider_offer_supported': true}, 17, 19),
+        isFalse);
+  });
+  test('canonical pricing mode wins over stale bidding flags', () {
+    expect(
+        RidePricingMode.fromService(
+            {'pricing_mode': 'fixed', 'enable_bidding': true}),
+        RidePricingMode.fixedFare);
+    expect(
+        RidePricingMode.fromService(
+            {'pricing_mode': 'bidding', 'enable_bidding': false}),
+        RidePricingMode.riderOffer);
+  });
   test('a single destination is not also quoted as an extra stop', () {
     // Confirmation collects the final drop in dropStopList. Re-sending that
     // one point made ETA price the route twice, but create-request omitted it.
@@ -108,16 +133,19 @@ void main() {
   });
 
   group('per-market minimum offer (Libya 25%, Qena independent)', () {
-    test('a fair 13 with a 25% limit allows 9.75 and offers 10, 11, 12, 13, 15', () {
+    test('a fair 13 with a 25% limit allows 9.75 and offers 10, 11, 12, 13, 15',
+        () {
       final floor = minimumRiderOffer(13, 25);
       expect(floor, 9.75);
       for (final offer in [10.0, 11.0, 12.0, 13.0, 15.0]) {
-        expect(offer >= floor, isTrue, reason: '$offer must be an acceptable offer');
+        expect(offer >= floor, isTrue,
+            reason: '$offer must be an acceptable offer');
       }
       expect(9.0 >= floor, isFalse);
     });
 
-    test('the stepper walks 13 down to 10 and up to 15, and stops at the floor', () {
+    test('the stepper walks 13 down to 10 and up to 15, and stops at the floor',
+        () {
       final floor = minimumRiderOffer(13, 25);
       var offer = 13.0;
       final down = <double>[];
