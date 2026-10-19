@@ -325,14 +325,10 @@ mixin _BookingConfirmationBookingControls
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       (userDetails['show_ride_later_feature'] == true &&
-                              ((widget.type == null)
-                                  ? (etaDetails[choosenVehicle]
-                                              ['enable_bidding'] ==
-                                          null ||
-                                      etaDetails[choosenVehicle]
-                                              ['enable_bidding'] ==
-                                          false)
-                                  : true) &&
+                              (widget.type != null ||
+                                  etaDetails[choosenVehicle]
+                                          ['ride_later_supported'] !=
+                                      false) &&
                               isOutStation == false)
                           ? Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -508,13 +504,6 @@ mixin _BookingConfirmationBookingControls
                                         (widget.type == 1 ||
                                             etaDetails[choosenVehicle]
                                                     ['coupon_supported'] !=
-                                                false) &&
-                                        (widget.type == 1 ||
-                                            etaDetails[choosenVehicle]
-                                                    ['enable_bidding'] ==
-                                                null ||
-                                            etaDetails[choosenVehicle]
-                                                    ['enable_bidding'] ==
                                                 false) &&
                                         widget.type != 2 &&
                                         isOneWayTrip == true)
