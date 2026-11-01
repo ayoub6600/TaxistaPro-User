@@ -1,9 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../widgets/trip_contact_actions.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:taxista/translations/translation.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../functions/functions.dart';
 import '../../styles/styles.dart';
@@ -504,51 +504,14 @@ class _HistoryDetailsState extends State<HistoryDetails> {
                                             SizedBox(
                                               height: 8.h,
                                             ),
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                MyText(
-                                                  text:
-                                                      languages[choosenLanguage]
-                                                          ['text_phoneـnumber'],
-                                                  size: 12.sp,
-                                                ),
-                                                GestureDetector(
-                                                  onTap: () async {
-                                                    final String phoneNumber =
-                                                        myHistory[selectedHistory]
-                                                                    [
-                                                                    'driverDetail']
-                                                                [
-                                                                'data']['mobile']
-                                                            .toString();
-                                                    final Uri phoneUri =
-                                                        Uri.parse(
-                                                            'tel:$phoneNumber');
-
-                                                    if (await canLaunchUrl(
-                                                        phoneUri)) {
-                                                      await launchUrl(phoneUri);
-                                                    } else {
-                                                      debugPrint(
-                                                          "Could not launch $phoneUri");
-                                                    }
-                                                  },
-                                                  child: Text(
-                                                    myHistory[selectedHistory]
-                                                                ['driverDetail']
-                                                            ['data']['mobile']
-                                                        .toString(),
-                                                    textDirection:
-                                                        TextDirection.ltr,
-                                                    style: GoogleFonts.cairo(
-                                                        color: Colors.grey,
-                                                        fontSize: 16.sp),
-                                                  ),
-                                                ),
-                                              ],
+                                            TripContactActions(
+                                              requestId: myHistory[selectedHistory]['id'].toString(),
+                                              driverName: myHistory[selectedHistory]['driverDetail']['data']['name'].toString(),
+                                              driverPhoto: myHistory[selectedHistory]['driverDetail']['data']['profile_picture']?.toString(),
+                                              details: [
+                                                myHistory[selectedHistory]['driverDetail']['data']['car_make_name'],
+                                                myHistory[selectedHistory]['driverDetail']['data']['car_number'],
+                                              ].where((v) => v != null && '$v'.isNotEmpty).join(' · '),
                                             ),
                                             SizedBox(
                                               height: 8.h,

@@ -29,8 +29,10 @@ class AdminCallApi {
     }
   }
 
-  static Future<AdminCallResult> availability() =>
-      _send(http.get(_u('calls/availability'), headers: _headers));
+  /// With [requestId]: whether the driver of that ride (from the trip history) can be called.
+  static Future<AdminCallResult> availability({String? requestId}) => _send(http.get(
+      _u('calls/availability').replace(queryParameters: {if (requestId != null) 'request_id': requestId}),
+      headers: _headers));
 
   /// [to]: 'admin' or 'driver' (the driver of [requestId], or of the current ride).
   static Future<AdminCallResult> start({String to = 'admin', String? requestId}) => _send(http.post(_u('calls'),
