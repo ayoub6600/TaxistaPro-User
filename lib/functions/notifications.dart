@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -22,6 +23,71 @@ String latestNotification = '';
 int id = 0;
 bool _messagingInitialized = false;
 bool _permissionRequestInFlight = false;
+bool _tokenSyncInFlight = false;
+DateTime? _lastTokenSync;
+
+/// Tells the backend which FCM token this device has right now.
+///
+/// The token used to be sent only at login. On iOS the APNs token usually does
+/// not exist yet at that moment (the permission prompt comes later), so the
+/// account was stored with no token and nothing ever filled it in - the rider
+/// then showed as "no FCM" in the admin and received no push at all. This is
+/// called whenever the rider reaches Home, when the OS grants permission, and
+/// whenever Firebase rotates the token. A fresh app session re-confirms at most
+/// every 6 hours; a rotation or a permission grant is sent immediately.
+Future<void> syncDeviceToken({String? token, bool force = false}) async {
+  if (bearerToken.isEmpty || _tokenSyncInFlight) return;
+  final last = _lastTokenSync;
+  if (!force &&
+      token == null &&
+      last != null &&
+      DateTime.now().difference(last) < const Duration(hours: 6)) {
+    return;
+  }
+
+  _tokenSyncInFlight = true;
+  try {
+    var fcm = token;
+    if (fcm == null || fcm.isEmpty) {
+      if (Platform.isIOS) {
+        // getToken() throws on iOS until the APNs token exists; give it time.
+        for (var i = 0; i < 5; i++) {
+          String? apns;
+          try {
+            apns = await FirebaseMessaging.instance.getAPNSToken();
+          } catch (_) {}
+          if (apns != null) break;
+          await Future<void>.delayed(const Duration(seconds: 2));
+        }
+      }
+      try {
+        fcm = await FirebaseMessaging.instance.getToken();
+      } catch (error) {
+        debugPrint('FCM token not available yet: $error');
+      }
+    }
+    if (fcm == null || fcm.isEmpty) return;
+
+    final response = await http.post(
+      Uri.parse('${url}api/v1/user/device-token'),
+      headers: {
+        'Authorization': 'Bearer ${bearerToken[0].token}',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'device_token': fcm,
+        'platform': Platform.isIOS ? 'ios' : 'android',
+      }),
+    );
+    if (response.statusCode == 200) {
+      _lastTokenSync = DateTime.now();
+    }
+  } catch (error) {
+    debugPrint('Device token sync failed: $error');
+  } finally {
+    _tokenSyncInFlight = false;
+  }
+}
 
 /// Every tap on a notification this app showed itself lands here (the plugin is one instance,
 /// so each initialize() below passes it again): a message or a missed call from the
@@ -122,8 +188,9 @@ Future<void> initMessaging() async {
     if (launch?.didNotificationLaunchApp == true && support != null) SupportChatLink.open(support);
   } catch (_) {}
 
-  FirebaseMessaging.instance.onTokenRefresh.listen((_) {
+  FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
     debugPrint('FCM token refreshed');
+    unawaited(syncDeviceToken(token: newToken, force: true));
   });
 
   FirebaseMessaging.instance.getInitialMessage().then((message) {
@@ -224,7 +291,14 @@ Future<void> requestNotificationPermissionIfNeeded() async {
   if (!_messagingInitialized || _permissionRequestInFlight) return;
 
   final current = await FirebaseMessaging.instance.getNotificationSettings();
-  if (current.authorizationStatus != AuthorizationStatus.notDetermined) return;
+  if (current.authorizationStatus != AuthorizationStatus.notDetermined) {
+    // Permission was decided earlier: re-confirm the token for this account.
+    if (current.authorizationStatus == AuthorizationStatus.authorized ||
+        current.authorizationStatus == AuthorizationStatus.provisional) {
+      unawaited(syncDeviceToken());
+    }
+    return;
+  }
 
   _permissionRequestInFlight = true;
   try {
@@ -235,7 +309,7 @@ Future<void> requestNotificationPermissionIfNeeded() async {
     );
     if (settings.authorizationStatus == AuthorizationStatus.authorized ||
         settings.authorizationStatus == AuthorizationStatus.provisional) {
-      await FirebaseMessaging.instance.getToken();
+      await syncDeviceToken(force: true);
     }
   } catch (error) {
     debugPrint('Unable to request notification permission: $error');
