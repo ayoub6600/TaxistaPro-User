@@ -16,6 +16,7 @@ import '../NavigatorPages/settings.dart';
 import '../NavigatorPages/sos.dart';
 import '../NavigatorPages/support.dart';
 import '../NavigatorPages/walletpage.dart';
+import '../callPage/call_log_page.dart';
 import '../onTripPage/map_page.dart';
 import '../../navigation/guarded_navigation.dart';
 
@@ -314,6 +315,27 @@ class _NavDrawerState extends State<NavDrawer> {
                                           builder: (context) =>
                                               const MakeComplaint()));
                                 },
+                              ),
+                            ),
+
+                            //call log
+                            InkWell(
+                              onTap: () => _open(MaterialPageRoute(builder: (context) => const CallLogPage())),
+                              child: Container(
+                                width: media.width * 0.7,
+                                padding: EdgeInsets.only(top: media.width * 0.07),
+                                child: Row(children: [
+                                  Icon(Icons.history, size: media.width * 0.06, color: textColor),
+                                  SizedBox(width: media.width * 0.025),
+                                  Expanded(
+                                    child: MyText(
+                                      text: 'سجل المكالمات',
+                                      overflow: TextOverflow.ellipsis,
+                                      size: media.width * sixteen,
+                                      color: textColor,
+                                    ),
+                                  ),
+                                ]),
                               ),
                             ),
 

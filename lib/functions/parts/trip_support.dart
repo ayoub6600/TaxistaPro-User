@@ -140,6 +140,13 @@ messageSeen() async {
   }
 }
 
+/// A voice message went out: refresh the chat and nudge the driver's app (the same counter a
+/// text message moves).
+Future<void> voiceMessageSent() async {
+  await getCurrentMessages();
+  FirebaseDatabase.instance.ref('requests/${userRequestData['id']}').update({'message_by_user': chatList.length});
+}
+
 //admin chat
 
 dynamic chatStream;
@@ -153,7 +160,10 @@ streamAdminchat() async {
       .listen((event) async {
     var value =
         Map<String, dynamic>.from(jsonDecode(jsonEncode(event.snapshot.value)));
-    if (value['to_id'].toString() == userDetails['id'].toString()) {
+    if (value['to_id'].toString() == userDetails['id'].toString() && value['message'] == '🎤 رسالة صوتية') {
+      // a voice message: the history carries its player link, the realtime event only its text
+      await getadminCurrentMessages();
+    } else if (value['to_id'].toString() == userDetails['id'].toString()) {
       adminChatList.add(jsonDecode(jsonEncode(event.snapshot.value)));
     }
     value.clear();

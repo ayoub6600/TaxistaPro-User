@@ -5,9 +5,16 @@ import Firebase
 import Vision
 import WebKit
 import webview_flutter_wkwebview
+import PushKit
+import CallKit
+import AVFoundation
+import WebRTC
+import flutter_callkit_incoming
 
 @main
-@objc class AppDelegate: FlutterAppDelegate {
+@objc class AppDelegate: FlutterAppDelegate, PKPushRegistryDelegate, CallkitIncomingAppDelegate {
+  private var voipRegistry: PKPushRegistry?
+
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -26,7 +33,64 @@ import webview_flutter_wkwebview
 }
     application.registerForRemoteNotifications()
  UIApplication.shared.beginReceivingRemoteControlEvents()
+
+    // Calls (with the driver of the ride, or the administration): PushKit rings the phone through
+    // CallKit even when locked; WebRTC's audio starts only once CallKit has activated the session.
+    let registry = PKPushRegistry(queue: DispatchQueue.main)
+    registry.delegate = self
+    registry.desiredPushTypes = [PKPushType.voIP]
+    voipRegistry = registry
+    #if targetEnvironment(simulator)
+    // the Simulator has no CallKit audio session: WebRTC manages the audio itself there
+    RTCAudioSession.sharedInstance().useManualAudio = false
+    #else
+    RTCAudioSession.sharedInstance().useManualAudio = true
+    RTCAudioSession.sharedInstance().isAudioEnabled = false
+    #endif
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  // MARK: - PushKit (incoming calls)
+
+  func pushRegistry(_ registry: PKPushRegistry, didUpdate credentials: PKPushCredentials, for type: PKPushType) {
+    let token = credentials.token.map { String(format: "%02x", $0) }.joined()
+    SwiftFlutterCallkitIncomingPlugin.sharedInstance?.setDevicePushTokenVoIP(token)
+  }
+
+  func pushRegistry(_ registry: PKPushRegistry, didInvalidatePushTokenFor type: PKPushType) {
+    SwiftFlutterCallkitIncomingPlugin.sharedInstance?.setDevicePushTokenVoIP("")
+  }
+
+  func pushRegistry(_ registry: PKPushRegistry, didReceiveIncomingPushWith payload: PKPushPayload, for type: PKPushType, completion: @escaping () -> Void) {
+    guard type == .voIP else { completion(); return }
+    // iOS requires every VoIP push to be reported to CallKit at once
+    let p = payload.dictionaryPayload
+    let id = (p["call_id"] as? String) ?? UUID().uuidString
+    let fromDriver = (p["caller_role"] as? String) == "driver"
+    let data = flutter_callkit_incoming.Data(id: id, nameCaller: (p["caller_name"] as? String) ?? "إدارة تاكسيستا",
+                                             handle: fromDriver ? "سائق · تاكسيستا" : "إدارة تاكسيستا", type: 0)
+    data.extra = ["call_id": id]
+    data.duration = 45000
+    SwiftFlutterCallkitIncomingPlugin.sharedInstance?.showCallkitIncoming(data, fromPushKit: true)
+    DispatchQueue.main.asyncAfter(deadline: .now() + 1) { completion() }
+  }
+
+  // MARK: - CallKit actions (the Dart side receives the same events and does the work)
+
+  func onAccept(_ call: Call, _ action: CXAnswerCallAction) { action.fulfill() }
+  func onDecline(_ call: Call, _ action: CXEndCallAction) { action.fulfill() }
+  func onEnd(_ call: Call, _ action: CXEndCallAction) { action.fulfill() }
+  func onTimeOut(_ call: Call) {}
+  func providerDidReset() {}
+
+  func didActivateAudioSession(_ audioSession: AVAudioSession) {
+    RTCAudioSession.sharedInstance().audioSessionDidActivate(audioSession)
+    RTCAudioSession.sharedInstance().isAudioEnabled = true
+  }
+
+  func didDeactivateAudioSession(_ audioSession: AVAudioSession) {
+    RTCAudioSession.sharedInstance().audioSessionDidDeactivate(audioSession)
+    RTCAudioSession.sharedInstance().isAudioEnabled = false
   }
 }
 

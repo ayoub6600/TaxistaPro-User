@@ -2,9 +2,11 @@ import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
+import 'calls/admin_call_controller.dart';
 import 'functions.dart';
 
 // create an instance
@@ -84,6 +86,9 @@ Future<void> initMessaging() async {
 
   FirebaseMessaging.instance.getInitialMessage().then((message) {
     if (message?.data != null) {
+      if (message?.data['push_type'] == 'admin_call') {
+        AdminCallController.answerFromNotification(message!.data);
+      }
       if (message?.data['push_type'] == 'general') {
         latestNotification = message?.data['message'];
         isGeneral = true;
@@ -99,6 +104,8 @@ Future<void> initMessaging() async {
   });
 
   FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
+    // calls: ring / stop ringing (data-only on Android)
+    if (await handleCallPush(message.data, appOpen: true)) return;
     RemoteNotification? notification = message.notification;
     if (message.data['push_type'].toString() == 'recovery_driver_ready') {
       _handleRecoveryDriverReadyPush();
@@ -121,6 +128,10 @@ Future<void> initMessaging() async {
   });
 
   FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    if (message.data['push_type'].toString() == 'admin_call') {
+      AdminCallController.answerFromNotification(message.data);
+      return;
+    }
     if (message.data['push_type'].toString() == 'general') {
       latestNotification = message.data['message'];
       isGeneral = true;
@@ -133,6 +144,22 @@ Future<void> initMessaging() async {
       _handleScheduledOfferPush(opened: true);
     }
   });
+}
+
+/// A call rings with the system call screen (and Taxista's own screen when the app is open); its
+/// end dismisses it. True when the message was a call message (nothing else to show for it).
+Future<bool> handleCallPush(Map<String, dynamic> data, {bool appOpen = false}) async {
+  final type = data['push_type']?.toString();
+  if (type == 'admin_call') {
+    await AdminCallController.incomingPush(data,
+        appOpen: appOpen && WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed);
+    return true;
+  }
+  if (type == 'admin_call_end') {
+    await AdminCallController.dismissIncoming((data['call_id'] ?? '').toString());
+    return true;
+  }
+  return false;
 }
 
 /// Requests the system prompt only after the rider reaches the home screen.

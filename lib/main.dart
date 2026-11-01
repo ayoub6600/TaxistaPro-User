@@ -1,5 +1,6 @@
 import 'package:bot_toast/bot_toast.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -9,12 +10,26 @@ import 'package:path_provider/path_provider.dart';
 import 'package:taxista/firebase_options.dart';
 
 import 'functions/app_lifecycle.dart';
+import 'functions/calls/admin_call_controller.dart';
 import 'functions/functions.dart';
 import 'functions/live_queries.dart';
 import 'functions/notifications.dart';
 import 'local_firebase.dart';
 import 'navigation/taxista_page_transitions.dart';
+import 'pages/callPage/admin_call_page.dart';
 import 'pages/loadingPage/loadingpage.dart';
+
+/// Calls while the app is in the background or closed (Android: data-only messages): ring with
+/// the full-screen incoming call, or stop ringing. Every other message is left to the system tray.
+@pragma('vm:entry-point')
+Future<void> riderBackgroundMessage(RemoteMessage message) async {
+  try {
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    }
+  } catch (_) {}
+  await handleCallPush(message.data);
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,6 +55,7 @@ Future<void> main() async {
   // Local ride rehearsals use RTDB updates; FCM has no local emulator.
   if (!usesLocalFirebase) {
     await initMessaging();
+    FirebaseMessaging.onBackgroundMessage(riderBackgroundMessage);
   }
 
   checkInternetConnection();
@@ -80,6 +96,7 @@ class MyApp extends StatelessWidget {
           valueListenable: valueNotifierBook.value,
           builder: (context, value, child) {
             return MaterialApp(
+              navigatorKey: appNavigatorKey,
               debugShowCheckedModeBanner: false,
               title: 'Taxista',
               theme: ThemeData(
@@ -103,7 +120,11 @@ class MyApp extends StatelessWidget {
                   data: MediaQuery.of(context).copyWith(
                     textScaler: const TextScaler.linear(1.0),
                   ),
-                  child: botToast(context, widget),
+                  // a call going on behind another screen: the green "return to call" bar on top
+                  child: Stack(children: [
+                    botToast(context, widget),
+                    const Positioned(top: 0, left: 0, right: 0, child: OngoingCallBar()),
+                  ]),
                 );
               },
             );

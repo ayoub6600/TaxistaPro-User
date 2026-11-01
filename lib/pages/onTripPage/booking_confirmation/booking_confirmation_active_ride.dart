@@ -477,11 +477,9 @@ mixin _BookingConfirmationActiveRide
                                     width: 12,
                                   ),
                                   InkWell(
-                                    onTap: () {
-                                      makingPhoneCall(
-                                          userRequestData['driverDetail']
-                                              ['data']['mobile']);
-                                    },
+                                    // a voice call inside the app; the phone only when the
+                                    // driver's app cannot take calls yet
+                                    onTap: () => callDriverInApp(context),
                                     child: Container(
                                       height: media.width * 0.096,
                                       width: media.width * 0.096,

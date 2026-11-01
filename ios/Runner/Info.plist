@@ -59,6 +59,8 @@
 	<string>Taxista uses your location to show nearby drivers, set your pickup point and follow your trip on the map.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Taxista uses your location to show nearby drivers, set your pickup point and follow your trip on the map.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Taxista uses the microphone only during voice calls with your driver or the Taxista administration, and for voice messages you choose to record.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Taxista accesses your photos only when you choose a picture for your profile.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
@@ -67,6 +69,8 @@
 	<array>
 		<string>processing</string>
 		<string>remote-notification</string>
+		<string>voip</string>
+		<string>audio</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>

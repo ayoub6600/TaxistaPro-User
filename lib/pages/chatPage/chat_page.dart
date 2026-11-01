@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../functions/calls/admin_call_controller.dart';
 import '../../functions/functions.dart';
 import '../../styles/styles.dart';
 import '../../translations/translation.dart';
+import '../../widgets/voice/voice_bubble.dart';
+import '../../widgets/voice/voice_send.dart';
 import '../../widgets/widgets.dart';
 import '../loadingPage/loading.dart';
 
@@ -22,6 +25,19 @@ class _ChatPageState extends State<ChatPage> {
     //get messages
     getCurrentMessages();
     super.initState();
+  }
+
+  Future<void> _sendVoice() async {
+    final sent = await VoiceSend.recordAndSend(context, endpoint: 'send-voice', fields: {'request_id': userRequestData['id'].toString()});
+    if (sent != null) await voiceMessageSent();
+  }
+
+  /// A voice call with the driver, inside the app (no phone numbers).
+  Future<void> _callDriver() async {
+    final problem = await AdminCallController.instance.callDriver(requestId: userRequestData['id']?.toString());
+    if (problem != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(problem), behavior: SnackBarBehavior.floating));
+    }
   }
 
   @override
@@ -98,6 +114,24 @@ class _ChatPageState extends State<ChatPage> {
                                         ),
                                       ],
                                     )),
+                                PositionedDirectional(
+                                  end: 0,
+                                  child: Semantics(
+                                    button: true,
+                                    label: 'اتصال صوتي بالسائق',
+                                    child: InkWell(
+                                      onTap: _callDriver,
+                                      borderRadius: BorderRadius.circular(media.width * 0.05),
+                                      child: Container(
+                                        height: media.width * 0.1,
+                                        width: media.width * 0.1,
+                                        alignment: Alignment.center,
+                                        decoration: BoxDecoration(color: const Color(0xFF1D4ED8).withValues(alpha: 0.1), shape: BoxShape.circle),
+                                        child: const Icon(Icons.call, color: Color(0xFF1D4ED8)),
+                                      ),
+                                    ),
+                                  ),
+                                ),
                                 Positioned(
                                   child: InkWell(
                                     onTap: () {
@@ -142,7 +176,7 @@ class _ChatPageState extends State<ChatPage> {
                                                   : CrossAxisAlignment.start,
                                               children: [
                                                 Container(
-                                                  width: media.width * 0.5,
+                                                  width: chatList[i]['message_type'] == 'voice' ? null : media.width * 0.5,
                                                   padding: EdgeInsets.all(
                                                       media.width * 0.04),
                                                   decoration: BoxDecoration(
@@ -160,7 +194,7 @@ class _ChatPageState extends State<ChatPage> {
                                                           ? buttonColor
                                                           : const Color(
                                                               0xffE7EDEF)),
-                                                  child: MyText(
+                                                  child: VoiceBubble.fromMessage(chatList[i], mine: chatList[i]['from_type'] == 1) ?? MyText(
                                                       text: chatList[i]
                                                           ['message'],
                                                       size: media.width *
@@ -231,25 +265,38 @@ class _ChatPageState extends State<ChatPage> {
                                       onChanged: (val) {},
                                     ),
                                   ),
-                                  InkWell(
-                                    onTap: () async {
-                                      FocusManager.instance.primaryFocus
-                                          ?.unfocus();
-                                      setState(() {
-                                        _sendingMessage = true;
-                                      });
-                                      await sendMessage(chatText.text);
-                                      chatText.clear();
-                                      setState(() {
-                                        _sendingMessage = false;
-                                      });
-                                    },
-                                    child: Image.asset(
-                                      'assets/images/send.png',
-                                      fit: BoxFit.contain,
-                                      width: media.width * 0.075,
-                                      color: textColor,
-                                    ),
+                                  // nothing typed: the microphone (a voice message); else send
+                                  ValueListenableBuilder<TextEditingValue>(
+                                    valueListenable: chatText,
+                                    builder: (context, value, _) => value.text.trim().isEmpty
+                                        ? Semantics(
+                                            button: true,
+                                            label: 'تسجيل رسالة صوتية',
+                                            child: InkWell(
+                                              onTap: _sendVoice,
+                                              child: Icon(Icons.mic, color: const Color(0xFF1D4ED8), size: media.width * 0.075),
+                                            ),
+                                          )
+                                        : InkWell(
+                                            onTap: () async {
+                                              FocusManager.instance.primaryFocus
+                                                  ?.unfocus();
+                                              setState(() {
+                                                _sendingMessage = true;
+                                              });
+                                              await sendMessage(chatText.text);
+                                              chatText.clear();
+                                              setState(() {
+                                                _sendingMessage = false;
+                                              });
+                                            },
+                                            child: Image.asset(
+                                              'assets/images/send.png',
+                                              fit: BoxFit.contain,
+                                              width: media.width * 0.075,
+                                              color: textColor,
+                                            ),
+                                          ),
                                   )
                                 ],
                               ),

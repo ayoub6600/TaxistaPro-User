@@ -4,9 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../functions/calls/admin_call_controller.dart';
 import '../../functions/functions.dart';
 import '../../styles/styles.dart';
 import '../../translations/translation.dart';
+import '../../widgets/voice/voice_bubble.dart';
+import '../../widgets/voice/voice_send.dart';
 import '../../widgets/widgets.dart';
 import '../loadingPage/loading.dart';
 
@@ -24,6 +27,25 @@ class _AdminChatPageState extends State<AdminChatPage> {
   ScrollController controller = ScrollController();
   bool _loading = false;
   bool contactus = false;
+
+  /// The call button: a voice call inside the app; when no admin takes calls right now, the
+  /// support phone numbers as before.
+  Future<void> _callAdministration() async {
+    final problem = await AdminCallController.instance.callAdministration();
+    if (problem == null || !mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(problem), behavior: SnackBarBehavior.floating));
+    setState(() => contactus = true);
+  }
+
+  Future<void> _sendVoice() async {
+    final sent = await VoiceSend.recordAndSend(context, endpoint: 'send-voice-message',
+        fields: {if (chatid != null) 'chat_id': chatid.toString()});
+    if (sent == null) return;
+    chatid = sent['chat_id'] ?? chatid;
+    isnewchat = 0;
+    await getadminCurrentMessages();
+    if (mounted) setState(() {});
+  }
   @override
   void initState() {
     //get messages
@@ -115,17 +137,7 @@ class _AdminChatPageState extends State<AdminChatPage> {
                                     Positioned(
                                       left: media.width * 0.05,
                                       child: InkWell(
-                                        onTap: () {
-                                          if (contactus == false) {
-                                            setState(() {
-                                              contactus = true;
-                                            });
-                                          } else {
-                                            setState(() {
-                                              contactus = false;
-                                            });
-                                          }
-                                        },
+                                        onTap: _callAdministration,
                                         child: CircleAvatar(
                                           backgroundColor: Colors.green,
                                           radius: 15.r,
@@ -199,8 +211,9 @@ class _AdminChatPageState extends State<AdminChatPage> {
                                                     Card(
                                                       elevation: 5,
                                                       child: Container(
-                                                        width:
-                                                            media.width * 0.5,
+                                                        width: adminChatList[i]['message_type'] == 'voice'
+                                                            ? null
+                                                            : media.width * 0.5,
                                                         padding: EdgeInsets.all(
                                                             media.width * 0.03),
                                                         decoration:
@@ -244,7 +257,9 @@ class _AdminChatPageState extends State<AdminChatPage> {
                                                                     ? buttonColor
                                                                     : const Color(
                                                                         0xffE7EDEF)),
-                                                        child: MyText(
+                                                        child: VoiceBubble.fromMessage(adminChatList[i],
+                                                                mine: adminChatList[i]['from_id'].toString() == userDetails['id'].toString()) ??
+                                                            MyText(
                                                             text:
                                                                 adminChatList[i]
                                                                     ['message'],
@@ -301,6 +316,18 @@ class _AdminChatPageState extends State<AdminChatPage> {
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
                                     children: [
+                                      if (adminchatText.text.isEmpty)
+                                        Semantics(
+                                          button: true,
+                                          label: 'تسجيل رسالة صوتية',
+                                          child: InkWell(
+                                            onTap: _sendVoice,
+                                            child: const CircleAvatar(
+                                              backgroundColor: Colors.blue,
+                                              child: Icon(Icons.mic, color: Colors.white),
+                                            ),
+                                          ),
+                                        ),
                                       if (adminchatText.text.isNotEmpty)
                                         InkWell(
                                           onTap: () async {

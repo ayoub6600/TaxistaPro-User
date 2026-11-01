@@ -53,6 +53,7 @@ import 'map_launch/map_launch_coordinator.dart';
 import 'map_launch/taxi_launch_overlay.dart';
 import 'pick_loc_select.dart';
 import '../../navigation/guarded_navigation.dart';
+import '../../functions/calls/admin_call_controller.dart';
 // ignore: depend_on_referenced_packages
 
 part 'map_page/map_animation.dart';
@@ -219,6 +220,9 @@ class _MapsState extends State<Maps>
     addressList.removeWhere((element) => element.type == 'drop');
 
     getLocs();
+    // voice calls: CallKit events, this iPhone's VoIP token, "this version can take calls", a
+    // call answered on the lock screen while the app was starting
+    unawaited(AdminCallController.instance.init());
     unawaited(getActiveRiderBookings());
     unawaited(refreshPromotionCampaigns().then((_) {
       if (mounted) {
