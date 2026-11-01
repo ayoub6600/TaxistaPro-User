@@ -160,20 +160,13 @@ streamAdminchat() async {
       .listen((event) async {
     var value =
         Map<String, dynamic>.from(jsonDecode(jsonEncode(event.snapshot.value)));
-    if (value['to_id'].toString() == userDetails['id'].toString() && value['message'] == '🎤 رسالة صوتية') {
-      // a voice message: the history carries its player link, the realtime event only its text
-      await getadminCurrentMessages();
-    } else if (value['to_id'].toString() == userDetails['id'].toString()) {
-      adminChatList.add(jsonDecode(jsonEncode(event.snapshot.value)));
+    if (value['to_id'].toString() == userDetails['id'].toString()) {
+      // something from the administration (a message, a voice message, a call card): the history
+      // is the truth - ids, voice links, call details - and reloading never shows one twice.
+      // It is read only if the chat is on screen; otherwise the badge shows it as unread.
+      await getadminCurrentMessages(markRead: adminChatPagesOpen > 0);
     }
     value.clear();
-    if (adminChatList.isNotEmpty) {
-      unSeenChatCount =
-          adminChatList[adminChatList.length - 1]['count'].toString();
-      if (unSeenChatCount == 'null') {
-        unSeenChatCount = '0';
-      }
-    }
     valueNotifierChat.incrementNotifier();
   });
 }
@@ -183,11 +176,17 @@ streamAdminchat() async {
 List adminChatList = [];
 dynamic isnewchat = 1;
 dynamic chatid;
-getadminCurrentMessages() async {
+
+/// How many chat-with-the-administration pages are on screen (they read what arrives).
+int adminChatPagesOpen = 0;
+
+/// The chat with the administration. [markRead] false (a refresh in the background) leaves what
+/// the administration sent unread and puts its count on the badge.
+getadminCurrentMessages({bool markRead = true}) async {
   dynamic result;
   try {
     var response = await http.get(
-      Uri.parse('${url}api/v1/request/admin-chat-history'),
+      Uri.parse('${url}api/v1/request/admin-chat-history${markRead ? '' : '?mark_read=0'}'),
       headers: {
         'Authorization': 'Bearer ${bearerToken[0].token}',
         'Content-Type': 'application/json'
@@ -203,7 +202,8 @@ getadminCurrentMessages() async {
       if (adminChatList.isNotEmpty && chatStream == null) {
         streamAdminchat();
       }
-      unSeenChatCount = '0';
+      unSeenChatCount = markRead ? '0' : '${jsonDecode(response.body)['data']['unseen'] ?? 0}';
+      valueNotifierChat.incrementNotifier();
       result = 'success';
     } else if (response.statusCode == 401) {
       result = 'logout';

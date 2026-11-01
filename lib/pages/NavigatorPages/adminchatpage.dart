@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -8,13 +9,21 @@ import '../../functions/calls/admin_call_controller.dart';
 import '../../functions/functions.dart';
 import '../../styles/styles.dart';
 import '../../translations/translation.dart';
+import '../../functions/support_chat_link.dart';
+import '../../widgets/support_call_card.dart';
 import '../../widgets/voice/voice_bubble.dart';
 import '../../widgets/voice/voice_send.dart';
 import '../../widgets/widgets.dart';
 import '../loadingPage/loading.dart';
 
 class AdminChatPage extends StatefulWidget {
-  const AdminChatPage({super.key});
+  /// Opened from a notification: the message to bring into view (and briefly highlight).
+  final int? focusMessageId;
+
+  const AdminChatPage({super.key, this.focusMessageId});
+
+  /// Whether the chat with the administration is on screen (a tapped notification reuses it).
+  static bool get isOpen => adminChatPagesOpen > 0;
 
   @override
   State<AdminChatPage> createState() => _AdminChatPageState();
@@ -46,13 +55,61 @@ class _AdminChatPageState extends State<AdminChatPage> {
     await getadminCurrentMessages();
     if (mounted) setState(() {});
   }
+  // the message a notification pointed at: scrolled into view once loaded, outlined for a moment
+  final GlobalKey _focusKey = GlobalKey();
+  int? _focusId;
+  int? _highlightId;
+  Timer? _highlightTimer;
+
   @override
   void initState() {
+    adminChatPagesOpen++;
+    _focusId = widget.focusMessageId;
+    SupportChatLink.focus.addListener(_onFocusRequest);
     //get messages
     _loading = true;
     getmessage();
     super.initState();
   }
+
+  @override
+  void dispose() {
+    adminChatPagesOpen--;
+    SupportChatLink.focus.removeListener(_onFocusRequest);
+    _highlightTimer?.cancel();
+    super.dispose();
+  }
+
+  /// A notification tapped while this page is open: reload and show that message.
+  Future<void> _onFocusRequest() async {
+    final id = SupportChatLink.focus.value;
+    if (id == null) return;
+    _focusId = id;
+    await getadminCurrentMessages();
+    if (mounted) valueNotifierChat.incrementNotifier();
+  }
+
+  /// After a build: the focused message into view (once), otherwise the newest at the bottom.
+  void _scrollAfterBuild() {
+    final target = _focusKey.currentContext;
+    if (_focusId != null && target != null) {
+      final id = _focusId;
+      _focusId = null;
+      Scrollable.ensureVisible(target, alignment: 0.4, duration: const Duration(milliseconds: 400), curve: Curves.easeOut);
+      setState(() => _highlightId = id);
+      _highlightTimer?.cancel();
+      _highlightTimer = Timer(const Duration(milliseconds: 2500), () {
+        if (mounted) setState(() => _highlightId = null);
+      });
+      return;
+    }
+    if (_focusId != null && !_loading) _focusId = null; // not in the history (deleted, or another chat)
+    if (controller.hasClients) {
+      controller.animateTo(controller.position.maxScrollExtent, duration: const Duration(milliseconds: 500), curve: Curves.ease);
+    }
+  }
+
+  Future<void> _callBack() => _callAdministration();
 
   getmessage() async {
     adminChatList.clear();
@@ -91,9 +148,7 @@ class _AdminChatPageState extends State<AdminChatPage> {
                   valueListenable: valueNotifierChat.value,
                   builder: (context, value, child) {
                     WidgetsBinding.instance.addPostFrameCallback((_) {
-                      controller.animateTo(controller.position.maxScrollExtent,
-                          duration: const Duration(milliseconds: 500),
-                          curve: Curves.ease);
+                      if (mounted) _scrollAfterBuild();
                     });
                     //call for message seen
                     // messageSeen();
@@ -183,9 +238,18 @@ class _AdminChatPageState extends State<AdminChatPage> {
                                     children: adminChatList
                                         .asMap()
                                         .map((i, value) {
+                                          final messageId = int.tryParse('${adminChatList[i]['id'] ?? ''}');
+                                          final focused = messageId != null && (messageId == _focusId || messageId == _highlightId);
+                                          // a call with the administration: a card in the middle, with "call again"
+                                          final callCard = SupportCallCard.fromMessage(adminChatList[i],
+                                              highlighted: messageId != null && messageId == _highlightId, onCallBack: _callBack);
+                                          if (callCard != null) {
+                                            return MapEntry(i, Container(key: focused ? _focusKey : null, width: media.width * 0.9, alignment: Alignment.center, child: callCard));
+                                          }
                                           return MapEntry(
                                               i,
                                               Container(
+                                                key: focused ? _focusKey : null,
                                                 padding: EdgeInsets.only(
                                                     top: media.width * 0.01),
                                                 width: media.width * 0.9,
@@ -210,6 +274,11 @@ class _AdminChatPageState extends State<AdminChatPage> {
                                                   children: [
                                                     Card(
                                                       elevation: 5,
+                                                      shape: messageId != null && messageId == _highlightId
+                                                          ? RoundedRectangleBorder(
+                                                              side: const BorderSide(color: Color(0xFFF59E0B), width: 2),
+                                                              borderRadius: BorderRadius.circular(media.width * 0.02))
+                                                          : null,
                                                       child: Container(
                                                         width: adminChatList[i]['message_type'] == 'voice'
                                                             ? null

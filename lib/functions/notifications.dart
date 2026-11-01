@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -8,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 
 import 'calls/admin_call_controller.dart';
 import 'functions.dart';
+import 'support_chat_link.dart';
 
 // create an instance
 FirebaseMessaging messaging = FirebaseMessaging.instance;
@@ -21,9 +23,42 @@ int id = 0;
 bool _messagingInitialized = false;
 bool _permissionRequestInFlight = false;
 
+/// Every tap on a notification this app showed itself lands here (the plugin is one instance,
+/// so each initialize() below passes it again): a message or a missed call from the
+/// administration opens that conversation; anything else, as before.
+@pragma('vm:entry-point')
 void notificationTapBackground(NotificationResponse notificationResponse) {
+  final support = SupportChatLink.fromPayload(notificationResponse.payload);
+  if (support != null) {
+    SupportChatLink.open(support);
+    return;
+  }
   isGeneral = true;
   valueNotifierHome.incrementNotifier();
+}
+
+/// A message or a missed call from the administration while the app is on screen: the open chat
+/// just reloads (and reads it); otherwise a notification whose tap opens the conversation.
+Future<void> _supportPushInForeground(RemoteMessage message) async {
+  final data = message.data;
+  final isChat = data['push_type'] == SupportChatLink.chatPush;
+  if (isChat && adminChatPagesOpen > 0) {
+    await getadminCurrentMessages();
+    return;
+  }
+  if (isChat) unawaited(getadminCurrentMessages(markRead: false)); // the badge
+  await fltNotification.show(
+    id++,
+    message.notification?.title ?? data['title']?.toString() ?? 'إدارة تاكسيستا',
+    message.notification?.body ?? data['message']?.toString() ?? '',
+    const NotificationDetails(
+      android: AndroidNotificationDetails('admin_chat_channel', 'Admin Chat',
+          channelDescription: 'Messages and missed calls from the administration',
+          importance: Importance.high, priority: Priority.high, playSound: true),
+      iOS: DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: true),
+    ),
+    payload: SupportChatLink.payload(data),
+  );
 }
 
 /// This push is only ever a timely nudge, never trusted on its own -
@@ -77,8 +112,15 @@ var iosInit = const DarwinInitializationSettings(
 var initSetting = InitializationSettings(android: androiInit, iOS: iosInit);
 
 Future<void> initMessaging() async {
-  await fltNotification.initialize(initSetting);
+  await fltNotification.initialize(initSetting,
+      onDidReceiveNotificationResponse: notificationTapBackground);
   _messagingInitialized = true;
+  // the app was started by tapping one of its own notifications
+  try {
+    final launch = await fltNotification.getNotificationAppLaunchDetails();
+    final support = SupportChatLink.fromPayload(launch?.notificationResponse?.payload);
+    if (launch?.didNotificationLaunchApp == true && support != null) SupportChatLink.open(support);
+  } catch (_) {}
 
   FirebaseMessaging.instance.onTokenRefresh.listen((_) {
     debugPrint('FCM token refreshed');
@@ -86,18 +128,23 @@ Future<void> initMessaging() async {
 
   FirebaseMessaging.instance.getInitialMessage().then((message) {
     if (message?.data != null) {
-      if (message?.data['push_type'] == 'admin_call') {
-        AdminCallController.answerFromNotification(message!.data);
+      if (SupportChatLink.handles(message!.data)) {
+        // closed app, tapped: the conversation opens once the home screen is up
+        SupportChatLink.open(message.data);
+        return;
       }
-      if (message?.data['push_type'] == 'general') {
-        latestNotification = message?.data['message'];
+      if (message.data['push_type'] == 'admin_call') {
+        AdminCallController.answerFromNotification(message.data);
+      }
+      if (message.data['push_type'] == 'general') {
+        latestNotification = message.data['message'];
         isGeneral = true;
         valueNotifierHome.incrementNotifier();
       }
-      if (message?.data['push_type'] == 'recovery_driver_ready') {
+      if (message.data['push_type'] == 'recovery_driver_ready') {
         _handleRecoveryDriverReadyPush();
       }
-      if (_isScheduledOfferPush(message?.data)) {
+      if (_isScheduledOfferPush(message.data)) {
         _handleScheduledOfferPush(opened: true);
       }
     }
@@ -106,6 +153,10 @@ Future<void> initMessaging() async {
   FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
     // calls: ring / stop ringing (data-only on Android)
     if (await handleCallPush(message.data, appOpen: true)) return;
+    if (SupportChatLink.handles(message.data)) {
+      await _supportPushInForeground(message);
+      return;
+    }
     RemoteNotification? notification = message.notification;
     if (message.data['push_type'].toString() == 'recovery_driver_ready') {
       _handleRecoveryDriverReadyPush();
@@ -128,6 +179,11 @@ Future<void> initMessaging() async {
   });
 
   FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    if (SupportChatLink.handles(message.data)) {
+      // in the background, tapped: straight to the conversation (or the call log for a trip call)
+      SupportChatLink.open(message.data);
+      return;
+    }
     if (message.data['push_type'].toString() == 'admin_call') {
       AdminCallController.answerFromNotification(message.data);
       return;
@@ -299,7 +355,8 @@ Future<void> showOtpNotification(message) async {
   );
   const NotificationDetails notificationDetails =
       NotificationDetails(android: androidNotificationDetails, iOS: iosDetails);
-  rideNotification.initialize(initSetting);
+  rideNotification.initialize(initSetting,
+      onDidReceiveNotificationResponse: notificationTapBackground);
   await rideNotification.show(id++, message.title.toString(),
       message.body.toString(), notificationDetails);
   id = id++;
@@ -325,7 +382,8 @@ Future<void> showRideNotification(message) async {
   );
   const NotificationDetails notificationDetails =
       NotificationDetails(android: androidNotificationDetails, iOS: iosDetails);
-  rideNotification.initialize(initSetting);
+  rideNotification.initialize(initSetting,
+      onDidReceiveNotificationResponse: notificationTapBackground);
   await rideNotification.show(id++, message.title.toString(),
       message.body.toString(), notificationDetails);
   id = id++;

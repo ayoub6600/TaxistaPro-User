@@ -27,6 +27,7 @@ import '../../functions/api_guard.dart';
 import '../../functions/live_queries.dart';
 import '../../functions/geohash.dart';
 import '../../functions/notifications.dart';
+import '../../functions/support_chat_link.dart';
 import '../../styles/styles.dart';
 import '../../translations/translation.dart';
 import '../../widgets/clippers.dart';
@@ -233,7 +234,10 @@ class _MapsState extends State<Maps>
     // "A driver priced your scheduled ride": one light check on arrival; after
     // that it is kept current by the push notification and the resume reconcile.
     unawaited(refreshScheduledOfferSummary());
-    getadminCurrentMessages();
+    // the badge only: what the administration sent stays unread until the chat is opened
+    getadminCurrentMessages(markRead: false);
+    // a notification tapped before the home screen was up (cold start): open its conversation now
+    WidgetsBinding.instance.addPostFrameCallback((_) => SupportChatLink.appReady());
     unawaited(fetchPendingRecoveryOfferForRider().then((_) {
       if (mounted) setState(() {});
     }));
