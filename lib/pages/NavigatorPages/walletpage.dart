@@ -615,7 +615,15 @@ class _WalletPageState extends State<WalletPage> {
                                                                 color: textColor
                                                                     .withOpacity(
                                                                         0.4),
-                                                              )
+                                                              ),
+                                                              // the trip this line belongs to (e.g. change returned by the driver)
+                                                              if ((walletHistory[i]['request_number'] ?? '').toString().isNotEmpty)
+                                                                MyText(
+                                                                  text: 'رحلة ${walletHistory[i]['request_number']}'
+                                                                      '${(walletHistory[i]['transaction_id'] ?? '').toString().startsWith('CR-') ? ' · ${walletHistory[i]['transaction_id']}' : ''}',
+                                                                  size: media.width * ten,
+                                                                  color: textColor.withOpacity(0.55),
+                                                                ),
                                                             ],
                                                           ),
                                                           Expanded(

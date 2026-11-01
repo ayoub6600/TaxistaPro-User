@@ -4,13 +4,15 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import '../pages/NavigatorPages/adminchatpage.dart';
+import '../pages/NavigatorPages/walletpage.dart';
 import '../pages/callPage/call_log_page.dart';
 import 'calls/admin_call_controller.dart';
 import 'functions.dart';
 
 /// Opening the chat with the administration from a notification, whatever state the app was in
 /// (open, in the background, closed, phone locked): a message from the administration
-/// (push_type admin_chat_message) or a missed call from it (admin_call_missed).
+/// (push_type admin_chat_message) or a missed call from it (admin_call_missed). The same path opens
+/// the wallet for change a driver returned to it (change_return).
 ///
 /// The tap is kept until the app can act on it: a signed-in session with the home screen up
 /// (after a cold start that is when the home screen mounts, see [appReady]). The conversation is
@@ -19,6 +21,7 @@ import 'functions.dart';
 class SupportChatLink {
   static const chatPush = 'admin_chat_message';
   static const missedCallPush = 'admin_call_missed';
+  static const changeReturnPush = 'change_return';
 
   /// The message to show in the chat page already on screen (set when a tap arrives while it is open).
   static final ValueNotifier<int?> focus = ValueNotifier<int?>(null);
@@ -29,7 +32,7 @@ class SupportChatLink {
   /// A push this link opens. A missed call between a driver and a rider opens the call log instead.
   static bool handles(Map data) {
     final type = data['push_type']?.toString();
-    return type == chatPush || type == missedCallPush;
+    return type == chatPush || type == missedCallPush || type == changeReturnPush;
   }
 
   static bool _isTripCall(Map data) => data['call_kind']?.toString() == 'driver_rider';
@@ -69,6 +72,10 @@ class SupportChatLink {
     _pending = null;
     _busy = true;
     try {
+      if (data['push_type'] == changeReturnPush) {
+        nav.push(MaterialPageRoute(builder: (_) => const WalletPage()));
+        return;
+      }
       if (data['push_type'] == missedCallPush && _isTripCall(data)) {
         nav.push(MaterialPageRoute(builder: (_) => const CallLogPage()));
         return;

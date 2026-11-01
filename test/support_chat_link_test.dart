@@ -7,6 +7,7 @@ void main() {
       expect(SupportChatLink.handles({'push_type': 'admin_chat_message', 'chat_id': 'c1', 'message_id': '7'}), isTrue);
       expect(SupportChatLink.handles({'push_type': 'admin_call_missed', 'call_kind': 'admin_driver'}), isTrue);
       expect(SupportChatLink.handles({'push_type': 'admin_call'}), isFalse, reason: 'a ringing call stays CallKit\'s');
+      expect(SupportChatLink.handles({'push_type': 'change_return', 'request_id': 'r1'}), isTrue, reason: 'opens the wallet');
       expect(SupportChatLink.handles({'push_type': 'general'}), isFalse);
       expect(SupportChatLink.handles({}), isFalse);
     });
