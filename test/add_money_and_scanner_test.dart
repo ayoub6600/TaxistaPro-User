@@ -276,7 +276,11 @@ void main() {
       expect(swift.contains('import Vision'), isTrue);
       expect(swift.contains('VNRecognizeTextRequest'), isTrue);
       expect(swift.contains('usesLanguageCorrection = false'), isTrue, reason: 'digits are never "corrected"');
-      expect(swift.contains('URLSession'), isFalse);
+      // the card is read on the device: no network anywhere in the scanner's code, and the app
+      // delegate's only request is the signed "this call is shown" link of a VoIP push
+      expect(swift.substring(swift.indexOf('taxista/card_ocr')).contains('URLSession'), isFalse);
+      expect('URLSession'.allMatches(swift).length, 1);
+      expect(swift.contains('p["alerted_url"]'), isTrue);
       expect(swift.contains('taxista/card_ocr'), isTrue);
 
       final gradle = File('android/app/build.gradle').readAsStringSync();

@@ -93,6 +93,9 @@ class AdminCallController extends ChangeNotifier {
     });
     await _sendVoipToken();
     unawaited(_sendReady());
+    // back from the settings (or anywhere): the server learns at once whether calls can ring locked
+    _lifecycle ??= AppLifecycleListener(onResume: () => unawaited(_sendReady()));
+    if (Platform.isAndroid) unawaited(Future.delayed(const Duration(seconds: 4), checkLockScreenCalls));
     // a call answered from the lock screen before the app finished starting
     try {
       final calls = await FlutterCallkitIncoming.activeCalls();
@@ -137,8 +140,67 @@ class AdminCallController extends ChangeNotifier {
   Future<void> _sendReady() async {
     try {
       final info = await PackageInfo.fromPlatform();
-      await AdminCallApi.ready(Platform.isIOS ? 'ios' : 'android', '${info.version}+${info.buildNumber}');
+      await AdminCallApi.ready(Platform.isIOS ? 'ios' : 'android', '${info.version}+${info.buildNumber}', fullScreen: await _fullScreenAllowed());
     } catch (_) {}
+  }
+
+  AppLifecycleListener? _lifecycle;
+  static bool _askedLockScreen = false;
+
+  /// Android 14+: may a call show over the lock screen (null elsewhere, where it always may).
+  static Future<bool?> _fullScreenAllowed() async {
+    if (!Platform.isAndroid) return null;
+    try {
+      return await FlutterCallkitIncoming.canUseFullScreenIntent();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Without "full-screen notifications" a call reaches a locked Android phone as a plain
+  /// notification. Ask once per start, straight to the right setting; some makers (Xiaomi, Oppo,
+  /// Vivo, Tecno...) also need "show on lock screen" in the app's own settings.
+  Future<void> checkLockScreenCalls() async {
+    if (!Platform.isAndroid || _askedLockScreen) return;
+    final allowed = await _fullScreenAllowed();
+    final context = appNavigatorKey.currentContext;
+    if (allowed != false || context == null || !context.mounted) return;
+    _askedLockScreen = true;
+    String maker = '';
+    try {
+      maker = (await DeviceInfoPlugin().androidInfo).manufacturer.toLowerCase();
+    } catch (_) {}
+    final strict = RegExp('xiaomi|redmi|poco|oppo|realme|vivo|huawei|honor|tecno|infinix|itel|oneplus').hasMatch(maker);
+    if (!context.mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (c) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          title: const Text('اسمح للمكالمات بالظهور وهاتفك مقفل'),
+          content: Text('حتى ترن مكالمات تاكسيستا وتظهر على شاشة القفل مثل المكالمات العادية، فعّل «عرض الإشعارات بملء الشاشة» لتطبيق تاكسيستا.'
+              '${strict ? '\n\nعلى هاتفك فعّل أيضًا «العرض على شاشة القفل» و«عرض النوافذ المنبثقة أثناء العمل في الخلفية» من إعدادات التطبيق ← الأذونات.' : ''}'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(c), child: const Text('لاحقًا')),
+            if (strict)
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(c);
+                  perm.openAppSettings();
+                },
+                child: const Text('إعدادات التطبيق'),
+              ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(c);
+                FlutterCallkitIncoming.requestFullIntentPermission();
+              },
+              child: const Text('السماح'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   static String roleLabel(String? type) =>
@@ -153,7 +215,11 @@ class AdminCallController extends ChangeNotifier {
     if (id.isEmpty || instance.callId == id) return;
     // the system screen rings (and works locked); the iOS Simulator ends CallKit calls by itself
     // after a moment, so there the app's own screen rings alone
-    if (!(appOpen && await _onSimulator())) await showIncoming(data);
+    if (!(appOpen && await _onSimulator())) {
+      await showIncoming(data);
+    } else {
+      unawaited(AdminCallApi.alerted(data)); // the app's own screen rings
+    }
     if (appOpen && !instance.busy) instance._incomingInApp(id, data);
   }
 
@@ -219,6 +285,8 @@ class AdminCallController extends ChangeNotifier {
         ringtonePath: 'system_ringtone_default',
       ),
     ));
+    // shown: now the caller may see "ringing" (awaited, so a background isolate stays alive for it)
+    await AdminCallApi.alerted(data);
   }
 
   /// The call stopped ringing on the server (the caller hung up, someone else answered...).
@@ -271,7 +339,8 @@ class AdminCallController extends ChangeNotifier {
       final desc = await pc.getLocalDescription();
       final sent = await AdminCallApi.offer(callId!, desc!.sdp!);
       if (!sent.ok) throw Exception(sent.message);
-      _set('ringing', 'يرن…');
+      // "ringing" only once the other side confirmed it shows the call
+      _set('ringing', sent.data['alerted'] == true ? 'يرن…' : 'جارٍ الاتصال…');
       _pollState(const Duration(seconds: 1));
     } catch (e) {
       await _fail(e);
@@ -465,6 +534,7 @@ class AdminCallController extends ChangeNotifier {
         await _finish((r.data['status_label'] ?? 'انتهت المكالمة').toString());
         return;
       }
+      if (s == 'ringing' && role == 'caller') statusLabel = (r.data['status_label'] ?? statusLabel).toString();
       notifyListeners();
       _pollState(Duration(seconds: s == 'accepted' ? 2 : 1));
     });

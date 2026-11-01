@@ -38,9 +38,22 @@ class AdminCallApi {
 
   static Future<AdminCallResult> log() => _send(http.get(_u('calls/log'), headers: _headers));
 
-  /// This app version can take calls (the server never rings older versions).
-  static Future<AdminCallResult> ready(String platform, String version) =>
-      _send(http.post(_u('calls/ready'), headers: _headers, body: jsonEncode({'platform': platform, 'version': version})));
+  /// This app version can take calls (the server never rings older versions). [fullScreen]: whether
+  /// this Android phone may show a call over the lock screen (the caller is told when not).
+  static Future<AdminCallResult> ready(String platform, String version, {bool? fullScreen}) => _send(http.post(_u('calls/ready'),
+      headers: _headers,
+      // alerts: this version confirms every call it shows (AdminCallApi.alerted), so "ringing" means ringing
+      body: jsonEncode({'platform': platform, 'version': version, 'alerts': true, if (fullScreen != null) 'full_screen': fullScreen})));
+
+  /// The phone shows the incoming call: open the signed link that came with the push (no login
+  /// needed, so it works from the background isolate too). Only then does the caller see "ringing".
+  static Future<void> alerted(Map data) async {
+    final u = Uri.tryParse((data['alerted_url'] ?? '').toString());
+    if (u == null || !u.hasScheme) return;
+    try {
+      await http.get(u).timeout(const Duration(seconds: 8));
+    } catch (_) {}
+  }
 
   static Future<AdminCallResult> state(String id, {bool ice = false}) =>
       _send(http.get(_u('calls/$id${ice ? '?ice=1' : ''}'), headers: _headers));

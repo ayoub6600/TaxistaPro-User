@@ -72,6 +72,11 @@ import flutter_callkit_incoming
     data.extra = ["call_id": id]
     data.duration = 45000
     SwiftFlutterCallkitIncomingPlugin.sharedInstance?.showCallkitIncoming(data, fromPushKit: true)
+    // the (locked) iPhone shows the call: tell the server through the signed link in the push, so the
+    // caller sees "ringing" only now (no login needed - the app may not even be running)
+    if let link = p["alerted_url"] as? String, let url = URL(string: link) {
+      URLSession.shared.dataTask(with: url).resume()
+    }
     DispatchQueue.main.asyncAfter(deadline: .now() + 1) { completion() }
   }
 
