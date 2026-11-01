@@ -82,8 +82,8 @@ class _ModernForgotPasswordState extends State<ModernForgotPassword> {
     super.initState();
     _ownsApi = widget.api == null;
     _api = widget.api ?? RiderPasswordResetApi(baseUrl: app.url);
-    _country = widget.initialCountry ??
-        (widget.policies.isEmpty ? null : widget.policies.first);
+    _country =
+        initialSignInCountry(widget.policies, detected: widget.initialCountry);
   }
 
   @override

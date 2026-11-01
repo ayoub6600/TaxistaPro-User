@@ -63,7 +63,7 @@ class _ModernLoginState extends State<ModernLogin> {
       }
     }
     if (!mounted) return;
-    final selected = detected ?? (policies.isEmpty ? null : policies.first);
+    final selected = initialSignInCountry(policies, detected: detected);
     setState(() {
       _policies = policies;
       _country = selected;
@@ -72,7 +72,22 @@ class _ModernLoginState extends State<ModernLogin> {
           : _LoginMethod.phone;
       _detectingLocation = false;
       _loading = false;
+      // no countries = the server was not reached, not a country problem
+      _error = policies.isEmpty ? _connectionError : null;
     });
+  }
+
+  String get _connectionError => _copy(
+      'تعذر الاتصال بالخادم. تحقق من الإنترنت ثم أعد المحاولة.',
+      "Couldn't reach the server. Check your connection and try again.");
+
+  void _retryPrepare() {
+    setState(() {
+      _loading = true;
+      _detectingLocation = true;
+      _error = null;
+    });
+    _prepare();
   }
 
   @override
@@ -121,7 +136,9 @@ class _ModernLoginState extends State<ModernLogin> {
       _error = result == false
           ? _copy('بيانات الدخول غير صحيحة. راجع الحساب وكلمة المرور.',
               'The login details are incorrect. Check your account and password.')
-          : result.toString();
+          : (result == null || result == 'no internet')
+              ? _connectionError
+              : result.toString();
     });
   }
 
@@ -247,6 +264,12 @@ class _ModernLoginState extends State<ModernLogin> {
                                 _identity.clear();
                                 _error = null;
                               }),
+                    )
+                  else if (!_loading)
+                    OutlinedButton.icon(
+                      onPressed: _retryPrepare,
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: Text(_copy('إعادة تحميل الدول', 'Reload countries')),
                     ),
                   const SizedBox(height: 14),
                   SegmentedButton<_LoginMethod>(

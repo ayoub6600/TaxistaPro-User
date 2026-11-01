@@ -32,6 +32,7 @@ class CountryAuthPolicy {
     required this.channel,
     required this.areas,
     this.flag,
+    this.isDefault = false,
   });
 
   final int index;
@@ -45,6 +46,9 @@ class CountryAuthPolicy {
   final List<SignupArea> areas;
   final String? flag;
 
+  /// The country the backend marks `default` (Libya).
+  final bool isDefault;
+
   factory CountryAuthPolicy.fromApi(int index, Map<String, dynamic> json) {
     return CountryAuthPolicy(
       index: index,
@@ -57,6 +61,7 @@ class CountryAuthPolicy {
       channel: _channelFrom('${json['signup_otp_channel'] ?? 'sms'}'),
       areas: _areasFrom(json['service_locations']),
       flag: json['flag']?.toString(),
+      isDefault: json['default'] == true,
     );
   }
 
@@ -88,6 +93,26 @@ class CountryAuthPolicy {
     }
     return areas;
   }
+}
+
+/// The country a sign-in screen starts on: where the phone is when that is
+/// known, otherwise the backend's default country, never simply the first of
+/// the list. The API sorts by name, so Egypt (+20, email sign-in) comes first:
+/// a phone whose location could not be read started there and a Libyan number
+/// could not sign in.
+CountryAuthPolicy? initialSignInCountry(
+  List<CountryAuthPolicy> policies, {
+  CountryAuthPolicy? detected,
+}) {
+  if (detected != null) return detected;
+  if (policies.isEmpty) return null;
+  for (final policy in policies) {
+    if (policy.isDefault) return policy;
+  }
+  for (final policy in policies) {
+    if (policy.areas.isNotEmpty) return policy;
+  }
+  return policies.first;
 }
 
 /// The registration steps, identical for every country: the phone number is

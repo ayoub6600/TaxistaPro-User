@@ -407,29 +407,33 @@ void configurePendingUserRegistration({
   signupZoneId = zoneId;
 }
 
+/// The FCM token sent with sign-in and registration: a bonus, never a
+/// condition. getToken() throws without Google Play services or when FCM
+/// cannot be reached, and that used to abort the sign-in itself. A missing
+/// token goes as before ("null", which the backend ignores) and Home's
+/// syncDeviceToken fills it in later.
+Future<String?> _signInFcmToken() async {
+  try {
+    if (Platform.isIOS) {
+      var apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+      if (apnsToken == null) {
+        await Future<void>.delayed(const Duration(seconds: 3));
+        apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+      }
+      if (apnsToken == null) return null;
+    }
+    return await FirebaseMessaging.instance.getToken();
+  } catch (error) {
+    debugPrint('FCM token unavailable at sign-in: $error');
+    return null;
+  }
+}
+
 registerUser() async {
   bearerToken.clear();
   dynamic result;
   try {
-    String? token;
-    if (Platform.isIOS) {
-      String? apnsToken = await FirebaseMessaging.instance.getAPNSToken();
-      if (apnsToken != null) {
-        token = await FirebaseMessaging.instance.getToken();
-      } else {
-        await Future<void>.delayed(
-          const Duration(
-            seconds: 3,
-          ),
-        );
-        apnsToken = await FirebaseMessaging.instance.getAPNSToken();
-        if (apnsToken != null) {
-          token = await FirebaseMessaging.instance.getToken();
-        }
-      }
-    } else {
-      token = await FirebaseMessaging.instance.getToken();
-    }
+    final token = await _signInFcmToken();
     var fcm = token.toString();
     final response =
         http.MultipartRequest('POST', Uri.parse('${url}api/v1/user/register'));
@@ -723,25 +727,7 @@ userLogin(number, login, password, {String? countryDialCode}) async {
   dynamic result;
   try {
     debugPrint('drops-login ${url}api/v1/user/login');
-    String? token;
-    if (Platform.isIOS) {
-      String? apnsToken = await FirebaseMessaging.instance.getAPNSToken();
-      if (apnsToken != null) {
-        token = await FirebaseMessaging.instance.getToken();
-      } else {
-        await Future<void>.delayed(
-          const Duration(
-            seconds: 3,
-          ),
-        );
-        apnsToken = await FirebaseMessaging.instance.getAPNSToken();
-        if (apnsToken != null) {
-          token = await FirebaseMessaging.instance.getToken();
-        }
-      }
-    } else {
-      token = await FirebaseMessaging.instance.getToken();
-    }
+    final token = await _signInFcmToken();
     var fcm = token.toString();
 
     var response = await http.post(Uri.parse('${url}api/v1/user/login'),
