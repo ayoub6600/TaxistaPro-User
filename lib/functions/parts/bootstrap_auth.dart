@@ -17,12 +17,9 @@ String signupZoneId = '';
 String packageName = '';
 String signKey = '';
 
-// This cleanup branch defaults to the local backend so a plain VS Code Run
-// does not accidentally authenticate against production.
-String url = const String.fromEnvironment(
-  'API_BASE_URL',
-  defaultValue: 'http://127.0.0.1:8002/',
-);
+// Debug runs default to the local backend, release builds to production
+// (see api_base_url.dart); --dart-define=API_BASE_URL overrides both.
+String url = apiBaseUrl;
 
 String mapkey = (platform == TargetPlatform.android)
     ? 'AIzaSyCLVX-Jnqqo89cZ2xQ6CJflSueG-laba7g'
