@@ -158,6 +158,8 @@ streamAdminchat() async {
           'chats/${(adminChatList.length > 2) ? userDetails['chat_id'] : chatid}')
       .onValue
       .listen((event) async {
+    // nothing at this node yet (no message since the chat began): nothing to react to
+    if (event.snapshot.value is! Map) return;
     var value =
         Map<String, dynamic>.from(jsonDecode(jsonEncode(event.snapshot.value)));
     if (value['to_id'].toString() == userDetails['id'].toString()) {

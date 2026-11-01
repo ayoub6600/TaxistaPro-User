@@ -1,14 +1,16 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import '../../functions/calls/admin_call_controller.dart';
 import '../../functions/functions.dart';
 import '../../styles/styles.dart';
-import '../../translations/translation.dart';
+import '../../widgets/chat/chat_kit.dart';
 import '../../widgets/voice/voice_bubble.dart';
 import '../../widgets/voice/voice_send.dart';
-import '../../widgets/widgets.dart';
-import '../loadingPage/loading.dart';
 
+/// The chat with the driver during the ride under way. Messages arrive through the ride's live
+/// updates (valueNotifierBook); sending also nudges the driver's app through the ride node.
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
 
@@ -16,304 +18,214 @@ class ChatPage extends StatefulWidget {
   State<ChatPage> createState() => _ChatPageState();
 }
 
+class _Outgoing {
+  final String text;
+  final DateTime at = DateTime.now();
+  bool failed = false;
+
+  _Outgoing(this.text);
+}
+
 class _ChatPageState extends State<ChatPage> {
-  TextEditingController chatText = TextEditingController();
-  ScrollController controller = ScrollController();
-  bool _sendingMessage = false;
+  final TextEditingController _input = TextEditingController();
+  final FocusNode _inputFocus = FocusNode();
+  final ScrollController _scroll = ScrollController();
+  final List<_Outgoing> _outgoing = [];
+  bool _calling = false;
+
+  bool get _ar => languageDirection == 'rtl';
+  String _t(String ar, String en) => _ar ? ar : en;
+
+  Map get _driver {
+    final d = userRequestData['driverDetail'];
+    return d is Map && d['data'] is Map ? d['data'] as Map : const {};
+  }
+
   @override
   void initState() {
-    //get messages
-    getCurrentMessages();
     super.initState();
+    getCurrentMessages();
+  }
+
+  @override
+  void dispose() {
+    _input.dispose();
+    _inputFocus.dispose();
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  void _toBottom() {
+    if (_scroll.hasClients) _scroll.animateTo(0, duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
+  }
+
+  Future<void> _sendText([_Outgoing? retry]) async {
+    final text = retry?.text ?? _input.text.trim();
+    if (text.isEmpty) return;
+    final item = retry ?? _Outgoing(text);
+    setState(() {
+      item.failed = false;
+      if (retry == null) {
+        _outgoing.add(item);
+        _input.clear();
+      }
+    });
+    _toBottom();
+    final result = await sendMessage(text);
+    if (!mounted) return;
+    setState(() {
+      if (result == 'success') {
+        _outgoing.remove(item);
+      } else {
+        item.failed = true;
+      }
+    });
   }
 
   Future<void> _sendVoice() async {
+    FocusManager.instance.primaryFocus?.unfocus();
     final sent = await VoiceSend.recordAndSend(context, endpoint: 'send-voice', fields: {'request_id': userRequestData['id'].toString()});
     if (sent != null) await voiceMessageSent();
+    _toBottom();
   }
 
   /// A voice call with the driver, inside the app (no phone numbers).
   Future<void> _callDriver() async {
+    if (_calling) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() => _calling = true);
     final problem = await AdminCallController.instance.callDriver(requestId: userRequestData['id']?.toString());
-    if (problem != null && mounted) {
+    if (!mounted) return;
+    setState(() => _calling = false);
+    if (problem != null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(problem), behavior: SnackBarBehavior.floating));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    var media = MediaQuery.of(context).size;
-    return PopScope(
-      canPop: true,
-      child: Material(
-        child: Scaffold(
-          body: ValueListenableBuilder(
-              valueListenable: valueNotifierBook.value,
-              builder: (context, value, child) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  controller.animateTo(controller.position.maxScrollExtent,
-                      duration: const Duration(milliseconds: 500),
-                      curve: Curves.ease);
-                });
-                //call for message seen
-                // ;
-
-                return Directionality(
-                  textDirection: (languageDirection == 'rtl')
-                      ? TextDirection.rtl
-                      : TextDirection.ltr,
-                  child: Stack(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.fromLTRB(
-                            media.width * 0.05,
-                            MediaQuery.of(context).padding.top +
-                                media.width * 0.05,
-                            media.width * 0.05,
-                            media.width * 0.05),
-                        height: media.height * 1,
-                        width: media.width * 1,
-                        color: page,
-                        child: Column(
-                          children: [
-                            Stack(
-                              children: [
-                                Container(
-                                    width: media.width * 0.9,
-                                    alignment: Alignment.center,
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        MyText(
-                                          text: userRequestData['driverDetail']
-                                              ['data']['name'],
-                                          size: media.width * sixteen,
-                                          fontweight: FontWeight.bold,
-                                        ),
-                                        SizedBox(
-                                          height: media.width * 0.025,
-                                        ),
-                                        SizedBox(
-                                          width: media.width * 0.7,
-                                          child: MyText(
-                                            text: userRequestData[
-                                                        'driverDetail']['data']
-                                                    ['car_color'] +
-                                                ' ' +
-                                                userRequestData['driverDetail']
-                                                    ['data']['car_make_name'] +
-                                                ' ' +
-                                                userRequestData['driverDetail']
-                                                    ['data']['car_model_name'],
-                                            size: media.width * fourteen,
-                                            textAlign: TextAlign.center,
-                                            maxLines: 1,
-                                            color: const Color(0xff8A8A8A),
-                                          ),
-                                        ),
-                                      ],
-                                    )),
-                                PositionedDirectional(
-                                  end: 0,
-                                  child: Semantics(
-                                    button: true,
-                                    label: 'اتصال صوتي بالسائق',
-                                    child: InkWell(
-                                      onTap: _callDriver,
-                                      borderRadius: BorderRadius.circular(media.width * 0.05),
-                                      child: Container(
-                                        height: media.width * 0.1,
-                                        width: media.width * 0.1,
-                                        alignment: Alignment.center,
-                                        decoration: BoxDecoration(color: const Color(0xFF1D4ED8).withValues(alpha: 0.1), shape: BoxShape.circle),
-                                        child: const Icon(Icons.call, color: Color(0xFF1D4ED8)),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Positioned(
-                                  child: InkWell(
-                                    onTap: () {
-                                      Navigator.pop(context, true);
-                                    },
-                                    child: Container(
-                                      height: media.width * 0.1,
-                                      width: media.width * 0.1,
-                                      alignment: Alignment.center,
-                                      child: Icon(Icons.arrow_back_ios,
-                                          color: textColor),
-                                    ),
-                                  ),
-                                )
-                              ],
-                            ),
-                            SizedBox(
-                              height: media.width * 0.05,
-                            ),
-                            Expanded(
-                                child: SingleChildScrollView(
-                              controller: controller,
-                              child: Column(
-                                children: chatList
-                                    .asMap()
-                                    .map((i, value) {
-                                      return MapEntry(
-                                          i,
-                                          Container(
-                                            padding: EdgeInsets.only(
-                                                top: media.width * 0.025),
-                                            width: media.width * 0.9,
-                                            alignment:
-                                                (chatList[i]['from_type'] == 1)
-                                                    ? Alignment.centerRight
-                                                    : Alignment.centerLeft,
-                                            child: Column(
-                                              crossAxisAlignment: (chatList[i]
-                                                          ['from_type'] ==
-                                                      1)
-                                                  ? CrossAxisAlignment.end
-                                                  : CrossAxisAlignment.start,
-                                              children: [
-                                                Container(
-                                                  width: chatList[i]['message_type'] == 'voice' ? null : media.width * 0.5,
-                                                  padding: EdgeInsets.all(
-                                                      media.width * 0.04),
-                                                  decoration: BoxDecoration(
-                                                      borderRadius: (chatList[i]
-                                                                  [
-                                                                  'from_type'] ==
-                                                              1)
-                                                          ? BorderRadius
-                                                              .circular(8)
-                                                          : BorderRadius
-                                                              .circular(8),
-                                                      color: (chatList[i][
-                                                                  'from_type'] ==
-                                                              1)
-                                                          ? buttonColor
-                                                          : const Color(
-                                                              0xffE7EDEF)),
-                                                  child: VoiceBubble.fromMessage(chatList[i], mine: chatList[i]['from_type'] == 1) ?? MyText(
-                                                      text: chatList[i]
-                                                          ['message'],
-                                                      size: media.width *
-                                                          fourteen,
-                                                      color: (isDarkTheme ==
-                                                              true)
-                                                          ? Colors.black
-                                                          // : textColor,
-                                                          : (chatList[i][
-                                                                      'from_type'] ==
-                                                                  1)
-                                                              ? Colors.white
-                                                              : Colors.black),
-                                                ),
-                                                SizedBox(
-                                                  height: media.width * 0.015,
-                                                ),
-                                                MyText(
-                                                  text: chatList[i]
-                                                      ['converted_created_at'],
-                                                  size: media.width * twelve,
-                                                )
-                                              ],
-                                            ),
-                                          ));
-                                    })
-                                    .values
-                                    .toList(),
-                              ),
-                            )),
-
-                            //text field
-                            Container(
-                              margin: EdgeInsets.only(top: media.width * 0.025),
-                              padding: EdgeInsets.fromLTRB(
-                                  media.width * 0.025,
-                                  media.width * 0.01,
-                                  media.width * 0.025,
-                                  media.width * 0.01),
-                              width: media.width * 0.9,
-                              decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                      color: borderLines, width: 1.2),
-                                  color: page),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  SizedBox(
-                                    width: media.width * 0.7,
-                                    child: TextField(
-                                      controller: chatText,
-                                      decoration: InputDecoration(
-                                        border: InputBorder.none,
-                                        hintText: languages[choosenLanguage]
-                                            ['text_entermessage'],
-                                        hintStyle: GoogleFonts.notoSans(
-                                          color: textColor.withOpacity(0.4),
-                                          fontSize: media.width * twelve,
-                                        ),
-                                      ),
-                                      style: GoogleFonts.notoSans(
-                                        color: textColor,
-                                      ),
-                                      minLines: 1,
-                                      maxLines: 4,
-                                      onChanged: (val) {},
-                                    ),
-                                  ),
-                                  // nothing typed: the microphone (a voice message); else send
-                                  ValueListenableBuilder<TextEditingValue>(
-                                    valueListenable: chatText,
-                                    builder: (context, value, _) => value.text.trim().isEmpty
-                                        ? Semantics(
-                                            button: true,
-                                            label: 'تسجيل رسالة صوتية',
-                                            child: InkWell(
-                                              onTap: _sendVoice,
-                                              child: Icon(Icons.mic, color: const Color(0xFF1D4ED8), size: media.width * 0.075),
-                                            ),
-                                          )
-                                        : InkWell(
-                                            onTap: () async {
-                                              FocusManager.instance.primaryFocus
-                                                  ?.unfocus();
-                                              setState(() {
-                                                _sendingMessage = true;
-                                              });
-                                              await sendMessage(chatText.text);
-                                              chatText.clear();
-                                              setState(() {
-                                                _sendingMessage = false;
-                                              });
-                                            },
-                                            child: Image.asset(
-                                              'assets/images/send.png',
-                                              fit: BoxFit.contain,
-                                              width: media.width * 0.075,
-                                              color: textColor,
-                                            ),
-                                          ),
-                                  )
-                                ],
-                              ),
-                            )
-                          ],
-                        ),
-                      ),
-                      //loader
-                      (_sendingMessage == true)
-                          ? const Positioned(top: 0, child: Loading())
-                          : Container()
-                    ],
-                  ),
-                );
-              }),
-        ),
+    final p = ChatPalette.current();
+    final car = [
+      [_driver['car_make_name'], _driver['car_model_name']].where((v) => v != null && '$v'.isNotEmpty).join(' '),
+      _driver['car_number'],
+    ].where((v) => v != null && '$v'.isNotEmpty).join(' · ');
+    return Directionality(
+      textDirection: _ar ? ui.TextDirection.rtl : ui.TextDirection.ltr,
+      child: Scaffold(
+        backgroundColor: p.background,
+        body: Column(children: [
+          ChatHeader(
+            palette: p,
+            title: '${_driver['name'] ?? _t('السائق', 'Driver')}',
+            status: car.isNotEmpty ? car : _t('سائق رحلتك', 'Your driver'),
+            online: true,
+            calling: _calling,
+            photo: _driver['profile_picture']?.toString(),
+            icon: Icons.local_taxi_rounded,
+            onBack: () => Navigator.of(context).maybePop(),
+            onCall: _callDriver,
+            callLabel: _t('اتصال مجاني بالسائق عبر تاكسيستا', 'Free call to the driver through Taxista'),
+          ),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+              behavior: HitTestBehavior.translucent,
+              child: ValueListenableBuilder(
+                valueListenable: valueNotifierBook.value,
+                builder: (context, _, __) => _body(p),
+              ),
+            ),
+          ),
+          ChatComposer(
+            palette: p,
+            controller: _input,
+            focusNode: _inputFocus,
+            hint: _t('اكتب رسالة للسائق…', 'Write to the driver…'),
+            sendLabel: _t('إرسال', 'Send'),
+            voiceLabel: _t('تسجيل رسالة صوتية', 'Record a voice message'),
+            onChanged: () => setState(() {}),
+            onSend: () => _sendText(),
+            onVoice: _sendVoice,
+          ),
+        ]),
       ),
+    );
+  }
+
+  Widget _body(ChatPalette p) {
+    final messages = chatList.whereType<Map>().toList();
+    if (messages.isEmpty && _outgoing.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Container(
+              width: 76,
+              height: 76,
+              decoration: BoxDecoration(color: theme.withValues(alpha: p.dark ? 0.2 : 0.09), shape: BoxShape.circle),
+              child: Icon(Icons.chat_rounded, color: theme, size: 34),
+            ),
+            const SizedBox(height: 14),
+            Text(_t('راسل سائقك', 'Message your driver'), textAlign: TextAlign.center, style: p.text(18, weight: FontWeight.w700)),
+            const SizedBox(height: 6),
+            Text(_t('اكتب له مكانك بالضبط أو أي ملاحظة عن الرحلة، أو اتصل به مجانًا.', 'Tell the driver exactly where you are, or call for free.'),
+                textAlign: TextAlign.center, style: p.text(14, color: p.sub, height: 1.6)),
+          ]),
+        ),
+      );
+    }
+    bool sameRun(Map? a, Map? b) {
+      if (a == null || b == null || '${a['from_type']}' != '${b['from_type']}') return false;
+      final ta = ChatTime.parse(a['created_at']), tb = ChatTime.parse(b['created_at']);
+      return ta != null && tb != null && ChatTime.sameDay(ta, tb) && tb.difference(ta).inMinutes.abs() < 3;
+    }
+
+    final rows = <Widget>[];
+    DateTime? day;
+    for (var i = 0; i < messages.length; i++) {
+      final m = messages[i];
+      final at = ChatTime.parse(m['created_at']);
+      if (at != null && (day == null || !ChatTime.sameDay(day, at))) {
+        rows.add(ChatDaySeparator(palette: p, label: ChatTime.dayLabel(at, _ar)));
+        day = at;
+      }
+      final mine = '${m['from_type']}' == '1';
+      rows.add(Padding(
+        padding: EdgeInsets.only(top: sameRun(i > 0 ? messages[i - 1] : null, m) ? 2 : 10),
+        child: ChatBubble(
+          palette: p,
+          mine: mine,
+          tail: !sameRun(m, i + 1 < messages.length ? messages[i + 1] : null),
+          text: '${m['message'] ?? ''}',
+          voice: VoiceBubble.fromMessage(m, mine: mine),
+          time: at != null ? ChatTime.clock(at, _ar) : '',
+          status: mine ? ('${m['seen']}' == '1' ? ChatDelivery.read : ChatDelivery.sent) : null,
+          copiedLabel: _t('تم نسخ الرسالة', 'Message copied'),
+        ),
+      ));
+    }
+    for (final o in _outgoing) {
+      rows.add(Padding(
+        padding: const EdgeInsets.only(top: 10),
+        child: ChatBubble(
+          palette: p,
+          mine: true,
+          tail: true,
+          text: o.text,
+          time: ChatTime.clock(o.at, _ar),
+          status: o.failed ? ChatDelivery.failed : ChatDelivery.sending,
+          failedLabel: _t('لم تُرسل · اضغط لإعادة المحاولة', 'Not sent · tap to retry'),
+          onRetry: o.failed ? () => _sendText(o) : null,
+          copiedLabel: _t('تم نسخ الرسالة', 'Message copied'),
+        ),
+      ));
+    }
+    return SingleChildScrollView(
+      controller: _scroll,
+      reverse: true,
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 14),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: rows),
     );
   }
 }
