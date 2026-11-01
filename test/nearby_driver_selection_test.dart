@@ -258,6 +258,25 @@ void main() {
       expect(result.single.counterOffer, 29);
     });
 
+    test('fills a nearby targeted driver\'s missing name and photo from request-meta',
+        () {
+      final nearby = _nearby([_driver('3'), _driver('9', name: 'محمد')]);
+      final result = prioritizeTargetedDrivers(
+        nearby,
+        {
+          '3': {'driver_id': 3, 'active': 1, 'name': 'سالم', 'profile_picture': 'https://cdn.example/3.jpg'},
+          '9': {'driver_id': 9, 'active': 1, 'name': 'اسم آخر'},
+        },
+        null,
+      );
+
+      final filled = result.firstWhere((c) => c.driverId == '3');
+      expect(filled.name, 'سالم');
+      expect(filled.avatarUrl, 'https://cdn.example/3.jpg');
+      // a name the driver's location node already carries is kept
+      expect(result.firstWhere((c) => c.driverId == '9').name, 'محمد');
+    });
+
     test('fails safely on malformed metadata', () {
       final nearby = _nearby([_driver('3')]);
       final result = prioritizeTargetedDrivers(nearby, 'garbage', 42);

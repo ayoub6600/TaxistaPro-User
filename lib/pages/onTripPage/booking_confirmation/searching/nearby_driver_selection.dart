@@ -262,7 +262,19 @@ List<NearbyDriverCandidate> prioritizeTargetedDrivers(
     if (!seen.add(id)) continue;
     final known = nearbyById[id];
     if (known != null) {
-      targeted.add(decorate(known));
+      final candidate = decorate(known);
+      final metadata = metadataById[id];
+      final metaName = metadata?['name']?.toString().trim() ?? '';
+      final metaImage = metadata?['profile_picture']?.toString().trim() ?? '';
+
+      targeted.add(candidate.copyWith(
+        data: {
+          ...candidate.data,
+          if (candidate.name.isEmpty && metaName.isNotEmpty) 'name': metaName,
+          if (candidate.avatarUrl == null && metaImage.isNotEmpty)
+            'profile_picture': metaImage,
+        },
+      ));
       continue;
     }
     final offer = offers[id];
