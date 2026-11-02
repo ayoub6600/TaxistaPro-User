@@ -54,6 +54,17 @@ mixin _BookingConfirmationBookingControls
       ),
       child: Column(
         children: [
+          // "سواقيني": a favourite driver free and near for this car type (ride now only)
+          if (choosenTransportType == 0 &&
+              widget.type != 1 &&
+              isOutStation != true &&
+              choosenVehicle != null &&
+              addressList.any((e) => e.type == 'pickup'))
+            FavoriteDriverChoice(
+              pickLat: addressList.firstWhere((e) => e.type == 'pickup').latlng.latitude,
+              pickLng: addressList.firstWhere((e) => e.type == 'pickup').latlng.longitude,
+              zoneTypeId: etaDetails[choosenVehicle]['zone_type_id']?.toString(),
+            ),
           (choosenTransportType == 1)
               ? Column(
                   children: [

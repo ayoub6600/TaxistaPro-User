@@ -39,13 +39,16 @@ createRequest(value, api) async {
   debugPrint('drops1 $url$api');
   print("----------->url11 $url$api");
   try {
+    // a ride now may name the favourite driver the rider chose ("سواقيني"); the server checks it
+    final isRide = api.toString().endsWith('api/v1/request/create');
     var response = await http.post(Uri.parse('$url$api'),
         headers: {
           'Authorization': 'Bearer ${bearerToken[0].token}',
           'Content-Type': 'application/json',
         },
-        body: value);
+        body: isRide ? withChosenFavorite(value) : value);
     if (response.statusCode == 200) {
+      chosenFavoriteDriverId = null;
       print(
           "---->drivername ${jsonDecode(response.body)['data']['driver_name']}");
       print(

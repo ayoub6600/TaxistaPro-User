@@ -1,3 +1,5 @@
+import '../../community/favorites_page.dart';
+import '../../community/rewards_page.dart';
 import 'package:flutter/material.dart';
 import 'package:taxista/pages/NavigatorPages/fav_address.dart';
 import 'package:taxista/pages/NavigatorPages/makecomplaint.dart';
@@ -338,6 +340,31 @@ class _NavDrawerState extends State<NavDrawer> {
                                 ]),
                               ),
                             ),
+
+                            // TAXISTA 2.0: favourite drivers and rewards
+                            for (final item in [
+                              (Icons.favorite_border_rounded, 'سواقيني', () => const FavoritesPage()),
+                              (Icons.card_giftcard_rounded, 'مكافآتي', () => const RewardsPage()),
+                            ])
+                              InkWell(
+                                onTap: () => _open(MaterialPageRoute(builder: (context) => item.$3())),
+                                child: Container(
+                                  width: media.width * 0.7,
+                                  padding: EdgeInsets.only(top: media.width * 0.07),
+                                  child: Row(children: [
+                                    Icon(item.$1, size: media.width * 0.06, color: textColor),
+                                    SizedBox(width: media.width * 0.025),
+                                    Expanded(
+                                      child: MyText(
+                                        text: item.$2,
+                                        overflow: TextOverflow.ellipsis,
+                                        size: media.width * sixteen,
+                                        color: textColor,
+                                      ),
+                                    ),
+                                  ]),
+                                ),
+                              ),
 
                             //settings
                             SizedBox(

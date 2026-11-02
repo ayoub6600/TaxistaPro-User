@@ -24,6 +24,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'api_base_url.dart';
 import 'api_guard.dart';
+import '../community/community_api.dart';
 import 'live_queries.dart';
 import '../utils/scheduled_offers.dart';
 

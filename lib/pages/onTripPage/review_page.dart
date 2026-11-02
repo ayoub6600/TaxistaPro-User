@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../functions/functions.dart';
 import '../../styles/styles.dart';
 import '../../translations/translation.dart';
+import '../../community/after_ride_page.dart';
 import '../../widgets/widgets.dart';
 import '../loadingPage/loading.dart';
 import '../login/login.dart';
@@ -275,9 +276,13 @@ class _ReviewState extends State<Review> {
                                   setState(() {
                                     _loading = true;
                                   });
+                                  final rideId = userRequestData['id']?.toString();
                                   var result = await userRating();
 
                                   if (result == true) {
+                                    if (rideId != null && context.mounted) {
+                                      await AfterRidePage.showIfUseful(context, rideId);
+                                    }
                                     navigate();
                                     _loading = false;
                                   } else if (result == 'logout') {
