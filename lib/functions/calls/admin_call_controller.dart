@@ -11,6 +11,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart' as perm;
 
 import '../../pages/callPage/admin_call_page.dart';
+import '../functions.dart' show languageDirection;
 import 'admin_call_api.dart';
 
 /// Where the app's screens live, so a call can open its screen from a notification or CallKit.
@@ -196,35 +197,18 @@ class AdminCallController extends ChangeNotifier {
     } catch (_) {}
     final strict = RegExp('xiaomi|redmi|poco|oppo|realme|vivo|huawei|honor|tecno|infinix|itel|oneplus').hasMatch(maker);
     if (!context.mounted) return;
-    await showDialog<void>(
+    final choice = await showModalBottomSheet<String>(
       context: context,
-      builder: (c) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: AlertDialog(
-          title: const Text('اسمح للمكالمات بالظهور وهاتفك مقفل'),
-          content: Text('حتى ترن مكالمات تاكسيستا وتظهر على شاشة القفل مثل المكالمات العادية، فعّل «عرض الإشعارات بملء الشاشة» لتطبيق تاكسيستا.'
-              '${strict ? '\n\nعلى هاتفك فعّل أيضًا «العرض على شاشة القفل» و«عرض النوافذ المنبثقة أثناء العمل في الخلفية» من إعدادات التطبيق ← الأذونات.' : ''}'),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(c), child: const Text('لاحقًا')),
-            if (strict)
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(c);
-                  perm.openAppSettings();
-                },
-                child: const Text('إعدادات التطبيق'),
-              ),
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(c);
-                FlutterCallkitIncoming.requestFullIntentPermission();
-              },
-              child: const Text('السماح'),
-            ),
-          ],
-        ),
-      ),
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheet) => LockScreenCallsSheet(strict: strict),
     );
+    if (choice == 'allow') {
+      await FlutterCallkitIncoming.requestFullIntentPermission();
+    } else if (choice == 'settings') {
+      await perm.openAppSettings();
+    }
   }
 
   static String roleLabel(String? type) =>
@@ -638,4 +622,83 @@ class AdminCallController extends ChangeNotifier {
 
   /// Back to the call screen from anywhere (the "ongoing call" bar).
   void openScreen() => _openScreen();
+}
+
+/// Android 14+: one friendly ask to let Taxista calls ring like ordinary calls, over the lock
+/// screen ("full-screen notifications"); on makers that hide calls more, the app settings too.
+class LockScreenCallsSheet extends StatelessWidget {
+  final bool strict;
+
+  const LockScreenCallsSheet({super.key, this.strict = false});
+
+  static bool get _ar => languageDirection != 'ltr';
+  static String _t(String ar, String en) => _ar ? ar : en;
+
+  @override
+  Widget build(BuildContext context) {
+    const green = Color(0xFF16A34A);
+    const ink = Color(0xff12121D);
+    return Directionality(
+      textDirection: _ar ? TextDirection.rtl : TextDirection.ltr,
+      child: Container(
+        decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(26))),
+        padding: const EdgeInsets.fromLTRB(22, 22, 22, 12),
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Center(
+                child: Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(color: green.withValues(alpha: 0.12), shape: BoxShape.circle),
+                  child: const Icon(Icons.ring_volume_rounded, color: green, size: 32),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(_t('لا تفوّت أي مكالمة', "Don't miss a call"),
+                  textAlign: TextAlign.center, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: ink)),
+              const SizedBox(height: 8),
+              Text(
+                  _t('اسمح لمكالمات تاكسيستا أن ترنّ على شاشة القفل مثل المكالمات العادية.',
+                      'Let Taxista calls ring on the lock screen like ordinary calls.'),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14.5, height: 1.5, color: ink.withValues(alpha: 0.7))),
+              if (strict) ...[
+                const SizedBox(height: 10),
+                Text(
+                    _t('على هاتفك فعّل أيضًا «العرض على شاشة القفل» من إعدادات التطبيق.',
+                        'On your phone, also turn on "Show on lock screen" in the app settings.'),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 13, height: 1.45, color: ink.withValues(alpha: 0.55))),
+              ],
+              const SizedBox(height: 18),
+              SizedBox(
+                height: 52,
+                child: FilledButton(
+                  key: const ValueKey('lock-calls-allow'),
+                  style: FilledButton.styleFrom(backgroundColor: green, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                  onPressed: () => Navigator.pop(context, 'allow'),
+                  child: Text(_t('السماح', 'Allow'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                ),
+              ),
+              if (strict) ...[
+                const SizedBox(height: 8),
+                OutlinedButton(
+                  style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(46), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                  onPressed: () => Navigator.pop(context, 'settings'),
+                  child: Text(_t('إعدادات التطبيق', 'App settings')),
+                ),
+              ],
+              const SizedBox(height: 2),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(_t('لاحقًا', 'Later'), style: TextStyle(fontSize: 12.5, color: ink.withValues(alpha: 0.45))),
+              ),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
 }

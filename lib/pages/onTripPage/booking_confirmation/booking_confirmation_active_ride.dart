@@ -469,35 +469,12 @@ mixin _BookingConfirmationActiveRide
                                   SizedBox(
                                     width: media.width * 0.05,
                                   ),
-                                  CallWhatsAppButton(
-                                    phoneNumber: userRequestData['driverDetail']
-                                        ['data']['mobile'],
+                                  // one "اتصال": the free call through Taxista, WhatsApp or the phone
+                                  CallOptionsButton(
+                                    peerName: userRequestData['driverDetail']['data']['name'].toString(),
+                                    mobile: userRequestData['driverDetail']['data']['mobile']?.toString(),
+                                    freeCall: () => AdminCallController.instance.callDriver(requestId: userRequestData['id']?.toString()),
                                   ),
-                                  const SizedBox(
-                                    width: 12,
-                                  ),
-                                  InkWell(
-                                    // a voice call inside the app; the phone only when the
-                                    // driver's app cannot take calls yet
-                                    onTap: () => callDriverInApp(context),
-                                    child: Container(
-                                      height: media.width * 0.096,
-                                      width: media.width * 0.096,
-                                      decoration: BoxDecoration(
-                                          border: Border.all(
-                                              color: const Color(0xff5BDD0A),
-                                              width: 1),
-                                          shape: BoxShape.circle),
-                                      alignment: Alignment.center,
-                                      child: Image.asset(
-                                        'assets/images/call.png',
-                                        color: const Color(0xff5BDD0A),
-                                        height: media.width * 0.05,
-                                        width: media.width * 0.05,
-                                        fit: BoxFit.contain,
-                                      ),
-                                    ),
-                                  )
                                 ],
                               ),
                           ],

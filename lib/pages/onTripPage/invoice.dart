@@ -12,6 +12,7 @@ import '../login/login.dart';
 import 'booking_confirmation.dart';
 import 'map_page.dart';
 import 'review_page.dart';
+import '../../community/ride_wrap_up.dart';
 import '../../navigation/guarded_navigation.dart';
 
 class Invoice extends StatefulWidget {
@@ -1208,11 +1209,9 @@ class _InvoiceState extends State<Invoice> {
                                             _choosePaymentMethod = true;
                                           });
                                         } else {
-                                          guardedPush(
-                                              context,
-                                              MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      const Review()));
+                                          // the rating card rises over the invoice
+                                          guardedPush(context,
+                                              RideWrapUp.route(const Review()));
                                         }
                                       },
                                       text: (userRequestData['is_paid'] == 0 &&

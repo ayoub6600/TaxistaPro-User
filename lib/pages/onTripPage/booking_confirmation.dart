@@ -26,7 +26,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart' as perm;
 import 'package:share_plus/share_plus.dart';
 import 'package:taxista/pages/onTripPage/bookingwidgets.dart';
-import 'package:taxista/pages/onTripPage/call_wats.dart';
+import '../../widgets/call_options.dart';
 import 'package:vector_math/vector_math.dart' as vector;
 
 import '../../functions/api_guard.dart';
@@ -201,41 +201,5 @@ class _BookingConfirmationState extends State<BookingConfirmation>
       child: buildBookingConfirmation(context),
     );
   }
-}
-
-/// The call button on the ride card: a voice call with the driver inside the app (no phone
-/// numbers either way). When that is not possible - the driver's app is an older version - the
-/// reason, with the phone call the rider had before as the way out.
-Future<void> callDriverInApp(BuildContext context) async {
-  final problem = await AdminCallController.instance.callDriver(requestId: userRequestData['id']?.toString());
-  if (problem == null || !context.mounted) return;
-  final mobile = userRequestData['driverDetail']?['data']?['mobile']?.toString();
-  await showModalBottomSheet<void>(
-    context: context,
-    builder: (sheet) => Directionality(
-      textDirection: ui.TextDirection.rtl, // intl's TextDirection is in scope in this library
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            const Text('الاتصال بالسائق', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 8),
-            Text(problem, style: const TextStyle(fontSize: 14.5, height: 1.5)),
-            const SizedBox(height: 16),
-            if (mobile != null && mobile.isNotEmpty)
-              FilledButton.icon(
-                onPressed: () {
-                  Navigator.of(sheet).pop();
-                  makingPhoneCall(mobile);
-                },
-                icon: const Icon(Icons.phone),
-                label: const Text('اتصال هاتفي'),
-              ),
-            TextButton(onPressed: () => Navigator.of(sheet).pop(), child: const Text('إغلاق')),
-          ]),
-        ),
-      ),
-    ),
-  );
 }
 

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../functions/calls/admin_call_controller.dart';
 import '../../functions/functions.dart';
 import '../../styles/styles.dart';
+import '../../widgets/call_options.dart';
 import '../../widgets/chat/chat_kit.dart';
 import '../../widgets/voice/voice_bubble.dart';
 import '../../widgets/voice/voice_send.dart';
@@ -89,17 +90,21 @@ class _ChatPageState extends State<ChatPage> {
     _toBottom();
   }
 
-  /// A voice call with the driver, inside the app (no phone numbers).
+  /// "اتصال": the free call through Taxista (no phone numbers), WhatsApp or the phone.
   Future<void> _callDriver() async {
     if (_calling) return;
     FocusManager.instance.primaryFocus?.unfocus();
-    setState(() => _calling = true);
-    final problem = await AdminCallController.instance.callDriver(requestId: userRequestData['id']?.toString());
-    if (!mounted) return;
-    setState(() => _calling = false);
-    if (problem != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(problem), behavior: SnackBarBehavior.floating));
-    }
+    await CallOptions.show(
+      context,
+      peerName: '${_driver['name'] ?? _t('السائق', 'the driver')}',
+      mobile: _driver['mobile']?.toString(),
+      freeCall: () async {
+        setState(() => _calling = true);
+        final problem = await AdminCallController.instance.callDriver(requestId: userRequestData['id']?.toString());
+        if (mounted) setState(() => _calling = false);
+        return problem;
+      },
+    );
   }
 
   @override
@@ -124,7 +129,7 @@ class _ChatPageState extends State<ChatPage> {
             icon: Icons.local_taxi_rounded,
             onBack: () => Navigator.of(context).maybePop(),
             onCall: _callDriver,
-            callLabel: _t('اتصال مجاني بالسائق عبر تاكسيستا', 'Free call to the driver through Taxista'),
+            callLabel: _t('اتصال بالسائق', 'Call the driver'),
           ),
           Expanded(
             child: GestureDetector(
