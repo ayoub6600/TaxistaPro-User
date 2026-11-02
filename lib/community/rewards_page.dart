@@ -98,7 +98,7 @@ class _RewardsPageState extends State<RewardsPage> {
       Row(children: [
         _balance(p, 'رصيد مشاوير', balances['ride_credit_lyd'], 'للرحلات فقط', p.mine),
         const SizedBox(width: 8),
-        _balance(p, 'أموالك في المحفظة', balances['own_money_lyd'], 'قابلة للتحويل', p.ink),
+        _balance(p, 'أموالك', balances['own_money_lyd'], 'قابلة للتحويل', p.ink),
         const SizedBox(width: 8),
         _balance(p, 'في الطريق', balances['campaign_rewards_on_the_way_lyd'], 'بعد مهلة التسوية', CommunityLook.good),
       ]),
