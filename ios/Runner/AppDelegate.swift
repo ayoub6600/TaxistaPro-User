@@ -14,6 +14,10 @@ import flutter_callkit_incoming
 @main
 @objc class AppDelegate: FlutterAppDelegate, PKPushRegistryDelegate, CallkitIncomingAppDelegate {
   private var voipRegistry: PKPushRegistry?
+  /// The incoming call ringing right now (its CallKit id) and the timer asking the server whether
+  /// it still rings: a caller who hangs up before an answer must stop the ringing here at once.
+  private var ringWatchId: String?
+  private var ringWatch: Timer?
 
   override func application(
     _ application: UIApplication,
@@ -27,6 +31,9 @@ import flutter_callkit_incoming
     }
     if let registrar = self.registrar(forPlugin: "TaxistaCardFill") {
       CardFillBridge.register(messenger: registrar.messenger(), registry: self)
+    }
+    if let registrar = self.registrar(forPlugin: "TaxistaCallAudio") {
+      CallAudio.register(messenger: registrar.messenger())
     }
     if #available(iOS 10.0, *) {
   UNUserNotificationCenter.current().delegate = self as? UNUserNotificationCenterDelegate
@@ -63,29 +70,94 @@ import flutter_callkit_incoming
 
   func pushRegistry(_ registry: PKPushRegistry, didReceiveIncomingPushWith payload: PKPushPayload, for type: PKPushType, completion: @escaping () -> Void) {
     guard type == .voIP else { completion(); return }
-    // iOS requires every VoIP push to be reported to CallKit at once
+    // iOS requires every VoIP push to be reported to CallKit at once - with a valid UUID, or the
+    // plugin reports nothing and iOS kills the app
     let p = payload.dictionaryPayload
-    let id = (p["call_id"] as? String) ?? UUID().uuidString
+    let serverId = ((p["call_id"] as? String) ?? "").lowercased()
+    let id = UUID(uuidString: serverId) != nil ? serverId : UUID().uuidString.lowercased()
     let fromDriver = (p["caller_role"] as? String) == "driver"
     let data = flutter_callkit_incoming.Data(id: id, nameCaller: (p["caller_name"] as? String) ?? "إدارة تاكسيستا",
                                              handle: fromDriver ? "سائق · تاكسيستا" : "إدارة تاكسيستا", type: 0)
-    data.extra = ["call_id": id]
+    data.extra = ["call_id": serverId]
     data.duration = 45000
-    SwiftFlutterCallkitIncomingPlugin.sharedInstance?.showCallkitIncoming(data, fromPushKit: true)
-    // the (locked) iPhone shows the call: tell the server through the signed link in the push, so the
-    // caller sees "ringing" only now (no login needed - the app may not even be running)
-    if let link = p["alerted_url"] as? String, let url = URL(string: link) {
-      URLSession.shared.dataTask(with: url).resume()
+    // CallKit can refuse the call (an id still registered, the one-call limit...). A VoIP push that
+    // ends with no call reported gets the app killed by iOS (SIGKILL 0xBAADCA11, seen on 2026-11-02),
+    // so a refused call is replaced by a stand-in that is ended at once. Only a call really on screen
+    // tells the server through the signed link in the push, so the caller sees "ringing" only now (no
+    // login needed - the app may not even be running); the same link then says whether it still rings.
+    let link = (p["alerted_url"] as? String).flatMap(URL.init(string:))
+    // PushKit's completion only once the call (or the stand-in) is reported, at most 2 s later
+    var finished = false
+    let finish = { if !finished { finished = true; completion() } }
+    guard let plugin = SwiftFlutterCallkitIncomingPlugin.sharedInstance else {
+      reportStandInCall()
+      completion()
+      return
     }
-    DispatchQueue.main.asyncAfter(deadline: .now() + 1) { completion() }
+    plugin.showCallkitIncoming(data, fromPushKit: true, reported: { [weak self] shown in
+      if shown, let url = link {
+        URLSession.shared.dataTask(with: url).resume()
+        self?.watchRinging(id, url)
+      } else if !shown {
+        self?.reportStandInCall()
+      }
+      finish()
+    })
+    DispatchQueue.main.asyncAfter(deadline: .now() + 2) { finish() }
+  }
+
+  /// Every 2 s while the call rings: once the server says it no longer rings (the caller hung up,
+  /// it was answered elsewhere, it timed out) the system call screen goes away - no ghost call.
+  private func watchRinging(_ callKitId: String, _ link: URL) {
+    stopRingWatch()
+    ringWatchId = callKitId
+    let until = Date().addingTimeInterval(60)
+    ringWatch = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
+      guard let self = self, self.ringWatchId == callKitId else { return }
+      if Date() > until { self.stopRingWatch(); return }
+      URLSession.shared.dataTask(with: link) { body, _, _ in
+        guard let body = body,
+              let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any],
+              let status = json["status"] as? String, status != "ringing" else { return }
+        DispatchQueue.main.async {
+          guard self.ringWatchId == callKitId else { return }
+          self.stopRingWatch()
+          SwiftFlutterCallkitIncomingPlugin.sharedInstance?.endCall(flutter_callkit_incoming.Data(args: ["id": callKitId]))
+        }
+      }.resume()
+    }
+  }
+
+  /// A provider of its own for the stand-in: the plugin's provider is the one that just refused.
+  private lazy var standInProvider: CXProvider = {
+    let config = CXProviderConfiguration()
+    config.supportsVideo = false
+    config.maximumCallsPerCallGroup = 1
+    config.includesCallsInRecents = false
+    return CXProvider(configuration: config)
+  }()
+
+  private func reportStandInCall() {
+    let uuid = UUID()
+    let update = CXCallUpdate()
+    update.localizedCallerName = "تاكسيستا"
+    standInProvider.reportNewIncomingCall(with: uuid, update: update) { [weak self] _ in
+      self?.standInProvider.reportCall(with: uuid, endedAt: Date(), reason: .failed)
+    }
+  }
+
+  private func stopRingWatch() {
+    ringWatch?.invalidate()
+    ringWatch = nil
+    ringWatchId = nil
   }
 
   // MARK: - CallKit actions (the Dart side receives the same events and does the work)
 
-  func onAccept(_ call: Call, _ action: CXAnswerCallAction) { action.fulfill() }
-  func onDecline(_ call: Call, _ action: CXEndCallAction) { action.fulfill() }
-  func onEnd(_ call: Call, _ action: CXEndCallAction) { action.fulfill() }
-  func onTimeOut(_ call: Call) {}
+  func onAccept(_ call: Call, _ action: CXAnswerCallAction) { stopRingWatch(); action.fulfill() }
+  func onDecline(_ call: Call, _ action: CXEndCallAction) { stopRingWatch(); action.fulfill() }
+  func onEnd(_ call: Call, _ action: CXEndCallAction) { stopRingWatch(); action.fulfill() }
+  func onTimeOut(_ call: Call) { stopRingWatch() }
   func providerDidReset() {}
 
   func didActivateAudioSession(_ audioSession: AVAudioSession) {
@@ -96,6 +168,35 @@ import flutter_callkit_incoming
   func didDeactivateAudioSession(_ audioSession: AVAudioSession) {
     RTCAudioSession.sharedInstance().audioSessionDidDeactivate(audioSession)
     RTCAudioSession.sharedInstance().isAudioEnabled = false
+  }
+}
+
+
+/// The call's audio when CallKit did not hand over an audio session (its call was refused or ended
+/// by the system): WebRTC runs with manual audio on a device, so without this the call connects
+/// in silence. Dart asks once the call is connected; a session CallKit already activated is kept.
+final class CallAudio {
+  static func register(messenger: FlutterBinaryMessenger) {
+    let channel = FlutterMethodChannel(name: "taxista/call_audio", binaryMessenger: messenger)
+    channel.setMethodCallHandler { call, result in
+      guard call.method == "ensure" else { result(FlutterMethodNotImplemented); return }
+      #if targetEnvironment(simulator)
+      result(true)
+      #else
+      let rtc = RTCAudioSession.sharedInstance()
+      if rtc.isAudioEnabled { result(true); return }
+      let session = AVAudioSession.sharedInstance()
+      do {
+        try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetooth, .allowBluetoothA2DP])
+        try session.setActive(true)
+        rtc.audioSessionDidActivate(session)
+        rtc.isAudioEnabled = true
+        result(true)
+      } catch {
+        result(false)
+      }
+      #endif
+    }
   }
 }
 

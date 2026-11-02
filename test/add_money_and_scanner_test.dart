@@ -277,9 +277,11 @@ void main() {
       expect(swift.contains('VNRecognizeTextRequest'), isTrue);
       expect(swift.contains('usesLanguageCorrection = false'), isTrue, reason: 'digits are never "corrected"');
       // the card is read on the device: no network anywhere in the scanner's code, and the app
-      // delegate's only request is the signed "this call is shown" link of a VoIP push
+      // delegate's only requests go to the signed link of a VoIP push ("this call is shown", then
+      // "does it still ring" every 2 s)
       expect(swift.substring(swift.indexOf('taxista/card_ocr')).contains('URLSession'), isFalse);
-      expect('URLSession'.allMatches(swift).length, 1);
+      expect('URLSession'.allMatches(swift).length, 2);
+      expect(RegExp(r'URLSession\.shared\.dataTask\(with: (url|link)\)').allMatches(swift).length, 2);
       expect(swift.contains('p["alerted_url"]'), isTrue);
       expect(swift.contains('taxista/card_ocr'), isTrue);
 

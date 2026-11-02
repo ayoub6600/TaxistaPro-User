@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_callkit_incoming/entities/entities.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
@@ -72,14 +73,14 @@ class AdminCallController extends ChangeNotifier {
           break;
         case CallEventActionCallDecline(:final callKitParams):
           final id = _idOf(callKitParams);
-          if (id == callId && busy) {
+          if (_isCurrent(callKitParams) && busy) {
             await (status == 'incoming' ? decline() : hangUp(fromSystem: true));
           } else {
             await AdminCallApi.decline(id);
           }
           break;
         case CallEventActionCallEnded(:final callKitParams):
-          if (_idOf(callKitParams) == callId && busy) await hangUp(fromSystem: true);
+          if (_isCurrent(callKitParams) && busy) await hangUp(fromSystem: true);
           break;
         case CallEventActionCallToggleMute(:final isMuted):
           setMuted(isMuted);
@@ -126,6 +127,29 @@ class AdminCallController extends ChangeNotifier {
   static String _idOf(CallKitParams p) => _norm(p.extra?['call_id'] ?? p.id);
 
   static String _norm(Object? id) => (id ?? '').toString().trim().toLowerCase();
+
+  /// The id this app gives CallKit for a server call: the server id itself (the Driver app on the
+  /// same phone uses a different one, see its callKitId).
+  static String callKitId(String serverId) => _norm(serverId);
+
+  /// A CallKit event about the call this controller holds. An event for a call the plugin no longer
+  /// tracks carries only the CallKit id.
+  bool _isCurrent(CallKitParams p) => isSameCall(p, callId);
+
+  /// Whether CallKit's [p] is the server call [serverId]: by the server id it carries, or by this
+  /// app's CallKit id for it (all an event about an untracked call has).
+  static bool isSameCall(CallKitParams p, String? serverId) {
+    if (serverId == null || serverId.isEmpty) return false;
+    final server = _norm(p.extra?['call_id']);
+    // without the server id it is this app's call only under this app's CallKit id (on a phone
+    // with both apps, the other app's call has the same server id under another CallKit id)
+    return server.isNotEmpty ? server == _norm(serverId) : _norm(p.id) == callKitId(serverId);
+  }
+
+  /// The CallKit ids of every call but [serverId]'s: left behind by a ring the caller cancelled or a
+  /// call the system kept, they make CallKit refuse or end a new one (one call at a time).
+  static List<String> staleCallKitIds(List<CallKitParams> active, String serverId) =>
+      [for (final c in active) if (!isSameCall(c, serverId) && _norm(c.id).isNotEmpty) _norm(c.id)];
 
   Future<void> _sendVoipToken() async {
     if (!Platform.isIOS) return;
@@ -248,7 +272,7 @@ class AdminCallController extends ChangeNotifier {
     final type = (data['caller_role'] ?? 'admin').toString();
     final name = (data['caller_name'] ?? 'إدارة تاكسيستا').toString();
     await FlutterCallkitIncoming.showCallkitIncoming(CallKitParams(
-      id: id,
+      id: callKitId(id),
       nameCaller: name,
       appName: 'Taxista',
       handle: type == 'driver' ? 'سائق · تاكسيستا' : 'إدارة تاكسيستا',
@@ -297,7 +321,7 @@ class AdminCallController extends ChangeNotifier {
       return;
     }
     try {
-      await FlutterCallkitIncoming.endCall(id);
+      await FlutterCallkitIncoming.endCall(callKitId(id));
     } catch (_) {}
   }
 
@@ -369,7 +393,7 @@ class AdminCallController extends ChangeNotifier {
       if (Platform.isAndroid) {
         // answered on Taxista's screen: the system's ringing notification stops (without "ending" the call)
         try {
-          await FlutterCallkitIncoming.hideCallkitIncoming(CallKitParams(id: id));
+          await FlutterCallkitIncoming.hideCallkitIncoming(CallKitParams(id: callKitId(id)));
         } catch (_) {}
       }
       final pc = await _media(state.ice);
@@ -438,15 +462,20 @@ class AdminCallController extends ChangeNotifier {
       _physical ??= (await DeviceInfoPlugin().iosInfo).isPhysicalDevice;
       if (_physical == false) return;
       final calls = await FlutterCallkitIncoming.activeCalls();
-      final known = calls.where((c) => _idOf(c) == id).toList();
+      for (final stale in staleCallKitIds(calls, id)) {
+        try {
+          await FlutterCallkitIncoming.endCall(stale);
+        } catch (_) {}
+      }
+      final known = calls.where((c) => isSameCall(c, id)).toList();
       if (known.isNotEmpty) {
         // ringing on the system screen but answered on Taxista's: answer it in CallKit too (this
         // plugin call is CallKit's "answer" - right for a ringing incoming call, never for our own)
-        if (!known.first.isAccepted && role == 'callee') await FlutterCallkitIncoming.setCallConnected(id);
+        if (!known.first.isAccepted && role == 'callee') await FlutterCallkitIncoming.setCallConnected(callKitId(id));
         return;
       }
       await FlutterCallkitIncoming.startCall(CallKitParams(
-        id: id,
+        id: callKitId(id),
         nameCaller: peerName,
         handle: (peer['type'] ?? 'admin') == 'driver' ? 'سائق · تاكسيستا' : 'إدارة تاكسيستا',
         type: 0,
@@ -457,6 +486,17 @@ class AdminCallController extends ChangeNotifier {
   }
 
   static bool? _physical;
+
+  static const _audio = MethodChannel('taxista/call_audio');
+
+  /// On a device WebRTC's audio waits for CallKit's audio session; if CallKit never handed one over
+  /// (its call was refused or ended by the system) the call would be connected but silent.
+  Future<void> _ensureAudio() async {
+    if (!Platform.isIOS) return;
+    try {
+      await _audio.invokeMethod('ensure');
+    } catch (_) {}
+  }
 
   static Future<bool> _onSimulator() async {
     if (!Platform.isIOS) return false;
@@ -483,6 +523,7 @@ class AdminCallController extends ChangeNotifier {
         _reconnect?.cancel();
         answeredAt ??= DateTime.now();
         _set('accepted', 'متصل');
+        unawaited(_ensureAudio());
       } else if (s == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected && status == 'accepted') {
         // the network dropped: WebRTC usually finds its way back by itself within seconds
         _set('reconnecting', 'إعادة الاتصال…');
@@ -562,7 +603,7 @@ class AdminCallController extends ChangeNotifier {
     _local = null;
     if (endSystemCall && callId != null) {
       try {
-        await FlutterCallkitIncoming.endCall(callId!);
+        await FlutterCallkitIncoming.endCall(callKitId(callId!));
       } catch (_) {}
     }
     _set('ended', label);

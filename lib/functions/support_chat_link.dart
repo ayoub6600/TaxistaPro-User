@@ -12,7 +12,8 @@ import 'functions.dart';
 /// Opening the chat with the administration from a notification, whatever state the app was in
 /// (open, in the background, closed, phone locked): a message from the administration
 /// (push_type admin_chat_message) or a missed call from it (admin_call_missed). The same path opens
-/// the wallet for change a driver returned to it (change_return).
+/// the wallet for change a driver returned to it (change_return) and for a top-up paid in cash to a
+/// driver (wallet_topup, "تم شحن محفظتك").
 ///
 /// The tap is kept until the app can act on it: a signed-in session with the home screen up
 /// (after a cold start that is when the home screen mounts, see [appReady]). The conversation is
@@ -22,6 +23,7 @@ class SupportChatLink {
   static const chatPush = 'admin_chat_message';
   static const missedCallPush = 'admin_call_missed';
   static const changeReturnPush = 'change_return';
+  static const walletTopUpPush = 'wallet_topup';
 
   /// The message to show in the chat page already on screen (set when a tap arrives while it is open).
   static final ValueNotifier<int?> focus = ValueNotifier<int?>(null);
@@ -32,7 +34,7 @@ class SupportChatLink {
   /// A push this link opens. A missed call between a driver and a rider opens the call log instead.
   static bool handles(Map data) {
     final type = data['push_type']?.toString();
-    return type == chatPush || type == missedCallPush || type == changeReturnPush;
+    return type == chatPush || type == missedCallPush || type == changeReturnPush || type == walletTopUpPush;
   }
 
   static bool _isTripCall(Map data) => data['call_kind']?.toString() == 'driver_rider';
@@ -72,7 +74,7 @@ class SupportChatLink {
     _pending = null;
     _busy = true;
     try {
-      if (data['push_type'] == changeReturnPush) {
+      if (data['push_type'] == changeReturnPush || data['push_type'] == walletTopUpPush) {
         nav.push(MaterialPageRoute(builder: (_) => const WalletPage()));
         return;
       }

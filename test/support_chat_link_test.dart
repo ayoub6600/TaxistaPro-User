@@ -8,6 +8,7 @@ void main() {
       expect(SupportChatLink.handles({'push_type': 'admin_call_missed', 'call_kind': 'admin_driver'}), isTrue);
       expect(SupportChatLink.handles({'push_type': 'admin_call'}), isFalse, reason: 'a ringing call stays CallKit\'s');
       expect(SupportChatLink.handles({'push_type': 'change_return', 'request_id': 'r1'}), isTrue, reason: 'opens the wallet');
+      expect(SupportChatLink.handles({'push_type': 'wallet_topup', 'transaction_ref': 'TU-1'}), isTrue, reason: 'a top-up through a driver opens the wallet');
       expect(SupportChatLink.handles({'push_type': 'general'}), isFalse);
       expect(SupportChatLink.handles({}), isFalse);
     });
