@@ -4,6 +4,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../functions/functions.dart';
 import '../../update/update_checker.dart';
 import '../../update/update_gate.dart';
+import '../../update/update_offer.dart';
 import '../../update/update_policy.dart';
 import '../language/languages.dart';
 import '../login/login.dart';
@@ -175,10 +176,15 @@ class _LoadingPageState extends State<LoadingPage> {
     try {
       final result = await checkRiderUpdate();
       if (!mounted) return;
-      if (result.decision != UpdateDecision.none) {
+      // a mandatory update blocks here - unless a ride was in progress: it then waits for the
+      // home screen with no ride (UpdateOffer), so nobody is stopped mid-ride. An optional
+      // update never interrupts startup; it is offered on the home screen.
+      if (result.decision == UpdateDecision.mandatory && !await RideInProgress.recently()) {
+        if (!mounted) return;
         _showUpdateScreen(result);
         return;
       }
+      if (result.decision != UpdateDecision.none) UpdateOffer.pending = result;
       await _continueAfterUpdateCheck();
     } finally {
       _checkingUpdate = false;

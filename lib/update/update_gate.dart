@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'forced_update_page.dart';
 import 'update_checker.dart';
+import 'update_offer.dart';
 import 'update_policy.dart';
 
 /// Rider app identity for the update gate. These are the ONLY places this
@@ -92,6 +93,15 @@ class RiderUpdateScreen extends StatefulWidget {
 class _RiderUpdateScreenState extends State<RiderUpdateScreen> {
   bool _failed = false;
   bool _opening = false;
+  bool _outsideStore = false;
+
+  @override
+  void initState() {
+    super.initState();
+    UpdateOffer.installedOutsideStore().then((v) {
+      if (mounted && v) setState(() => _outsideStore = true);
+    });
+  }
 
   Future<void> _update() async {
     if (_opening) return; // one tap, one attempt
@@ -102,13 +112,33 @@ class _RiderUpdateScreenState extends State<RiderUpdateScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => ForcedUpdatePage(
-        appName: riderAppName,
-        languageCode: updateLanguage(widget.chosenLanguage),
-        mandatory: widget.result.decision == UpdateDecision.mandatory,
-        notes: widget.result.policy?.notes ?? '',
-        onUpdate: _update,
-        onLater: widget.onLater,
-        updateFailed: _failed,
-      );
+  Widget build(BuildContext context) {
+    final language = updateLanguage(widget.chosenLanguage);
+    return ForcedUpdatePage(
+      appName: riderAppName,
+      languageCode: language,
+      mandatory: widget.result.decision == UpdateDecision.mandatory,
+      notes: widget.result.policy?.message(isIos: Platform.isIOS, languageCode: language) ?? '',
+      onUpdate: _update,
+      onLater: widget.onLater,
+      updateFailed: _failed,
+      installedOutsideStore: _outsideStore,
+    );
+  }
+}
+
+/// The home screen's part: remembers whether a ride is in progress, and once the home screen is up
+/// with no ride, shows the update found at startup (see UpdateOffer).
+void riderHomeUpdateHook(BuildContext context, {required bool tripInProgress, required bool requestOpen, required String chosenLanguage}) {
+  RideInProgress.observe(tripInProgress);
+  if (UpdateOffer.pending == null) return;
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    UpdateOffer.maybeShow(
+      context,
+      rideActive: requestOpen,
+      languageCode: updateLanguage(chosenLanguage),
+      openStore: openRiderStore,
+      mandatoryPage: (result) => RiderUpdateScreen(result: result, chosenLanguage: chosenLanguage),
+    );
+  });
 }

@@ -55,6 +55,7 @@ import 'map_launch/taxi_launch_overlay.dart';
 import 'pick_loc_select.dart';
 import '../../navigation/guarded_navigation.dart';
 import '../../functions/calls/admin_call_controller.dart';
+import '../../update/update_gate.dart' show riderHomeUpdateHook;
 // ignore: depend_on_referenced_packages
 
 part 'map_page/map_animation.dart';

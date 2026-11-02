@@ -31,6 +31,14 @@ extension _MapPageView on _MapsState {
                 _controller!.setMapStyle(mapStyle);
                 _isDarkTheme = isDarkTheme;
               }
+              // app updates: remember a ride in progress; offer the startup's update with no ride
+              riderHomeUpdateHook(context,
+                  tripInProgress: userRequestData.isNotEmpty &&
+                      userRequestData['accepted_at'] != null &&
+                      userRequestData['is_completed'] != 1 &&
+                      userRequestData['is_cancelled'] != 1,
+                  requestOpen: userRequestData.isNotEmpty,
+                  chosenLanguage: choosenLanguage);
               if (openScheduledOffersRequested) {
                 openScheduledOffersRequested = false;
                 WidgetsBinding.instance.addPostFrameCallback((_) {

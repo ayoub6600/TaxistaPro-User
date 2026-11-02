@@ -20,7 +20,8 @@ class ForcedUpdatePage extends StatelessWidget {
     this.notes = '',
     this.onLater,
     this.updateFailed = false,
-    this.accent = const Color(0xFF1A73E8),
+    this.installedOutsideStore = false,
+    this.accent = const Color(0xFF0873FF),
   });
 
   /// e.g. "تاكسيستا" / "تاكسيستامان".
@@ -35,19 +36,23 @@ class ForcedUpdatePage extends StatelessWidget {
 
   /// Show the "could not open the store" hint under the button.
   final bool updateFailed;
+
+  /// Android: this copy did not come from Google Play (see UpdateOffer.installedOutsideStore).
+  final bool installedOutsideStore;
   final Color accent;
 
   bool get _arabic => languageCode != 'en';
 
-  String get _title => _arabic
-      ? 'يتوفر تحديث جديد لـ$appName'
-      : 'A new update is available for $appName';
+  String get _title => _arabic ? 'تحديث جديد لتاكسيستا' : 'A new Taxista update';
   String get _body => _arabic
-      ? 'يجب تحديث التطبيق للاستمرار والاستفادة من آخر التحسينات.'
-      : 'Please update the app to continue and get the latest improvements.';
+      ? 'هذا التحديث مطلوب لمتابعة استخدام $appName بأمان.'
+      : 'This update is required to keep using $appName safely.';
   String get _optionalBody => _arabic
-      ? 'يتوفر إصدار أحدث من التطبيق مع آخر التحسينات.'
-      : 'A newer version of the app with the latest improvements is available.';
+      ? 'حسّنّا المكالمات والخرائط وأداء التطبيق لتجربة أسرع وأسهل.'
+      : 'We improved calls, maps and performance for a faster, easier ride.';
+  String get _outsideStore => _arabic
+      ? 'هذه النسخة لم تُثبَّت من Google Play. إن لم يكتمل التحديث من المتجر، احذف التطبيق ثم ثبّته من Google Play، أو اطلب النسخة الجديدة من فريق تاكسيستا.'
+      : 'This copy was not installed from Google Play. If the store cannot update it, uninstall the app and install it from Google Play, or ask the Taxista team for the new version.';
   String get _updateNow => _arabic ? 'تحديث الآن' : 'Update now';
   String get _later => _arabic ? 'لاحقًا' : 'Later';
   String get _openFailed => _arabic
@@ -150,6 +155,20 @@ class ForcedUpdatePage extends StatelessWidget {
                             child: Text(_later,
                                 style: TextStyle(
                                     fontSize: 15, color: scheme.onSurfaceVariant)),
+                          ),
+                        ],
+                        if (installedOutsideStore) ...[
+                          const SizedBox(height: 14),
+                          Container(
+                            key: const ValueKey('update_outside_store'),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                                color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(12)),
+                            child: Text(_outsideStore,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                    fontSize: 13, color: Color(0xFF92400E), height: 1.5)),
                           ),
                         ],
                         if (updateFailed) ...[

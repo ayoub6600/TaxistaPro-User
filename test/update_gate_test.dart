@@ -3,9 +3,11 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:taxista/update/forced_update_page.dart';
 import 'package:taxista/update/update_checker.dart';
 import 'package:taxista/update/update_gate.dart';
+import 'package:taxista/update/update_offer.dart';
 import 'package:taxista/update/update_policy.dart';
 
 Map<dynamic, dynamic> policy({
@@ -206,8 +208,8 @@ void main() {
         onUpdate: () => updated++,
       )));
 
-      expect(find.text('يتوفر تحديث جديد لـتاكسيستا'), findsOneWidget);
-      expect(find.text('يجب تحديث التطبيق للاستمرار والاستفادة من آخر التحسينات.'), findsOneWidget);
+      expect(find.text('تحديث جديد لتاكسيستا'), findsOneWidget);
+      expect(find.text('هذا التحديث مطلوب لمتابعة استخدام تاكسيستا بأمان.'), findsOneWidget);
       expect(find.text('تحديث الآن'), findsOneWidget);
       expect(find.byKey(const ValueKey('update_later')), findsNothing);
       expect(find.byType(CircularProgressIndicator), findsNothing);
@@ -263,7 +265,7 @@ void main() {
         onUpdate: () {},
       )));
 
-      expect(find.text('A new update is available for Taxista'), findsOneWidget);
+      expect(find.text('A new Taxista update'), findsOneWidget);
       expect(Directionality.of(tester.element(find.byKey(const ValueKey('update_title')))), TextDirection.ltr);
       expect(find.byKey(const ValueKey('update_failed')), findsOneWidget);
       expect(find.text('Bug fixes'), findsOneWidget);
@@ -290,5 +292,142 @@ void main() {
     expect(updateLanguage('en'), 'en');
     expect(updateLanguage('ar'), 'ar');
     expect(updateLanguage(''), anyOf('ar', 'en'));
+  });
+
+  group('the release page (platforms), read by 6.7.2 and later', () {
+    const now = 1800000000000;
+    Map<dynamic, dynamic> node({
+      Map<String, dynamic> android = const {},
+      Map<String, dynamic> ios = const {},
+    }) =>
+        {
+          // what older apps read: never decides for a new app that has its platform
+          ...policy(version: '9.9.9', mandatory: true),
+          'platforms': {
+            'android': {'live_version': '6.7.2', 'live_build': 44, 'mandatory': false, 'min_version': '', 'min_build': 0, 'notify_at': 0, 'message_ar': 'حسّنّا المكالمات', 'message_en': 'Better calls', 'url': 'https://play.google.com/store/apps/details?id=com.ayoub.usertaxista', ...android},
+            'ios': {'live_version': '6.7.2', 'live_build': 44, 'mandatory': true, 'min_version': '6.4.4', 'min_build': 37, 'notify_at': 0, 'message_ar': '', 'message_en': '', 'url': 'https://apps.apple.com/app/id6739538467', ...ios},
+          },
+        };
+    UpdateDecision on(Map<dynamic, dynamic> data, String v, int b, {required bool ios}) =>
+        UpdatePolicy.fromMap(data).evaluate(installedVersion: v, installedBuild: b, isIos: ios, nowMs: now);
+
+    test('an older version is offered the live one, gently', () {
+      expect(on(node(), '6.7.1', 43, ios: false), UpdateDecision.optional);
+      expect(on(node(), '6.7.2', 43, ios: false), UpdateDecision.optional, reason: 'same version, older build');
+      expect(on(node(), '6.7.2', 44, ios: false), UpdateDecision.none);
+      expect(on(node(), '6.8.0', 1, ios: false), UpdateDecision.none);
+    });
+
+    test('only below the enforced minimum is an update mandatory', () {
+      expect(on(node(), '6.4.3', 99, ios: true), UpdateDecision.mandatory);
+      expect(on(node(), '6.4.4', 36, ios: true), UpdateDecision.mandatory);
+      expect(on(node(), '6.4.4', 37, ios: true), UpdateDecision.optional);
+    });
+
+    test('nothing is offered before its start time', () {
+      final later = node(android: {'notify_at': now + 60000});
+      expect(on(later, '6.7.1', 43, ios: false), UpdateDecision.none);
+      expect(on(node(android: {'notify_at': now - 1}), '6.7.1', 43, ios: false), UpdateDecision.optional);
+    });
+
+    test('a release still in review is never in the payload, so nothing is offered', () {
+      expect(on(node(android: {'live_version': '', 'live_build': 0}), '6.4.4', 37, ios: false), UpdateDecision.none);
+    });
+
+    test('an Android phone never opens the App Store, an iPhone never opens Google Play', () {
+      final mixed = UpdatePolicy.fromMap(node(
+        android: {'url': 'https://apps.apple.com/app/id6739538467'},
+        ios: {'url': 'https://play.google.com/store/apps/details?id=com.ayoub.usertaxista'},
+      ));
+      expect(mixed.storeUrl(isIos: false, fallbackIos: riderAppStoreFallback, fallbackAndroid: riderPlayStoreFallback), riderPlayStoreFallback);
+      expect(mixed.storeUrl(isIos: true, fallbackIos: riderAppStoreFallback, fallbackAndroid: riderPlayStoreFallback), riderAppStoreFallback);
+      final good = UpdatePolicy.fromMap(node());
+      expect(good.storeUrl(isIos: false, fallbackIos: 'x', fallbackAndroid: 'y'), 'https://play.google.com/store/apps/details?id=com.ayoub.usertaxista');
+    });
+
+    test('the message follows the app language, and survives the cache', () {
+      final p = UpdatePolicy.fromMap(node());
+      expect(p.message(isIos: false, languageCode: 'ar'), 'حسّنّا المكالمات');
+      expect(p.message(isIos: false, languageCode: 'en'), 'Better calls');
+      final again = UpdatePolicy.fromMap(jsonDecode(jsonEncode(p.toJson())) as Map);
+      expect(again.android!.liveBuild, 44);
+      expect(again.ios!.mandatory, isTrue);
+      expect(again.evaluate(installedVersion: '6.4.3', installedBuild: 1, isIos: true, nowMs: now), UpdateDecision.mandatory);
+    });
+  });
+
+  group('the update window', () {
+    Future<void> openSheet(WidgetTester tester, {required bool outside, required Future<bool> Function() onUpdate, List<bool?>? closed}) async {
+      await tester.pumpWidget(MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: ElevatedButton(
+                onPressed: () async {
+                  final r = await showModalBottomSheet<bool>(
+                    context: context,
+                    isScrollControlled: true,
+                    builder: (_) => UpdateOfferSheet(
+                      languageCode: 'ar',
+                      message: '',
+                      version: '6.7.2',
+                      installedOutsideStore: outside,
+                      isIos: false,
+                      onUpdate: onUpdate,
+                    ),
+                  );
+                  closed?.add(r);
+                },
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      ));
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('«تحديث جديد لتاكسيستا», the default message, Update now and Later', (tester) async {
+      var opened = 0;
+      final closed = <bool?>[];
+      await openSheet(tester, outside: false, closed: closed, onUpdate: () async {
+        opened++;
+        return true;
+      });
+      expect(find.text('تحديث جديد لتاكسيستا'), findsOneWidget);
+      expect(find.text('حسّنّا المكالمات والخرائط وأداء التطبيق لتجربة أسرع وأسهل.'), findsOneWidget);
+      expect(find.text('الإصدار 6.7.2'), findsOneWidget);
+      expect(find.byKey(const ValueKey('update_offer_sideload')), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('update_offer_now')));
+      await tester.pumpAndSettle();
+      expect(opened, 1);
+      expect(closed, [false], reason: 'opened the store: not put off');
+
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('update_offer_later')));
+      await tester.pumpAndSettle();
+      expect(closed, [false, true]);
+    });
+
+    testWidgets('an APK from outside Google Play is told how to get out, and a failed store stays open', (tester) async {
+      await openSheet(tester, outside: true, onUpdate: () async => false);
+      expect(find.byKey(const ValueKey('update_offer_sideload')), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('update_offer_now')));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('تعذّر فتح Google Play'), findsOneWidget);
+      expect(find.byKey(const ValueKey('update_offer_now')), findsOneWidget);
+    });
+
+    testWidgets('a ride in progress is remembered across restarts, and forgotten when it ends', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      RideInProgress.observe(true);
+      await tester.pump();
+      expect(await RideInProgress.recently(), isTrue);
+      RideInProgress.observe(false);
+      await tester.pump();
+      expect(await RideInProgress.recently(), isFalse);
+    });
   });
 }
