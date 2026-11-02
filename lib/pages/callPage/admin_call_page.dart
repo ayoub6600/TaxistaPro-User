@@ -176,6 +176,38 @@ class _AdminCallPageState extends State<AdminCallPage> {
                       ],
                     ),
                   ),
+                  // the line: no internet here, a weak connection, a ring that has not reached them yet
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 220),
+                    child: call.notice.isEmpty
+                        ? const SizedBox(width: double.infinity)
+                        : Padding(
+                            padding: const EdgeInsets.only(top: 16),
+                            child: Container(
+                              key: const ValueKey('call-notice'),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF59E0B).withValues(alpha: 0.16),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.45)),
+                              ),
+                              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                Icon(
+                                    call.status == 'ringing' && call.role == 'caller' && !call.notice.contains('لديك')
+                                        ? Icons.phonelink_erase_rounded
+                                        : Icons.signal_cellular_connected_no_internet_4_bar_rounded,
+                                    color: const Color(0xFFFBBF24),
+                                    size: 20),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(call.notice,
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(color: Color(0xFFFDE68A), fontSize: 13.5, fontWeight: FontWeight.w600, height: 1.4)),
+                                ),
+                              ]),
+                            ),
+                          ),
+                  ),
                   const Spacer(flex: 3),
                   if (call.chat != null && !ringingHere)
                     Padding(

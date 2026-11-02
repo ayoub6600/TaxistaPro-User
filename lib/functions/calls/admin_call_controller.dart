@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,6 +14,8 @@ import 'package:permission_handler/permission_handler.dart' as perm;
 import '../../pages/callPage/admin_call_page.dart';
 import '../functions.dart' show languageDirection;
 import 'admin_call_api.dart';
+import 'call_quality.dart';
+import 'call_tones.dart';
 
 /// Where the app's screens live, so a call can open its screen from a notification or CallKit.
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
@@ -53,6 +56,14 @@ class AdminCallController extends ChangeNotifier {
   Timer? _poll;
   Timer? _reconnect;
   bool _listening = false;
+
+  /// A word about the line under the status ('' when all is well): this phone's internet, a weak
+  /// connection during the call, a ring that has not reached the other phone yet.
+  String notice = '';
+  NetQuality quality = NetQuality.good;
+  final CallQualityMonitor _quality = CallQualityMonitor();
+  int _pollFailures = 0;
+  String? _reach;
 
   bool get busy => status != 'idle' && status != 'ended';
   bool get live => status == 'accepted' || status == 'reconnecting' || status == 'connecting';
@@ -97,7 +108,12 @@ class AdminCallController extends ChangeNotifier {
     unawaited(_sendReady());
     // back from the settings (or anywhere): the server learns at once whether calls can ring locked
     _lifecycle ??= AppLifecycleListener(onResume: () => unawaited(_sendReady()));
-    if (Platform.isAndroid) unawaited(Future.delayed(const Duration(seconds: 4), checkLockScreenCalls));
+    if (Platform.isAndroid) {
+      unawaited(Future.delayed(const Duration(seconds: 4), () async {
+        await checkLockScreenCalls();
+        await checkBatteryForCalls();
+      }));
+    }
     // a call answered from the lock screen before the app finished starting
     try {
       final calls = await FlutterCallkitIncoming.activeCalls();
@@ -165,12 +181,25 @@ class AdminCallController extends ChangeNotifier {
   Future<void> _sendReady() async {
     try {
       final info = await PackageInfo.fromPlatform();
-      await AdminCallApi.ready(Platform.isIOS ? 'ios' : 'android', '${info.version}+${info.buildNumber}', fullScreen: await _fullScreenAllowed());
+      await AdminCallApi.ready(Platform.isIOS ? 'ios' : 'android', '${info.version}+${info.buildNumber}',
+          fullScreen: await _fullScreenAllowed(), batteryRestricted: await batteryRestricted());
     } catch (_) {}
   }
 
   AppLifecycleListener? _lifecycle;
   static bool _askedLockScreen = false;
+  static bool _askedBattery = false;
+
+  /// Android: is Taxista's battery use restricted ("Optimized" / Samsung's sleeping apps)? Such a
+  /// phone may hold the call's push back until the app is opened. null elsewhere.
+  static Future<bool?> batteryRestricted() async {
+    if (!Platform.isAndroid) return null;
+    try {
+      return !(await perm.Permission.ignoreBatteryOptimizations.isGranted);
+    } catch (_) {
+      return null;
+    }
+  }
 
   /// Android 14+: may a call show over the lock screen (null elsewhere, where it always may).
   static Future<bool?> _fullScreenAllowed() async {
@@ -209,6 +238,25 @@ class AdminCallController extends ChangeNotifier {
     } else if (choice == 'settings') {
       await perm.openAppSettings();
     }
+  }
+
+  /// Samsung and most Android makers put apps they think unused to sleep, and a sleeping app's
+  /// call push waits until it is opened - the call never rings. Asked once per start, only when
+  /// the battery use is restricted: one tap to the app's settings (Battery -> Unrestricted).
+  Future<void> checkBatteryForCalls() async {
+    if (!Platform.isAndroid || _askedBattery) return;
+    if (await batteryRestricted() != true) return;
+    final context = appNavigatorKey.currentContext;
+    if (context == null || !context.mounted) return;
+    _askedBattery = true;
+    final open = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheet) => const BatteryCallsSheet(),
+    );
+    if (open == true) await perm.openAppSettings();
   }
 
   static String roleLabel(String? type) =>
@@ -251,6 +299,15 @@ class AdminCallController extends ChangeNotifier {
   static Future<void> showIncoming(Map<String, dynamic> data) async {
     final id = _norm(data['call_id']);
     if (id.isEmpty || instance.callId == id) return;
+    if (Platform.isAndroid) {
+      try {
+        final active = await FlutterCallkitIncoming.activeCalls();
+        if (active.any((c) => isSameCall(c, id))) {
+          await AdminCallApi.alerted(data); // already ringing: just say so again
+          return;
+        }
+      } catch (_) {}
+    }
     final until = int.tryParse((data['ring_until'] ?? '').toString());
     final ms = until != null ? (until * 1000 - DateTime.now().millisecondsSinceEpoch).clamp(5000, 45000) : 45000;
     final type = (data['caller_role'] ?? 'admin').toString();
@@ -330,6 +387,7 @@ class AdminCallController extends ChangeNotifier {
 
   Future<String?> _call(String to, String? requestId) async {
     peer = to == 'admin' ? const {'name': 'إدارة تاكسيستا', 'role': 'الدعم والتشغيل', 'type': 'admin'} : const {'name': 'السائق', 'role': 'سائق', 'type': 'driver'};
+    if (await offline()) return 'لا يوجد اتصال بالإنترنت. تحقّق من الشبكة ثم حاول مرة أخرى.';
     final started = await AdminCallApi.start(to: to, requestId: requestId);
     if (!started.ok) return started.message;
     callId = _norm(started.data['id']);
@@ -349,11 +407,55 @@ class AdminCallController extends ChangeNotifier {
       if (!sent.ok) throw Exception(sent.message);
       // "ringing" only once the other side confirmed it shows the call
       _set('ringing', sent.data['alerted'] == true ? 'يرن…' : 'جارٍ الاتصال…');
+      _ringing(sent.data);
       _pollState(const Duration(seconds: 1));
     } catch (e) {
       await _fail(e);
     }
     return null;
+  }
+
+  /// The caller's view while it rings: the server's label, the pip while the ring is on its way,
+  /// the long ring once the other phone shows the call, a word when it has not reached it yet.
+  void _ringing(Map<String, dynamic> data) {
+    _reach = data['reach']?.toString() ?? (data['alerted'] == true ? 'ringing' : 'connecting');
+    statusLabel = (data['status_label'] ?? statusLabel).toString();
+    unawaited(CallTones.play(CallTones.ringingTone(reach: data['reach']?.toString(), alerted: data['alerted'] == true)));
+    _refreshNotice();
+  }
+
+  /// No connection at all (airplane mode, no network): checked before calling.
+  static Future<bool> offline() async {
+    try {
+      final r = await Connectivity().checkConnectivity();
+      return r.isEmpty || r.every((c) => c == ConnectivityResult.none);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  void _refreshNotice() {
+    var text = '';
+    if (_pollFailures >= 2) {
+      text = 'الإنترنت لديك ضعيف أو مقطوع… نحاول الاستمرار';
+    } else if (status == 'ringing' && role == 'caller' && _reach == 'unreached') {
+      text = 'قد يكون الإنترنت لدى ${peerName == 'إدارة تاكسيستا' ? 'الطرف الآخر' : peerName} ضعيفًا أو التطبيق مغلقًا.';
+    } else if (status == 'accepted' && quality == NetQuality.poor) {
+      text = 'الاتصال ضعيف جدًا، قد ينقطع الصوت';
+    } else if (status == 'accepted' && quality == NetQuality.weak) {
+      text = 'الاتصال ضعيف، قد يتقطع الصوت';
+    }
+    if (text != notice) {
+      notice = text;
+      notifyListeners();
+    }
+  }
+
+  /// The line is gone (WebRTC failed, or did not come back within 20 s).
+  Future<void> _dropped() async {
+    final id = callId;
+    if (id != null) unawaited(AdminCallApi.end(id));
+    await _finish('انقطع الاتصال بسبب ضعف الإنترنت', tone: CallTone.failed);
   }
 
   // ---------------------------------------------------------------- answering
@@ -421,6 +523,7 @@ class AdminCallController extends ChangeNotifier {
   }
 
   Future<void> hangUp({bool fromSystem = false}) async {
+    unawaited(CallTones.stop());
     final id = callId;
     if (id != null) await AdminCallApi.end(id);
     await _finish('انتهت المكالمة', endSystemCall: !fromSystem);
@@ -506,17 +609,22 @@ class AdminCallController extends ChangeNotifier {
       if (s == RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
         _reconnect?.cancel();
         answeredAt ??= DateTime.now();
+        unawaited(CallTones.stop());
         _set('accepted', 'متصل');
         unawaited(_ensureAudio());
+        _quality.start(pc, (q) {
+          quality = q;
+          _refreshNotice();
+        });
       } else if (s == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected && status == 'accepted') {
         // the network dropped: WebRTC usually finds its way back by itself within seconds
         _set('reconnecting', 'إعادة الاتصال…');
         _reconnect?.cancel();
         _reconnect = Timer(const Duration(seconds: 20), () {
-          if (status == 'reconnecting') hangUp();
+          if (status == 'reconnecting') _dropped();
         });
-      } else if (s == RTCPeerConnectionState.RTCPeerConnectionStateFailed) {
-        hangUp();
+      } else if (s == RTCPeerConnectionState.RTCPeerConnectionStateFailed && busy) {
+        _dropped();
       }
     };
     try {
@@ -542,24 +650,34 @@ class AdminCallController extends ChangeNotifier {
       if (id == null || !busy) return;
       final r = await AdminCallApi.state(id);
       if (!r.ok) {
+        _pollFailures++;
+        _refreshNotice();
         _pollState(const Duration(seconds: 3));
         return;
       }
       if (id != callId) return;
+      if (_pollFailures > 0) {
+        _pollFailures = 0;
+        _refreshNotice();
+      }
       _apply(r.data);
       final s = (r.data['status'] ?? '').toString();
       if (s == 'accepted' && role == 'caller' && _pc != null && r.data['remote_sdp'] != null) {
         final current = await _pc!.getRemoteDescription();
         if (current == null) {
+          unawaited(CallTones.stop());
           await _pc!.setRemoteDescription(RTCSessionDescription(r.data['remote_sdp'], 'answer'));
           _set('connecting', 'جارٍ الاتصال…');
         }
       }
       if (s != 'ringing' && s != 'accepted') {
-        await _finish((r.data['status_label'] ?? 'انتهت المكالمة').toString());
+        // the other side (or the ring's end) closed it: say who, and let it be heard
+        final talked = answeredAt != null;
+        final label = s == 'ended' && talked ? 'أنهى $peerName المكالمة' : (r.data['status_label'] ?? 'انتهت المكالمة').toString();
+        await _finish(label, tone: CallTones.endTone(status: s, connected: talked, iAmCaller: role == 'caller'));
         return;
       }
-      if (s == 'ringing' && role == 'caller') statusLabel = (r.data['status_label'] ?? statusLabel).toString();
+      if (s == 'ringing' && role == 'caller') _ringing(r.data);
       notifyListeners();
       _pollState(Duration(seconds: s == 'accepted' ? 2 : 1));
     });
@@ -575,9 +693,12 @@ class AdminCallController extends ChangeNotifier {
     await _finish(text.isEmpty ? 'تعذّر الاتصال' : text);
   }
 
-  Future<void> _finish(String label, {bool endSystemCall = true}) async {
+  Future<void> _finish(String label, {bool endSystemCall = true, CallTone? tone}) async {
     _poll?.cancel();
     _reconnect?.cancel();
+    _quality.stop();
+    await CallTones.stop();
+    if (tone != null) unawaited(CallTones.play(tone));
     try {
       _local?.getTracks().forEach((t) => t.stop());
       await _local?.dispose();
@@ -586,10 +707,21 @@ class AdminCallController extends ChangeNotifier {
     _pc = null;
     _local = null;
     if (endSystemCall && callId != null) {
-      try {
-        await FlutterCallkitIncoming.endCall(callKitId(callId!));
-      } catch (_) {}
+      final id = callKitId(callId!);
+      // with a tone, the system call (and its audio) closes once it has been heard
+      if (tone != null && Platform.isIOS) {
+        unawaited(Future.delayed(const Duration(milliseconds: 1300), () async {
+          try {
+            await FlutterCallkitIncoming.endCall(id);
+          } catch (_) {}
+        }));
+      } else {
+        try {
+          await FlutterCallkitIncoming.endCall(id);
+        } catch (_) {}
+      }
     }
+    notice = '';
     _set('ended', label);
     // a moment to read how it ended (and to go back to the chat), then the screen closes
     Future.delayed(const Duration(seconds: 4), () {
@@ -599,6 +731,11 @@ class AdminCallController extends ChangeNotifier {
 
   void _reset() {
     _poll?.cancel();
+    _quality.stop();
+    quality = NetQuality.good;
+    notice = '';
+    _pollFailures = 0;
+    _reach = null;
     callId = null;
     status = 'idle';
     statusLabel = '';
@@ -702,3 +839,81 @@ class LockScreenCallsSheet extends StatelessWidget {
     );
   }
 }
+
+/// Android: one friendly ask to stop putting Taxista to sleep, so a call push is never held back.
+class BatteryCallsSheet extends StatelessWidget {
+  const BatteryCallsSheet({super.key});
+
+  static bool get _ar => languageDirection != 'ltr';
+  static String _t(String ar, String en) => _ar ? ar : en;
+
+  @override
+  Widget build(BuildContext context) {
+    const blue = Color(0xFF0873FF);
+    const ink = Color(0xff12121D);
+    Widget step(String n, String text) => Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Container(
+              width: 22,
+              height: 22,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(color: blue.withValues(alpha: 0.12), shape: BoxShape.circle),
+              child: Text(n, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: blue)),
+            ),
+            const SizedBox(width: 10),
+            Expanded(child: Text(text, style: TextStyle(fontSize: 14, height: 1.45, color: ink.withValues(alpha: 0.75)))),
+          ]),
+        );
+    return Directionality(
+      textDirection: _ar ? TextDirection.rtl : TextDirection.ltr,
+      child: Container(
+        decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(26))),
+        padding: const EdgeInsets.fromLTRB(22, 22, 22, 12),
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Center(
+                child: Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(color: blue.withValues(alpha: 0.12), shape: BoxShape.circle),
+                  child: const Icon(Icons.battery_charging_full_rounded, color: blue, size: 32),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(_t('حتى ترنّ مكالمات تاكسيستا دائمًا', 'So Taxista calls always ring'),
+                  textAlign: TextAlign.center, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: ink)),
+              const SizedBox(height: 8),
+              Text(
+                  _t('هاتفك يوقف تاكسيستا لتوفير البطارية، فتصل المكالمة متأخرة أو لا ترن. غيّر الإعداد مرة واحدة:',
+                      'Your phone pauses Taxista to save battery, so calls arrive late or do not ring. Change it once:'),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14.5, height: 1.5, color: ink.withValues(alpha: 0.7))),
+              const SizedBox(height: 6),
+              step('1', _t('اضغط «فتح الإعدادات»', 'Tap "Open settings"')),
+              step('2', _t('البطارية', 'Battery')),
+              step('3', _t('اختر «غير مقيّد»', 'Choose "Unrestricted"')),
+              const SizedBox(height: 18),
+              SizedBox(
+                height: 52,
+                child: FilledButton(
+                  key: const ValueKey('battery-calls-open'),
+                  style: FilledButton.styleFrom(backgroundColor: blue, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                  onPressed: () => Navigator.pop(context, true),
+                  child: Text(_t('فتح الإعدادات', 'Open settings'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(_t('لاحقًا', 'Later'), style: TextStyle(fontSize: 12.5, color: ink.withValues(alpha: 0.45))),
+              ),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+}
+

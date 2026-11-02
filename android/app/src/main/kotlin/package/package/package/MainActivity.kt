@@ -15,6 +15,7 @@ class MainActivity: FlutterFragmentActivity() {
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         CardFillBridge.register(flutterEngine)
+        CallTones.register(flutterEngine)
 
         // Optional "scan card": on-device text recognition with ML Kit's bundled
         // Latin model (no network, no download). The photo is read from the path

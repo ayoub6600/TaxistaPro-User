@@ -34,6 +34,7 @@ import flutter_callkit_incoming
     }
     if let registrar = self.registrar(forPlugin: "TaxistaCallAudio") {
       CallAudio.register(messenger: registrar.messenger())
+      CallTones.register(messenger: registrar.messenger())
     }
     if #available(iOS 10.0, *) {
   UNUserNotificationCenter.current().delegate = self as? UNUserNotificationCenterDelegate
@@ -399,3 +400,92 @@ final class CardFillBridge: NSObject {
     }
   }
 }
+
+
+/// What the caller hears, built in memory (no sound files): the European telephone tones at
+/// 425 Hz used in Libya and Egypt - "connecting" (a short pip every 2 s), "ringback" (1 s on,
+/// 4 s off, once the other phone really rings), "busy" (declined / no answer), "ended" (the other
+/// side hung up: three falling tones) and "failed" (the network dropped the call). They play in the
+/// call's own audio session: an active session is used as it is, never reconfigured or ended.
+final class CallTones {
+  private static var player: AVAudioPlayer?
+
+  static func register(messenger: FlutterBinaryMessenger) {
+    let channel = FlutterMethodChannel(name: "taxista/call_tones", binaryMessenger: messenger)
+    channel.setMethodCallHandler { call, result in
+      switch call.method {
+      case "play":
+        let tone = (call.arguments as? [String: Any])?["tone"] as? String ?? ""
+        play(tone)
+        result(nil)
+      case "stop":
+        stop()
+        result(nil)
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+    }
+  }
+
+  /// (frequencies in Hz, seconds) segments; 0 Hz is silence.
+  private static func segments(_ tone: String) -> (parts: [([Double], Double)], loops: Int)? {
+    switch tone {
+    case "connecting": return ([([425], 0.25), ([0], 1.75)], -1)
+    case "ringback": return ([([425], 1.0), ([0], 4.0)], -1)
+    case "busy": return ([([425], 0.5), ([0], 0.5), ([425], 0.5), ([0], 0.5), ([425], 0.5), ([0], 0.5)], 0)
+    case "ended": return ([([880], 0.18), ([0], 0.07), ([660], 0.18), ([0], 0.07), ([440], 0.3)], 0)
+    case "failed": return ([([950], 0.3), ([1400], 0.3), ([1800], 0.3)], 0)
+    default: return nil
+    }
+  }
+
+  private static func wav(_ parts: [([Double], Double)]) -> Data {
+    let rate = 16000.0
+    var samples = [Int16]()
+    for (freqs, seconds) in parts {
+      let count = Int(seconds * rate)
+      let fade = min(160, count / 4)
+      for i in 0..<count {
+        var v = 0.0
+        if freqs.first != 0 {
+          for f in freqs { v += sin(2 * Double.pi * f * Double(i) / rate) }
+          v /= Double(freqs.count)
+          let edge = min(i, count - 1 - i)
+          if edge < fade { v *= Double(edge) / Double(fade) } // no clicks
+        }
+        samples.append(Int16(v * 0.35 * Double(Int16.max)))
+      }
+    }
+    var data = Data()
+    func u32(_ x: UInt32) { var y = x.littleEndian; data.append(Data(bytes: &y, count: 4)) }
+    func u16(_ x: UInt16) { var y = x.littleEndian; data.append(Data(bytes: &y, count: 2)) }
+    let bytes = UInt32(samples.count * 2)
+    data.append("RIFF".data(using: .ascii)!); u32(36 + bytes); data.append("WAVE".data(using: .ascii)!)
+    data.append("fmt ".data(using: .ascii)!); u32(16); u16(1); u16(1); u32(UInt32(rate)); u32(UInt32(rate) * 2); u16(2); u16(16)
+    data.append("data".data(using: .ascii)!); u32(bytes)
+    samples.withUnsafeBufferPointer { data.append(Data(buffer: $0)) }
+    return data
+  }
+
+  private static func play(_ tone: String) {
+    stop()
+    guard let spec = segments(tone) else { return }
+    let session = AVAudioSession.sharedInstance()
+    if session.category != .playAndRecord {
+      // before CallKit / WebRTC set the call up (the simulator, a call that never reached CallKit)
+      try? session.setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetooth, .allowBluetoothA2DP])
+    }
+    guard let p = try? AVAudioPlayer(data: wav(spec.parts)) else { return }
+    p.numberOfLoops = spec.loops
+    p.volume = 0.8
+    p.prepareToPlay()
+    p.play()
+    player = p
+  }
+
+  private static func stop() {
+    player?.stop()
+    player = nil
+  }
+}
+

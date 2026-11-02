@@ -42,10 +42,16 @@ class AdminCallApi {
 
   /// This app version can take calls (the server never rings older versions). [fullScreen]: whether
   /// this Android phone may show a call over the lock screen (the caller is told when not).
-  static Future<AdminCallResult> ready(String platform, String version, {bool? fullScreen}) => _send(http.post(_u('calls/ready'),
+  static Future<AdminCallResult> ready(String platform, String version, {bool? fullScreen, bool? batteryRestricted}) => _send(http.post(_u('calls/ready'),
       headers: _headers,
       // alerts: this version confirms every call it shows (AdminCallApi.alerted), so "ringing" means ringing
-      body: jsonEncode({'platform': platform, 'version': version, 'alerts': true, if (fullScreen != null) 'full_screen': fullScreen})));
+      body: jsonEncode({
+        'platform': platform,
+        'version': version,
+        'alerts': true,
+        if (fullScreen != null) 'full_screen': fullScreen,
+        if (batteryRestricted != null) 'battery_restricted': batteryRestricted,
+      })));
 
   /// The phone shows the incoming call: open the signed link that came with the push (no login
   /// needed, so it works from the background isolate too). Only then does the caller see "ringing".

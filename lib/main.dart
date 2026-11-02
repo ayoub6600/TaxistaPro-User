@@ -23,12 +23,13 @@ import 'pages/loadingPage/loadingpage.dart';
 /// the full-screen incoming call, or stop ringing. Every other message is left to the system tray.
 @pragma('vm:entry-point')
 Future<void> riderBackgroundMessage(RemoteMessage message) async {
+  // a call rings first, before Firebase is initialised: on a phone woken by the push every second counts
+  if (await handleCallPush(message.data)) return;
   try {
     if (Firebase.apps.isEmpty) {
       await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
     }
   } catch (_) {}
-  await handleCallPush(message.data);
 }
 
 Future<void> main() async {
