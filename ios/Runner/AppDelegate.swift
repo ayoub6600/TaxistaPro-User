@@ -439,7 +439,7 @@ final class CallTones {
     }
   }
 
-  private static func wav(_ parts: [([Double], Double)]) -> Data {
+  private static func wav(_ parts: [([Double], Double)]) -> Foundation.Data {
     let rate = 16000.0
     var samples = [Int16]()
     for (freqs, seconds) in parts {
@@ -456,14 +456,14 @@ final class CallTones {
         samples.append(Int16(v * 0.35 * Double(Int16.max)))
       }
     }
-    var data = Data()
-    func u32(_ x: UInt32) { var y = x.littleEndian; data.append(Data(bytes: &y, count: 4)) }
-    func u16(_ x: UInt16) { var y = x.littleEndian; data.append(Data(bytes: &y, count: 2)) }
+    var data = Foundation.Data()
+    func u32(_ x: UInt32) { var y = x.littleEndian; data.append(Foundation.Data(bytes: &y, count: 4)) }
+    func u16(_ x: UInt16) { var y = x.littleEndian; data.append(Foundation.Data(bytes: &y, count: 2)) }
     let bytes = UInt32(samples.count * 2)
     data.append("RIFF".data(using: .ascii)!); u32(36 + bytes); data.append("WAVE".data(using: .ascii)!)
     data.append("fmt ".data(using: .ascii)!); u32(16); u16(1); u16(1); u32(UInt32(rate)); u32(UInt32(rate) * 2); u16(2); u16(16)
     data.append("data".data(using: .ascii)!); u32(bytes)
-    samples.withUnsafeBufferPointer { data.append(Data(buffer: $0)) }
+    samples.withUnsafeBufferPointer { data.append(Foundation.Data(buffer: $0)) }
     return data
   }
 
