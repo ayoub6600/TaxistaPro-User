@@ -348,7 +348,21 @@ mixin _BookingConfirmationModalOverlays
             )
           : Container(),
       (isLoading == true)
-          ? const Positioned(top: 0, child: Loading())
+          ? Positioned(
+              top: 0,
+              // re-sending a booking whose answer never arrived: say so, and that it is safe
+              child: ValueListenableBuilder<int>(
+                valueListenable: BookingSend.attempt,
+                builder: (context, attempt, _) => attempt < 2
+                    ? const Loading()
+                    : Loading(
+                        message: languageDirection == 'rtl' ? 'الإنترنت ضعيف…' : 'Weak internet…',
+                        submessage: languageDirection == 'rtl'
+                            ? 'نعيد إرسال طلبك (المحاولة $attempt من ${BookingSend.attempts}). طلبك لن يتكرر ولن يضيع.'
+                            : 'Sending your booking again (try $attempt of ${BookingSend.attempts}). It will not be duplicated or lost.',
+                      ),
+              ),
+            )
           : Container(),
       (internet == false)
           ? Positioned(

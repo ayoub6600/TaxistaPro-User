@@ -21,9 +21,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:taxista/functions/notifications.dart';
 import 'package:taxista/translations/translation.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:uuid/uuid.dart';
 
 import 'api_base_url.dart';
 import 'api_guard.dart';
+import 'booking_send.dart';
 import '../community/community_api.dart';
 import 'live_queries.dart';
 import '../utils/scheduled_offers.dart';

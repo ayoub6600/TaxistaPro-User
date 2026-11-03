@@ -33,28 +33,41 @@ String _bookingErrorMessage(String body) {
   return languages[choosenLanguage]['text_something_went_wrong'];
 }
 
+/// The booking the rider is trying to make right now. Kept after a send whose
+/// answer never arrived, so tapping again re-sends the SAME booking and the
+/// server hands back the ride it may already have created (never a second).
+String? pendingBookingId;
+
 createRequest(value, api) async {
   waitingTime = 0;
   dynamic result;
   debugPrint('drops1 $url$api');
-  print("----------->url11 $url$api");
   try {
     // a ride now may name the favourite driver the rider chose ("سواقيني"); the server checks it
     final isRide = api.toString().endsWith('api/v1/request/create');
-    var response = await http.post(Uri.parse('$url$api'),
+    pendingBookingId ??= const Uuid().v4();
+    final body = isRide
+        ? BookingSend.withBookingId(withChosenFavorite(value), pendingBookingId!)
+        : value;
+    Future<http.Response> post() => http.post(Uri.parse('$url$api'),
         headers: {
           'Authorization': 'Bearer ${bearerToken[0].token}',
           'Content-Type': 'application/json',
         },
-        body: isRide ? withChosenFavorite(value) : value);
+        body: body);
+    // only the immediate-ride endpoint recognises a repeated booking, so only
+    // it is re-sent on its own; the others are sent once, with a time limit
+    final response = await BookingSend.send(post, tries: isRide ? BookingSend.attempts : 1);
+    if (response == null) {
+      internet = false;
+      result = 'no internet';
+      valueNotifierBook.incrementNotifier();
+      return result;
+    }
+    // the server answered: whatever it said, the next tap is a new booking
+    pendingBookingId = null;
     if (response.statusCode == 200) {
       chosenFavoriteDriverId = null;
-      print(
-          "---->drivername ${jsonDecode(response.body)['data']['driver_name']}");
-      print(
-          "---11111-> response ${jsonDecode(response.body)["driver_completed_rides_count"]}");
-      print(
-          "---11111-> response ${jsonDecode(response.body)["user_completed_rides_count"]}");
       userRequestData = jsonDecode(response.body)['data'];
       streamRequest();
       result = 'success';
