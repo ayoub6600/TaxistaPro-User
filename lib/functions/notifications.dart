@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 
 import 'calls/admin_call_controller.dart';
 import 'functions.dart';
+import 'pulse_api.dart';
 import 'support_chat_link.dart';
 
 // create an instance
@@ -214,6 +215,10 @@ Future<void> initMessaging() async {
       if (_isScheduledOfferPush(message.data)) {
         _handleScheduledOfferPush(opened: true);
       }
+      if (message.data['push_type'] == 'pulse-reminder') {
+        // the home map fills the usual destination; the rider confirms the booking himself
+        PulseBookingIntent.fromPush(message.data);
+      }
     }
   });
 
@@ -230,6 +235,9 @@ Future<void> initMessaging() async {
     }
     if (_isScheduledOfferPush(message.data)) {
       _handleScheduledOfferPush();
+    }
+    if (message.data['push_type'].toString() == 'pickup-change' && userRequestData.isNotEmpty) {
+      PickupChangeState.reload('${userRequestData['id']}');
     }
     if (notification != null) {
       if (message.data['push_type'].toString() == 'general') {
@@ -265,6 +273,12 @@ Future<void> initMessaging() async {
     }
     if (_isScheduledOfferPush(message.data)) {
       _handleScheduledOfferPush(opened: true);
+    }
+    if (message.data['push_type'].toString() == 'pulse-reminder') {
+      PulseBookingIntent.fromPush(message.data);
+    }
+    if (message.data['push_type'].toString() == 'pickup-change' && userRequestData.isNotEmpty) {
+      PickupChangeState.reload('${userRequestData['id']}');
     }
   });
 }

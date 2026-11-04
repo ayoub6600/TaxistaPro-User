@@ -40,6 +40,26 @@ mixin _BookingConfirmationModalOverlays
       buildPaymentMethodOverlay(),
       buildPendingRequestOverlay(media),
       buildActiveRideSheet(media),
+      // accepted, not started yet: the pickup point may still move, by agreement with the driver
+      if (userRequestData.isNotEmpty &&
+          userRequestData['accepted_at'] != null &&
+          '${userRequestData['is_trip_start']}' != '1' &&
+          userRequestData['is_trip_start'] != true &&
+          '${userRequestData['is_completed']}' != '1')
+        Positioned(
+          top: MediaQuery.of(context).padding.top + 70,
+          left: 16,
+          right: 16,
+          child: PickupChangePanel(
+            key: ValueKey('pickup-${userRequestData['id']}'),
+            rideId: '${userRequestData['id']}',
+            pickup: userRequestData['pick_lat'] == null
+                ? null
+                : LatLng(double.tryParse('${userRequestData['pick_lat']}') ?? 0,
+                    double.tryParse('${userRequestData['pick_lng']}') ?? 0),
+            onChanged: () => refreshUserRequestState(),
+          ),
+        ),
       (_cancelling == true)
           ? CancellationSheet(
               reasons: cancelReasonsList

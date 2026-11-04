@@ -1,5 +1,6 @@
 // ignore_for_file: deprecated_member_use
 
+import '../pulse/pickup_change_panel.dart' show PulsePickupPoints;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart' as geolocs;
@@ -559,6 +560,16 @@ class _PickupLocationState extends State<PickupLocation>
                                     ),
                                   )
                                 : Container(),
+                      ),
+                      // approved pickup points around an event (only when the city offers them)
+                      Positioned(
+                        top: MediaQuery.of(context).padding.top + 120,
+                        left: 16,
+                        right: 16,
+                        child: PulsePickupPoints(
+                          around: () => _centerLocation,
+                          onSelect: (point, name) => _controller?.animateCamera(CameraUpdate.newLatLngZoom(point, 18)),
+                        ),
                       ),
                       Positioned(
                           child: Container(

@@ -66,6 +66,8 @@ import 'booking_confirmation/searching/nearby_driver_selection.dart';
 import '../../navigation/guarded_navigation.dart';
 import '../../functions/calls/admin_call_controller.dart';
 
+import '../pulse/pickup_change_panel.dart';
+
 part 'booking_confirmation/booking_confirmation_controller.dart';
 part 'booking_confirmation/booking_confirmation_map_canvas.dart';
 part 'booking_confirmation/booking_confirmation_marker_snapshots.dart';

@@ -41,6 +41,8 @@ import '../pages/onTripPage/review_page.dart';
 import '../pages/referralcode/referral_code.dart';
 import '../styles/styles.dart';
 
+import 'pulse_api.dart';
+
 part 'parts/bootstrap_auth.dart';
 part 'parts/user_session.dart';
 part 'parts/routing_eta.dart';

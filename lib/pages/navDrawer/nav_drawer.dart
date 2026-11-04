@@ -1,3 +1,4 @@
+import '../pulse/routines_page.dart';
 import '../../community/favorites_page.dart';
 import '../../community/rewards_page.dart';
 import 'package:flutter/material.dart';
@@ -345,6 +346,7 @@ class _NavDrawerState extends State<NavDrawer> {
                             for (final item in [
                               (Icons.favorite_border_rounded, 'سواقيني', () => const FavoritesPage()),
                               (Icons.card_giftcard_rounded, 'مكافآتي', () => const RewardsPage()),
+                              (Icons.repeat_rounded, 'رحلاتي المعتادة', () => const PulseRoutinesPage()),
                             ])
                               InkWell(
                                 onTap: () => _open(MaterialPageRoute(builder: (context) => item.$3())),
