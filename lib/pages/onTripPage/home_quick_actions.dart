@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../growth/gift_widgets.dart';
 import '../../styles/styles.dart';
 
 class HomeQuickDestination {
@@ -53,6 +54,8 @@ class HomeQuickActions extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // a Taxista gift with its countdown (nothing when the rider has none)
+          const GiftBanner(),
           Row(
             children: [
               for (var index = 0; index < destinations.length; index++) ...[

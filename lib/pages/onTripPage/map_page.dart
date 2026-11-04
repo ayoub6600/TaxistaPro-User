@@ -5,6 +5,9 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:ui' as ui;
 
+import '../../growth/growth_api.dart';
+import '../../growth/my_gifts_page.dart';
+
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -214,6 +217,14 @@ class _MapsState extends State<Maps>
     _showLaunchOverlay = widget.animateColdLaunch;
     _isDarkTheme = isDarkTheme;
     WidgetsBinding.instance.addObserver(this);
+    // a gift link that opened the app before sign-in: open «هداياي» on it now
+    final pendingGift = GrowthLinks.pendingRef;
+    if (pendingGift != null) {
+      GrowthLinks.pendingRef = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) Navigator.push(context, MaterialPageRoute(builder: (_) => MyGiftsPage(highlightRef: pendingGift)));
+      });
+    }
     choosenTransportType =
         (userDetails['enable_modules_for_applications'] == 'both' ||
                 userDetails['enable_modules_for_applications'] == 'taxi')

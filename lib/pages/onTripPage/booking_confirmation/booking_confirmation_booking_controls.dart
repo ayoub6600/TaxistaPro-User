@@ -65,6 +65,14 @@ mixin _BookingConfirmationBookingControls
               pickLng: addressList.firstWhere((e) => e.type == 'pickup').latlng.longitude,
               zoneTypeId: etaDetails[choosenVehicle]['zone_type_id']?.toString(),
             ),
+          // a Taxista gift: what it takes off this fare, before «تأكيد الطلب» (the server's rule)
+          if (choosenTransportType == 0 && widget.type != 1 && isOutStation != true && choosenVehicle != null)
+            GiftPreviewLine(
+              zoneTypeId: etaDetails[choosenVehicle]['zone_type_id']?.toString(),
+              fare: double.tryParse(etaDetails[choosenVehicle]['total']?.toString() ?? '') ?? 0,
+              pricingMode: RidePricingMode.fromService(etaDetails[choosenVehicle]) == RidePricingMode.fixedFare ? 'fixed' : 'bidding',
+              coupon: etaDetails[choosenVehicle]['has_discount'] == true,
+            ),
           (choosenTransportType == 1)
               ? Column(
                   children: [

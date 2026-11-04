@@ -44,6 +44,15 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Taxista gift links (https://taxista.aljidartech.com/offers/<ref>), verified by the
+                 server's /.well-known/assetlinks.json once GROWTH_ANDROID_CERT_SHA256 is set -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https" android:host="taxista.aljidartech.com" android:pathPrefix="/offers/"/>
+            </intent-filter>
+            <meta-data android:name="flutter_deeplinking_enabled" android:value="true"/>
         </activity>
         <meta-data android:name="com.google.android.geo.API_KEY"
                android:value="AIzaSyCLVX-Jnqqo89cZ2xQ6CJflSueG-laba7g"/>
