@@ -28,6 +28,21 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>fb1658292492627792</string>
+			</array>
+		</dict>
+	</array>
+	<key>FacebookAppID</key>
+	<string>1658292492627792</string>
+	<key>FacebookClientToken</key>
+	<string>ff9dcfa7c8a4d644b1c246d150b98cc7</string>
+	<key>FacebookDisplayName</key>
+	<string>TAXISTA</string>
 	<key>FirebaseAppDelegateProxyEnabled</key>
 	<true/>
 	<key>ITSAppUsesNonExemptEncryption</key>

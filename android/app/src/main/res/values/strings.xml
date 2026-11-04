@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Meta app TAXISTA (developers.facebook.com, app id 1658292492627792). The client token is
+         not a secret: Meta designs it to ship inside the app (Settings > Advanced > Client token). -->
+    <string name="facebook_app_id" translatable="false">1658292492627792</string>
+    <string name="facebook_client_token" translatable="false">ff9dcfa7c8a4d644b1c246d150b98cc7</string>
+    <string name="fb_login_protocol_scheme" translatable="false">fb1658292492627792</string>
+</resources>

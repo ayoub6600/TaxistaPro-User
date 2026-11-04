@@ -47,6 +47,9 @@
         </activity>
         <meta-data android:name="com.google.android.geo.API_KEY"
                android:value="AIzaSyCLVX-Jnqqo89cZ2xQ6CJflSueG-laba7g"/>
+        <!-- Meta App Events: install and app-open measurement for the app-install ads (Meta app TAXISTA) -->
+        <meta-data android:name="com.facebook.sdk.ApplicationId" android:value="@string/facebook_app_id"/>
+        <meta-data android:name="com.facebook.sdk.ClientToken" android:value="@string/facebook_client_token"/>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data
