@@ -44,15 +44,40 @@ class _PickupChangePanelState extends State<PickupChangePanel> {
   @override
   void dispose() {
     PickupChangeState.current.removeListener(_changed);
+    _noteTimer?.cancel();
     super.dispose();
   }
 
+  int? _told;
+
   void _changed() {
-    if (PickupChangeState.current.value?['status'] == 'accepted') widget.onChanged?.call();
+    final c = PickupChangeState.current.value;
+    final id = (c?['id'] as num?)?.toInt();
+    if (c != null && id != null && _told != id && (c['status'] == 'accepted' || c['status'] == 'rejected')) {
+      // the answer to a proposal, once: both sides see the same outcome
+      _told = id;
+      if (c['status'] == 'accepted') {
+        widget.onChanged?.call();
+        _say('تم تغيير نقطة الالتقاط. اعتمدوا النقطة الجديدة على الخريطة.');
+      } else if (c['mine'] == true) {
+        _say('السائق لم يقبل التغيير؛ بقيت نقطة الالتقاط كما كانت.');
+      }
+    }
     if (mounted) setState(() {});
   }
 
-  void _say(String m) => ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(m, style: GoogleFonts.cairo())));
+  // the trip screens have no Scaffold of their own (a SnackBar would assert), so the panel says it itself
+  String? _note;
+  Timer? _noteTimer;
+
+  void _say(String m) {
+    if (!mounted) return;
+    _noteTimer?.cancel();
+    setState(() => _note = m);
+    _noteTimer = Timer(const Duration(seconds: 7), () {
+      if (mounted) setState(() => _note = null);
+    });
+  }
 
   Future<bool> _confirm(String title, String body, String yes) async =>
       await showDialog<bool>(
@@ -164,7 +189,17 @@ class _PickupChangePanelState extends State<PickupChangePanel> {
         color: Colors.white,
         elevation: 3,
         borderRadius: BorderRadius.circular(14),
-        child: Padding(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10), child: body),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            body,
+            if (_note != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(_note!, style: GoogleFonts.cairo(fontSize: 12.5, color: const Color(0xffB45309), fontWeight: FontWeight.w600)),
+              ),
+          ]),
+        ),
       ),
     );
   }
@@ -197,6 +232,8 @@ class _PickupPointPickerState extends State<PickupPointPicker> {
             onCameraMove: (p) => _at = p.target,
             myLocationEnabled: true,
             zoomControlsEnabled: false,
+            // keep the map's own buttons above the confirm button
+            padding: EdgeInsets.only(bottom: 90 + MediaQuery.of(context).padding.bottom),
           ),
           const Padding(padding: EdgeInsets.only(bottom: 36), child: Icon(Icons.location_on_rounded, size: 44, color: Color(0xffDC2626))),
           Positioned(
