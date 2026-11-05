@@ -38,10 +38,11 @@ class _GiftBannerState extends State<GiftBanner> {
     if (!mounted || d == null) return;
     final live = [
       for (final g in (d['gifts'] is List ? d['gifts'] as List : const []))
-        if (g is Map && (g['state'] == 'active' || g['state'] == 'partly_used') && (g['seconds_left'] ?? 0) > 0) g
+        if (g is Map && (g['state'] == 'active' || g['state'] == 'partly_used') && (g['seconds_left'] ?? 0) > 0 && (g['remaining_minor'] ?? 0) > 0) g
     ]..sort((a, b) => (a['seconds_left'] as num).compareTo(b['seconds_left'] as num));
+    // a gift held for a ride in progress has nothing left to offer until that ride ends
     setState(() {
-      _gift = live.isEmpty ? null : live.first;
+      _gift = live.isEmpty || (d['balance_minor'] ?? 0) <= 0 ? null : live.first;
       _balance = d['balance']?.toString();
       _at = DateTime.now();
     });
