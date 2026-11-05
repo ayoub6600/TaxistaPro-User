@@ -55,7 +55,7 @@ class _GiftBannerState extends State<GiftBanner> {
     final secs = (g['seconds_left'] as num).toInt() - DateTime.now().difference(_at).inSeconds;
     if (secs <= 0) return const SizedBox.shrink();
     final d = Duration(seconds: secs);
-    final left = d.inDays > 0 ? 'باقي ${d.inDays} يوم' : 'باقي ${d.inHours} ساعة و${d.inMinutes % 60} دقيقة';
+    final left = MyGiftsPageCountdown.text(Duration(hours: d.inHours, minutes: d.inDays > 0 ? 0 : d.inMinutes % 60));
     return Semantics(
       button: true,
       label: 'عندك هدية $_balance، $left',
@@ -231,5 +231,43 @@ Future<void> showRescueSheet(BuildContext context) async {
         ),
       );
     }),
+  );
+}
+
+/// «ليش ألغيت؟» after a cancel while searching: optional, one tap, «تخطي» closes it. It never undoes
+/// or delays the cancel, which is already done.
+Future<void> showQuickCancelReason(BuildContext context) async {
+  final p = CommunityLook.palette;
+  await showModalBottomSheet(
+    context: context,
+    backgroundColor: p.surface,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+    builder: (ctx) => Directionality(
+      textDirection: TextDirection.rtl,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('تم الإلغاء. ليش ألغيت؟', style: p.text(17, weight: FontWeight.w800)),
+          const SizedBox(height: 4),
+          Text('اختياري، يساعدنا نحسّن الخدمة.', style: p.text(13, color: p.sub)),
+          const SizedBox(height: 14),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            for (final r in quickCancelReasons)
+              CommunityChip(
+                label: r.$2,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  sendQuickCancelReason(r.$1);
+                },
+              ),
+          ]),
+          const SizedBox(height: 10),
+          Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: TextButton(onPressed: () => Navigator.pop(ctx), child: Text('تخطي', style: p.text(14, color: p.sub))),
+          ),
+        ]),
+      ),
+    ),
   );
 }

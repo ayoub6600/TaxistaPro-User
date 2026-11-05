@@ -12,9 +12,11 @@ void main() {
     expect(GrowthLinks.refFrom(null), isNull);
   });
 
-  test('the countdown reads in days, then hours:minutes:seconds, and ends at zero', () {
-    expect(MyGiftsPageCountdown.text(const Duration(days: 1, hours: 3, minutes: 5)), 'باقي 1 يوم و03:05');
-    expect(MyGiftsPageCountdown.text(const Duration(hours: 5, minutes: 4, seconds: 9)), 'باقي 05:04:09');
+  test('the countdown reads in words for days, a clock under a day, and ends at zero', () {
+    expect(MyGiftsPageCountdown.text(const Duration(days: 1, hours: 23, minutes: 41)), 'باقي يوم و23 ساعة');
+    expect(MyGiftsPageCountdown.text(const Duration(days: 2)), 'باقي يومين');
+    expect(MyGiftsPageCountdown.text(const Duration(days: 6, hours: 1)), 'باقي 6 أيام و1 ساعة');
+    expect(MyGiftsPageCountdown.text(const Duration(hours: 5, minutes: 4, seconds: 9)), 'باقي \u206605:04:09\u2069');
     expect(MyGiftsPageCountdown.text(Duration.zero), 'انتهت');
   });
 }

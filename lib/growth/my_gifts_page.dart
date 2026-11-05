@@ -178,6 +178,8 @@ class MyGiftsPageCountdown {
     final m = d.inMinutes % 60;
     final s = d.inSeconds % 60;
     String two(int n) => n.toString().padLeft(2, '0');
-    return days > 0 ? 'باقي $days يوم و${two(h)}:${two(m)}' : 'باقي ${two(h)}:${two(m)}:${two(s)}';
+    // words for days (a clock after Arabic text flips in RTL); the clock kept left-to-right
+    if (days > 0) return 'باقي ${days == 1 ? 'يوم' : days == 2 ? 'يومين' : '$days أيام'}${h > 0 ? ' و$h ساعة' : ''}';
+    return 'باقي \u2066${two(h)}:${two(m)}:${two(s)}\u2069';
   }
 }

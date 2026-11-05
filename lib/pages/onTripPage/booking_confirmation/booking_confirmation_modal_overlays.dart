@@ -322,6 +322,8 @@ mixin _BookingConfirmationModalOverlays
               isLoading = false;
               _cancel = false;
             });
+            // «ليش ألغيت؟»: one optional tap, with «تخطي»
+            if (result == 'success') showQuickCancelReason(context);
           },
         ),
       (requestCancelledByDriver == true)

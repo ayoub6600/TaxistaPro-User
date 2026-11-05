@@ -92,3 +92,17 @@ class GrowthLinks {
     return m?.group(1);
   }
 }
+
+/// The one-tap reasons the server knows (their Arabic labels are the server's own).
+const quickCancelReasons = [
+  ('price', 'السعر أعلى من المتوقع'),
+  ('wait', 'الانتظار طويل'),
+  ('changed_mind', 'غيّرت رأيي'),
+  ('mistake', 'طلبت بالغلط'),
+  ('other_ride', 'لقيت مواصلة أخرى'),
+];
+
+Future<bool> sendQuickCancelReason(String key) async {
+  final d = await GrowthApi._post('cancel-reason', {'key': key});
+  return d != null && d['saved'] == true;
+}
