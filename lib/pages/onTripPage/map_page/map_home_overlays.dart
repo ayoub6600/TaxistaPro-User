@@ -27,23 +27,33 @@ extension _MapHomeOverlays on _MapsState {
               ride: RecurringApi.pendingTomorrow(RecurringApi.rides.value)!['ride'] as Map<String, dynamic>,
               next: RecurringApi.pendingTomorrow(RecurringApi.rides.value)!['next'] as Map<String, dynamic>,
             ),
+            if (ContestsApi.homePost.value != null) ...[
+              const SizedBox(height: 8),
+              ContestHomeCard(post: ContestsApi.homePost.value!),
+            ],
             if (activePromotionCampaigns.isNotEmpty) ...[
               const SizedBox(height: 8),
               _PromotionStrip(campaigns: activePromotionCampaigns, rtl: languageDirection == 'rtl'),
             ],
           ]),
         )
-      else if (activePromotionCampaigns.isNotEmpty && _bottom == 0)
+      else if ((activePromotionCampaigns.isNotEmpty || ContestsApi.homePost.value != null) && _bottom == 0)
         Positioned(
           top: MediaQuery.of(context).padding.top +
               (scheduledOfferSummary.hasOffers ? 138 : 84),
           left: 16,
           right: 16,
-          // every running campaign, one at a time: swipe between them (dots under)
-          child: _PromotionStrip(
-            campaigns: activePromotionCampaigns,
-            rtl: languageDirection == 'rtl',
-          ),
+          // «مسابقات تاكسيستا» first (it has a closing time), then every running campaign, one at a
+          // time: swipe between them (dots under)
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            if (ContestsApi.homePost.value != null) ContestHomeCard(post: ContestsApi.homePost.value!),
+            if (ContestsApi.homePost.value != null && activePromotionCampaigns.isNotEmpty) const SizedBox(height: 8),
+            if (activePromotionCampaigns.isNotEmpty)
+              _PromotionStrip(
+                campaigns: activePromotionCampaigns,
+                rtl: languageDirection == 'rtl',
+              ),
+          ]),
         ),
       Positioned(
           top: 0,

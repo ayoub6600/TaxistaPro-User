@@ -17,6 +17,7 @@ import 'recurring_push.dart';
 import 'live_activity.dart';
 import '../pages/recurring/recurring_rides_page.dart' show RecurringLink;
 import 'support_chat_link.dart';
+import '../contests/contests_pages.dart' show ContestLink;
 
 // create an instance
 FirebaseMessaging messaging = FirebaseMessaging.instance;
@@ -251,6 +252,11 @@ Future<void> initMessaging() async {
         SupportChatLink.open(message.data);
         return;
       }
+      if (ContestLink.handles(message.data)) {
+        // «نتيجة مسابقة تاكسيستا»: the contests open once the home screen is up
+        ContestLink.openPush(message.data);
+        return;
+      }
       if (message.data['push_type'] == 'admin_call') {
         AdminCallController.answerFromNotification(message.data);
       }
@@ -317,6 +323,10 @@ Future<void> initMessaging() async {
     if (SupportChatLink.handles(message.data)) {
       // in the background, tapped: straight to the conversation (or the call log for a trip call)
       SupportChatLink.open(message.data);
+      return;
+    }
+    if (ContestLink.handles(message.data)) {
+      ContestLink.openPush(message.data);
       return;
     }
     if (message.data['push_type'].toString() == 'admin_call') {

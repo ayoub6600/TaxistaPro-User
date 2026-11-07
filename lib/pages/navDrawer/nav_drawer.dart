@@ -23,6 +23,7 @@ import '../NavigatorPages/support.dart';
 import '../NavigatorPages/walletpage.dart';
 import '../onTripPage/map_page.dart';
 import '../../navigation/guarded_navigation.dart';
+import '../../contests/contests_pages.dart';
 
 class NavDrawer extends StatefulWidget {
   const NavDrawer({super.key});
@@ -181,6 +182,11 @@ class _NavDrawerState extends State<NavDrawer> {
                             icon: Icons.emoji_events_outlined,
                             text: rtl ? 'مكافآتي' : 'My rewards',
                             onTap: () => _open(MaterialPageRoute(builder: (context) => const RewardsPage())),
+                          ),
+                          _DrawerItem(
+                            icon: Icons.emoji_events_rounded,
+                            text: rtl ? 'مسابقات تاكسيستا' : 'Taxista contests',
+                            onTap: () => _open(MaterialPageRoute(builder: (context) => const ContestsFeedPage())),
                           ),
                           _DrawerItem(
                             icon: Icons.redeem_rounded,

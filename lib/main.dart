@@ -26,6 +26,7 @@ import 'local_firebase.dart';
 import 'navigation/taxista_page_transitions.dart';
 import 'pages/callPage/admin_call_page.dart';
 import 'pages/loadingPage/loadingpage.dart';
+import 'contests/contests_pages.dart';
 
 /// Calls while the app is in the background or closed (Android: data-only messages): ring with
 /// the full-screen incoming call, or stop ringing. Every other message is left to the system tray.
@@ -146,6 +147,14 @@ class MyApp extends StatelessWidget {
               // https://taxista.aljidartech.com/offers/<ref> (App Links / Universal Links): «هداياي»
               // when signed in, otherwise kept until the home screen; any other route is ignored
               onGenerateRoute: (settings) {
+                // https://taxista.aljidartech.com/c/<code>: a shared contest opens «مسابقات تاكسيستا»
+                if (ContestLink.isLink(settings.name)) {
+                  if (bearerToken.isEmpty) {
+                    ContestLink.openLink(); // kept until the home screen is up
+                    return null;
+                  }
+                  return MaterialPageRoute(builder: (_) => const ContestsFeedPage());
+                }
                 final ref = GrowthLinks.refFrom(settings.name);
                 if (ref == null) return null;
                 if (bearerToken.isEmpty) {

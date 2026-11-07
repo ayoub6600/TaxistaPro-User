@@ -67,6 +67,8 @@ import '../recurring/recurring_home_banner.dart';
 import '../../community/rewards_page.dart';
 import '../../functions/schedule_time.dart';
 import '../recurring/recurring_rides_page.dart' show RecurringLink, RecurringRidesPage;
+import '../../contests/contests_api.dart';
+import '../../contests/contests_pages.dart';
 // ignore: depend_on_referenced_packages
 
 part 'map_page/map_animation.dart';
@@ -268,6 +270,10 @@ class _MapsState extends State<Maps>
     RecurringPush.lastAnswer.addListener(_onRecurringAnswer);
     unawaited(RecurringApi.refresh());
     WidgetsBinding.instance.addPostFrameCallback((_) => RecurringLink.appReady());
+    // «مسابقات تاكسيستا»: the card on the home screen, and a result push or share link tapped before home was up
+    ContestsApi.homePost.addListener(_onRecurringRides);
+    unawaited(ContestsApi.refreshHome());
+    WidgetsBinding.instance.addPostFrameCallback((_) => ContestLink.flush());
     unawaited(fetchPendingRecoveryOfferForRider().then((_) {
       if (mounted) setState(() {});
     }));
@@ -314,6 +320,7 @@ class _MapsState extends State<Maps>
   /// safer to reset to, so a failed reconcile just releases every lock and
   /// tries again a little later.
   Future<void> _onResumed() async {
+    unawaited(ContestsApi.refreshHome());
     unawaited(refreshPromotionCampaigns().then((_) {
       if (mounted) {
         setState(() {});
@@ -475,6 +482,7 @@ class _MapsState extends State<Maps>
     WidgetsBinding.instance.removeObserver(this);
     PulseBookingIntent.pending.removeListener(_onPulseIntent);
     RecurringApi.rides.removeListener(_onRecurringRides);
+    ContestsApi.homePost.removeListener(_onRecurringRides);
     RecurringPush.lastAnswer.removeListener(_onRecurringAnswer);
     _pickupSearchController.dispose();
     _controller?.dispose();
