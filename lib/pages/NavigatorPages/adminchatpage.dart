@@ -12,6 +12,7 @@ import '../../widgets/chat/chat_kit.dart';
 import '../../widgets/support_call_card.dart';
 import '../../widgets/voice/voice_bubble.dart';
 import '../../widgets/voice/voice_send.dart';
+import '../recurring/recurring_chat_card.dart';
 
 /// The conversation with Taxista support: messages, voice messages, call cards, and a voice
 /// call to the administration from the header.
@@ -345,13 +346,17 @@ class _AdminChatPageState extends State<AdminChatPage> {
           mine: mine,
           tail: lastOfRun,
           highlighted: id != null && id == _highlightId,
-          text: '${m['message'] ?? ''}',
+          text: RecurringChatCard.handles(m) ? RecurringChatCard.textWithoutLink('${m['message'] ?? ''}') : '${m['message'] ?? ''}',
           voice: VoiceBubble.fromMessage(m, mine: mine),
           time: at != null ? ChatTime.clock(at, _ar) : '${m['user_timezone'] ?? ''}',
           status: mine ? (m['unseen_count'].toString() == '1' ? ChatDelivery.read : ChatDelivery.sent) : null,
           copiedLabel: _t('تم نسخ الرسالة', 'Message copied'),
         ),
       ));
+      // a recurring-ride message: its two buttons under the text (the server's action_card)
+      if (!mine && RecurringChatCard.handles(m)) {
+        rows.add(RecurringChatCard(card: m['action_card'] as Map, onAnswered: () => unawaited(_load())));
+      }
       previous = m;
     }
     for (final o in _outgoing) {
