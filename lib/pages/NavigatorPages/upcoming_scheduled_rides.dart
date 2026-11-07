@@ -9,6 +9,7 @@ import 'package:taxista/translations/translation.dart';
 import '../../functions/functions.dart';
 import '../../utils/scheduled_offers.dart';
 import '../../functions/schedule_time.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../styles/styles.dart';
 import '../../widgets/widgets.dart';
 
@@ -28,6 +29,9 @@ class _UpcomingScheduledRidesPageState
   String? actionError;
   Timer? _ticker;
   String? _answeringOfferId;
+
+  /// 0 all, 1 scheduled, 2 recurring
+  int _filter = 0;
 
   bool get isRtl => languageDirection == 'rtl';
 
@@ -252,64 +256,66 @@ class _UpcomingScheduledRidesPageState
               child: Column(
                 children: [
                   SizedBox(height: MediaQuery.of(context).padding.top),
-                  Stack(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.only(bottom: media.width * 0.05),
-                        width: media.width * 1,
-                        alignment: Alignment.center,
-                        child: MyText(
-                          text: languages[choosenLanguage]
-                              ['text_upcoming_rides'],
-                          size: media.width * twenty,
-                          fontweight: FontWeight.w600,
-                        ),
+                  // «الرحلات القادمة · كل مواعيدك في مكان واحد», then الكل / مجدولة / مشوار الدوام
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(children: [
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: Icon(Icons.arrow_back_rounded, color: textColor),
+                        style: IconButton.styleFrom(backgroundColor: textColor.withValues(alpha: .05), fixedSize: const Size(44, 44)),
                       ),
-                      Positioned(
-                        child: ClipRRect(
-                          borderRadius:
-                              BorderRadius.circular(media.width * 0.05),
-                          child: InkWell(
-                            onTap: () => Navigator.pop(context),
-                            child: Container(
-                              height: media.width * 0.11,
-                              width: media.width * 0.11,
-                              decoration: BoxDecoration(
-                                  border: Border.all(
-                                      color: Colors.white, width: 0.5),
-                                  shape: BoxShape.circle,
-                                  color: Colors.black.withOpacity(0.17)),
-                              child: Icon(Icons.arrow_back,
-                                  size: media.width * 0.05,
-                                  color: (isDarkTheme)
-                                      ? Colors.white
-                                      : Colors.black),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(languages[choosenLanguage]['text_upcoming_rides'] ?? (isRtl ? 'الرحلات القادمة' : 'Upcoming rides'),
+                              style: GoogleFonts.cairo(color: textColor, fontSize: 21, fontWeight: FontWeight.w800, height: 1.2)),
+                          Text(isRtl ? 'كل مواعيدك في مكان واحد' : 'All your bookings in one place',
+                              style: GoogleFonts.cairo(color: textColor.withValues(alpha: .55), fontSize: 12.5)),
+                        ]),
+                      ),
+                    ]),
+                  ),
+                  if (upcomingScheduledRides.any((e) => e is Map && e['recurring_label'] != null))
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(color: textColor.withValues(alpha: .05), borderRadius: BorderRadius.circular(16)),
+                      child: Row(children: [
+                        for (final f in const [0, 1, 2])
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => setState(() => _filter = f),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 220),
+                                curve: Curves.easeOut,
+                                padding: const EdgeInsets.symmetric(vertical: 9),
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: _filter == f ? page : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: _filter == f ? [BoxShadow(color: Colors.black.withValues(alpha: .08), blurRadius: 8, offset: const Offset(0, 2))] : null,
+                                ),
+                                child: Text(
+                                  [
+                                    isRtl ? 'الكل' : 'All',
+                                    isRtl ? 'مجدولة' : 'Scheduled',
+                                    isRtl ? 'مشوار الدوام' : 'Recurring',
+                                  ][f],
+                                  style: GoogleFonts.cairo(color: textColor, fontSize: 13.5, fontWeight: _filter == f ? FontWeight.w800 : FontWeight.w600),
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
-                    ],
-                  ),
+                      ]),
+                    ),
                   Expanded(
                     child: SingleChildScrollView(
                       physics: const BouncingScrollPhysics(),
                       child: (upcomingScheduledRides.isNotEmpty)
                           ? Column(
                               children: [
-                                Column(
-                                  children: upcomingScheduledRides
-                                      .asMap()
-                                      .map((i, value) {
-                                        return MapEntry(
-                                            i,
-                                            (upcomingScheduledRides[i].isEmpty)
-                                                ? _shimmerCard(media)
-                                                : _rideCard(media,
-                                                    upcomingScheduledRides[i]));
-                                      })
-                                      .values
-                                      .toList(),
-                                ),
+                                Column(children: _grouped(media)),
                                 (upcomingScheduledRidesPage['pagination'] !=
                                         null)
                                     ? (upcomingScheduledRidesPage['pagination']
@@ -368,6 +374,68 @@ class _UpcomingScheduledRidesPageState
     );
   }
 
+  /// the rides by day («غدًا · السبت», «الأحد 8 نوفمبر»), in the server's order
+  List<Widget> _grouped(media) {
+    final out = <Widget>[];
+    String? last;
+    for (final item in upcomingScheduledRides) {
+      if (item is! Map || item.isEmpty) {
+        out.add(_shimmerCard(media));
+        continue;
+      }
+      final recurring = item['recurring_label'] != null;
+      if (_filter == 1 && recurring) continue;
+      if (_filter == 2 && !recurring) continue;
+      final t = parseTripStart(item);
+      String day = '';
+      if (t != null) {
+        final now = DateTime.now();
+        final d = DateTime(t.year, t.month, t.day).difference(DateTime(now.year, now.month, now.day)).inDays;
+        final weekday = scheduleDateLabel(t, isRtl: isRtl).split('،').first.split(',').first;
+        day = d == 0
+            ? '${isRtl ? 'اليوم' : 'Today'} · $weekday'
+            : d == 1
+                ? '${isRtl ? 'غدًا' : 'Tomorrow'} · $weekday'
+                : scheduleDateLabel(t, isRtl: isRtl);
+      }
+      if (day.isNotEmpty && day != last) {
+        out.add(Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(4, 10, 4, 8),
+          child: Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: Text(day, style: GoogleFonts.cairo(color: textColor, fontSize: 15, fontWeight: FontWeight.w800)),
+          ),
+        ));
+        last = day;
+      }
+      out.add(_rideCard(media, item));
+    }
+    return out;
+  }
+
+  Widget _tag(String text, Color color, IconData icon) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+        decoration: BoxDecoration(color: color.withValues(alpha: .1), borderRadius: BorderRadius.circular(99)),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 4),
+          Text(text, style: GoogleFonts.cairo(color: color, fontSize: 12, fontWeight: FontWeight.w800)),
+        ]),
+      );
+
+  Widget _place(Color dot, String text, int lines) => Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Container(
+          margin: const EdgeInsets.only(top: 6),
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: dot, shape: BoxShape.circle, border: Border.all(color: dot.withValues(alpha: .25), width: 3)),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(text, maxLines: lines, overflow: TextOverflow.ellipsis, style: GoogleFonts.cairo(color: textColor, fontSize: 13.5, fontWeight: FontWeight.w600)),
+        ),
+      ]);
+
   Widget _shimmerCard(media) {
     return Container(
       margin: EdgeInsets.only(bottom: media.width * 0.02),
@@ -392,61 +460,51 @@ class _UpcomingScheduledRidesPageState
         .where((v) => v != null && v != '-')
         .join(' ');
 
+    final clock = tripStart == null
+        ? ''
+        : '${tripStart.hour.toString().padLeft(2, '0')}:${tripStart.minute.toString().padLeft(2, '0')}';
+    final hasOffer = driver == null && (scheduledCounterOffers[item['id']?.toString()] ?? []).isNotEmpty;
     return Container(
       width: media.width * 1,
-      padding: EdgeInsets.all(media.width * 0.03),
-      margin: EdgeInsets.only(bottom: media.width * 0.03),
+      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        color: page,
+        borderRadius: BorderRadius.circular(20),
+        color: isDarkTheme ? const Color(0xff171B22) : Colors.white,
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .05), blurRadius: 12, offset: const Offset(0, 4))],
         // A ready ride is about to start, so it earns a bit more visual
         // weight than the calm "scheduled/dispatching/reserved" cards
         // around it - without leaving this list or looking like an
         // active-trip card.
-        border: isReady ? Border.all(color: online, width: 1.4) : null,
+        border: Border.all(color: isReady ? online : textColor.withValues(alpha: .06), width: isReady ? 1.4 : 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // «07:15» big, then what this booking is: recurring, its state, an offer waiting
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    color: statusColor(item['scheduled_status'])),
-                child: MyText(
-                  text: statusLabel(item['scheduled_status']),
-                  fontweight: FontWeight.w600,
-                  color: Colors.white,
-                  size: media.width * twelve,
-                ),
-              ),
-              MyText(
-                text: item['request_number'],
-                color: Colors.grey,
-                fontweight: FontWeight.w600,
-                size: media.width * twelve,
+              if (clock.isNotEmpty)
+                Text(clock,
+                    textDirection: TextDirection.ltr,
+                    style: GoogleFonts.notoSans(color: textColor, fontSize: 24, fontWeight: FontWeight.w800, height: 1.1)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Wrap(spacing: 6, runSpacing: 6, children: [
+                  if (item['recurring_label'] != null)
+                    _tag('${item['recurring_label']}', const Color(0xff0873FF), Icons.repeat_rounded),
+                  _tag(statusLabel(item['scheduled_status']), statusColor(item['scheduled_status']) == textColor ? const Color(0xff4B5770) : statusColor(item['scheduled_status']),
+                      isReady ? Icons.notifications_active_rounded : (driver != null ? Icons.person_rounded : Icons.schedule_rounded)),
+                  if (hasOffer) _tag(isRtl ? 'عرض سائق بانتظارك' : 'A driver offer', const Color(0xffB7791F), Icons.local_offer_outlined),
+                ]),
               ),
             ],
           ),
-          SizedBox(height: 10.h),
-          Row(
-            children: [
-              Icon(isReady ? Icons.notifications_active : Icons.watch_later,
-                  color: isReady ? online : Colors.blue,
-                  size: media.width * 0.045),
-              SizedBox(width: media.width * 0.02),
-              Expanded(
-                child: MyText(
-                  text: relativeLabel,
-                  color: isReady ? online : Colors.grey,
-                  fontweight: isReady ? FontWeight.w800 : FontWeight.w600,
-                  size: media.width * fourteen,
-                ),
-              ),
-            ],
+          const SizedBox(height: 6),
+          Text(
+            '$relativeLabel · ${item['request_number'] ?? ''}',
+            style: GoogleFonts.cairo(color: isReady ? online : textColor.withValues(alpha: .55), fontSize: 12.5, fontWeight: isReady ? FontWeight.w800 : FontWeight.w600),
           ),
           if (item['scheduled_status'] == 'scheduled' && driver == null)
             Padding(
@@ -458,66 +516,26 @@ class _UpcomingScheduledRidesPageState
                 style: TextStyle(color: Colors.grey[700]),
               ),
             ),
-          SizedBox(height: media.width * 0.02),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              Container(
-                height: media.width * 0.08,
-                width: media.width * 0.08,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.green.withOpacity(0.4)),
-                child:
-                    const Icon(Icons.location_on_outlined, color: Colors.white),
-              ),
-              SizedBox(width: media.width * 0.03),
-              Expanded(
-                child: MyText(
-                  text: item['pick_address'],
-                  maxLines: 2,
-                  size: media.width * twelve,
-                ),
-              ),
-            ],
-          ),
+          const SizedBox(height: 10),
+          // the route as two dots on a line: pickup, then the destination
+          _place(const Color(0xff14A47B), '${item['pick_address'] ?? ''}', 2),
           if (item['drop_address'] != null) ...[
-            SizedBox(height: media.width * 0.02),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Container(
-                  height: media.width * 0.08,
-                  width: media.width * 0.08,
-                  alignment: Alignment.center,
-                  decoration: const BoxDecoration(
-                      shape: BoxShape.circle, color: Color(0xFFFF0000)),
-                  child: const Icon(Icons.location_on, color: Colors.white),
-                ),
-                SizedBox(width: media.width * 0.03),
-                Expanded(
-                  child: MyText(
-                    text: item['drop_address'],
-                    maxLines: 1,
-                    size: media.width * twelve,
-                  ),
-                ),
-              ],
+            Padding(
+              padding: const EdgeInsetsDirectional.only(start: 4.5),
+              child: Container(width: 1.5, height: 10, color: textColor.withValues(alpha: .15)),
             ),
+            _place(const Color(0xffE0243A), '${item['drop_address']}', 1),
           ],
           if (item['request_eta_amount'] != null) ...[
             SizedBox(height: media.width * 0.02),
             Row(
               children: [
-                const Icon(Icons.payment, color: Colors.blue),
-                SizedBox(width: media.width * 0.02),
-                MyText(
-                  text:
-                      '${isRtl ? 'السعر العادل: ' : 'Fair fare: '}${item['requested_currency_symbol'] ?? ''} ${item['request_eta_amount']}',
-                  fontweight: FontWeight.bold,
-                  size: media.width * fourteen,
-                ),
+                Icon(Icons.payments_outlined, color: textColor.withValues(alpha: .5), size: 18),
+                const SizedBox(width: 6),
+                Text(isRtl ? 'السعر العادل' : 'Fair fare', style: GoogleFonts.cairo(color: textColor.withValues(alpha: .6), fontSize: 13)),
+                const Spacer(),
+                Text('${item['request_eta_amount']} ${item['requested_currency_symbol'] ?? ''}',
+                    style: GoogleFonts.notoSans(color: textColor, fontSize: 15, fontWeight: FontWeight.w800)),
               ],
             ),
           ],
@@ -567,8 +585,8 @@ class _UpcomingScheduledRidesPageState
                       ),
                       MyText(
                         text: isRtl
-                            ? 'سيأتيك عند موعد الرحلة: ${item['trip_start_time'] ?? ''}'
-                            : 'Pickup at your scheduled time: ${item['trip_start_time'] ?? ''}',
+                            ? 'سيأتيك عند الموعد: $relativeLabel'
+                            : 'Picks you up at: $relativeLabel',
                         color: online,
                         size: media.width * twelve,
                       ),
@@ -603,12 +621,13 @@ class _UpcomingScheduledRidesPageState
                       padding:
                           EdgeInsets.symmetric(vertical: media.width * 0.025),
                       decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: borderLines, width: 1.2)),
+                          borderRadius: BorderRadius.circular(14),
+                          color: const Color(0xff0873FF).withValues(alpha: .08)),
                       child: MyText(
                         text: languages[choosenLanguage]['text_reschedule'],
                         size: media.width * fourteen,
-                        color: Colors.blue,
+                        fontweight: FontWeight.w700,
+                        color: const Color(0xff0873FF),
                       ),
                     ),
                   ),
@@ -628,12 +647,13 @@ class _UpcomingScheduledRidesPageState
                       padding:
                           EdgeInsets.symmetric(vertical: media.width * 0.025),
                       decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          color: verifyDeclined),
+                          borderRadius: BorderRadius.circular(14),
+                          color: const Color(0xffE0243A).withValues(alpha: .08)),
                       child: MyText(
                         text: languages[choosenLanguage]['text_cancel_ride'],
                         size: media.width * fourteen,
-                        color: Colors.white,
+                        fontweight: FontWeight.w700,
+                        color: const Color(0xffE0243A),
                       ),
                     ),
                   ),
