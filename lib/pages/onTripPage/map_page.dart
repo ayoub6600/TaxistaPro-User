@@ -59,6 +59,7 @@ import 'pick_loc_select.dart';
 import '../../navigation/guarded_navigation.dart';
 import '../../functions/calls/admin_call_controller.dart';
 import '../../update/update_gate.dart' show riderHomeUpdateHook;
+import '../../functions/pulse_api.dart';
 // ignore: depend_on_referenced_packages
 
 part 'map_page/map_animation.dart';
@@ -231,6 +232,11 @@ class _MapsState extends State<Maps>
             ? 0
             : 1;
     addressList.removeWhere((element) => element.type == 'drop');
+    // «نبض تاكسيستا»: a tapped routine reminder fills the usual destination here; the rider
+    // still confirms the booking himself. The open app reports where it is only if reminders are on.
+    PulseBookingIntent.pending.addListener(_onPulseIntent);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _onPulseIntent());
+    PulsePresence.refreshConsent().then((_) => PulsePresence.report());
 
     getLocs();
     // voice calls: CallKit events, this iPhone's VoIP token, "this version can take calls", a
@@ -435,11 +441,19 @@ class _MapsState extends State<Maps>
     _controller?.setMapStyle(mapStyle);
   }
 
+  void _onPulseIntent() {
+    final intent = PulseBookingIntent.pending.value;
+    if (intent == null || !mounted || userRequestData.isNotEmpty) return;
+    PulseBookingIntent.pending.value = null;
+    runDestinationEntryOnce(() => selectFavoriteDestination(intent));
+  }
+
   @override
   void dispose() {
     // A State that stays registered keeps itself (and its map, markers and
     // lists) alive for the life of the app and runs on every lifecycle event.
     WidgetsBinding.instance.removeObserver(this);
+    PulseBookingIntent.pending.removeListener(_onPulseIntent);
     _pickupSearchController.dispose();
     _controller?.dispose();
     _controller = null;

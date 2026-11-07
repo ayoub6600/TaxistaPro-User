@@ -1,4 +1,5 @@
 import '../../growth/my_gifts_page.dart';
+import '../pulse/routines_page.dart';
 import '../../community/favorites_page.dart';
 import '../../community/rewards_page.dart';
 import 'package:flutter/material.dart';
@@ -347,6 +348,7 @@ class _NavDrawerState extends State<NavDrawer> {
                               (Icons.favorite_border_rounded, 'سواقيني', () => const FavoritesPage()),
                               (Icons.card_giftcard_rounded, 'مكافآتي', () => const RewardsPage()),
                               (Icons.redeem_rounded, 'هداياي', () => const MyGiftsPage()),
+                              (Icons.repeat_rounded, 'رحلاتي المعتادة', () => const PulseRoutinesPage()),
                             ])
                               InkWell(
                                 onTap: () => _open(MaterialPageRoute(builder: (context) => item.$3())),

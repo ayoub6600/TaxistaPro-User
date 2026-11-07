@@ -584,6 +584,7 @@ streamRide() {
       'is_trip_start',
       'is_driver_arrived',
       'is_accept',
+      'pickup_change',
     ],
   ).handleError((onError) {
     rideStreamStart?.cancel();
@@ -602,6 +603,10 @@ Future<void> _onRideLeaf(RideLeaf leaf) async {
       break;
     case 'message_by_driver':
       getCurrentMessages();
+      break;
+    case 'pickup_change':
+      // a pickup-change proposal or answer: read it from the server, never from the node alone
+      await PickupChangeState.reload(rideId);
       break;
     case 'cancelled_by_driver':
       requestCancelledByDriver = true;

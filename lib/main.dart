@@ -1,5 +1,6 @@
 import 'growth/growth_api.dart';
 import 'growth/my_gifts_page.dart';
+import 'functions/pulse_api.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -72,6 +73,8 @@ Future<void> main() async {
       detachRideStreams,
     ])
     ..onForeground.add(LiveQueries.instance.resumeAll)
+    // routine reminders: the open app tells where it is (only if the rider switched them on)
+    ..onForeground.add(PulsePresence.report)
     ..attach();
 
   runApp(const MyApp());
