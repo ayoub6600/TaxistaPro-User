@@ -11,12 +11,22 @@
 		2DB1A15DF7B96AFBA0E31B49 /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 227E0B1B474B4A3C7CBC4458 /* Pods_RunnerTests.framework */; };
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
+		481C69BB4A56A765A8CF828A /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C93FFC994D44BDCB07A98E1E /* WidgetKit.framework */; };
+		6AABD63B7680162AFFAD8E26 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DBB9F4BA3A2CE172BE6EB115 /* Foundation.framework */; };
 		7463AFAA035D54E26CE97EB0 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B9E272A12857BF06E351D2A4 /* Pods_Runner.framework */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
 		7CABA8799AD3FC651FAA233D /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = CCCC5C48BB2F70C5B4C80DAE /* GoogleService-Info.plist */; };
+		890A2311849FB382AFAEF666 /* RecurringDayShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2E65C2B48F23D7D43233982 /* RecurringDayShared.swift */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
+		A80F22B4E7E38111C9749075 /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2CA31EA07332A8D659CEDAE1 /* AppIntents.framework */; };
+		C8632CF5F84AA800D482E3C8 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EE084BA2FF660253B70AE8C4 /* SwiftUI.framework */; };
+		D35973B446D94A7207238BB2 /* RecurringLive.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 96964EE6E87279E3FC561F03 /* RecurringLive.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		DD25E303F5F62C94A24582CC /* RecurringDayShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2E65C2B48F23D7D43233982 /* RecurringDayShared.swift */; };
+		E3016914858C8155C34F9D68 /* RecurringLiveWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0467ECA2A31039A7982A04 /* RecurringLiveWidget.swift */; };
+		F286C70D97D66555AB9C0FFE /* ActivityKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D07268CA3FD85B7771A9421 /* ActivityKit.framework */; };
+		F664E22E2BDAA6A315BD97FD /* RecurringLiveActivities.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D5A2CDCCE96CF10C1776B6 /* RecurringLiveActivities.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -26,6 +36,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 97C146ED1CF9000F007C117D;
 			remoteInfo = Runner;
+		};
+		AD003C6AA4752E4FA834D49D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0A2E500F79D80BA3F7135A22;
+			remoteInfo = RecurringLive;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -40,13 +57,26 @@
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A8CE9B3A3E6B5AF6DFA4A073 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				D35973B446D94A7207238BB2 /* RecurringLive.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		047D14A62DC489AE00F594F1 /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
 		1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneratedPluginRegistrant.h; sourceTree = "<group>"; };
 		1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneratedPluginRegistrant.m; sourceTree = "<group>"; };
+		1D0C8ADEDC8AE1E00EF4E666 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		227E0B1B474B4A3C7CBC4458 /* Pods_RunnerTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_RunnerTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		2CA31EA07332A8D659CEDAE1 /* AppIntents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppIntents.framework; path = System/Library/Frameworks/AppIntents.framework; sourceTree = SDKROOT; };
 		331C807B294A618700263BE5 /* RunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerTests.swift; sourceTree = "<group>"; };
 		331C8081294A63A400263BE5 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		372B2AA1A56444CEF94A649B /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
@@ -54,7 +84,9 @@
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
+		7D07268CA3FD85B7771A9421 /* ActivityKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ActivityKit.framework; path = System/Library/Frameworks/ActivityKit.framework; sourceTree = SDKROOT; };
 		886E778DA830A930BFBC8A84 /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
+		96964EE6E87279E3FC561F03 /* RecurringLive.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = RecurringLive.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		9740EEB21CF90195004384FC /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Flutter/Debug.xcconfig; sourceTree = "<group>"; };
 		9740EEB31CF90195004384FC /* Generated.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Generated.xcconfig; path = Flutter/Generated.xcconfig; sourceTree = "<group>"; };
 		97C146EE1CF9000F007C117D /* Runner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Runner.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -62,11 +94,17 @@
 		97C146FD1CF9000F007C117D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		97C147001CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9F0467ECA2A31039A7982A04 /* RecurringLiveWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RecurringLiveWidget.swift; sourceTree = "<group>"; };
+		A1D5A2CDCCE96CF10C1776B6 /* RecurringLiveActivities.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RecurringLiveActivities.swift; sourceTree = "<group>"; };
+		B2E65C2B48F23D7D43233982 /* RecurringDayShared.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RecurringDayShared.swift; sourceTree = "<group>"; };
 		B9E272A12857BF06E351D2A4 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		C93FFC994D44BDCB07A98E1E /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		CCCC5C48BB2F70C5B4C80DAE /* GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Runner/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		CE5F173B529B0E4B52445FF4 /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
 		DB1B0074EF070F59FB61F897 /* Pods-RunnerTests.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.profile.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.profile.xcconfig"; sourceTree = "<group>"; };
+		DBB9F4BA3A2CE172BE6EB115 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		E6E159FD12AF5E7E1BA06CAC /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
+		EE084BA2FF660253B70AE8C4 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		F22570198B1680BB688F2E15 /* Pods-RunnerTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -76,6 +114,18 @@
 			buildActionMask = 2147483647;
 			files = (
 				7463AFAA035D54E26CE97EB0 /* Pods_Runner.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A4983FD04C3E715648508C4B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6AABD63B7680162AFFAD8E26 /* Foundation.framework in Frameworks */,
+				481C69BB4A56A765A8CF828A /* WidgetKit.framework in Frameworks */,
+				C8632CF5F84AA800D482E3C8 /* SwiftUI.framework in Frameworks */,
+				F286C70D97D66555AB9C0FFE /* ActivityKit.framework in Frameworks */,
+				A80F22B4E7E38111C9749075 /* AppIntents.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -96,6 +146,25 @@
 				331C807B294A618700263BE5 /* RunnerTests.swift */,
 			);
 			path = RunnerTests;
+			sourceTree = "<group>";
+		};
+		6DAF430B6507D400FF8466F6 /* RecurringLive */ = {
+			isa = PBXGroup;
+			children = (
+				B2E65C2B48F23D7D43233982 /* RecurringDayShared.swift */,
+				9F0467ECA2A31039A7982A04 /* RecurringLiveWidget.swift */,
+				1D0C8ADEDC8AE1E00EF4E666 /* Info.plist */,
+			);
+			name = RecurringLive;
+			path = RecurringLive;
+			sourceTree = "<group>";
+		};
+		9020A1934127085638A1AEA8 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				DBB9F4BA3A2CE172BE6EB115 /* Foundation.framework */,
+			);
+			name = iOS;
 			sourceTree = "<group>";
 		};
 		9740EEB11CF90186004384FC /* Flutter */ = {
@@ -119,6 +188,7 @@
 				A28FDD699A463651260E4575 /* Pods */,
 				FD20E75D684247919E100BB9 /* Frameworks */,
 				CCCC5C48BB2F70C5B4C80DAE /* GoogleService-Info.plist */,
+				6DAF430B6507D400FF8466F6 /* RecurringLive */,
 			);
 			sourceTree = "<group>";
 		};
@@ -127,6 +197,7 @@
 			children = (
 				97C146EE1CF9000F007C117D /* Runner.app */,
 				331C8081294A63A400263BE5 /* RunnerTests.xctest */,
+				96964EE6E87279E3FC561F03 /* RecurringLive.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -143,6 +214,7 @@
 				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
+				A1D5A2CDCCE96CF10C1776B6 /* RecurringLiveActivities.swift */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -165,6 +237,11 @@
 			children = (
 				B9E272A12857BF06E351D2A4 /* Pods_Runner.framework */,
 				227E0B1B474B4A3C7CBC4458 /* Pods_RunnerTests.framework */,
+				9020A1934127085638A1AEA8 /* iOS */,
+				C93FFC994D44BDCB07A98E1E /* WidgetKit.framework */,
+				EE084BA2FF660253B70AE8C4 /* SwiftUI.framework */,
+				7D07268CA3FD85B7771A9421 /* ActivityKit.framework */,
+				2CA31EA07332A8D659CEDAE1 /* AppIntents.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -172,6 +249,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		0A2E500F79D80BA3F7135A22 /* RecurringLive */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7EFDB80A31A306520EB5E94A /* Build configuration list for PBXNativeTarget "RecurringLive" */;
+			buildPhases = (
+				CC8CEEE47A2CEFAA6E37282C /* Sources */,
+				A4983FD04C3E715648508C4B /* Frameworks */,
+				4E96E3287673484221DD2A4B /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = RecurringLive;
+			productName = RecurringLive;
+			productReference = 96964EE6E87279E3FC561F03 /* RecurringLive.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		331C8080294A63A400263BE5 /* RunnerTests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 331C8087294A63A400263BE5 /* Build configuration list for PBXNativeTarget "RunnerTests" */;
@@ -201,6 +295,7 @@
 				97C146EB1CF9000F007C117D /* Frameworks */,
 				97C146EC1CF9000F007C117D /* Resources */,
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
+				A8CE9B3A3E6B5AF6DFA4A073 /* Embed Foundation Extensions */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				65ACD9DF74D515FB8AC05920 /* [CP] Embed Pods Frameworks */,
 				9F02E8B39DB52D74DA8D17AD /* [CP] Copy Pods Resources */,
@@ -209,6 +304,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				2A20A07E121E7FEEE59277E9 /* PBXTargetDependency */,
 			);
 			name = Runner;
 			productName = Runner;
@@ -250,12 +346,20 @@
 			targets = (
 				97C146ED1CF9000F007C117D /* Runner */,
 				331C8080294A63A400263BE5 /* RunnerTests */,
+				0A2E500F79D80BA3F7135A22 /* RecurringLive */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		331C807F294A63A400263BE5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4E96E3287673484221DD2A4B /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -418,12 +522,29 @@
 			files = (
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
+				DD25E303F5F62C94A24582CC /* RecurringDayShared.swift in Sources */,
+				F664E22E2BDAA6A315BD97FD /* RecurringLiveActivities.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CC8CEEE47A2CEFAA6E37282C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				890A2311849FB382AFAEF666 /* RecurringDayShared.swift in Sources */,
+				E3016914858C8155C34F9D68 /* RecurringLiveWidget.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		2A20A07E121E7FEEE59277E9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = RecurringLive;
+			target = 0A2E500F79D80BA3F7135A22 /* RecurringLive */;
+			targetProxy = AD003C6AA4752E4FA834D49D /* PBXContainerItemProxy */;
+		};
 		331C8086294A63A400263BE5 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 97C146ED1CF9000F007C117D /* Runner */;
@@ -451,6 +572,34 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
+		05A4CECC82D58D1AB9CB8677 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9740EEB31CF90195004384FC /* Generated.xcconfig */;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				DEVELOPMENT_TEAM = XY4836N588;
+				ENABLE_BITCODE = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = RecurringLive/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.taxistapro.user.RecurringLive;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
 		249021D3217E4FDB00AE95B9 /* Profile */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -586,6 +735,35 @@
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Runner.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Runner";
 			};
 			name = Profile;
+		};
+		381EEA8BA02363E1C25C597C /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9740EEB31CF90195004384FC /* Generated.xcconfig */;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				DEVELOPMENT_TEAM = XY4836N588;
+				ENABLE_BITCODE = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = RecurringLive/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.taxistapro.user.RecurringLive;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
 		};
 		97C147031CF9000F007C117D /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -767,6 +945,35 @@
 			};
 			name = Release;
 		};
+		E50AA54A4C05E3C2AC89BC16 /* Profile */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9740EEB31CF90195004384FC /* Generated.xcconfig */;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				DEVELOPMENT_TEAM = XY4836N588;
+				ENABLE_BITCODE = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = RecurringLive/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.taxistapro.user.RecurringLive;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Profile;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -776,6 +983,16 @@
 				331C8088294A63A400263BE5 /* Debug */,
 				331C8089294A63A400263BE5 /* Release */,
 				331C808A294A63A400263BE5 /* Profile */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		7EFDB80A31A306520EB5E94A /* Build configuration list for PBXNativeTarget "RecurringLive" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				381EEA8BA02363E1C25C597C /* Release */,
+				05A4CECC82D58D1AB9CB8677 /* Debug */,
+				E50AA54A4C05E3C2AC89BC16 /* Profile */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

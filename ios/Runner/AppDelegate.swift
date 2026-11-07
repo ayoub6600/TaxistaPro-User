@@ -10,6 +10,7 @@ import CallKit
 import AVFoundation
 import WebRTC
 import flutter_callkit_incoming
+import ActivityKit
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, PKPushRegistryDelegate, CallkitIncomingAppDelegate {
@@ -41,6 +42,10 @@ import flutter_callkit_incoming
 }
     application.registerForRemoteNotifications()
     RecurringReminderButtons.register()
+    if let registrar = self.registrar(forPlugin: "TaxistaLiveActivity") {
+      RecurringLiveActivities.register(messenger: registrar.messenger())
+    }
+    RecurringLiveActivities.start()
  UIApplication.shared.beginReceivingRemoteControlEvents()
 
     // Calls (with the driver of the ride, or the administration): PushKit rings the phone through
@@ -183,6 +188,12 @@ import flutter_callkit_incoming
     super.userNotificationCenter(center, didReceive: response, withCompletionHandler: completionHandler)
   }
 
+  /// ⏭ تخطي on the lock-screen card opens the app here (iOS asked Face ID / the code first when locked)
+  override func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
+    if RecurringLiveActivities.open(url) { return true }
+    return super.application(app, open: url, options: options)
+  }
+
   /// the answer shown in place of the question also shows while the app is open
   override func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
                                        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
@@ -205,8 +216,8 @@ enum RecurringReminderButtons {
   static func register() {
     // confirm: one tap, even on the lock screen. skip cancels a booked ride: the phone asks Face ID /
     // the code first (on a lock screen), so nobody else holding the phone can skip his day
-    let yes = UNNotificationAction(identifier: confirm, title: "✅ تأكيد مشوار الغد", options: [])
-    let no = UNNotificationAction(identifier: skip, title: "⏭ تخطي مشوار الغد", options: [.destructive, .authenticationRequired])
+    let yes = UNNotificationAction(identifier: confirm, title: "✅ تأكيد", options: [])
+    let no = UNNotificationAction(identifier: skip, title: "⏭ تخطي", options: [.destructive, .authenticationRequired])
     let cat = UNNotificationCategory(identifier: category, actions: [yes, no], intentIdentifiers: [],
                                      hiddenPreviewsBodyPlaceholder: "تذكير بمشوارك", options: [])
     let center = UNUserNotificationCenter.current()
@@ -230,6 +241,14 @@ enum RecurringReminderButtons {
     guard content.categoryIdentifier == category, action == confirm || action == skip else { return false }
     let data = fields(content.userInfo)
     guard let id = data["occurrence_id"], !id.isEmpty, let token = data["day_token"], !token.isEmpty else {
+      completion()
+      return true
+    }
+    if id == "demo" {
+      // the TestFlight tryout: nothing goes to the server
+      show(id: id, original: response.notification.request.identifier, data: data,
+           title: action == confirm ? "✅ تجربة: زر التأكيد يشتغل" : "⏭ تجربة: زر التخطي يشتغل",
+           message: "هذه تجربة فقط؛ ما تسجل شي في حسابك.", retry: false)
       completion()
       return true
     }
@@ -638,4 +657,5 @@ final class CallTones {
     player = nil
   }
 }
+
 

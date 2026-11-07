@@ -11,7 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'api_base_url.dart';
 
 /// «🚕 مشوارك غدًا!» - the evening reminder of a recurring ride, with two real buttons on the
-/// notification itself: ✅ تأكيد مشوار الغد / ⏭ تخطي مشوار الغد.
+/// notification itself: ✅ تأكيد / ⏭ تخطي.
 ///
 /// - iPhone: the push is an ordinary alert with the APNs category RECURRING_TOMORROW. The buttons are
 ///   registered and answered natively (ios/Runner/AppDelegate.swift), so they work on the lock screen
@@ -81,7 +81,7 @@ class RecurringPush {
     final expires = int.tryParse('${data['expires_at'] ?? ''}');
     final left = expires == null ? null : expires * 1000 - DateTime.now().millisecondsSinceEpoch;
     if (left != null && left <= 0) return; // its deadline passed while the phone was off
-    final title = '${data['title'] ?? '🚕 مشوارك غدًا!'}';
+    final title = '${data['title'] ?? '🚕 مشوارك غدًا'}';
     final body = note == null ? '${data['message'] ?? ''}' : '$note\n${data['message'] ?? ''}';
     await plugin.show(
       notificationId(data),
@@ -100,8 +100,8 @@ class RecurringPush {
           timeoutAfter: left,
           autoCancel: true,
           actions: const [
-            AndroidNotificationAction(confirmAction, '✅ تأكيد مشوار الغد', showsUserInterface: false, cancelNotification: false),
-            AndroidNotificationAction(skipAction, '⏭ تخطي مشوار الغد', showsUserInterface: false, cancelNotification: false),
+            AndroidNotificationAction(confirmAction, '✅ تأكيد', showsUserInterface: false, cancelNotification: false),
+            AndroidNotificationAction(skipAction, '⏭ تخطي', showsUserInterface: false, cancelNotification: false),
           ],
         ),
         iOS: const DarwinNotificationDetails(

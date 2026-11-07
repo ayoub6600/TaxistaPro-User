@@ -38,6 +38,14 @@
 				<string>fb1658292492627792</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.taxistapro.user.recurring</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>taxistarider</string>
+			</array>
+		</dict>
 	</array>
 	<key>FacebookAppID</key>
 	<string>1658292492627792</string>
@@ -81,6 +89,8 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Taxista accesses your photos only when you choose a picture for your profile.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>UIBackgroundModes</key>
 	<array>

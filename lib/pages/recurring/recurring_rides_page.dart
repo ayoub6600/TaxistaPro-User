@@ -8,6 +8,7 @@ import '../../functions/calls/admin_call_controller.dart' show appNavigatorKey;
 import '../../functions/functions.dart';
 import '../../functions/recurring_api.dart';
 import '../../functions/recurring_push.dart';
+import '../../functions/live_activity.dart';
 
 const _blue = Color(0xff0873FF);
 const _navy = Color(0xff0B2A5B);
@@ -94,6 +95,7 @@ class _RecurringRidesPageState extends State<RecurringRidesPage> {
                         onOpen: () => Navigator.of(context).push(_route(RecurringRidePage(uuid: '${rides[i]['id']}', initial: rides[i]))).then((_) => _load()),
                       ),
                     ),
+                  const _ReminderTryout(),
                 ],
               ),
             ),
@@ -364,7 +366,10 @@ class _TomorrowAnswerCardState extends State<TomorrowAnswerCard> {
       _failed = !r.ok;
       _result = r.message;
     });
-    if (r.ok) widget.onAnswered?.call();
+    if (r.ok) {
+      unawaited(LiveActivity.endDay('${widget.day['id'] ?? ''}')); // its card leaves the lock screen
+      widget.onAnswered?.call();
+    }
   }
 
   @override
@@ -788,5 +793,65 @@ class RecurringLink {
     if (uuid.isEmpty) return;
     _pending = null;
     nav.push(_route(RecurringRidePage(uuid: uuid, focusOccurrence: int.tryParse('${data['occurrence_id'] ?? ''}'))));
+  }
+}
+
+
+/// TestFlight only (never in the App Store build): try the evening reminder's look on this iPhone -
+/// the lock-screen card with both buttons, and the plain notification. Nothing reaches the server.
+class _ReminderTryout extends StatefulWidget {
+  const _ReminderTryout();
+
+  @override
+  State<_ReminderTryout> createState() => _ReminderTryoutState();
+}
+
+class _ReminderTryoutState extends State<_ReminderTryout> {
+  Map<String, dynamic> _info = const {};
+  String? _note;
+
+  @override
+  void initState() {
+    super.initState();
+    LiveActivity.info().then((i) {
+      if (mounted) setState(() => _info = i);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_info['tryout'] != true) return const SizedBox.shrink();
+    final card = _info['supported'] == true;
+    return Container(
+      margin: const EdgeInsets.only(top: 18),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFD6E4F7))),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text('🧪 تجربة شكل تذكير «مشوارك غدًا»', style: _t(15, w: FontWeight.w800)),
+        const SizedBox(height: 4),
+        Text('للتجربة في TestFlight فقط. ما يتسجل شي في حسابك، وما يوصل شي للسائقين.', style: _t(12.5, w: FontWeight.w500, c: Colors.black54)),
+        const SizedBox(height: 12),
+        FilledButton(
+          onPressed: card
+              ? () async {
+                  final r = await LiveActivity.demoCard();
+                  if (mounted) setState(() => _note = r == 'ok' ? 'البطاقة بدأت. اقفل الشاشة وشوفها على شاشة القفل، وجرب الزرين.' : r);
+                }
+              : null,
+          style: FilledButton.styleFrom(backgroundColor: const Color(0xFF1466DB), minimumSize: const Size.fromHeight(44)),
+          child: Text(card ? 'بطاقة شاشة القفل (الزرين ظاهرين)' : 'بطاقة شاشة القفل تحتاج iOS 17.2 أو أحدث', style: _t(14, c: Colors.white)),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton(
+          onPressed: () async {
+            await LiveActivity.demoNotification();
+            if (mounted) setState(() => _note = 'الإشعار يوصل بعد 5 ثواني. اقفل الشاشة الآن، ثم اضغط عليه ضغطة مطوّلة باش تبان الأزرار.');
+          },
+          style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(44)),
+          child: Text('الإشعار العادي (بعد 5 ثواني)', style: _t(14)),
+        ),
+        if (_note != null) ...[const SizedBox(height: 10), Text(_note!, style: _t(13, w: FontWeight.w600, c: const Color(0xFF1466DB)))],
+      ]),
+    );
   }
 }

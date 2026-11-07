@@ -14,6 +14,7 @@ import 'functions.dart';
 import 'pulse_api.dart';
 import 'recurring_api.dart';
 import 'recurring_push.dart';
+import 'live_activity.dart';
 import '../pages/recurring/recurring_rides_page.dart' show RecurringLink;
 import 'support_chat_link.dart';
 
@@ -79,6 +80,7 @@ Future<void> syncDeviceToken({String? token, bool force = false}) async {
       version = '${info.version}+${info.buildNumber}';
     } catch (_) {}
     unawaited(RecurringPush.rememberApiBase());
+    final live = await LiveActivity.deviceFields();
     final response = await http.post(
       Uri.parse('${url}api/v1/user/device-token'),
       headers: {
@@ -90,7 +92,9 @@ Future<void> syncDeviceToken({String? token, bool force = false}) async {
         'platform': Platform.isIOS ? 'ios' : 'android',
         // this version draws buttons on a notification (the evening reminder of a recurring ride)
         if (version != null) 'app_version': version,
-        'features': RecurringPush.features,
+        'features': [...RecurringPush.features, if (live['live_activity'] == true) LiveActivity.feature],
+        // iPhone 17.2+: Apple's push-to-start token for the lock-screen card «مشوارك غدًا»
+        if (live['live_activity_token'] != null) 'live_activity_token': live['live_activity_token'],
       }),
     );
     if (response.statusCode == 200) {
@@ -208,6 +212,11 @@ Future<void> initMessaging() async {
       onDidReceiveBackgroundNotificationResponse: recurringNotificationAction);
   _messagingInitialized = true;
   unawaited(RecurringPush.rememberApiBase());
+  // iPhone: a new push-to-start token for the lock-screen card goes to the server at once
+  LiveActivity.listen(
+    onToken: () => unawaited(syncDeviceToken(force: true)),
+    onAnswered: (_) => unawaited(RecurringApi.refresh(force: true)),
+  );
   if (Platform.isAndroid) {
     try {
       await fltNotification
