@@ -15,16 +15,23 @@ extension _MapHomeOverlays on _MapsState {
             onTap: _openScheduledOffers,
           ),
         ),
-      // tomorrow's recurring day waiting for his answer comes first (it has a deadline)
+      // tomorrow's recurring day waiting for his answer comes first (it has a deadline); the campaigns
+      // stay under it, compact
       if (_bottom == 0 && RecurringApi.pendingTomorrow(RecurringApi.rides.value) != null)
         Positioned(
           top: MediaQuery.of(context).padding.top + (scheduledOfferSummary.hasOffers ? 138 : 84),
           left: 16,
           right: 16,
-          child: RecurringTomorrowBanner(
-            ride: RecurringApi.pendingTomorrow(RecurringApi.rides.value)!['ride'] as Map<String, dynamic>,
-            next: RecurringApi.pendingTomorrow(RecurringApi.rides.value)!['next'] as Map<String, dynamic>,
-          ),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            RecurringTomorrowBanner(
+              ride: RecurringApi.pendingTomorrow(RecurringApi.rides.value)!['ride'] as Map<String, dynamic>,
+              next: RecurringApi.pendingTomorrow(RecurringApi.rides.value)!['next'] as Map<String, dynamic>,
+            ),
+            if (activePromotionCampaigns.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              _PromotionStrip(campaigns: activePromotionCampaigns, rtl: languageDirection == 'rtl'),
+            ],
+          ]),
         )
       else if (activePromotionCampaigns.isNotEmpty && _bottom == 0)
         Positioned(
@@ -32,8 +39,9 @@ extension _MapHomeOverlays on _MapsState {
               (scheduledOfferSummary.hasOffers ? 138 : 84),
           left: 16,
           right: 16,
-          child: _RiderPromotionHomeCard(
-            campaign: activePromotionCampaigns.first,
+          // every running campaign, one at a time: swipe between them (dots under)
+          child: _PromotionStrip(
+            campaigns: activePromotionCampaigns,
             rtl: languageDirection == 'rtl',
           ),
         ),
@@ -475,6 +483,54 @@ extension _MapHomeOverlays on _MapsState {
   }
 }
 
+/// the campaigns above the map, compact: one card, swipe to the next; small dots when there are more
+class _PromotionStrip extends StatefulWidget {
+  const _PromotionStrip({required this.campaigns, required this.rtl});
+  final List<Map<String, dynamic>> campaigns;
+  final bool rtl;
+
+  @override
+  State<_PromotionStrip> createState() => _PromotionStripState();
+}
+
+class _PromotionStripState extends State<_PromotionStrip> {
+  int _page = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final list = widget.campaigns;
+    if (list.length == 1) return _RiderPromotionHomeCard(campaign: list.first, rtl: widget.rtl);
+    return Column(mainAxisSize: MainAxisSize.min, children: [
+      SizedBox(
+        height: 62,
+        child: PageView.builder(
+          itemCount: list.length,
+          onPageChanged: (i) => setState(() => _page = i),
+          itemBuilder: (_, i) => Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            child: _RiderPromotionHomeCard(campaign: list[i], rtl: widget.rtl),
+          ),
+        ),
+      ),
+      const SizedBox(height: 5),
+      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        for (var i = 0; i < list.length; i++)
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            margin: const EdgeInsets.symmetric(horizontal: 2.5),
+            width: i == _page ? 16 : 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: i == _page ? const Color(0xff0873FF) : Colors.white.withValues(alpha: .85),
+              borderRadius: BorderRadius.circular(99),
+              boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 3)],
+            ),
+          ),
+      ]),
+    ]);
+  }
+}
+
 class _RiderPromotionHomeCard extends StatelessWidget {
   const _RiderPromotionHomeCard({required this.campaign, required this.rtl});
 
@@ -498,9 +554,9 @@ class _RiderPromotionHomeCard extends StatelessWidget {
             : (rtl
                 ? 'عرض ترحيبي بقيمة $reward $currency'
                 : 'Welcome offer: $reward LYD'))
-        : (rtl
-            ? 'مكافأة الرحلات: $reward $currency'
-            : 'Ride reward: $reward $currency');
+        : ('${campaign['name'] ?? ''}'.trim().isNotEmpty
+            ? '${campaign['name']}'
+            : (rtl ? 'مكافأة الرحلات: $reward $currency' : 'Ride reward: $reward $currency'));
     final subtitle = isSignup
         ? (credited
             ? (rtl
@@ -510,7 +566,7 @@ class _RiderPromotionHomeCard extends StatelessWidget {
                 ? 'عرض خاص للحسابات الجديدة'
                 : 'A special offer for new accounts'))
         : (rtl
-            ? 'أكملت $rides من $target رحلة${target > rides ? ' · باقي ${target - rides}' : ''}'
+            ? 'أكملت $rides من $target${target > rides ? ' · باقي ${target - rides}' : ''} · المكافأة $reward $currency'
             : '$rides of $target rides completed');
 
     final ring = !isSignup && target > 0;
@@ -521,7 +577,7 @@ class _RiderPromotionHomeCard extends StatelessWidget {
         // the campaign opens «مكافآتي» (its rules, its progress)
         onTap: () => guardedPush(context, MaterialPageRoute(builder: (_) => const RewardsPage())),
         child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: .97),
           borderRadius: BorderRadius.circular(18),
@@ -534,7 +590,7 @@ class _RiderPromotionHomeCard extends StatelessWidget {
         child: Row(
           children: [
             if (ring)
-              RideProgressRing(done: rides, target: target)
+              RideProgressRing(done: rides, target: target, size: 40)
             else
               const CircleAvatar(
                 radius: 19,

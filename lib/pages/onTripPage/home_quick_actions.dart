@@ -233,8 +233,8 @@ class _QuickDestinationCard extends StatelessWidget {
           onTap: destination.onTap,
           borderRadius: BorderRadius.circular(20),
           child: Container(
-            height: 94,
-            padding: const EdgeInsets.fromLTRB(8, 8, 8, 7),
+            height: 76,
+            padding: const EdgeInsets.fromLTRB(8, 6, 8, 5),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
@@ -247,7 +247,7 @@ class _QuickDestinationCard extends StatelessWidget {
                 _SoftIcon(
                   icon: destination.icon,
                   color: destination.accent,
-                  size: 32,
+                  size: 26,
                 ),
                 const Spacer(),
                 Text(
@@ -256,11 +256,12 @@ class _QuickDestinationCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: textColor,
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: FontWeight.w800,
+                    height: 1.2,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 1),
                 Row(
                   children: [
                     Expanded(
@@ -314,8 +315,8 @@ class _RideWithoutDestinationAction extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(20),
           child: Container(
-            height: 48,
-            padding: const EdgeInsets.symmetric(horizontal: 14),
+            height: 44,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: theme.withValues(alpha: .14)),
