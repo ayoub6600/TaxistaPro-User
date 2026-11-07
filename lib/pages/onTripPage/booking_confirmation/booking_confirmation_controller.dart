@@ -162,6 +162,8 @@ mixin _BookingConfirmationController
         .toList();
     if (payingVia < 0 || payingVia >= methods.length) return false;
     if (methods[payingVia] != 'wallet') return true;
+    // a zero or negative balance (e.g. -89) pays nothing: the rider must pick cash or top up first
+    if (walletBalance <= 0) return false;
     return walletBalance >= fare || methods.contains('wallet_and_cash');
   }
 

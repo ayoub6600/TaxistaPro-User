@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../functions/calls/admin_call_controller.dart' show appNavigatorKey;
 import '../../functions/functions.dart';
@@ -95,7 +96,6 @@ class _RecurringRidesPageState extends State<RecurringRidesPage> {
                         onOpen: () => Navigator.of(context).push(_route(RecurringRidePage(uuid: '${rides[i]['id']}', initial: rides[i]))).then((_) => _load()),
                       ),
                     ),
-                  const _ReminderTryout(),
                 ],
               ),
             ),
@@ -186,6 +186,51 @@ class RecurringRidePage extends StatefulWidget {
 class _RecurringRidePageState extends State<RecurringRidePage> {
   Map<String, dynamic>? _r;
   String? _error;
+  bool _cancelling = false;
+
+  /// asks once, then ends the whole schedule on the server; its coming days are skipped
+  Future<void> _confirmCancel() async {
+    final label = '${_r?['label'] ?? 'المشوار'}';
+    final yes = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: Container(
+          margin: const EdgeInsets.all(10),
+          padding: EdgeInsets.fromLTRB(18, 12, 18, 18 + MediaQuery.of(ctx).padding.bottom),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(26)),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Center(child: Container(width: 40, height: 5, decoration: BoxDecoration(color: _line, borderRadius: BorderRadius.circular(9)))),
+            const SizedBox(height: 14),
+            Text('إلغاء «$label» بالكامل؟', style: _t(19, w: FontWeight.w800)),
+            const SizedBox(height: 6),
+            Text('ما عاد يتحجز ليك أي مشوار من هذا الجدول، والتذكير يوقف. المشوار اللي اتحجز فعلًا تلقاه في «رحلاتي القادمة».', style: _t(13.5, c: _muted)),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: FilledButton.styleFrom(backgroundColor: const Color(0xffD92D20), minimumSize: const Size.fromHeight(50), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+              child: Text('نعم، ألغِ الجدول', style: _t(15, w: FontWeight.w800, c: Colors.white)),
+            ),
+            const SizedBox(height: 8),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('لا، خليه', style: _t(15, w: FontWeight.w700))),
+          ]),
+        ),
+      ),
+    );
+    if (yes != true || !mounted) return;
+    setState(() => _cancelling = true);
+    final r = await RecurringApi.cancel(widget.uuid);
+    if (!mounted) return;
+    setState(() => _cancelling = false);
+    if (!r.ok) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(r.message.isEmpty ? 'ما قدرناش نلغيه، جرّب مرة ثانية' : r.message)));
+      return;
+    }
+    unawaited(RecurringApi.refresh(force: true));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم إلغاء «$label»')));
+    Navigator.of(context).maybePop();
+  }
 
   @override
   void initState() {
@@ -272,6 +317,22 @@ class _RecurringRidePageState extends State<RecurringRidePage> {
                   const SizedBox(height: 12),
                   Text('لو ما رديتش على تذكير الليلة، المشوار ماشي في موعده عادي. التخطي قبل الموعد بأكثر من نص ساعة ما عليه أي رسوم.',
                       style: _t(12.5, c: _muted, w: FontWeight.w500)),
+                  if (r['status'] == 'active' || r['status'] == 'paused') ...[
+                    const SizedBox(height: 22),
+                    SizedBox(
+                      height: 50,
+                      child: OutlinedButton.icon(
+                        onPressed: _cancelling ? null : _confirmCancel,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xffD92D20),
+                          side: BorderSide(color: const Color(0xffD92D20).withValues(alpha: .35)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                        icon: const Icon(Icons.event_busy_rounded, size: 20),
+                        label: Text(_cancelling ? 'جاري الإلغاء…' : 'إلغاء «${r['label'] ?? 'المشوار'}» بالكامل', style: _t(15, w: FontWeight.w800, c: const Color(0xffD92D20))),
+                      ),
+                    ),
+                  ],
                 ],
               ],
             ),
@@ -467,7 +528,7 @@ class _RouteCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: _navy.withValues(alpha: .07), blurRadius: 18, offset: const Offset(0, 8))]),
       child: Column(children: [
-        SizedBox(height: 170, width: double.infinity, child: _RouteSketch(r: r)),
+        SizedBox(height: 190, width: double.infinity, child: _RouteMap(r: r)),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
           child: Row(children: [
@@ -801,76 +862,79 @@ class RecurringLink {
 }
 
 
-/// TestFlight only (never in the App Store build): try the evening reminder's look on this iPhone -
-/// the lock-screen card with both buttons, and the plain notification. Nothing reaches the server.
-class _ReminderTryout extends StatefulWidget {
-  const _ReminderTryout();
+/// the route on a real map: pickup (green), destination (red), the driven path when the server has it
+class _RouteMap extends StatefulWidget {
+  const _RouteMap({required this.r});
+  final Map<String, dynamic> r;
 
   @override
-  State<_ReminderTryout> createState() => _ReminderTryoutState();
+  State<_RouteMap> createState() => _RouteMapState();
 }
 
-class _ReminderTryoutState extends State<_ReminderTryout> {
-  Map<String, dynamic> _info = const {};
-  String? _note;
+class _RouteMapState extends State<_RouteMap> {
+  List<LatLng> get _pts {
+    final r = widget.r;
+    final out = <LatLng>[];
+    final path = r['route'] is Map ? r['route']['path'] : null;
+    if (path is List && path.length > 1) {
+      for (final p in path) {
+        if (p is List && p.length >= 2) out.add(LatLng((p[0] as num).toDouble(), (p[1] as num).toDouble()));
+      }
+    }
+    if (out.length < 2) {
+      final a = _ll(r['pick']), b = _ll(r['drop']);
+      if (a != null && b != null) out.addAll([a, b]);
+    }
+    return out;
+  }
 
-  @override
-  void initState() {
-    super.initState();
-    LiveActivity.info().then((i) {
-      if (mounted) setState(() => _info = i);
-    });
+  LatLng? _ll(dynamic m) {
+    if (m is! Map) return null;
+    final la = num.tryParse('${m['lat']}'), ln = num.tryParse('${m['lng']}');
+    return la == null || ln == null ? null : LatLng(la.toDouble(), ln.toDouble());
+  }
+
+  LatLngBounds _bounds(List<LatLng> p) {
+    var s = p.first.latitude, n = s, w = p.first.longitude, e = w;
+    for (final x in p) {
+      s = math.min(s, x.latitude);
+      n = math.max(n, x.latitude);
+      w = math.min(w, x.longitude);
+      e = math.max(e, x.longitude);
+    }
+    return LatLngBounds(southwest: LatLng(s, w), northeast: LatLng(n, e));
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_info['tryout'] != true) return const SizedBox.shrink();
-    final card = _info['supported'] == true;
-    return Container(
-      margin: const EdgeInsets.only(top: 18),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFD6E4F7))),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Text('🧪 تجربة شكل تذكير «مشوارك غدًا»', style: _t(15, w: FontWeight.w800)),
-        const SizedBox(height: 4),
-        Text('للتجربة في TestFlight فقط. ما يتسجل شي في حسابك، وما يوصل شي للسائقين.', style: _t(12.5, w: FontWeight.w500, c: Colors.black54)),
-        const SizedBox(height: 12),
-        FilledButton(
-          onPressed: card
-              ? () async {
-                  final r = await LiveActivity.demoCard();
-                  if (mounted) setState(() => _note = r == 'ok' ? 'البطاقة بدأت. اقفل الشاشة وشوفها على شاشة القفل، وجرب الزرين.' : r);
-                }
-              : null,
-          style: FilledButton.styleFrom(backgroundColor: const Color(0xFF1466DB), minimumSize: const Size.fromHeight(44)),
-          child: Text(card ? 'بطاقة شاشة القفل (الزرين ظاهرين)' : 'بطاقة شاشة القفل تحتاج iOS 17.2 أو أحدث', style: _t(14, c: Colors.white)),
-        ),
-        const SizedBox(height: 8),
-        FilledButton(
-          onPressed: card
-              ? () async {
-                  final r = await LiveActivity.demoCardAlert();
-                  if (mounted) {
-                    setState(() => _note = r == 'ok'
-                        ? 'افتح فيسبوك أو أي تطبيق ثاني توا. بعد 8 ثواني البطاقة تنفتح كبيرة فوقه لثواني، جرب الزرين وهي مفتوحة.'
-                        : r);
-                  }
-                }
-              : null,
-          style: FilledButton.styleFrom(backgroundColor: const Color(0xFF0B0B0F), minimumSize: const Size.fromHeight(44)),
-          child: Text('وأنت في تطبيق ثاني (بعد 8 ثواني)', style: _t(14, c: Colors.white)),
-        ),
-        const SizedBox(height: 8),
-        OutlinedButton(
-          onPressed: () async {
-            await LiveActivity.demoNotification();
-            if (mounted) setState(() => _note = 'الإشعار يوصل بعد 5 ثواني. اقفل الشاشة الآن، ثم اضغط عليه ضغطة مطوّلة باش تبان الأزرار.');
-          },
-          style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(44)),
-          child: Text('الإشعار العادي (بعد 5 ثواني)', style: _t(14)),
-        ),
-        if (_note != null) ...[const SizedBox(height: 10), Text(_note!, style: _t(13, w: FontWeight.w600, c: const Color(0xFF1466DB)))],
-      ]),
-    );
+    final pts = _pts;
+    if (pts.length < 2) return _RouteSketch(r: widget.r);
+    final a = _ll(widget.r['pick']) ?? pts.first, b = _ll(widget.r['drop']) ?? pts.last;
+    return Stack(children: [
+      GoogleMap(
+        initialCameraPosition: CameraPosition(target: LatLng((a.latitude + b.latitude) / 2, (a.longitude + b.longitude) / 2), zoom: 12),
+        onMapCreated: (c) => Future.delayed(const Duration(milliseconds: 350), () {
+          if (mounted) c.moveCamera(CameraUpdate.newLatLngBounds(_bounds(pts), 46));
+        }),
+        zoomControlsEnabled: false,
+        myLocationButtonEnabled: false,
+        mapToolbarEnabled: false,
+        compassEnabled: false,
+        scrollGesturesEnabled: false,
+        zoomGesturesEnabled: false,
+        rotateGesturesEnabled: false,
+        tiltGesturesEnabled: false,
+        liteModeEnabled: true,
+        polylines: {
+          Polyline(polylineId: const PolylineId('route'), points: pts, color: const Color(0xff0873FF), width: 5, startCap: Cap.roundCap, endCap: Cap.roundCap, jointType: JointType.round),
+        },
+        markers: {
+          Marker(markerId: const MarkerId('from'), position: a, icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen), infoWindow: InfoWindow(title: _place(widget.r['pick'] as Map?, 'الانطلاق'))),
+          Marker(markerId: const MarkerId('to'), position: b, icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed), infoWindow: InfoWindow(title: _place(widget.r['drop'] as Map?, 'الوجهة'))),
+        },
+      ),
+      // tapping the map does nothing; a soft edge keeps it inside the card's look
+      const Positioned.fill(child: IgnorePointer(child: DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.bottomCenter, end: Alignment.center, colors: [Color(0x22FFFFFF), Color(0x00FFFFFF)]))))),
+    ]);
   }
 }

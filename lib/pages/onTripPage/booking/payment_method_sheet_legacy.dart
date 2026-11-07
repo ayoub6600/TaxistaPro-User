@@ -27,6 +27,10 @@ class _ChoosePaymentMethodContainerState
           methods.contains('wallet')) {
         choosenInPopUp = methods.indexOf('wallet');
       }
+      // an empty or negative wallet cannot be chosen: start on cash
+      if (choosenInPopUp < methods.length && _walletLocked(methods[choosenInPopUp]) && methods.contains('cash')) {
+        choosenInPopUp = methods.indexOf('cash');
+      }
     }
     super.initState();
   }
@@ -53,7 +57,11 @@ class _ChoosePaymentMethodContainerState
               note: _paymentNote(methods[i]),
               icon: _paymentIcon(methods[i]),
               selected: choosenInPopUp == i,
-              onTap: () => setState(() => choosenInPopUp = i),
+              enabled: !_walletLocked(methods[i]),
+              onTap: () {
+                if (_walletLocked(methods[i])) return;
+                setState(() => choosenInPopUp = i);
+              },
             ),
       ]),
     );
@@ -66,6 +74,12 @@ class _ChoosePaymentMethodContainerState
         _ => Icons.qr_code_rounded,
       };
 
+  double? get _walletBalance => double.tryParse(
+      '${etaDetails.isNotEmpty && choosenVehicle != null ? etaDetails[choosenVehicle]['user_wallet_balance'] ?? '' : ''}');
+
+  /// the wallet pays nothing when its balance is zero or below (e.g. -89): it is shown but cannot be chosen
+  bool _walletLocked(String type) => (type == 'wallet' || type == 'wallet_and_cash') && (_walletBalance ?? 1) <= 0;
+
   String _paymentNote(String type) {
     final rtl = languageDirection == 'rtl';
     switch (type) {
@@ -73,8 +87,12 @@ class _ChoosePaymentMethodContainerState
         return rtl ? 'تدفع للسائق آخر الرحلة' : 'Pay the driver at the end';
       case 'wallet':
       case 'wallet_and_cash':
-        final bal = double.tryParse('${etaDetails.isNotEmpty && choosenVehicle != null ? etaDetails[choosenVehicle]['user_wallet_balance'] ?? '' : ''}');
-        return bal == null ? (rtl ? 'من رصيدك في تاكسيستا' : 'From your Taxista balance') : (rtl ? 'رصيدك ${bal.toStringAsFixed(2)}' : 'Balance ${bal.toStringAsFixed(2)}');
+        final bal = _walletBalance;
+        if (bal == null) return rtl ? 'من رصيدك في تاكسيستا' : 'From your Taxista balance';
+        if (bal <= 0) {
+          return rtl ? 'رصيدك ${bal.toStringAsFixed(2)} · اشحن محفظتك باش تدفع منها' : 'Balance ${bal.toStringAsFixed(2)} · top up to pay with it';
+        }
+        return rtl ? 'رصيدك ${bal.toStringAsFixed(2)} · لو ما كفاش، الباقي كاش' : 'Balance ${bal.toStringAsFixed(2)} · any rest in cash';
       case 'card':
         return rtl ? 'بطاقتك البنكية' : 'Your bank card';
       default:

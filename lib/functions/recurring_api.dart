@@ -25,6 +25,10 @@ class RecurringApi {
   static Future<RecurringResult> answer(String uuid, String date, String answer) =>
       _send(http.post(_u('recurring-rides/$uuid/$answer'), headers: _headers, body: jsonEncode({'date': date})));
 
+  /// the whole schedule ends (every coming day of it is skipped)
+  static Future<RecurringResult> cancel(String uuid) =>
+      _send(http.post(_u('recurring-rides/$uuid/cancel'), headers: _headers, body: jsonEncode({})));
+
   static Future<RecurringResult> _send(Future<http.Response> request) async {
     try {
       final r = await request.timeout(const Duration(seconds: 20));

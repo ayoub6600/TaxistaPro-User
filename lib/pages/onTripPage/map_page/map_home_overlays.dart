@@ -495,6 +495,14 @@ class _PromotionStrip extends StatefulWidget {
 
 class _PromotionStripState extends State<_PromotionStrip> {
   int _page = 0;
+  // each card takes ~78% of the width, so the next campaign («الرحلة الخامسة») peeks beside it
+  final _pager = PageController(viewportFraction: .78);
+
+  @override
+  void dispose() {
+    _pager.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -502,13 +510,15 @@ class _PromotionStripState extends State<_PromotionStrip> {
     if (list.length == 1) return _RiderPromotionHomeCard(campaign: list.first, rtl: widget.rtl);
     return Column(mainAxisSize: MainAxisSize.min, children: [
       SizedBox(
-        height: 62,
+        height: 52,
         child: PageView.builder(
+          controller: _pager,
+          padEnds: false,
           itemCount: list.length,
           onPageChanged: (i) => setState(() => _page = i),
           itemBuilder: (_, i) => Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2),
-            child: _RiderPromotionHomeCard(campaign: list[i], rtl: widget.rtl),
+            padding: const EdgeInsetsDirectional.only(end: 8),
+            child: _RiderPromotionHomeCard(campaign: list[i], rtl: widget.rtl, compact: true),
           ),
         ),
       ),
@@ -532,10 +542,11 @@ class _PromotionStripState extends State<_PromotionStrip> {
 }
 
 class _RiderPromotionHomeCard extends StatelessWidget {
-  const _RiderPromotionHomeCard({required this.campaign, required this.rtl});
+  const _RiderPromotionHomeCard({required this.campaign, required this.rtl, this.compact = false});
 
   final Map<String, dynamic> campaign;
   final bool rtl;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -577,10 +588,10 @@ class _RiderPromotionHomeCard extends StatelessWidget {
         // the campaign opens «مكافآتي» (its rules, its progress)
         onTap: () => guardedPush(context, MaterialPageRoute(builder: (_) => const RewardsPage())),
         child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: compact ? 9 : 12, vertical: compact ? 6 : 8),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: .97),
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(compact ? 15 : 18),
           boxShadow: const [
             BoxShadow(
                 color: Colors.black26, blurRadius: 12, offset: Offset(0, 4))
@@ -590,15 +601,15 @@ class _RiderPromotionHomeCard extends StatelessWidget {
         child: Row(
           children: [
             if (ring)
-              RideProgressRing(done: rides, target: target, size: 40)
+              RideProgressRing(done: rides, target: target, size: compact ? 34 : 40)
             else
-              const CircleAvatar(
-                radius: 19,
+              CircleAvatar(
+                radius: compact ? 16 : 19,
                 backgroundColor: Color(0xffE8F5EE),
-                child: Icon(Icons.card_giftcard_rounded,
-                    color: Color(0xff159668), size: 21),
+                child: const Icon(Icons.card_giftcard_rounded,
+                    color: Color(0xff159668), size: 19),
               ),
-            const SizedBox(width: 11),
+            SizedBox(width: compact ? 8 : 11),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -607,21 +618,21 @@ class _RiderPromotionHomeCard extends StatelessWidget {
                   Text(title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontWeight: FontWeight.w800,
-                          color: Color(0xff10264A),
-                          fontSize: 13)),
+                          color: const Color(0xff10264A),
+                          fontSize: compact ? 12 : 13)),
                   const SizedBox(height: 2),
                   Text(subtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          color: Color(0xff687994), fontSize: 11)),
+                      style: TextStyle(
+                          color: const Color(0xff687994), fontSize: compact ? 10 : 11)),
                 ],
               ),
             ),
-            const SizedBox(width: 8),
-            Icon(rtl ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
+            if (!compact) const SizedBox(width: 8),
+            if (!compact) Icon(rtl ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
                 color: const Color(0xff1677F8)),
           ],
         ),
