@@ -9,6 +9,7 @@ import '../../functions/functions.dart';
 import '../../functions/trip_chat_api.dart';
 import '../../styles/styles.dart';
 import '../../widgets/chat/chat_kit.dart';
+import '../../widgets/chat/chat_photos.dart';
 import '../../widgets/voice/voice_bubble.dart';
 import '../../widgets/voice/voice_send.dart';
 
@@ -122,6 +123,15 @@ class _TripChatPageState extends State<TripChatPage> {
         item.failed = true;
       }
     });
+  }
+
+  /// 📷: a photo to the driver of this ride
+  Future<void> _sendPhoto() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    final sent = await ChatPhotos.pickAndSend(context, endpoint: 'send-image', fields: {'request_id': widget.requestId});
+    if (sent == null) return;
+    await _load(quiet: true);
+    _toBottom();
   }
 
   Future<void> _sendVoice() async {
@@ -239,6 +249,7 @@ class _TripChatPageState extends State<TripChatPage> {
             onChanged: () => setState(() {}),
             onSend: () => _sendText(),
             onVoice: _sendVoice,
+            onPhoto: _sendPhoto,
           ),
         ]),
       ),
@@ -305,7 +316,8 @@ class _TripChatPageState extends State<TripChatPage> {
           palette: p,
           mine: mine,
           tail: !sameRun(m, next),
-          text: '${m['message'] ?? ''}',
+          text: ChatPhotos.of(m).isNotEmpty ? ChatPhotos.caption(m) : '${m['message'] ?? ''}',
+          photos: ChatPhotos.of(m),
           voice: VoiceBubble.fromMessage(m, mine: mine),
           time: at != null ? ChatTime.clock(at, _ar) : '',
           status: mine ? ('${m['seen']}' == '1' ? ChatDelivery.read : ChatDelivery.sent) : null,

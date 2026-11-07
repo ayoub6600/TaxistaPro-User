@@ -7,6 +7,7 @@ import '../../functions/functions.dart';
 import '../../styles/styles.dart';
 import '../../widgets/call_options.dart';
 import '../../widgets/chat/chat_kit.dart';
+import '../../widgets/chat/chat_photos.dart';
 import '../../widgets/voice/voice_bubble.dart';
 import '../../widgets/voice/voice_send.dart';
 
@@ -83,6 +84,14 @@ class _ChatPageState extends State<ChatPage> {
     });
   }
 
+  /// 📷: a photo to the driver of this ride (camera or gallery, preview, optional caption)
+  Future<void> _sendPhoto() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    final sent = await ChatPhotos.pickAndSend(context, endpoint: 'send-image', fields: {'request_id': userRequestData['id'].toString()});
+    if (sent != null) await voiceMessageSent();
+    _toBottom();
+  }
+
   Future<void> _sendVoice() async {
     FocusManager.instance.primaryFocus?.unfocus();
     final sent = await VoiceSend.recordAndSend(context, endpoint: 'send-voice', fields: {'request_id': userRequestData['id'].toString()});
@@ -151,6 +160,7 @@ class _ChatPageState extends State<ChatPage> {
             onChanged: () => setState(() {}),
             onSend: () => _sendText(),
             onVoice: _sendVoice,
+            onPhoto: _sendPhoto,
           ),
         ]),
       ),
@@ -201,7 +211,8 @@ class _ChatPageState extends State<ChatPage> {
           palette: p,
           mine: mine,
           tail: !sameRun(m, i + 1 < messages.length ? messages[i + 1] : null),
-          text: '${m['message'] ?? ''}',
+          text: ChatPhotos.of(m).isNotEmpty ? ChatPhotos.caption(m) : '${m['message'] ?? ''}',
+          photos: ChatPhotos.of(m),
           voice: VoiceBubble.fromMessage(m, mine: mine),
           time: at != null ? ChatTime.clock(at, _ar) : '',
           status: mine ? ('${m['seen']}' == '1' ? ChatDelivery.read : ChatDelivery.sent) : null,

@@ -9,6 +9,7 @@ import '../../functions/functions.dart';
 import '../../functions/support_chat_link.dart';
 import '../../styles/styles.dart';
 import '../../widgets/chat/chat_kit.dart';
+import '../../widgets/chat/chat_photos.dart';
 import '../../widgets/chat/chat_reactions.dart';
 import '../../widgets/v2_skeleton.dart';
 import '../../widgets/support_call_card.dart';
@@ -189,6 +190,18 @@ class _AdminChatPageState extends State<AdminChatPage> {
     });
   }
 
+  /// 📷: a photo to Taxista support (camera or gallery, preview, optional caption)
+  Future<void> _sendPhoto() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    final sent = await ChatPhotos.pickAndSend(context, endpoint: 'send-image-message', fields: {if (chatid != null) 'chat_id': chatid.toString()});
+    if (sent == null) return;
+    chatid = sent['chat_id'] ?? chatid;
+    isnewchat = 0;
+    await getadminCurrentMessages();
+    if (mounted) setState(() {});
+    _toBottom();
+  }
+
   Future<void> _sendVoice() async {
     FocusManager.instance.primaryFocus?.unfocus();
     final sent = await VoiceSend.recordAndSend(context, endpoint: 'send-voice-message',
@@ -306,6 +319,7 @@ class _AdminChatPageState extends State<AdminChatPage> {
                 onChanged: () => setState(() {}),
                 onSend: () => _sendText(),
                 onVoice: _sendVoice,
+            onPhoto: _sendPhoto,
               ),
             ],
           ),
@@ -369,7 +383,10 @@ class _AdminChatPageState extends State<AdminChatPage> {
           mine: mine,
           tail: lastOfRun,
           highlighted: id != null && id == _highlightId,
-          text: RecurringChatCard.handles(m) ? RecurringChatCard.textWithoutLink('${m['message'] ?? ''}') : '${m['message'] ?? ''}',
+          text: ChatPhotos.of(m).isNotEmpty
+              ? ChatPhotos.caption(m)
+              : (RecurringChatCard.handles(m) ? RecurringChatCard.textWithoutLink('${m['message'] ?? ''}') : '${m['message'] ?? ''}'),
+          photos: ChatPhotos.of(m),
           voice: VoiceBubble.fromMessage(m, mine: mine),
           time: at != null ? ChatTime.clock(at, _ar) : '${m['user_timezone'] ?? ''}',
           status: mine ? (m['unseen_count'].toString() == '1' ? ChatDelivery.read : ChatDelivery.sent) : null,

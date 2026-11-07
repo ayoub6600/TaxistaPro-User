@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -5,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../styles/styles.dart';
+import 'chat_photos.dart';
 
 /// The look shared by the app's conversations (support, the driver of a trip): colours for both
 /// themes, dates and times, bubbles with time and delivery ticks, the header and the composer.
@@ -261,6 +263,9 @@ class ChatBubble extends StatelessWidget {
   final bool mine, tail, highlighted;
   final String text, time, copiedLabel;
   final Widget? voice;
+
+  /// photo links (message_type image): drawn above the caption ([text]); tap opens them full screen
+  final List<String> photos;
   final ChatDelivery? status;
   final String? failedLabel;
   final VoidCallback? onRetry;
@@ -275,6 +280,7 @@ class ChatBubble extends StatelessWidget {
     required this.copiedLabel,
     this.highlighted = false,
     this.voice,
+    this.photos = const [],
     this.status,
     this.failedLabel,
     this.onRetry,
@@ -298,7 +304,7 @@ class ChatBubble extends StatelessWidget {
 
     final bubble = Container(
       constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
-      padding: EdgeInsets.fromLTRB(12, voice != null ? 8 : 7, 12, 6),
+      padding: photos.isNotEmpty ? const EdgeInsets.fromLTRB(4, 4, 4, 6) : EdgeInsets.fromLTRB(12, voice != null ? 8 : 7, 12, 6),
       decoration: BoxDecoration(
         color: mine ? (failed ? p.mine.withValues(alpha: 0.55) : p.mine) : p.theirs,
         borderRadius: radius,
@@ -315,6 +321,18 @@ class ChatBubble extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (photos.isNotEmpty) ...[
+            ChatPhotoTiles(urls: photos, width: min(240, MediaQuery.of(context).size.width * 0.66)),
+            if (text.trim().isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 6, 8, 0),
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  widthFactor: 1,
+                  child: SelectableText(text, textDirection: chatTextDirection(text), style: p.text(15, color: fg, height: 1.45)),
+                ),
+              ),
+          ] else
           voice ??
               Align(
                 alignment: AlignmentDirectional.centerStart,
@@ -326,7 +344,9 @@ class ChatBubble extends StatelessWidget {
                 ),
               ),
           const SizedBox(height: 2),
-          Row(
+          Padding(
+            padding: photos.isNotEmpty ? const EdgeInsets.symmetric(horizontal: 8) : EdgeInsets.zero,
+            child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(time, textDirection: ui.TextDirection.ltr, style: p.text(10.5, color: meta, height: 1.2)),
@@ -349,6 +369,7 @@ class ChatBubble extends StatelessWidget {
               ],
             ],
           ),
+          ),
         ],
       ),
     );
@@ -360,7 +381,7 @@ class ChatBubble extends StatelessWidget {
           alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
           child: GestureDetector(
             onTap: onRetry,
-            onLongPress: voice != null || text.isEmpty
+            onLongPress: voice != null || photos.isNotEmpty || text.isEmpty
                 ? null
                 : () {
                     Clipboard.setData(ClipboardData(text: text));
@@ -402,6 +423,9 @@ class ChatComposer extends StatelessWidget {
   final String hint, sendLabel, voiceLabel;
   final VoidCallback onChanged, onSend, onVoice;
 
+  /// 📷 inside the field: camera or gallery (null = no photo button)
+  final VoidCallback? onPhoto;
+
   const ChatComposer({
     super.key,
     required this.palette,
@@ -413,6 +437,7 @@ class ChatComposer extends StatelessWidget {
     required this.onChanged,
     required this.onSend,
     required this.onVoice,
+    this.onPhoto,
   });
 
   @override
@@ -435,7 +460,8 @@ class ChatComposer extends StatelessWidget {
                 border: Border.all(color: p.line),
               ),
               alignment: Alignment.center,
-              child: TextField(
+              child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                Expanded(child: TextField(
                 controller: controller,
                 focusNode: focusNode,
                 minLines: 1,
@@ -454,7 +480,18 @@ class ChatComposer extends StatelessWidget {
                   hintText: hint,
                   hintStyle: p.text(15, color: p.sub.withValues(alpha: 0.85), height: 1.4),
                 ),
-              ),
+              )),
+                if (onPhoto != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: IconButton(
+                      onPressed: onPhoto,
+                      tooltip: 'صورة',
+                      icon: Icon(Icons.photo_camera_outlined, color: p.sub),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+              ]),
             ),
           ),
           const SizedBox(width: 8),
