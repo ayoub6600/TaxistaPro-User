@@ -69,11 +69,14 @@ class _ButtonState extends State<Button> {
       onPressed: _guardedTap,
       child: Container(
         width: (widget.width != null) ? widget.width : media.width * 0.9,
+        // design v2: the app's blue, 54 high, 18 round (every screen's main button)
         decoration: BoxDecoration(
-            color: widget.backgroundcolor ?? Colors.blue,
-            borderRadius: BorderRadius.circular(20.r)),
+            color: widget.onTap == null
+                ? (widget.backgroundcolor ?? const Color(0xff0873FF)).withValues(alpha: .4)
+                : widget.backgroundcolor ?? const Color(0xff0873FF),
+            borderRadius: BorderRadius.circular(18)),
         child: Container(
-          height: widget.height ?? media.width * 0.12,
+          height: widget.height ?? 54,
           // width: (widget.width != null) ? widget.width : media.width * 0.9,
           padding: EdgeInsets.only(
               left: media.width * twenty, right: media.width * twenty),
@@ -82,15 +85,11 @@ class _ButtonState extends State<Button> {
             fit: BoxFit.contain,
             child: Text(
               widget.text,
+              // no letter spacing: it breaks Arabic joining
               style: GoogleFonts.cairo(
-                  fontSize: 14.sp,
-                  color: (widget.textcolor != null)
-                      ? widget.textcolor
-                      : !isDarkTheme
-                          ? const Color.fromARGB(255, 255, 255, 255)
-                          : Colors.black,
-                  fontWeight: widget.fontweight ?? FontWeight.bold,
-                  letterSpacing: 1),
+                  fontSize: 16,
+                  color: widget.textcolor ?? Colors.white,
+                  fontWeight: widget.fontweight ?? FontWeight.w800),
             ),
           ),
         ),

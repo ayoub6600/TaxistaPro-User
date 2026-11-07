@@ -18,6 +18,7 @@ import 'package:taxista/pages/onTripPage/map_page.dart';
 import 'package:taxista/styles/styles.dart';
 import 'package:taxista/translations/translation.dart';
 import 'package:taxista/widgets/widgets.dart';
+import 'package:taxista/widgets/v2_sheet.dart';
 
 part 'booking/apply_coupons.dart';
 part 'booking/bid_metadata.dart';
