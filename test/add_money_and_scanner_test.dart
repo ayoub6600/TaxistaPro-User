@@ -329,7 +329,7 @@ void main() {
 
     testWidgets('english labels', (tester) async {
       await openSheet(tester, makeEnv(FakeApi(), rtl: false));
-      expect(find.text('Qareeb recharge cards'), findsOneWidget);
+      expect(find.text('Recharge cards'), findsOneWidget);
       expect(find.text('Bank card'), findsOneWidget);
     });
 
