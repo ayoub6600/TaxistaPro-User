@@ -10,9 +10,24 @@ mixin _BookingConfirmationRequestAction
   // with a leading circular arrow badge (mirrored for RTL/LTR).
   Widget buildRideRequestButton(Size media, GeoHasher geo) {
     final isArabic = choosenLanguage == 'ar';
-    final label = (confirmRideLater == true || isOutStation)
+    // design v2: the button says what is asked and for how much («اطلب اقتصادي · 12 LYD», «أرسل عرضك
+    // · 15 LYD»); a scheduled / outstation ride keeps its own words
+    var label = (confirmRideLater == true || isOutStation)
         ? languages[choosenLanguage]['text_schedule']
         : languages[choosenLanguage]['text_book_now'];
+    if (confirmRideLater != true && !isOutStation && choosenVehicle != null && widget.type == null && choosenTransportType == 0) {
+      try {
+        final service = etaDetails[choosenVehicle];
+        final fare = chosenFareForService(choosenVehicle);
+        final amount = fare == fare.roundToDouble() ? fare.toStringAsFixed(0) : fare.toStringAsFixed(2);
+        final money = '$amount ${service['currency'] ?? ''}'.trim();
+        if (fare > 0) {
+          label = canAdjustSelectedFare(choosenVehicle)
+              ? (isArabic ? 'أرسل عرضك · $money' : 'Send your offer · $money')
+              : (isArabic ? 'اطلب ${service['name'] ?? ''} · $money' : 'Request ${service['name'] ?? ''} · $money');
+        }
+      } catch (_) {}
+    }
 
     return Material(
       color: Colors.transparent,

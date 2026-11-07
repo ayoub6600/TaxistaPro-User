@@ -68,6 +68,8 @@ import '../../navigation/guarded_navigation.dart';
 import '../../functions/calls/admin_call_controller.dart';
 
 import '../pulse/pickup_change_panel.dart';
+import 'booking_confirmation/widgets/booking_tile.dart';
+import '../../functions/schedule_time.dart';
 
 part 'booking_confirmation/booking_confirmation_controller.dart';
 part 'booking_confirmation/booking_confirmation_map_canvas.dart';

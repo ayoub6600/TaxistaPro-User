@@ -34,6 +34,16 @@ mixin _BookingConfirmationBookingControls
     return languages[choosenLanguage][key];
   }
 
+  /// «أمتعة، حيوانات» from what is chosen; «اختر» when nothing is
+  String _preferencesSummary() {
+    final rtl = languageDirection == 'rtl';
+    final picked = <String>[
+      if (addLuggagePreferences == true) rtl ? 'أمتعة' : 'Luggage',
+      if (addPetPreferences == true) rtl ? 'حيوان أليف' : 'Pet',
+    ];
+    return picked.isEmpty ? (rtl ? 'اختر' : 'Choose') : picked.join(rtl ? '، ' : ', ');
+  }
+
   Widget buildBookingControls(Size media, GeoHasher geo) {
     // NOT Theme.of(context).colorScheme here - see bookingBrandColorScheme()
     // doc comment in booking_confirmation.dart for why that silently misses
@@ -221,15 +231,16 @@ mixin _BookingConfirmationBookingControls
                   ),
                 )
               : Container(),
+          // design v2: «الدفع» and «التفضيلات» as two tiles, caption over the current choice
+          // (the payment first on the reading side)
           Row(
-            textDirection: ui.TextDirection.ltr,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            textDirection: languageDirection == 'rtl' ? ui.TextDirection.ltr : ui.TextDirection.rtl,
             children: [
               if (choosenTransportType == 0 &&
                   (userDetails['enable_driver_preference_for_user'] == '1' ||
                       userDetails['enable_pet_preference_for_user'] == '1' ||
                       userDetails['enable_luggage_preference_for_user'] == '1'))
-                Tooltip(
+                Expanded(child: Tooltip(
                   message: languages[choosenLanguage]['text_ride_preference'],
                   child: InkWell(
                     onTap: () {
@@ -250,25 +261,22 @@ mixin _BookingConfirmationBookingControls
                         ),
                       );
                     },
-                    borderRadius: BorderRadius.circular(12.r),
-                    child: Container(
-                      width: 42.w,
-                      height: 42.h,
-                      decoration: BoxDecoration(
-                        color: colors.primary.withValues(alpha: 0.09),
-                        border: Border.all(
-                            color: colors.primary.withValues(alpha: 0.18)),
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                      child: Icon(Icons.tune_rounded,
-                          color: colors.primary, size: 20.sp),
+                    borderRadius: BorderRadius.circular(16),
+                    child: BookingTile(
+                      icon: Icons.luggage_outlined,
+                      caption: languageDirection == 'rtl' ? 'التفضيلات' : 'Preferences',
+                      value: _preferencesSummary(),
+                      color: colors.primary,
                     ),
                   ),
-                )
-              else
-                const SizedBox(width: 42),
-              if (choosenVehicle != null)
-                InkWell(
+                )),
+              if (choosenVehicle != null) ...[
+                if (choosenTransportType == 0 &&
+                    (userDetails['enable_driver_preference_for_user'] == '1' ||
+                        userDetails['enable_pet_preference_for_user'] == '1' ||
+                        userDetails['enable_luggage_preference_for_user'] == '1'))
+                  const SizedBox(width: 10),
+                Expanded(child: InkWell(
                   onTap: () {
                     showModalBottomSheet(
                       context: context,
@@ -282,45 +290,17 @@ mixin _BookingConfirmationBookingControls
                       ),
                     );
                   },
-                  borderRadius: BorderRadius.circular(12.r),
-                  child: Container(
-                    constraints: BoxConstraints(maxWidth: media.width * 0.38),
-                    height: 42.h,
-                    padding: EdgeInsets.symmetric(horizontal: 10.w),
-                    decoration: BoxDecoration(
-                      color: colors.primary.withValues(alpha: 0.09),
-                      border: Border.all(
-                          color: colors.primary.withValues(alpha: 0.18)),
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                            _selectedPaymentType(rental: widget.type == 1) ==
-                                    'cash'
-                                ? Icons.payments_outlined
-                                : Icons.account_balance_wallet_outlined,
-                            color: colors.primary,
-                            size: 18.sp),
-                        SizedBox(width: 5.w),
-                        Flexible(
-                          child: Text(
-                            _selectedPaymentLabel(rental: widget.type == 1),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.cairo(
-                                color: colors.primary,
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                        Icon(Icons.keyboard_arrow_down_rounded,
-                            color: colors.primary, size: 17.sp),
-                      ],
-                    ),
+                  borderRadius: BorderRadius.circular(16),
+                  child: BookingTile(
+                    icon: _selectedPaymentType(rental: widget.type == 1) == 'cash'
+                        ? Icons.payments_outlined
+                        : Icons.account_balance_wallet_outlined,
+                    caption: languageDirection == 'rtl' ? 'الدفع' : 'Payment',
+                    value: _selectedPaymentLabel(rental: widget.type == 1),
+                    color: colors.primary,
                   ),
-                ),
+                )),
+              ],
             ],
           ),
           SizedBox(height: 8.h),
@@ -420,103 +400,15 @@ mixin _BookingConfirmationBookingControls
                                         });
                                       }
                                     },
-                                    child: (!confirmRideLater)
-                                        ? Container(
-                                            decoration: BoxDecoration(
-                                              color: colors.primary
-                                                  .withValues(alpha: 0.08),
-                                              border: Border.all(
-                                                  color: colors.primary
-                                                      .withValues(alpha: 0.16)),
-                                              borderRadius:
-                                                  BorderRadius.circular(14.r),
-                                            ),
-                                            padding: EdgeInsets.symmetric(
-                                              vertical: 8.h,
-                                            ),
-                                            child: (confirmRideLater == false)
-                                                ? Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .center,
-                                                    children: [
-                                                      Icon(
-                                                        Icons.access_time,
-                                                        size: media.width *
-                                                            sixteen,
-                                                        color: colors.primary,
-                                                      ),
-                                                      MyText(
-                                                        text: languages[
-                                                                choosenLanguage]
-                                                            ['text_ride_later'],
-                                                        size: media.width *
-                                                            twelve,
-                                                        color: colors.primary,
-                                                      ),
-                                                    ],
-                                                  )
-                                                : MyText(
-                                                    text: DateFormat()
-                                                        .format(choosenDateTime)
-                                                        .toString(),
-                                                    size: media.width * twelve,
-                                                  ),
-                                          )
-                                        : Container(
-                                            padding: EdgeInsets.symmetric(
-                                                horizontal: 14.w,
-                                                vertical: 8.h),
-                                            decoration: BoxDecoration(
-                                              borderRadius:
-                                                  BorderRadius.circular(14.r),
-                                              color: colors.primary
-                                                  .withValues(alpha: 0.08),
-                                              border: Border.all(
-                                                  color: colors.primary
-                                                      .withValues(alpha: 0.16)),
-                                            ),
-                                            alignment: Alignment.center,
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.center,
-                                              children: [
-                                                Text(
-                                                    DateFormat()
-                                                            .format(
-                                                                choosenDateTime)
-                                                            .toString()
-                                                            .split(" ")[1] +
-                                                        DateFormat()
-                                                            .format(
-                                                                choosenDateTime)
-                                                            .toString()
-                                                            .split(" ")[2],
-                                                    style: GoogleFonts.cairo(
-                                                      fontSize: 12.sp,
-                                                      fontWeight:
-                                                          FontWeight.w400,
-                                                      color: colors.primary,
-                                                    )),
-                                                SizedBox(
-                                                  width: 10.w,
-                                                ),
-                                                Text(
-                                                    DateFormat()
-                                                        .format(choosenDateTime)
-                                                        .toString()
-                                                        .split(" ")[3],
-                                                    style: GoogleFonts.cairo(
-                                                      fontSize: 12.sp,
-                                                      fontWeight:
-                                                          FontWeight.w400,
-                                                      color: colors.primary,
-                                                    )),
-                                              ],
-                                            ),
-                                          ),
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: BookingTile(
+                                      icon: Icons.schedule_rounded,
+                                      caption: languageDirection == 'rtl' ? 'الوقت' : 'Time',
+                                      value: !confirmRideLater
+                                          ? (languageDirection == 'rtl' ? 'الآن · احجز لوقت لاحق' : 'Now · book for later')
+                                          : scheduleRelativeLabel(choosenDateTime, isRtl: languageDirection == 'rtl'),
+                                      color: colors.primary,
+                                    ),
                                   ),
                                 ),
                                 (choosenVehicle != null &&
@@ -526,56 +418,30 @@ mixin _BookingConfirmationBookingControls
                                                 false) &&
                                         widget.type != 2 &&
                                         isOneWayTrip == true)
-                                    ? Row(
-                                        children: [
-                                          InkWell(
-                                            onTap: () {
-                                              showModalBottomSheet(
-                                                  context: context,
-                                                  isScrollControlled: true,
-                                                  builder: (context) {
-                                                    return ApplyCouponsContainer(
-                                                      type: widget.type,
-                                                    );
-                                                  });
-                                            },
-                                            child: Container(
-                                              padding: EdgeInsets.symmetric(
-                                                  vertical: 8.h,
-                                                  horizontal: 10.w),
-                                              margin: EdgeInsets.symmetric(
-                                                  horizontal:
-                                                      media.width * 0.05),
-                                              decoration: BoxDecoration(
-                                                color: colors.primary
-                                                    .withValues(alpha: 0.08),
-                                                border: Border.all(
-                                                    color: colors.primary
-                                                        .withValues(
-                                                            alpha: 0.16)),
-                                                borderRadius:
-                                                    BorderRadius.circular(14.r),
-                                              ),
-                                              child: Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.center,
-                                                children: [
-                                                  MyText(
-                                                    text: languages[
-                                                            choosenLanguage]
-                                                        ['text_coupons'],
-                                                    size:
-                                                        media.width * fourteen,
-                                                    fontweight: FontWeight.w600,
-                                                    color: colors.primary,
-                                                  ),
-                                                ],
-                                              ),
+                                    ? Padding(
+                                        padding: const EdgeInsetsDirectional.only(start: 10),
+                                        child: InkWell(
+                                          borderRadius: BorderRadius.circular(16),
+                                          onTap: () {
+                                            showModalBottomSheet(
+                                                context: context,
+                                                isScrollControlled: true,
+                                                builder: (context) {
+                                                  return ApplyCouponsContainer(
+                                                    type: widget.type,
+                                                  );
+                                                });
+                                          },
+                                          child: SizedBox(
+                                            width: media.width * 0.36,
+                                            child: BookingTile(
+                                              icon: Icons.local_offer_outlined,
+                                              caption: languages[choosenLanguage]['text_coupons'] ?? 'كوبونات الخصم',
+                                              value: languageDirection == 'rtl' ? 'أضف' : 'Add',
+                                              color: colors.primary,
                                             ),
                                           ),
-                                        ],
+                                        ),
                                       )
                                     : Container(),
                               ],
