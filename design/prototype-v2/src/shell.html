@@ -1,0 +1,45 @@
+<!--FRAGMENT-START-->
+<title>نموذج تاكسيستا راكب</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Noto+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+/*__CSS__*/
+</style>
+<div class="studio">
+  <aside class="panel" id="panel" aria-label="لوحة المراجعة">
+    <h1><span style="width:28px;height:28px;border-radius:8px;overflow:hidden;display:inline-block;flex:0 0 auto"><img src="__LOGO__" alt="" style="width:100%;height:100%"></span> نموذج تاكسيستا للراكب</h1>
+    <p class="sub">نفس شكل التطبيق الحالي، مطوّر بهدوء ومع حركة حقيقية. <b>بيانات تجريبية فقط</b> — لا يتصل بأي خادم ولا ينفّذ حجوزات أو مدفوعات. <span id="count"></span> شاشة.</p>
+    <div class="lbl">المظهر</div>
+    <div class="seg"><button data-set="theme" data-v="auto" class="on">تلقائي</button><button data-set="theme" data-v="light">فاتح</button><button data-set="theme" data-v="dark">داكن</button></div>
+    <div class="seg"><button data-set="reduced" data-v="0" class="on">حركة كاملة</button><button data-set="reduced" data-v="1">تقليل الحركة</button></div>
+    <div class="lbl">الشاشة الحالية: <span id="curName" style="color:var(--brand)"></span></div>
+    <div id="statesWrap"><div class="lbl" style="margin-top:4px">حالات هذه الشاشة</div><div class="sim-states" id="states"></div></div>
+    <div class="lbl">ملاحظاتك على هذه الشاشة</div>
+    <div class="note-box"><textarea id="noteText" placeholder="مثال: هذا الزر مش عاجبني / حركة المكافأة جميلة، خلّيها"></textarea>
+      <div class="note-actions"><button id="noteSave">حفظ الملاحظة</button><button class="ghost" id="noteCopy">نسخ الكل</button><button class="ghost" id="noteClear">مسح</button></div>
+      <div class="note-list" id="notes"></div></div>
+    <div class="lbl">كل الشاشات</div>
+    <div id="nav"></div>
+    <div class="sample-flag">كل الأسماء والأرقام والأسعار أمثلة. أسماء الأماكن من مصراتة للواقعية فقط، والخريطة رسم تقريبي.</div>
+  </aside>
+  <main class="stage">
+    <div class="phone"><div class="notch"></div>
+      <div class="screen" id="screen">
+        <div class="app" id="app">
+          <div class="statusbar" id="statusbar"><span class="num">9:41</span><span>●●● ▮</span></div>
+          <div class="pages" id="pages"></div>
+          <div class="ba-toggle" id="baToggle" hidden><button data-view="before">الحالي</button><button data-view="after" class="on">المطوّر</button></div>
+          <div class="drawer-layer" id="drawer"></div>
+          <div class="sheet-layer" id="sheets"></div>
+          <div class="toast-layer" id="toasts"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<button class="mobile-fab" id="fab" aria-label="الشاشات والملاحظات">☰</button>
+<div class="panel-scrim" id="scrimP"></div>
+<script>
+/*__JS__*/
+</script>
+<!--FRAGMENT-END-->
