@@ -6,6 +6,8 @@ import '../functions/functions.dart';
 import '../widgets/chat/chat_kit.dart';
 import 'community_api.dart';
 import 'community_kit.dart';
+import 'campaign_page.dart';
+import '../navigation/guarded_navigation.dart';
 
 /// "مكافآتي": every balance apart (ride credit, the rider's own money, rewards on their way),
 /// gold coins and their conversion, campaign progress with their terms, achievements, the last
@@ -94,7 +96,13 @@ class _RewardsPageState extends State<RewardsPage> {
     final achievements = d['achievements'] is List ? d['achievements'] as List : const [];
     final history = d['history'] is List ? d['history'] as List : const [];
     final campaigns = activePromotionCampaigns.where((c) => c['type'] != 'signup_bonus').toList();
+    // the main ride campaign leads the page on the app's navy card; the rest follow as short rows
+    final hero = campaigns.cast<Map<String, dynamic>?>().firstWhere(
+        (c) => c != null && c['type'] != 'comeback' && ((c['required_rides'] ?? 0) as num) > 0,
+        orElse: () => null);
+    final others = campaigns.where((c) => !identical(c, hero)).toList();
     return ListView(padding: const EdgeInsets.all(16), children: [
+      if (hero != null) ...[_hero(p, hero), const SizedBox(height: 12)],
       Row(children: [
         _balance(p, 'رصيد مشاوير', balances['ride_credit_lyd'], 'للرحلات فقط', p.mine),
         const SizedBox(width: 8),
@@ -104,10 +112,10 @@ class _RewardsPageState extends State<RewardsPage> {
       ]),
       const SizedBox(height: 12),
       if (gold['enabled'] == true || (gold['coins'] ?? 0) > 0) _goldCard(p, gold),
-      if (campaigns.isNotEmpty)
+      if (others.isNotEmpty)
         CommunityCard(
-          title: 'حملاتك',
-          child: Column(children: [for (final c in campaigns) _campaign(p, c)]),
+          title: hero == null ? 'حملاتك' : 'حملات أخرى',
+          child: Column(children: [for (final c in others) _campaign(p, c)]),
         ),
       if (achievements.isNotEmpty)
         CommunityCard(
@@ -282,6 +290,70 @@ class _RewardsPageState extends State<RewardsPage> {
             Padding(padding: const EdgeInsets.only(top: 4), child: Text('${c['terms']}', style: p.text(12, color: p.sub, height: 1.7))),
         ],
       ]),
+    );
+  }
+
+  Widget _hero(ChatPalette p, Map<String, dynamic> c) {
+    final done = ((c['completed_rides'] ?? 0) as num).toInt();
+    final target = ((c['required_rides'] ?? 0) as num).toInt();
+    final left = (target - done).clamp(0, target);
+    final ends = ChatTime.parse(c['period_ends_at']);
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(22),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => guardedPush(context, MaterialPageRoute(builder: (_) => CampaignPage(campaign: c))),
+        child: Ink(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(colors: [Color(0xff102A56), Color(0xff1965BF)]),
+            borderRadius: BorderRadius.circular(22),
+          ),
+          child: Row(children: [
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: .14), borderRadius: BorderRadius.circular(99)),
+                  child: Text('حملة نشطة · اضغط للتفاصيل', style: p.text(11, weight: FontWeight.w700, color: Colors.white)),
+                ),
+                const SizedBox(height: 8),
+                Text('${c['name'] ?? ''}', style: p.text(17, weight: FontWeight.w800, color: Colors.white)),
+                Text(c['can_earn_more'] == false ? 'حصلت على مكافأة هذه الحملة.' : 'باقي $left رحلة مكتملة',
+                    style: p.text(12.5, color: Colors.white.withValues(alpha: .85))),
+                if (ends != null && c['can_earn_more'] != false)
+                  Text('تنتهي ${ChatTime.dayLabel(ends, true)}', style: p.text(11.5, color: Colors.white70)),
+              ]),
+            ),
+            const SizedBox(width: 10),
+            TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: target <= 0 ? 0 : (done / target).clamp(0.0, 1.0)),
+              duration: const Duration(milliseconds: 1000),
+              curve: Curves.easeOutCubic,
+              builder: (_, v, __) => SizedBox.square(
+                dimension: 92,
+                child: Stack(alignment: Alignment.center, children: [
+                  SizedBox.square(
+                    dimension: 92,
+                    child: CircularProgressIndicator(
+                      value: v,
+                      strokeWidth: 8,
+                      strokeCap: StrokeCap.round,
+                      backgroundColor: Colors.white.withValues(alpha: .18),
+                      color: const Color(0xff4FC3F7),
+                    ),
+                  ),
+                  Column(mainAxisSize: MainAxisSize.min, children: [
+                    Text('$done', style: p.text(26, weight: FontWeight.w900, color: Colors.white, height: 1.1)),
+                    Text('من $target', style: p.text(11, color: Colors.white70)),
+                  ]),
+                ]),
+              ),
+            ),
+          ]),
+        ),
+      ),
     );
   }
 }
