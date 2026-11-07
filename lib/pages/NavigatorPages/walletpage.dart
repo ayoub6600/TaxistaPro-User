@@ -12,6 +12,7 @@ import '../noInternet/nointernet.dart';
 import '../../payments/moamalat/moamalat_app_env.dart';
 import '../../payments/moamalat/moamalat_env.dart';
 import '../../payments/moamalat/add_money_sheet.dart';
+import '../../community/rewards_page.dart';
 
 class WalletPage extends StatefulWidget {
   const WalletPage({super.key});
@@ -268,6 +269,118 @@ class _WalletPageState extends State<WalletPage> {
         });
   }
 
+  /// the balance, big, on the app's blue card; «إضافة فلوس» and «مكافآتي» under it
+  Widget _balanceCard() {
+    final symbol = '${walletBalance['currency_symbol'] ?? ''}';
+    final balance = walletBalance.isEmpty ? '—' : '${walletBalance['wallet_balance']}';
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(colors: [Color(0xff0873FF), Color(0xff1965BF)], begin: AlignmentDirectional.topStart, end: AlignmentDirectional.bottomEnd),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [BoxShadow(color: const Color(0xff0873FF).withValues(alpha: .25), blurRadius: 18, offset: const Offset(0, 8))],
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(languages[choosenLanguage]['text_availablebalance'] ?? 'الرصيد المتاح',
+            style: GoogleFonts.cairo(color: Colors.white.withValues(alpha: .85), fontSize: 13.5, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 2),
+        Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
+          Text(balance, style: GoogleFonts.notoSans(color: Colors.white, fontSize: 36, fontWeight: FontWeight.w800)),
+          const SizedBox(width: 6),
+          Text(symbol, style: GoogleFonts.cairo(color: Colors.white.withValues(alpha: .85), fontSize: 16, fontWeight: FontWeight.w700)),
+        ]),
+        const SizedBox(height: 16),
+        Row(children: [
+          _action(Icons.add_rounded, languages[choosenLanguage]['text_addmoney'] ?? 'إضافة فلوس', _startAddMoney),
+          const SizedBox(width: 10),
+          _action(Icons.emoji_events_outlined, 'مكافآتي',
+              () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RewardsPage()))),
+        ]),
+      ]),
+    );
+  }
+
+  Widget _action(IconData icon, String label, VoidCallback onTap) => Expanded(
+        child: Material(
+          color: Colors.white.withValues(alpha: .16),
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Column(children: [
+                Icon(icon, color: Colors.white, size: 24),
+                const SizedBox(height: 4),
+                Text(label, style: GoogleFonts.cairo(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800)),
+              ]),
+            ),
+          ),
+        ),
+      );
+
+  Widget _entry(Map e) {
+    final credit = e['is_credit'] == 1;
+    final title = languages[choosenLanguage][e['remarks'].toString()] ?? e['remarks'].toString();
+    final trip = (e['request_number'] ?? '').toString();
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDarkTheme ? const Color(0xff171B22) : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: textColor.withValues(alpha: .06)),
+      ),
+      child: Row(children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(color: (credit ? online : verifyDeclined).withValues(alpha: .1), borderRadius: BorderRadius.circular(13)),
+          child: Icon(credit ? Icons.south_west_rounded : Icons.north_east_rounded, color: credit ? online : verifyDeclined, size: 20),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title, maxLines: 2, overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.cairo(color: textColor, fontSize: 14, fontWeight: FontWeight.w800, height: 1.35)),
+            Text(
+              [
+                '${e['created_at'] ?? ''}',
+                if (trip.isNotEmpty) 'رحلة $trip',
+                if ((e['transaction_id'] ?? '').toString().startsWith('CR-')) '${e['transaction_id']}',
+              ].join(' · '),
+              style: GoogleFonts.cairo(color: textColor.withValues(alpha: .5), fontSize: 11.5),
+            ),
+          ]),
+        ),
+        Text('${credit ? '+' : '-'}${e['amount']}',
+            textDirection: TextDirection.ltr,
+            style: GoogleFonts.notoSans(color: credit ? online : textColor, fontSize: 15, fontWeight: FontWeight.w800)),
+      ]),
+    );
+  }
+
+  Widget _entryPlaceholder() => AnimatedBuilder(
+        animation: _shimmer,
+        builder: (context, _) => ShaderMask(
+          blendMode: BlendMode.srcATop,
+          shaderCallback: (bounds) => LinearGradient(
+                  colors: shaderColor,
+                  stops: shaderStops,
+                  begin: shaderBegin,
+                  end: shaderEnd,
+                  tileMode: TileMode.clamp,
+                  transform: SlidingGradientTransform(slidePercent: _shimmer.value))
+              .createShader(bounds),
+          child: Container(
+            height: 64,
+            margin: const EdgeInsets.only(bottom: 8),
+            decoration: BoxDecoration(color: hintColor.withValues(alpha: .25), borderRadius: BorderRadius.circular(18)),
+          ),
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
     var media = MediaQuery.of(context).size;
@@ -283,591 +396,81 @@ class _WalletPageState extends State<WalletPage> {
                 body: Stack(
                   alignment: Alignment.center,
                   children: [
+                    // design v2: the balance on the app's blue card with its actions, then the entries
                     Container(
-                      padding: EdgeInsets.fromLTRB(
-                          media.width * 0.05,
-                          media.width * 0.05 +
-                              MediaQuery.of(context).padding.top,
-                          media.width * 0.05,
-                          0),
-                      height: media.height - MediaQuery.of(context).padding.top,
-                      width: media.width * 1,
                       color: page,
-                      child: Column(
-                        children: [
-                          Expanded(
-                            child: CustomScrollView(
-                              controller: custom,
-                              slivers: [
-                                SliverAppBar(
-                                  backgroundColor: page,
-                                  automaticallyImplyLeading: false,
-                                  // collapsedHeight: 0,
-                                  collapsedHeight: media.width * 0.15 -
-                                      MediaQuery.of(context).padding.top,
-                                  toolbarHeight: media.width * 0.15 -
-                                      MediaQuery.of(context).padding.top,
-                                  // toolbarHeight: 0,
-                                  expandedHeight: media.width * 0.45,
-                                  pinned: true,
-                                  iconTheme: IconThemeData(
-                                      color: (isDarkTheme)
-                                          ? Colors.white
-                                          : Colors.black),
-
-                                  // excludeHeaderSemantics: false,
-                                  surfaceTintColor: page,
-
-                                  flexibleSpace: FlexibleSpaceBar(
-                                    background: Container(
-                                      color: page,
-                                      child: Column(
-                                        children: [
-                                          SizedBox(
-                                            height: media.width * 0.02,
-                                          ),
-                                          MyText(
-                                            text: languages[choosenLanguage]
-                                                ['text_enable_wallet'],
-                                            size: media.width * eighteen,
-                                            fontweight: FontWeight.w600,
-                                          ),
-                                          SizedBox(
-                                            height: media.width * 0.05,
-                                          ),
-                                          Row(
-                                            children: [
-                                              MyText(
-                                                text: languages[choosenLanguage]
-                                                    ['text_availablebalance'],
-                                                size: media.width * fourteen,
-                                                fontweight: FontWeight.w800,
-                                              ),
-                                            ],
-                                          ),
-                                          SizedBox(
-                                            height: media.width * 0.03,
-                                          ),
-                                          if (walletBalance.isNotEmpty)
-                                            Container(
-                                              height: media.width * 0.1,
-                                              width: media.width * 0.9,
-                                              alignment: Alignment.center,
-                                              decoration: BoxDecoration(
-                                                color: Colors.grey
-                                                    .withOpacity(0.1),
-                                              ),
-                                              child: MyText(
-                                                text: walletBalance[
-                                                        'currency_symbol'] +
-                                                    ' ' +
-                                                    walletBalance[
-                                                            'wallet_balance']
-                                                        .toString(),
-                                                size: media.width * twenty,
-                                                fontweight: FontWeight.w600,
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                    title: SizedBox(
-                                      // color: Colors.red,
-                                      width: (custom.hasClients &&
-                                              custom.offset < media.width * 0.4)
-                                          ? media.width * 0.4
-                                          : media.width,
-                                      child: MyText(
-                                        text: languages[choosenLanguage]
-                                            ['text_recenttransactions'],
-                                        size: (custom.hasClients &&
-                                                custom.offset <
-                                                    media.width * 0.4)
-                                            ? media.width * twelve
-                                            : media.width * sixteen,
-                                        textAlign: (custom.hasClients &&
-                                                custom.offset <
-                                                    media.width * 0.4)
-                                            ? TextAlign.center
-                                            : null,
-                                      ),
-                                    ),
+                      child: SafeArea(
+                        bottom: false,
+                        child: CustomScrollView(
+                          controller: custom,
+                          slivers: [
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(12, 8, 16, 0),
+                                child: Row(children: [
+                                  IconButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    icon: Icon(Icons.arrow_back_rounded, color: textColor),
+                                    style: IconButton.styleFrom(backgroundColor: textColor.withValues(alpha: .05), fixedSize: const Size(44, 44)),
                                   ),
-                                ),
-                                (walletHistory.isNotEmpty)
-                                    ? SliverList(
-                                        delegate: SliverChildBuilderDelegate(
-                                            (context, i) {
-                                          return Column(
-                                            children: [
-                                              (walletHistory[i].isEmpty)
-                                                  ? AnimatedBuilder(
-                                                      animation: _shimmer,
-                                                      builder:
-                                                          (context, widget) {
-                                                        return ShaderMask(
-                                                            blendMode: BlendMode
-                                                                .srcATop,
-                                                            shaderCallback:
-                                                                (bounds) {
-                                                              return LinearGradient(
-                                                                      colors:
-                                                                          shaderColor,
-                                                                      stops:
-                                                                          shaderStops,
-                                                                      begin:
-                                                                          shaderBegin,
-                                                                      end:
-                                                                          shaderEnd,
-                                                                      tileMode:
-                                                                          TileMode
-                                                                              .clamp,
-                                                                      transform: SlidingGradientTransform(
-                                                                          slidePercent: _shimmer
-                                                                              .value))
-                                                                  .createShader(
-                                                                      bounds);
-                                                            },
-                                                            child: Container(
-                                                              margin: EdgeInsets
-                                                                  .all(media
-                                                                          .width *
-                                                                      0.03),
-                                                              padding: EdgeInsets
-                                                                  .all(media
-                                                                          .width *
-                                                                      0.03),
-                                                              decoration: BoxDecoration(
-                                                                  color: page,
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(
-                                                                          media.width *
-                                                                              0.02)),
-                                                              child: Column(
-                                                                crossAxisAlignment:
-                                                                    CrossAxisAlignment
-                                                                        .start,
-                                                                children: [
-                                                                  SizedBox(
-                                                                    height: media
-                                                                            .width *
-                                                                        0.02,
-                                                                  ),
-                                                                  Row(
-                                                                    mainAxisAlignment:
-                                                                        MainAxisAlignment
-                                                                            .start,
-                                                                    children: [
-                                                                      Container(
-                                                                        height: media.width *
-                                                                            0.05,
-                                                                        width: media.width *
-                                                                            0.05,
-                                                                        decoration: BoxDecoration(
-                                                                            shape:
-                                                                                BoxShape.circle,
-                                                                            color: hintColor.withOpacity(0.5)),
-                                                                      ),
-                                                                      SizedBox(
-                                                                        width: media.width *
-                                                                            0.05,
-                                                                      ),
-                                                                      Expanded(
-                                                                        child:
-                                                                            Column(
-                                                                          children: [
-                                                                            Container(
-                                                                              height: media.width * 0.05,
-                                                                              color: hintColor.withOpacity(0.5),
-                                                                            ),
-                                                                            const SizedBox(
-                                                                              height: 5,
-                                                                            ),
-                                                                            Container(
-                                                                              height: media.width * 0.03,
-                                                                              color: hintColor.withOpacity(0.5),
-                                                                            ),
-                                                                          ],
-                                                                        ),
-                                                                      ),
-                                                                      SizedBox(
-                                                                        width: media.width *
-                                                                            0.05,
-                                                                      ),
-                                                                      Container(
-                                                                        height: media.width *
-                                                                            0.05,
-                                                                        width: media.width *
-                                                                            0.05,
-                                                                        decoration: BoxDecoration(
-                                                                            shape:
-                                                                                BoxShape.circle,
-                                                                            color: hintColor.withOpacity(0.5)),
-                                                                      ),
-                                                                    ],
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            ));
-                                                      })
-                                                  : Container(
-                                                      margin: EdgeInsets.only(
-                                                          top: media.width *
-                                                              0.02,
-                                                          bottom: media.width *
-                                                              0.02),
-                                                      width: media.width * 0.9,
-                                                      padding: EdgeInsets.all(
-                                                          media.width * 0.025),
-                                                      decoration: BoxDecoration(
-                                                          border: Border.all(
-                                                              color:
-                                                                  borderLines,
-                                                              width: 1.2),
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(12),
-                                                          color: Colors.grey
-                                                              .withOpacity(
-                                                                  0.1)),
-                                                      child: Row(
-                                                        children: [
-                                                          Container(
-                                                            height:
-                                                                media.width *
-                                                                    0.1067,
-                                                            width: media.width *
-                                                                0.1067,
-                                                            decoration: BoxDecoration(
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            10),
-                                                                color: (walletHistory[i]
-                                                                            [
-                                                                            'is_credit'] ==
-                                                                        1)
-                                                                    ? Colors
-                                                                        .green
-                                                                    : Colors
-                                                                        .red),
-                                                            alignment: Alignment
-                                                                .center,
-                                                            child: Text(
-                                                              (walletHistory[i][
-                                                                          'is_credit'] ==
-                                                                      1)
-                                                                  ? '+'
-                                                                  : '-',
-                                                              style: TextStyle(
-                                                                  color: Colors
-                                                                      .white,
-                                                                  fontSize: media
-                                                                          .width *
-                                                                      twentyfour),
-                                                            ),
-                                                          ),
-                                                          SizedBox(
-                                                            width: media.width *
-                                                                0.025,
-                                                          ),
-                                                          Column(
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .start,
-                                                            children: [
-                                                              GestureDetector(
-                                                                onTap: () {
-                                                                  debugPrint(
-                                                                      walletHistory[
-                                                                          i]);
-                                                                },
-                                                                child: MyText(
-                                                                  text: languages[
-                                                                          choosenLanguage][walletHistory[i]
-                                                                              [
-                                                                              'remarks']
-                                                                          .toString()] ??
-                                                                      walletHistory[i]
-                                                                              [
-                                                                              'remarks']
-                                                                          .toString(),
-                                                                  size: media
-                                                                          .width *
-                                                                      fourteen,
-                                                                  fontweight:
-                                                                      FontWeight
-                                                                          .w600,
-                                                                ),
-                                                              ),
-                                                              SizedBox(
-                                                                height: media
-                                                                        .width *
-                                                                    0.02,
-                                                              ),
-                                                              MyText(
-                                                                text: walletHistory[
-                                                                        i][
-                                                                    'created_at'],
-                                                                size: media
-                                                                        .width *
-                                                                    ten,
-                                                                color: textColor
-                                                                    .withOpacity(
-                                                                        0.4),
-                                                              ),
-                                                              // the trip this line belongs to (e.g. change returned by the driver)
-                                                              if ((walletHistory[i]['request_number'] ?? '').toString().isNotEmpty)
-                                                                MyText(
-                                                                  text: 'رحلة ${walletHistory[i]['request_number']}'
-                                                                      '${(walletHistory[i]['transaction_id'] ?? '').toString().startsWith('CR-') ? ' · ${walletHistory[i]['transaction_id']}' : ''}',
-                                                                  size: media.width * ten,
-                                                                  color: textColor.withOpacity(0.55),
-                                                                ),
-                                                            ],
-                                                          ),
-                                                          Expanded(
-                                                              child: Row(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .end,
-                                                            children: [
-                                                              MyText(
-                                                                text: walletHistory[
-                                                                            i][
-                                                                        'currency_symbol'] +
-                                                                    ' ' +
-                                                                    walletHistory[i]
-                                                                            [
-                                                                            'amount']
-                                                                        .toString(),
-                                                                size: media
-                                                                        .width *
-                                                                    twelve,
-                                                                color: (walletHistory[i]
-                                                                            [
-                                                                            'is_credit'] ==
-                                                                        1)
-                                                                    ? online
-                                                                    : verifyDeclined,
-                                                              )
-                                                            ],
-                                                          ))
-                                                        ],
-                                                      ),
-                                                    ),
-                                              //load more button
-                                              (walletPages.isNotEmpty &&
-                                                      i ==
-                                                          walletHistory.length -
-                                                              1)
-                                                  ? (walletPages[
-                                                              'current_page'] <
-                                                          walletPages[
-                                                              'total_pages'])
-                                                      ? InkWell(
-                                                          onTap: () async {
-                                                            setState(() {
-                                                              for (var i = 0;
-                                                                  i < 10;
-                                                                  i++) {
-                                                                walletHistory
-                                                                    .add({});
-                                                              }
-                                                            });
-
-                                                            var val = await getWalletHistoryPage(
-                                                                (walletPages[
-                                                                            'current_page'] +
-                                                                        1)
-                                                                    .toString());
-                                                            if (val ==
-                                                                'logout') {
-                                                              navigateLogout();
-                                                            }
-
-                                                            setState(() {
-                                                              isLoading = false;
-                                                            });
-                                                          },
-                                                          child: Container(
-                                                            padding: EdgeInsets
-                                                                .all(media
-                                                                        .width *
-                                                                    0.025),
-                                                            margin: EdgeInsets.only(
-                                                                bottom: media
-                                                                        .width *
-                                                                    0.05),
-                                                            decoration: BoxDecoration(
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            10),
-                                                                color: page,
-                                                                border: Border.all(
-                                                                    color:
-                                                                        borderLines,
-                                                                    width:
-                                                                        1.2)),
-                                                            child: MyText(
-                                                              text: languages[
-                                                                      choosenLanguage]
-                                                                  [
-                                                                  'text_loadmore'],
-                                                              size:
-                                                                  media.width *
-                                                                      sixteen,
-                                                            ),
-                                                          ),
-                                                        )
-                                                      : Container()
-                                                  : Container()
-                                            ],
-                                          );
-                                        }, childCount: walletHistory.length),
-                                      )
-                                    : SliverList(
-                                        delegate: SliverChildBuilderDelegate(
-                                            (context, i) {
-                                          return SizedBox(
-                                            height: media.height * 0.4,
-                                            child: Column(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                SizedBox(
-                                                  height: media.width * 0.2,
-                                                ),
-                                                Container(
-                                                  alignment: Alignment.center,
-                                                  height: media.width * 0.4,
-                                                  width: media.width * 0.4,
-                                                  decoration: BoxDecoration(
-                                                      image: DecorationImage(
-                                                          image: AssetImage(
-                                                              (isDarkTheme)
-                                                                  ? 'assets/images/no_transactiondark.gif'
-                                                                  : 'assets/images/no_transaction.gif'),
-                                                          fit: BoxFit.contain)),
-                                                ),
-                                                SizedBox(
-                                                  width: media.width * 0.6,
-                                                  child: MyText(
-                                                      text: languages[
-                                                              choosenLanguage]
-                                                          ['text_noDataFound'],
-                                                      textAlign:
-                                                          TextAlign.center,
-                                                      fontweight:
-                                                          FontWeight.w800,
-                                                      size: media.width *
-                                                          sixteen),
-                                                ),
-                                              ],
-                                            ),
-                                          );
-                                        }, childCount: 1),
-                                      ),
-                              ],
+                                  const SizedBox(width: 8),
+                                  Text(languages[choosenLanguage]['text_enable_wallet'] ?? 'المحفظة',
+                                      style: GoogleFonts.cairo(color: textColor, fontSize: 21, fontWeight: FontWeight.w800)),
+                                ]),
+                              ),
                             ),
-                          ),
-                          SizedBox(
-                            height: media.width * 0.2,
-                            width: media.width * 0.9,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                SizedBox(
-                                  height: media.width * 0.01,
-                                ),
-                                MyText(
-                                  text: languages[choosenLanguage]
-                                          ['text_recharge_bal']
-                                      .toString()
-                                      .toUpperCase(),
-                                  size: media.width * fourteen,
-                                  fontweight: FontWeight.w800,
-                                ),
-                                SizedBox(
-                                  height: media.width * 0.03,
-                                ),
-                                MyText(
-                                  text: languages[choosenLanguage]
-                                      ['text_rechage_text'],
-                                  size: media.width * twelve,
-                                  fontweight: FontWeight.w600,
-                                  color: textColor.withOpacity(0.5),
-                                )
-                              ],
+                            SliverToBoxAdapter(child: _balanceCard()),
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(20, 18, 20, 6),
+                                child: Text(languages[choosenLanguage]['text_recenttransactions'] ?? 'آخر المعاملات',
+                                    style: GoogleFonts.cairo(color: textColor, fontSize: 16, fontWeight: FontWeight.w800)),
+                              ),
                             ),
-                          ),
-                          Column(
-                            children: [
-                              Container(
-                                height: media.width * 0.15,
-                                width: media.width * 0.9,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color: Colors.blueAccent,
-                                  borderRadius: BorderRadius.circular(12.r),
+                            if (walletHistory.isNotEmpty)
+                              SliverPadding(
+                                padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                                sliver: SliverList(
+                                  delegate: SliverChildBuilderDelegate((context, i) {
+                                    final e = walletHistory[i];
+                                    final last = walletPages.isNotEmpty && i == walletHistory.length - 1 &&
+                                        walletPages['current_page'] < walletPages['total_pages'];
+                                    return Column(children: [
+                                      if (e is! Map || e.isEmpty) _entryPlaceholder() else _entry(e),
+                                      if (last)
+                                        TextButton(
+                                          onPressed: () async {
+                                            setState(() {
+                                              for (var k = 0; k < 10; k++) {
+                                                walletHistory.add({});
+                                              }
+                                            });
+                                            final val = await getWalletHistoryPage((walletPages['current_page'] + 1).toString());
+                                            if (val == 'logout') navigateLogout();
+                                            if (mounted) setState(() => isLoading = false);
+                                          },
+                                          child: Text(languages[choosenLanguage]['text_loadmore'] ?? 'المزيد',
+                                              style: GoogleFonts.cairo(fontWeight: FontWeight.w800)),
+                                        ),
+                                    ]);
+                                  }, childCount: walletHistory.length),
                                 ),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
-                                  children: [
-                                    InkWell(
-                                      onTap: _startAddMoney,
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.credit_card,
-                                            color: (ischeckmoneytransfer == 1)
-                                                ? const Color(0xFFFF0000)
-                                                : Colors.white,
-                                          ),
-                                          const SizedBox(
-                                            width: 5,
-                                          ),
-                                          MyText(
-                                              text: languages[choosenLanguage]
-                                                  ['text_addmoney'],
-                                              size: media.width * sixteen,
-                                              color: (ischeckmoneytransfer == 1)
-                                                  ? const Color(0xFFFF0000)
-                                                  : Colors.white)
-                                        ],
-                                      ),
-                                    ),
-                                  ],
+                              )
+                            else
+                              SliverToBoxAdapter(
+                                child: Padding(
+                                  padding: const EdgeInsets.only(top: 40),
+                                  child: Column(children: [
+                                    Image.asset(isDarkTheme ? 'assets/images/no_transactiondark.gif' : 'assets/images/no_transaction.gif',
+                                        width: media.width * 0.4, height: media.width * 0.4, fit: BoxFit.contain),
+                                    Text(languages[choosenLanguage]['text_noDataFound'] ?? '',
+                                        style: GoogleFonts.cairo(color: textColor.withValues(alpha: .6), fontSize: 15, fontWeight: FontWeight.w700)),
+                                  ]),
                                 ),
                               ),
-                              SizedBox(
-                                height: media.width * 0.1,
-                              )
-                            ],
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-
-                    Positioned(
-                      top: media.width * 0.055 +
-                          MediaQuery.of(context).padding.top,
-                      left: (languageDirection == 'ltr')
-                          ? media.width * 0.05
-                          : null,
-                      right: (languageDirection == 'rtl')
-                          ? media.width * 0.05
-                          : null,
-                      child: InkWell(
-                          onTap: () {
-                            Navigator.pop(context);
-                          },
-                          child: Icon(
-                            Icons.arrow_back_ios,
-                            color: textColor,
-                          )),
                     ),
 
                     //add payment
