@@ -19,6 +19,7 @@ import 'package:taxista/styles/styles.dart';
 import 'package:taxista/translations/translation.dart';
 import 'package:taxista/widgets/widgets.dart';
 import 'package:taxista/widgets/v2_sheet.dart';
+import 'package:taxista/functions/market_notice.dart';
 
 part 'booking/apply_coupons.dart';
 part 'booking/bid_metadata.dart';

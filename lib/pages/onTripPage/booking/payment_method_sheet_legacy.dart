@@ -78,7 +78,8 @@ class _ChoosePaymentMethodContainerState
       '${etaDetails.isNotEmpty && choosenVehicle != null ? etaDetails[choosenVehicle]['user_wallet_balance'] ?? '' : ''}');
 
   /// the wallet pays nothing when its balance is zero or below (e.g. -89): it is shown but cannot be chosen
-  bool _walletLocked(String type) => (type == 'wallet' || type == 'wallet_and_cash') && (_walletBalance ?? 1) <= 0;
+  bool _walletLocked(String type) =>
+      (type == 'wallet' || type == 'wallet_and_cash') && ((_walletBalance ?? 1) <= 0 || MarketNotice.foreign);
 
   String _paymentNote(String type) {
     final rtl = languageDirection == 'rtl';
@@ -88,6 +89,9 @@ class _ChoosePaymentMethodContainerState
       case 'wallet':
       case 'wallet_and_cash':
         final bal = _walletBalance;
+        if (MarketNotice.foreign) {
+          return rtl ? 'محفظتك بعملة بلدك، ما تنفعش في هذا البلد · الدفع كاش' : 'Your wallet is in another currency · pay cash here';
+        }
         if (bal == null) return rtl ? 'من رصيدك في تاكسيستا' : 'From your Taxista balance';
         if (bal <= 0) {
           return rtl ? 'رصيدك ${bal.toStringAsFixed(2)} · اشحن محفظتك باش تدفع منها' : 'Balance ${bal.toStringAsFixed(2)} · top up to pay with it';

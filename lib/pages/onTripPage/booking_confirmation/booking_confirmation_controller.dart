@@ -162,6 +162,11 @@ mixin _BookingConfirmationController
         .toList();
     if (payingVia < 0 || payingVia >= methods.length) return false;
     if (methods[payingVia] != 'wallet') return true;
+    // abroad the wallet (other currency) never pays: the ride goes as cash, like the server does
+    if (MarketNotice.foreign && methods.contains('cash')) {
+      payingVia = methods.indexOf('cash');
+      return true;
+    }
     // a zero or negative balance (e.g. -89) pays nothing: the rider must pick cash or top up first
     if (walletBalance <= 0) return false;
     return walletBalance >= fare || methods.contains('wallet_and_cash');
@@ -1198,6 +1203,7 @@ mixin _BookingConfirmationController
       if (val == 'logout') {
         navigateLogout();
       }
+      if (mounted) unawaited(MarketNotice.maybeShow(context));
     }
     if (widget.type == 1) {
       var val = await rentalEta();
@@ -1321,6 +1327,8 @@ mixin _BookingConfirmationController
       navigateLogout();
       return;
     }
+    // a quote in another country's money: say it once (prices there, cash only)
+    if (widget.type != 1) unawaited(MarketNotice.maybeShow(context));
 
     setState(() {
       isLoading = false;
