@@ -1,3 +1,4 @@
+import '../widgets/v2_skeleton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -126,7 +127,7 @@ class _DriverProfilePageState extends State<DriverProfilePage> {
             ),
         ]),
         body: !_loaded
-            ? const Center(child: CircularProgressIndicator())
+            ? const V2Skeleton()
             : d == null
                 ? Center(
                     child: Padding(

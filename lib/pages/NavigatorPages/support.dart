@@ -5,6 +5,7 @@ import '../../styles/styles.dart';
 import '../../translations/translation.dart';
 import 'adminchatpage.dart';
 import 'faq.dart';
+import '../callPage/call_log_page.dart';
 import '../../navigation/guarded_navigation.dart';
 
 /// «دعم العملاء» (design v2): the chat with Taxista first, on the app's blue card with its unread
@@ -85,6 +86,12 @@ class _SupportPageState extends State<SupportPage> {
               },
             ),
             const SizedBox(height: 12),
+            // calls with Taxista (moved here from the side menu): the same call log page
+            _Row(
+              icon: Icons.call_outlined,
+              text: _rtl ? 'مكالماتي مع تاكسيستا' : 'My calls with Taxista',
+              onTap: () => guardedPush(context, MaterialPageRoute(builder: (context) => const CallLogPage())),
+            ),
             _Row(
               icon: Icons.help_outline_rounded,
               text: _t('text_faq', 'الأسئلة الشائعة'),

@@ -105,20 +105,8 @@ class _LoadingState extends State<Loading> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    width: 58,
-                    height: 58,
-                    padding: const EdgeInsets.all(15),
-                    decoration: BoxDecoration(
-                      color: theme.withValues(alpha: .1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: CircularProgressIndicator(
-                      strokeWidth: 3,
-                      color: theme,
-                      strokeCap: StrokeCap.round,
-                    ),
-                  ),
+                  // design v2: the Taxista car driving along a short road (no spinning circle)
+                  const TaxiRoadLoader(),
                   const SizedBox(height: 18),
                   Text(
                     message ?? notice?.title ?? (rtl ? 'لحظات من فضلك…' : 'Just a moment…'),
@@ -165,4 +153,87 @@ class _LoadingState extends State<Loading> {
       ),
     );
   }
+}
+
+
+/// A small Taxista car going along a dashed road, looping; still when the phone asks for less motion.
+class TaxiRoadLoader extends StatefulWidget {
+  const TaxiRoadLoader({super.key, this.width = 150});
+  final double width;
+
+  @override
+  State<TaxiRoadLoader> createState() => _TaxiRoadLoaderState();
+}
+
+class _TaxiRoadLoaderState extends State<TaxiRoadLoader> with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1400))..repeat();
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final still = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    return SizedBox(
+      width: widget.width,
+      height: 46,
+      child: AnimatedBuilder(
+        animation: _c,
+        builder: (_, __) {
+          final t = still ? .5 : Curves.easeInOut.transform(_c.value);
+          final x = (rtl ? 1 - t : t) * (widget.width - 40);
+          return Stack(children: [
+            // the road: dashes that slide under the car
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 6,
+              child: CustomPaint(size: Size(widget.width, 4), painter: _RoadPainter(phase: still ? 0 : _c.value, rtl: rtl)),
+            ),
+            Positioned(
+              left: x,
+              bottom: 10,
+              child: Transform.translate(
+                offset: Offset(0, still ? 0 : -1.5 * (1 - (2 * _c.value - 1).abs())),
+                child: Transform.flip(
+                  flipX: rtl,
+                  child: Container(
+                    width: 40,
+                    height: 28,
+                    decoration: BoxDecoration(color: theme.withValues(alpha: .12), borderRadius: BorderRadius.circular(10)),
+                    child: Icon(Icons.local_taxi_rounded, color: theme, size: 24),
+                  ),
+                ),
+              ),
+            ),
+          ]);
+        },
+      ),
+    );
+  }
+}
+
+class _RoadPainter extends CustomPainter {
+  _RoadPainter({required this.phase, required this.rtl});
+  final double phase;
+  final bool rtl;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final base = Paint()..color = const Color(0xffE3E8EF);
+    canvas.drawRRect(RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(2)), base);
+    final dash = Paint()..color = const Color(0xff0873FF).withValues(alpha: .55);
+    const w = 12.0, gap = 10.0;
+    final shift = (rtl ? 1 : -1) * phase * (w + gap);
+    for (double x = -w - gap + shift % (w + gap); x < size.width; x += w + gap) {
+      canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(x, 0, w, size.height), const Radius.circular(2)), dash);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_RoadPainter old) => old.phase != phase;
 }

@@ -1,3 +1,4 @@
+import '../widgets/v2_skeleton.dart';
 import 'package:flutter/material.dart';
 
 import '../widgets/chat/chat_kit.dart';
@@ -55,7 +56,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
         body: RefreshIndicator(
           onRefresh: _load,
           child: _items == null
-              ? (_failed ? _message(p, 'تعذر التحميل. اسحب للأسفل لإعادة المحاولة.') : const Center(child: CircularProgressIndicator()))
+              ? (_failed ? _message(p, 'تعذر التحميل. اسحب للأسفل لإعادة المحاولة.') : const V2Skeleton())
               : _items!.isEmpty
                   ? _message(p, 'لا يوجد سائقون في «سواقيني» بعد.\nبعد رحلة جميلة اضغط على القلب لتضيف سائقك.', icon: Icons.favorite_border_rounded)
                   : ListView.separated(

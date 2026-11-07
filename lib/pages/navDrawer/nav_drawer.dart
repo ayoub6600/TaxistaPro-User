@@ -21,7 +21,6 @@ import '../NavigatorPages/settings.dart';
 import '../NavigatorPages/sos.dart';
 import '../NavigatorPages/support.dart';
 import '../NavigatorPages/walletpage.dart';
-import '../callPage/call_log_page.dart';
 import '../onTripPage/map_page.dart';
 import '../../navigation/guarded_navigation.dart';
 
@@ -225,11 +224,6 @@ class _NavDrawerState extends State<NavDrawer> {
                             image: 'assets/images/complaint.png',
                             text: t('text_make_complaints', 'تقديم شكوى', 'Make a complaint'),
                             onTap: () => _open(MaterialPageRoute(builder: (context) => const MakeComplaint())),
-                          ),
-                          _DrawerItem(
-                            icon: Icons.history_rounded,
-                            text: rtl ? 'سجل المكالمات' : 'Call log',
-                            onTap: () => _open(MaterialPageRoute(builder: (context) => const CallLogPage())),
                           ),
                           _DrawerItem(
                             image: 'assets/images/phone.png',

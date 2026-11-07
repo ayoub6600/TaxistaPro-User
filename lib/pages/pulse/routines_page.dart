@@ -1,3 +1,4 @@
+import '../../widgets/v2_skeleton.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -87,7 +88,7 @@ class _PulseRoutinesPageState extends State<PulseRoutinesPage> {
           label: Text('رحلة معتادة', style: _t(14, w: FontWeight.w700, c: Colors.white)),
         ),
         body: _loading
-            ? const Center(child: CircularProgressIndicator())
+            ? const V2Skeleton()
             : RefreshIndicator(
                 onRefresh: _load,
                 child: ListView(padding: const EdgeInsets.fromLTRB(16, 12, 16, 96), children: [

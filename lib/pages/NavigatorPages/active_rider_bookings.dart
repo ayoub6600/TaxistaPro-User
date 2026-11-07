@@ -1,3 +1,4 @@
+import '../../widgets/v2_skeleton.dart';
 import 'package:flutter/material.dart';
 
 import '../../functions/functions.dart';
@@ -88,7 +89,7 @@ class _ActiveRiderBookingsPageState extends State<ActiveRiderBookingsPage> {
       body: RefreshIndicator(
         onRefresh: _load,
         child: _loading && activeRiderBookings.isEmpty
-            ? const Center(child: CircularProgressIndicator())
+            ? const V2Skeleton()
             : ListView(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
                 children: [

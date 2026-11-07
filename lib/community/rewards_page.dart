@@ -1,3 +1,4 @@
+import '../widgets/v2_skeleton.dart';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -76,7 +77,7 @@ class _RewardsPageState extends State<RewardsPage> {
         backgroundColor: p.background,
         appBar: communityAppBar(context, 'مكافآتي'),
         body: !_loaded
-            ? const Center(child: CircularProgressIndicator())
+            ? const V2Skeleton()
             : RefreshIndicator(
                 onRefresh: _load,
                 child: _data == null

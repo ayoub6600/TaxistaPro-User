@@ -1,3 +1,4 @@
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:taxista/pages/login/login.dart';
@@ -90,223 +91,66 @@ class _HistoryState extends State<History> {
                   SizedBox(
                     height: 20.h,
                   ),
+                  // design v2: «سجل الرحلات» with two tabs (the upcoming rides have their own page)
                   Padding(
-                    // color: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 20.0.w),
-                    child: Row(
-                      children: [
-                        InkWell(
-                            onTap: () {
-                              Navigator.pop(context);
-                            },
-                            child: Icon(Icons.arrow_back_ios,
-                                color: (isDarkTheme)
-                                    ? Colors.white
-                                    : Colors.black)),
+                    padding: const EdgeInsets.fromLTRB(12, 0, 16, 0),
+                    child: Row(children: [
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: Icon(Icons.arrow_back_rounded, color: textColor),
+                        style: IconButton.styleFrom(backgroundColor: textColor.withValues(alpha: .05), fixedSize: const Size(44, 44)),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(languageDirection == 'rtl' ? 'سجل الرحلات' : (languages[choosenLanguage]['text_enable_history'] ?? 'History'),
+                          style: GoogleFonts.cairo(color: textColor, fontSize: 21, fontWeight: FontWeight.w800)),
+                    ]),
+                  ),
+                  Container(
+                    margin: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(color: textColor.withValues(alpha: .05), borderRadius: BorderRadius.circular(16)),
+                    child: Row(children: [
+                      for (final tab in const [1, 2])
                         Expanded(
-                          child: MyText(
-                            textAlign: TextAlign.center,
-                            text: (_showHistory == 0)
-                                ? languages[choosenLanguage]
-                                    ['text_upcoming_rides']
-                                : (_showHistory == 1)
-                                    ? languages[choosenLanguage]
-                                        ['text_completed_rides']
-                                    : (_showHistory == 2)
-                                        ? languages[choosenLanguage]
-                                            ['text_cancelled_rides']
-                                        : languages[choosenLanguage]
-                                            ['text_enable_history'],
-                            size: media.width * twenty,
-                            maxLines: 1,
-                            fontweight: FontWeight.w600,
+                          child: GestureDetector(
+                            onTap: () async {
+                              if (_showHistory == tab) return;
+                              setState(() {
+                                myHistory.clear();
+                                myHistoryPage.clear();
+                                showFilter = false;
+                                _showHistory = tab;
+                                for (var i = 0; i < 10; i++) {
+                                  myHistory.add({});
+                                }
+                              });
+                              historyFiltter = tab == 1 ? 'is_completed=1' : 'is_cancelled=1';
+                              await getHistory();
+                              if (mounted) setState(() {});
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 220),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: _showHistory == tab ? page : Colors.transparent,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: _showHistory == tab ? [BoxShadow(color: Colors.black.withValues(alpha: .08), blurRadius: 8, offset: const Offset(0, 2))] : null,
+                              ),
+                              child: Text(
+                                languages[choosenLanguage][tab == 1 ? 'text_completed' : 'text_cancelled'] ?? '',
+                                style: GoogleFonts.cairo(color: textColor, fontSize: 14, fontWeight: _showHistory == tab ? FontWeight.w800 : FontWeight.w600),
+                              ),
+                            ),
                           ),
                         ),
-                        // InkWell(
-                        //   onTap: () {
-                        //     setState(() {
-                        //       if (!showFilter) {
-                        //         showFilter = true;
-                        //       } else {
-                        //         showFilter = false;
-                        //       }
-                        //     });
-                        //   },
-                        //   child: SizedBox(
-                        //     height: media.width * 0.1,
-                        //     width: media.width * 0.1,
-                        //     child: Image.asset(
-                        //       'assets/images/Tune.png',
-                        //       color: textColor,
-                        //     ),
-                        //   ),
-                        // )
-                      ],
-                    ),
-                  ),
-                  SizedBox(
-                    height: 20.h,
-                  ),
-                  Row(
-                    children: [
-                      InkWell(
-                        onTap: () {
-                          setState(() {
-                            showFilter = false;
-                          });
-                        },
-                        child: Container(
-                            margin: EdgeInsets.only(
-                                top: media.width * 0.02,
-                                left: media.width * 0.05,
-                                right: media.width * 0.05,
-                                bottom: media.width * 0.02),
-                            width: media.width * 0.9,
-                            //     height: media.width * 0.1,
-                            decoration: BoxDecoration(
-                                color: (isDarkTheme)
-                                    ? Colors.grey
-                                    : Colors.grey.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(10)),
-                            child: Row(
-                              children: [
-                                SizedBox(
-                                  width: media.width * 0.05,
-                                ),
-                                Expanded(
-                                  child: GestureDetector(
-                                    onTap: () async {
-                                      setState(() {
-                                        myHistory.clear();
-                                        myHistoryPage.clear();
-                                        _showHistory = 0;
-                                        showFilter = false;
-                                        for (var i = 0; i < 10; i++) {
-                                          myHistory.add({});
-                                        }
-                                      });
-                                      historyFiltter = 'is_later=1';
-
-                                      await getHistory();
-                                      setState(() {});
-                                    },
-                                    child: Container(
-                                      alignment: Alignment.center,
-                                      height: media.width * 0.1,
-                                      decoration: BoxDecoration(
-                                        color: (_showHistory == 0)
-                                            ? Colors.blue
-                                            : Colors.transparent,
-                                        borderRadius:
-                                            BorderRadius.circular(8.r),
-                                      ),
-                                      child: MyText(
-                                        text: languages[choosenLanguage]
-                                            ['text_upcoming'],
-                                        size: media.width * sixteen,
-                                        color: (_showHistory == 0)
-                                            ? Colors.white
-                                            : Colors.black,
-                                        maxLines: 1,
-                                        fontweight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: GestureDetector(
-                                    onTap: () async {
-                                      setState(() {
-                                        myHistory.clear();
-                                        myHistoryPage.clear();
-                                        showFilter = false;
-                                        _showHistory = 1;
-                                        for (var i = 0; i < 10; i++) {
-                                          myHistory.add({});
-                                        }
-                                      });
-                                      historyFiltter = 'is_completed=1';
-                                      await getHistory();
-                                      setState(() {});
-                                    },
-                                    child: Container(
-                                      alignment: Alignment.center,
-                                      height: media.width * 0.1,
-                                      decoration: BoxDecoration(
-                                        color: (_showHistory == 1)
-                                            ? Colors.blue
-                                            : Colors.transparent,
-                                        borderRadius:
-                                            BorderRadius.circular(8.r),
-                                      ),
-                                      child: MyText(
-                                        text: languages[choosenLanguage]
-                                            ['text_completed'],
-                                        size: media.width * sixteen,
-                                        color: (_showHistory == 1)
-                                            ? Colors.white
-                                            : Colors.black,
-                                        maxLines: 1,
-                                        fontweight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: GestureDetector(
-                                    onTap: () async {
-                                      setState(() {
-                                        myHistory.clear();
-                                        myHistoryPage.clear();
-                                        _showHistory = 2;
-                                        showFilter = false;
-                                        for (var i = 0; i < 10; i++) {
-                                          myHistory.add({});
-                                        }
-                                      });
-                                      historyFiltter = 'is_cancelled=1';
-                                      await getHistory();
-                                      setState(() {});
-                                    },
-                                    child: Container(
-                                      alignment: Alignment.center,
-                                      height: media.width * 0.1,
-                                      decoration: BoxDecoration(
-                                        borderRadius:
-                                            BorderRadius.circular(8.r),
-                                        color: (_showHistory == 2)
-                                            ? Colors.blue
-                                            : Colors.transparent,
-                                      ),
-                                      child: MyText(
-                                        text: languages[choosenLanguage]
-                                            ['text_cancelled'],
-                                        size: media.width * sixteen,
-                                        color: (_showHistory == 2)
-                                            ? Colors.white
-                                            : Colors.black,
-                                        maxLines: 1,
-                                        fontweight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            )),
-                      ),
-                    ],
+                    ]),
                   ),
                   Expanded(
                       child: Container(
                     padding: const EdgeInsets.all(1),
                     width: media.width * 1,
-                    color: (myHistory.isEmpty)
-                        ? (!isDarkTheme)
-                            ? Colors.white
-                            : Colors.black
-                        : (isDarkTheme)
-                            ? Colors.grey
-                            : Colors.grey.withOpacity(0.2),
+                    color: page,
                     child: SingleChildScrollView(
                       physics: const BouncingScrollPhysics(),
                       child: Column(
@@ -554,8 +398,10 @@ class _HistoryState extends State<History> {
                                                             borderRadius:
                                                                 BorderRadius
                                                                     .circular(
-                                                                        12),
-                                                            color: page,
+                                                                        20),
+                                                            color: isDarkTheme ? const Color(0xff171B22) : Colors.white,
+                                                            border: Border.all(color: textColor.withValues(alpha: .07)),
+                                                            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .04), blurRadius: 12, offset: const Offset(0, 4))],
                                                           ),
                                                           margin: EdgeInsets.only(
                                                               bottom:

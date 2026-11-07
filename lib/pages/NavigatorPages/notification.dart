@@ -1,3 +1,4 @@
+import '../../widgets/v2_skeleton.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -201,7 +202,7 @@ class _NotificationPageState extends State<NotificationPage> {
               ),
               Expanded(
                 child: _loading && items.isEmpty
-                    ? const Center(child: CircularProgressIndicator())
+                    ? const V2Skeleton()
                     : RefreshIndicator(
                         onRefresh: _load,
                         child: shown.isEmpty
