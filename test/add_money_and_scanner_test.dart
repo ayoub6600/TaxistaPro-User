@@ -280,8 +280,13 @@ void main() {
       // delegate's only requests go to the signed link of a VoIP push ("this call is shown", then
       // "does it still ring" every 2 s)
       expect(swift.substring(swift.indexOf('taxista/card_ocr')).contains('URLSession'), isFalse);
-      expect('URLSession'.allMatches(swift).length, 2);
-      expect(RegExp(r'URLSession\.shared\.dataTask\(with: (url|link)\)').allMatches(swift).length, 2);
+      // the evening reminder's buttons (enum RecurringReminderButtons) post only the day's answer
+      final reminder = swift.substring(swift.indexOf('enum RecurringReminderButtons'));
+      expect(reminder.contains('api/v1/recurring-day/'), isTrue);
+      expect('URLSession'.allMatches(reminder).length, 1);
+      final rest = swift.substring(0, swift.indexOf('enum RecurringReminderButtons'));
+      expect('URLSession'.allMatches(rest).length, 2);
+      expect(RegExp(r'URLSession\.shared\.dataTask\(with: (url|link)\)').allMatches(rest).length, 2);
       expect(swift.contains('p["alerted_url"]'), isTrue);
       expect(swift.contains('taxista/card_ocr'), isTrue);
 
