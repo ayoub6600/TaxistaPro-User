@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:taxista/pages/NavigatorPages/paymentgateways.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../functions/functions.dart';
+import '../../growth/gift_widgets.dart';
 import '../../styles/styles.dart';
 import '../../translations/translation.dart';
 import '../../widgets/widgets.dart';
@@ -966,6 +967,11 @@ class _InvoiceState extends State<Invoice> {
                                                                         ),
                                                                       ],
                                                                     ),
+                                                                    // a Taxista gift is part of the discount above: named here
+                                                                    if (userRequestData['id'] != null)
+                                                                      RideGiftLine(
+                                                                          requestId: userRequestData['id'].toString(),
+                                                                          style: TextStyle(fontSize: media.width * twelve)),
                                                                     Container(
                                                                       margin: EdgeInsets.only(
                                                                           top: media.width *

@@ -1,3 +1,5 @@
+import 'growth/growth_api.dart';
+import 'growth/my_gifts_page.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -114,6 +116,27 @@ class MyApp extends StatelessWidget {
                 GlobalCupertinoLocalizations.delegate,
               ],
               home: const LoadingPage(),
+              // https://taxista.aljidartech.com/offers/<ref> (App Links / Universal Links): «هداياي»
+              // when signed in, otherwise kept until the home screen; any other route is ignored
+              onGenerateRoute: (settings) {
+                final ref = GrowthLinks.refFrom(settings.name);
+                if (ref == null) return null;
+                if (bearerToken.isEmpty) {
+                  GrowthLinks.pendingRef = ref;
+                  return null;
+                }
+                return MaterialPageRoute(builder: (_) => MyGiftsPage(highlightRef: ref));
+              },
+              // a link that came while signed out (kept for later) or any unknown route: nothing opens
+              onUnknownRoute: (settings) => PageRouteBuilder(
+                opaque: false,
+                pageBuilder: (context, _, __) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+                  });
+                  return const SizedBox.shrink();
+                },
+              ),
               navigatorObservers: [BotToastNavigatorObserver()],
               builder: (context, widget) {
                 final botToast = BotToastInit();

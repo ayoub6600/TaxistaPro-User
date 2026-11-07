@@ -332,6 +332,9 @@ AudioPlayer audioPlayers = AudioPlayer();
 
 //get reverse geo coding
 
+/// OpenStreetMap's Nominatim refuses requests without an identifying User-Agent (403 for Dart's default)
+const nominatimHeaders = {'User-Agent': 'TaxistaRider (+https://taxista.aljidartech.com)', 'Accept-Language': 'ar'};
+
 var pickupAddress = '';
 var dropAddress = '';
 
@@ -379,6 +382,7 @@ Future<String?> geoCoding(double lat, double lng) async {
       val = await http.get(
         Uri.parse(
             'https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lng&format=json'),
+        headers: nominatimHeaders,
       );
     }
 
@@ -569,7 +573,8 @@ Future<void> getAutocomplete(input, sessionToken, lat, lng) async {
       pref.setString('autoAddress', jsonEncode(storedAutoAddress));
     } else {
       var result = await http.get(Uri.parse(
-          'https://nominatim.openstreetmap.org/search?q=$input&format=json'));
+          'https://nominatim.openstreetmap.org/search?q=$input&format=json'),
+          headers: nominatimHeaders);
 
       for (var element in jsonDecode(result.body)) {
         addAutoFill.add({

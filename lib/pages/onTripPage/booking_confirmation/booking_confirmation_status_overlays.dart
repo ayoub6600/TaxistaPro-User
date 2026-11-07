@@ -9,6 +9,9 @@ mixin _BookingConfirmationStatusOverlays
       title: languages[choosenLanguage]['text_nodriver'],
       actionLabel: languages[choosenLanguage]['text_tryagain'],
       icon: Icons.local_taxi_rounded,
+      // «أبلغني عند توفر سائق»: one notice if a driver comes free nearby (the server says if it is on)
+      secondaryActionLabel: 'أبلغني عند توفر سائق',
+      onSecondaryAction: () => showRescueSheet(context),
       onAction: () async {
         setState(() {
           noDriverFound = false;

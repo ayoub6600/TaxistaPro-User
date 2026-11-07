@@ -1238,14 +1238,7 @@ mixin _BookingConfirmationController
     final reason = _cancelReason == 'others'
         ? _cancelCustomReason.trim()
         : _cancelReason.trim();
-    if (reason.isEmpty) {
-      setState(() {
-        _cancellingError = _cancelReason == 'others'
-            ? languages[choosenLanguage]['text_add_cancel_reason']
-            : languages[choosenLanguage]['text_cancel_reason'];
-      });
-      return;
-    }
+    // the reason helps us but never stands between the rider and cancelling: an empty one is fine
 
     setState(() {
       isLoading = true;

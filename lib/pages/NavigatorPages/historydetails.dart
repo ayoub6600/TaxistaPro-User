@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:taxista/translations/translation.dart';
 
 import '../../functions/functions.dart';
+import '../../growth/gift_widgets.dart';
 import '../../styles/styles.dart';
 import '../../widgets/widgets.dart';
 import '../loadingPage/loading.dart';
@@ -1330,6 +1331,11 @@ class _HistoryDetailsState extends State<HistoryDetails> {
                                                                           ),
                                                                         ],
                                                                       ),
+                                                                      // a Taxista gift is part of the discount above: named here
+                                                                      if (myHistory[selectedHistory]['id'] != null)
+                                                                        RideGiftLine(
+                                                                            requestId: myHistory[selectedHistory]['id'].toString(),
+                                                                            style: TextStyle(fontSize: media.width * twelve)),
                                                                       Container(
                                                                         margin: EdgeInsets.only(
                                                                             top: media.width *
