@@ -43,7 +43,15 @@ class TripSelectionOverlay extends StatelessWidget {
     required this.places,
     this.searchResults = const SizedBox.shrink(),
     this.infoMessage = '',
+    this.quickChips = const [],
+    this.hasResults = false,
   });
+
+  /// «البيت», «الشغل», «اختر من الخريطة»: one tap under the two fields
+  final List<TripSelectionPlaceData> quickChips;
+
+  /// search results are showing: offer «ما لقيتش المكان؟ حدده على الخريطة» under them
+  final bool hasResults;
 
   final bool rtl;
   final String pickupAddress;
@@ -180,13 +188,48 @@ class TripSelectionOverlay extends StatelessWidget {
                                 ),
                               ),
                             ],
+                            if (quickChips.isNotEmpty) ...[
+                              const SizedBox(height: 10),
+                              SizedBox(
+                                height: 40,
+                                child: ListView.separated(
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: quickChips.length,
+                                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                                  itemBuilder: (_, i) => _QuickChip(quickChips[i]),
+                                ),
+                              ),
+                            ],
                             searchResults,
-                            const SizedBox(height: 12),
-                            _MapSelectionCard(
-                              rtl: rtl,
-                              selectingPickup: pickupEditing,
-                              onTap: onChooseFromMap,
-                            ),
+                            if (hasResults)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 10),
+                                child: Center(
+                                  child: TextButton(
+                                    onPressed: onChooseFromMap,
+                                    child: Text.rich(TextSpan(children: [
+                                      TextSpan(
+                                        text: rtl ? 'ما لقيتش المكان؟ ' : "Can't find it? ",
+                                        style: const TextStyle(color: _taxistaMuted, fontWeight: FontWeight.w600),
+                                      ),
+                                      TextSpan(
+                                        text: rtl ? 'حدده على الخريطة' : 'Pick it on the map',
+                                        style: const TextStyle(color: _taxistaBlue, fontWeight: FontWeight.w800),
+                                      ),
+                                    ])),
+                                  ),
+                                ),
+                              ),
+                            // the map is a chip above (and the hint under the results); the big card only
+                            // when no chips were given
+                            if (quickChips.isEmpty) ...[
+                              const SizedBox(height: 12),
+                              _MapSelectionCard(
+                                rtl: rtl,
+                                selectingPickup: pickupEditing,
+                                onTap: onChooseFromMap,
+                              ),
+                            ],
                             const SizedBox(height: 14),
                             _RecentPlacesCard(rtl: rtl, places: places),
                           ],
@@ -272,7 +315,7 @@ class _TripSelectionHeader extends StatelessWidget {
               ],
             ),
             child: Text(
-              rtl ? 'تحديد الرحلة' : 'Plan your trip',
+              rtl ? 'خطط لرحلتك' : 'Plan your trip',
               style: const TextStyle(
                 color: _taxistaInk,
                 fontSize: 18,
@@ -763,4 +806,27 @@ class _SoftIcon extends StatelessWidget {
       child: Icon(icon, color: color, size: 21),
     );
   }
+}
+
+class _QuickChip extends StatelessWidget {
+  const _QuickChip(this.place);
+  final TripSelectionPlaceData place;
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: Colors.white,
+        shape: StadiumBorder(side: BorderSide(color: place.accent.withValues(alpha: .22))),
+        child: InkWell(
+          customBorder: const StadiumBorder(),
+          onTap: place.onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(place.icon, size: 17, color: place.accent),
+              const SizedBox(width: 6),
+              Text(place.title, style: const TextStyle(color: _taxistaInk, fontSize: 13.5, fontWeight: FontWeight.w800)),
+            ]),
+          ),
+        ),
+      );
 }

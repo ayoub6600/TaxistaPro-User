@@ -18,6 +18,32 @@ extension _MapDestinationSheet on _MapsState {
       infoMessage: infoMessage,
       searchResults: buildDestinationSearchResults(media),
       places: _tripSelectionPlaces(),
+      hasResults: addAutoFill.isNotEmpty,
+      quickChips: [
+        if (!_pickaddress && quickFavorite('Home') != null)
+          TripSelectionPlaceData(
+            title: rtl ? 'البيت' : 'Home',
+            subtitle: '',
+            icon: Icons.home_outlined,
+            accent: const Color(0xff0873FF),
+            onTap: () => runDestinationEntryOnce(() => useQuickFavorite(media, 'Home')),
+          ),
+        if (!_pickaddress && quickFavorite('Work') != null)
+          TripSelectionPlaceData(
+            title: rtl ? 'الشغل' : 'Work',
+            subtitle: '',
+            icon: Icons.work_outline_rounded,
+            accent: const Color(0xff2381E9),
+            onTap: () => runDestinationEntryOnce(() => useQuickFavorite(media, 'Work')),
+          ),
+        TripSelectionPlaceData(
+          title: rtl ? 'اختر من الخريطة' : 'Choose on map',
+          subtitle: '',
+          icon: Icons.map_outlined,
+          accent: const Color(0xff14A47B),
+          onTap: _pickaddress ? openPickupLocationPicker : openDropLocationPicker,
+        ),
+      ],
       canContinue: hasPickupAndDrop,
       onBack: _closeDestinationEditor,
       onPickupTap: _handlePickupFieldTap,
