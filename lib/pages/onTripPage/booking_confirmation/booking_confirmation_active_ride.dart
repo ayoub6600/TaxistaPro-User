@@ -61,44 +61,53 @@ mixin _BookingConfirmationActiveRide
                       SizedBox(
                         height: media.height * 0.01,
                       ),
+                      // design v2: what is happening now, big; the ride code beside it
                       SizedBox(
-                          width: media.width * 0.9,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              (userRequestData['is_trip_start'] != 1 &&
-                                      userRequestData['show_otp_feature'] ==
-                                          true)
-                                  ? Container(
-                                      width: media.width * 0.3,
-                                      height: media.width * 0.1,
-                                      alignment: Alignment.center,
-                                      decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(
-                                              media.width * 0.02),
-                                          color: Colors.grey.withOpacity(0.2)),
-                                      child:
-                                          (userRequestData['is_trip_start'] !=
-                                                      1 &&
-                                                  userRequestData[
-                                                          'show_otp_feature'] ==
-                                                      true)
-                                              ? MyText(
-                                                  text:
-                                                      'Otp : ${userRequestData['ride_otp']}',
-                                                  size: media.width * fourteen,
-                                                  textAlign: TextAlign.end,
-                                                  fontweight: FontWeight.bold,
-                                                  maxLines: 1,
-                                                )
-                                              : Container(),
-                                    )
-                                  : Container(),
-                            ],
-                          )),
-                      SizedBox(
-                        height: media.width * 0.025,
+                        width: media.width * 0.9,
+                        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Expanded(
+                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text(_activeRideTitle(),
+                                  style: GoogleFonts.cairo(color: textColor, fontSize: 21, fontWeight: FontWeight.w800, height: 1.25)),
+                              Text(_activeRideLine(),
+                                  maxLines: 3,
+                                  style: GoogleFonts.cairo(color: textColor.withValues(alpha: .6), fontSize: 13, height: 1.45)),
+                            ]),
+                          ),
+                          if (userRequestData['is_trip_start'] != 1 && userRequestData['show_otp_feature'] == true)
+                            Container(
+                              margin: const EdgeInsetsDirectional.only(start: 10),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: theme.withValues(alpha: .08),
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: Column(children: [
+                                Text(languageDirection == 'rtl' ? 'رمز الرحلة' : 'Ride code',
+                                    style: GoogleFonts.cairo(color: theme, fontSize: 11, fontWeight: FontWeight.w700)),
+                                Text('${userRequestData['ride_otp']}',
+                                    style: GoogleFonts.notoSans(color: theme, fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: 2)),
+                              ]),
+                            ),
+                        ]),
                       ),
+                      if (userRequestData['accepted_at'] != null &&
+                          userRequestData['arrived_at'] != null &&
+                          userRequestData['is_trip_start'] == 0 &&
+                          (waitingTime / 60).toStringAsFixed(0) != '0')
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Container(
+                            width: media.width * 0.9,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(color: const Color(0xffFFF4DB), borderRadius: BorderRadius.circular(14)),
+                            child: Text(
+                              '${languages[choosenLanguage]['text_waiting_time']}: ${(waitingTime / 60).toStringAsFixed(0)} ${languages[choosenLanguage]['text_mins']}',
+                              style: GoogleFonts.cairo(color: const Color(0xffB7791F), fontSize: 13, fontWeight: FontWeight.w800),
+                            ),
+                          ),
+                        ),
+                      SizedBox(height: media.width * 0.03),
                       if (fare != null) ...[
                         SizedBox(
                           width: media.width * 0.9,
@@ -108,378 +117,9 @@ mixin _BookingConfirmationActiveRide
                             expanded: true,
                           ),
                         ),
-                        SizedBox(height: media.width * 0.025),
+                        SizedBox(height: media.width * 0.03),
                       ],
-                      ((widget.type == null ||
-                                  (widget.type != 1 || widget.type != 2) &&
-                                      userRequestData['is_trip_start'] == 0) &&
-                              userRequestData['waiting_charge'].toString() !=
-                                  '0')
-                          ? Container(
-                              width: media.width * 0.9,
-                              padding: EdgeInsets.all(media.width * 0.05),
-                              color: borderColor.withOpacity(0.1),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: MyText(
-                                      text: ((userRequestData['accepted_at'] !=
-                                                  null &&
-                                              userRequestData['arrived_at'] ==
-                                                  null &&
-                                              userRequestData['is_trip_start'] ==
-                                                  0))
-                                          ? languages[choosenLanguage]
-                                              ['text_captain_arrive']
-                                          : (userRequestData['accepted_at'] != null &&
-                                                  userRequestData['arrived_at'] !=
-                                                      null &&
-                                                  userRequestData['is_trip_start'] ==
-                                                      0)
-                                              ? (userRequestData['is_bid_ride'] ==
-                                                      1)
-                                                  ? languages[choosenLanguage]
-                                                      ['text_captain_arrived']
-                                                  : '${languages[choosenLanguage]['text_captain_arrived']}, ${languages[choosenLanguage]['text_waiting_time_text'].toString().replaceAll('5', userRequestData['free_waiting_time_in_mins_before_trip_start'].toString()).replaceAll('**', (userRequestData['requested_currency_symbol'].toString() + userRequestData['waiting_charge'].toString()))}'
-                                              : (_dist != null)
-                                                  ? languages[choosenLanguage][
-                                                          'text_reaching_destination']
-                                                      .toString()
-                                                      .replaceAll(
-                                                          '1111',
-                                                          double.parse(((_dist * 2))
-                                                                  .toString())
-                                                              .round()
-                                                              .toString())
-                                                  : languages[choosenLanguage]
-                                                      ['text_onride'],
-                                      size: media.width * fourteen,
-                                      color: greyText,
-                                    ),
-                                  ),
-                                  if ((userRequestData['accepted_at'] != null &&
-                                          userRequestData['arrived_at'] !=
-                                              null &&
-                                          userRequestData['is_trip_start'] ==
-                                              0) &&
-                                      (waitingTime / 60).toStringAsFixed(0) !=
-                                          '0')
-                                    Container(
-                                      padding:
-                                          EdgeInsets.all(media.width * 0.025),
-                                      decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                          color: const Color(0xff5BDD0A)
-                                              .withOpacity(0.24)),
-                                      child: Column(
-                                        children: [
-                                          MyText(
-                                            text: languages[choosenLanguage]
-                                                ['text_waiting_time'],
-                                            size: media.width * twelve,
-                                            color: greyText,
-                                          ),
-                                          MyText(
-                                            text:
-                                                '${(waitingTime / 60).toStringAsFixed(0)} ${languages[choosenLanguage]['text_mins']}',
-                                            size: media.width * twelve,
-                                            fontweight: FontWeight.w600,
-                                            color: Colors.orange,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            )
-                          : Container(),
-                      SizedBox(
-                        height: media.height * 0.01,
-                      ),
-                      Container(
-                        padding: EdgeInsets.all(media.width * 0.025),
-                        width: media.width * 0.9,
-                        color: borderColor.withOpacity(0.1),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      SizedBox(
-                                        height: media.width * 0.02,
-                                      ),
-                                      Row(
-                                        children: [
-                                          Container(
-                                            height: media.width * 0.15,
-                                            width: media.width * 0.15,
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              image: DecorationImage(
-                                                  image: NetworkImage(
-                                                    userRequestData[
-                                                                'driverDetail']
-                                                            ['data']
-                                                        ['profile_picture'],
-                                                  ),
-                                                  fit: BoxFit.cover),
-                                            ),
-                                          ),
-                                          SizedBox(
-                                            width: media.width * 0.03,
-                                          ),
-                                          SizedBox(
-                                            height: media.width * 0.01,
-                                          ),
-                                          SizedBox(
-                                            width: media.width * 0.025,
-                                          ),
-                                        ],
-                                      ),
-                                      Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.start,
-                                        children: [
-                                          Icon(
-                                            Icons.star,
-                                            color: Colors.orange,
-                                            size: media.width * 0.05,
-                                          ),
-                                          SizedBox(
-                                            width: media.width * 0.005,
-                                          ),
-                                          Expanded(
-                                            child: MyText(
-                                              color: greyText,
-                                              text: (userRequestData[
-                                                              'driverDetail']
-                                                          ['data']['rating'] ==
-                                                      0)
-                                                  ? languages[choosenLanguage]
-                                                      ['text_no_rating']
-                                                  : userRequestData[
-                                                              'driverDetail']
-                                                          ['data']['rating']
-                                                      .toString(),
-                                              size: media.width * fourteen,
-                                              fontweight: FontWeight.w600,
-                                              maxLines: 1,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      SizedBox(
-                                        height: media.width * 0.01,
-                                      ),
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: MyText(
-                                                text: userRequestData[
-                                                            'driverDetail']
-                                                        ['data']['name']
-                                                    .toString(),
-                                                size: media.width * fourteen,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                fontweight: FontWeight.w500),
-                                          ),
-                                        ],
-                                      ),
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                              child: MyText(
-                                            text:
-                                                '${userRequestData['driverDetail']['data']['car_color']} | ${userRequestData['driverDetail']['data']['car_make_name']} | ${userRequestData['driverDetail']['data']['car_model_name']}',
-                                            size: media.width * twelve,
-                                            maxLines: 2,
-                                          )),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Expanded(
-                                    child: Column(
-                                  children: [
-                                    SizedBox(
-                                      height: media.width * 0.3,
-                                      width: media.width * 0.3,
-                                      child: Image.network(
-                                          userRequestData['vehicle_type_image']
-                                              .toString()),
-                                    ),
-                                    Text(
-                                      languages[choosenLanguage]
-                                          ['text_car_number'],
-                                      style: TextStyle(
-                                          fontSize: media.width * sixteen,
-                                          fontWeight: FontWeight.w600),
-                                    ),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Container(
-                                          padding: EdgeInsets.only(
-                                              left: media.width * 0.025,
-                                              right: media.width * 0.025),
-                                          width: media.width * 0.3,
-                                          height: media.width * 0.1,
-                                          decoration: BoxDecoration(
-                                              color: Colors.yellow[700],
-                                              borderRadius:
-                                                  BorderRadius.circular(5),
-                                              border: Border.all(
-                                                  color: Colors.black,
-                                                  width: 2)),
-                                          child: FittedBox(
-                                              fit: BoxFit.fitWidth,
-                                              child: Text(
-                                                  '${userRequestData['driverDetail']['data']['car_number']}')),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ))
-                              ],
-                            ),
-                            SizedBox(
-                              height: media.width * 0.03,
-                            ),
-                            Container(
-                              child: Row(
-                                children: [
-                                  Text(
-                                    "عدد الطلبات المكتملة للسائق",
-                                    style: GoogleFonts.notoSans(
-                                      fontSize: media.width * fourteen,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                  SizedBox(
-                                    width: media.width * 0.04,
-                                  ),
-                                  CircleAvatar(
-                                    backgroundColor: Colors.blue,
-                                    radius: media.width * 0.04,
-                                    child: Text(
-                                      (userRequestData[
-                                                  'driver_completed_rides_count'] ??
-                                              0)
-                                          .toString(),
-                                      style: GoogleFonts.notoSans(
-                                        fontSize: media.width * fourteen,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            SizedBox(
-                              height: media.width * 0.03,
-                            ),
-                            if (userRequestData['is_trip_start'] == 0)
-                              Row(
-                                children: [
-                                  Expanded(
-                                      child: InkWell(
-                                    onTap: () async {
-                                      var result = await guardedPush(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (context) =>
-                                                  const ChatPage()));
-                                      if (result) {
-                                        setState(() {});
-                                      }
-                                    },
-                                    child: Container(
-                                      height: media.width * 0.12,
-                                      padding: EdgeInsets.only(
-                                          left: media.width * 0.05,
-                                          right: media.width * 0.05),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(
-                                            media.width * 0.07),
-                                        color: Colors.grey.withOpacity(0.2),
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.start,
-                                        children: [
-                                          Stack(
-                                            children: [
-                                              SizedBox(
-                                                width: media.width * 0.1,
-                                                child: const Icon(
-                                                  Icons.message,
-                                                  color: Colors.grey,
-                                                ),
-                                              ),
-                                              if (chatList
-                                                  .where((element) =>
-                                                      element['from_type'] ==
-                                                          2 &&
-                                                      element['seen'] == 0)
-                                                  .isNotEmpty)
-                                                Positioned(
-                                                    top: media.width * 0.01,
-                                                    right: media.width * 0.01,
-                                                    child: Container(
-                                                      height:
-                                                          media.width * 0.02,
-                                                      width: media.width * 0.02,
-                                                      decoration: BoxDecoration(
-                                                          shape:
-                                                              BoxShape.circle,
-                                                          color:
-                                                              verifyDeclined),
-                                                    ))
-                                            ],
-                                          ),
-                                          SizedBox(
-                                            width: media.width * 0.03,
-                                          ),
-                                          Expanded(
-                                              child: MyText(
-                                            text:
-                                                '${languages[choosenLanguage]['text_chatwithdriver']} ${userRequestData['driverDetail']['data']['name'].toString()}',
-                                            size: media.width * fourteen,
-                                            color: hintColor,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ))
-                                        ],
-                                      ),
-                                    ),
-                                  )),
-                                  SizedBox(
-                                    width: media.width * 0.05,
-                                  ),
-                                  // one "اتصال": the free call through Taxista, WhatsApp or the phone
-                                  CallOptionsButton(
-                                    peerName: userRequestData['driverDetail']['data']['name'].toString(),
-                                    mobile: userRequestData['driverDetail']['data']['mobile']?.toString(),
-                                    freeCall: () => AdminCallController.instance.callDriver(requestId: userRequestData['id']?.toString()),
-                                  ),
-                                ],
-                              ),
-                          ],
-                        ),
-                      ),
+                      _activeDriverCard(media),
                       SizedBox(
                         height: media.width * 0.05,
                       ),
@@ -1037,5 +677,144 @@ mixin _BookingConfirmationActiveRide
                   )),
             ))
         : Container();
+  }
+
+  /// «يوصلك خلال 4 دقائق», «وصل السائق», «في الطريق إلى وجهتك»
+  String _activeRideTitle() {
+    final rtl = languageDirection == 'rtl';
+    final d = userRequestData;
+    if (d['is_trip_start'] == 1) return rtl ? 'في الطريق إلى وجهتك' : 'On the way to your destination';
+    if (d['arrived_at'] != null) return rtl ? 'وصل السائق' : 'Your driver has arrived';
+    if (_dist != null) {
+      final m = double.parse((_dist * 2).toString()).round();
+      if (m > 0) return rtl ? 'يوصلك خلال $m ${m <= 10 && m > 2 ? 'دقائق' : 'دقيقة'}' : 'Arrives in $m min';
+    }
+    return rtl ? 'السائق في الطريق إليك' : 'Your driver is on the way';
+  }
+
+  /// the same words as before under the title (arrival, waiting charge, on the ride)
+  String _activeRideLine() {
+    final d = userRequestData;
+    final l = languages[choosenLanguage];
+    if (d['accepted_at'] != null && d['arrived_at'] == null && d['is_trip_start'] == 0) return '${l['text_captain_arrive']}';
+    if (d['accepted_at'] != null && d['arrived_at'] != null && d['is_trip_start'] == 0) {
+      if (d['is_bid_ride'] == 1 || d['waiting_charge'].toString() == '0') return '${l['text_captain_arrived']}';
+      return '${l['text_captain_arrived']}, ${l['text_waiting_time_text'].toString().replaceAll('5', d['free_waiting_time_in_mins_before_trip_start'].toString()).replaceAll('**', (d['requested_currency_symbol'].toString() + d['waiting_charge'].toString()))}';
+    }
+    return '${l['text_onride']}';
+  }
+
+  /// the driver as one card: photo and rating, name, the car without empty fields, the plate, rides done;
+  /// then «رسالة» and «اتصال» (the same chat page and call button as before)
+  Widget _activeDriverCard(Size media) {
+    final rtl = languageDirection == 'rtl';
+    final drv = userRequestData['driverDetail']['data'];
+    bool real(dynamic v) => v != null && '$v'.trim().isNotEmpty && '$v' != 'null' && '$v' != '-';
+    final car = [drv['car_make_name'], drv['car_model_name'], drv['car_color']].where(real).join(' · ');
+    final rides = userRequestData['driver_completed_rides_count'] ?? 0;
+    final rating = drv['rating'];
+    final unread = chatList.where((e) => e['from_type'] == 2 && e['seen'] == 0).isNotEmpty;
+    return Container(
+      width: media.width * 0.9,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isDarkTheme ? const Color(0xff171B22) : Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: textColor.withValues(alpha: .07)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .05), blurRadius: 14, offset: const Offset(0, 5))],
+      ),
+      child: Column(children: [
+        Row(children: [
+          Stack(clipBehavior: Clip.none, children: [
+            Container(
+              width: 58,
+              height: 58,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                image: DecorationImage(image: NetworkImage('${drv['profile_picture']}'), fit: BoxFit.cover),
+              ),
+            ),
+            PositionedDirectional(
+              bottom: -6,
+              start: 6,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(99), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .12), blurRadius: 4)]),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.star_rounded, color: Color(0xffF5A524), size: 14),
+                  Text(rating == 0 || rating == null ? '—' : '$rating',
+                      style: GoogleFonts.notoSans(color: const Color(0xff10213F), fontSize: 11.5, fontWeight: FontWeight.w800)),
+                ]),
+              ),
+            ),
+          ]),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('${drv['name'] ?? ''}',
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.cairo(color: textColor, fontSize: 16.5, fontWeight: FontWeight.w800)),
+              if (car.isNotEmpty)
+                Text(car, maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.cairo(color: textColor.withValues(alpha: .6), fontSize: 12.5)),
+              Text(rtl ? '$rides رحلة مكتملة' : '$rides rides', style: GoogleFonts.cairo(color: textColor.withValues(alpha: .5), fontSize: 12)),
+            ]),
+          ),
+          if (real(drv['car_number']))
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: const Color(0xffFFD54F),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xff10213F), width: 1.6),
+              ),
+              child: Text('${drv['car_number']}',
+                  textDirection: ui.TextDirection.ltr,
+                  style: GoogleFonts.notoSans(color: const Color(0xff10213F), fontSize: 15, fontWeight: FontWeight.w800)),
+            ),
+        ]),
+        if (userRequestData['is_trip_start'] == 0) ...[
+          const SizedBox(height: 14),
+          Row(children: [
+            Expanded(
+              child: Material(
+                color: theme.withValues(alpha: .07),
+                borderRadius: BorderRadius.circular(16),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () async {
+                    final result = await guardedPush(context, MaterialPageRoute(builder: (context) => const ChatPage()));
+                    if (result == true) setState(() {});
+                  },
+                  child: SizedBox(
+                    height: 48,
+                    child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Stack(clipBehavior: Clip.none, children: [
+                        Icon(Icons.chat_bubble_outline_rounded, color: theme, size: 21),
+                        if (unread)
+                          const PositionedDirectional(
+                            top: -2,
+                            end: -3,
+                            child: CircleAvatar(radius: 4.5, backgroundColor: Color(0xffE0243A)),
+                          ),
+                      ]),
+                      const SizedBox(width: 8),
+                      Text(rtl ? 'رسالة' : 'Message', style: GoogleFonts.cairo(color: theme, fontSize: 14.5, fontWeight: FontWeight.w800)),
+                    ]),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            // one «اتصال»: the free call through Taxista, WhatsApp or the phone
+            CallOptionsButton(
+              peerName: '${drv['name']}',
+              mobile: drv['mobile']?.toString(),
+              freeCall: () => AdminCallController.instance.callDriver(requestId: userRequestData['id']?.toString()),
+            ),
+          ]),
+        ],
+      ]),
+    );
   }
 }
