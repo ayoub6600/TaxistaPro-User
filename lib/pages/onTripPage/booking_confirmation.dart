@@ -69,6 +69,8 @@ import '../../functions/calls/admin_call_controller.dart';
 
 import '../pulse/pickup_change_panel.dart';
 import 'booking_confirmation/widgets/booking_tile.dart';
+import '../../games/waiting_games.dart';
+import '../../games/ride_host.dart';
 import '../../functions/schedule_time.dart';
 
 part 'booking_confirmation/booking_confirmation_controller.dart';

@@ -53,6 +53,10 @@ class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
   @override
   void initState() {
     super.initState();
+    // the admin's game settings (TestFlight: all on), read once per app start
+    RideGamesHost.configure().then((_) {
+      if (mounted) setState(() {});
+    });
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2200),
@@ -201,7 +205,10 @@ class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
     final media = MediaQuery.sizeOf(context);
     final topPadding = MediaQuery.paddingOf(context).top;
     final compact = media.height < 720;
-    final sheetHeight = _searchingSheetHeight(media);
+    final gamesBox = (media.height * 0.24).clamp(150.0, 230.0).toDouble();
+    final showGames = RideGamesHost.enabled;
+    final sheetHeight = _searchingSheetHeight(media) + (showGames ? (RideGamesHost.boxOpen ? gamesBox + 12 : 58) : 0);
+    RideGamesHost.sync(context);
     final revealedDrivers = widget.drivers
         .where((driver) => _revealedDrivers.containsKey(driver.revealKey))
         .toList(growable: false);
@@ -351,6 +358,23 @@ class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
                     totalSeconds: widget.totalSeconds,
                     isRtl: widget.isRtl,
                   ),
+                  // «العب وأنت تستنى»: the box opens inside the sheet (a quarter of the screen); the
+                  // request stays in view above it; offers from drivers come first (the box steps aside)
+                  if (showGames) ...[
+                    SizedBox(height: compact ? 8 : 10),
+                    if (RideGamesHost.boxOpen && offeringDrivers.isEmpty)
+                      WaitingGamesBox(
+                        status: RideGamesHost.status,
+                        controller: RideGamesHost.controller,
+                        height: gamesBox,
+                        onClose: () => setState(() => RideGamesHost.boxOpen = false),
+                      )
+                    else
+                      PlayWhileWaitingButton(
+                        label: RideGamesHost.boxOpen ? 'كمّل اللعب' : 'العب وأنت تستنى',
+                        onTap: () => setState(() => RideGamesHost.boxOpen = true),
+                      ),
+                  ],
                   SizedBox(height: compact ? 9 : 13),
                   Expanded(
                     child: offeringDrivers.isEmpty && viewingDrivers.isEmpty

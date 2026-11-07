@@ -708,6 +708,12 @@ mixin _BookingConfirmationActiveRide
   /// then «رسالة» and «اتصال» (the same chat page and call button as before)
   Widget _activeDriverCard(Size media) {
     final rtl = languageDirection == 'rtl';
+    // the games keep listening after the driver accepts (same round, same controller)
+    RideGamesHost.sync(context,
+        distanceKm: _dist is num ? (_dist as num).toDouble() : null,
+        onCall: null,
+        onChat: () => guardedPush(context, MaterialPageRoute(builder: (context) => const ChatPage())),
+        onBackToTrip: () {});
     final drv = userRequestData['driverDetail']['data'];
     bool real(dynamic v) => v != null && '$v'.trim().isNotEmpty && '$v' != 'null' && '$v' != '-';
     final car = [drv['car_make_name'], drv['car_model_name'], drv['car_color']].where(real).join(' · ');
@@ -806,6 +812,22 @@ mixin _BookingConfirmationActiveRide
               ),
             ),
             const SizedBox(width: 10),
+            if (RideGamesHost.enabled && userRequestData['arrived_at'] == null) ...[
+              Material(
+                color: const Color(0xff102A56).withValues(alpha: .08),
+                borderRadius: BorderRadius.circular(16),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () => WaitingGamesFullScreen.open(context, controller: RideGamesHost.controller, status: RideGamesHost.status),
+                  child: const SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: Icon(Icons.sports_esports_rounded, color: Color(0xff102A56)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+            ],
             // one «اتصال»: the free call through Taxista, WhatsApp or the phone
             CallOptionsButton(
               peerName: '${drv['name']}',
