@@ -62,6 +62,16 @@ class LiveActivity {
     }
   }
 
+  /// the TestFlight tryout: the card now, and its alert in 8 seconds (as the evening push brings it), so it
+  /// opens large over another app for a few seconds
+  static Future<String> demoCardAlert() async {
+    try {
+      return '${await _channel.invokeMethod('demoCardAlert')}';
+    } catch (e) {
+      return 'ما قدرناش نبدأ البطاقة: $e';
+    }
+  }
+
   /// the TestFlight tryout: the plain notification in 5 seconds (lock the phone meanwhile)
   static Future<void> demoNotification() async {
     try {

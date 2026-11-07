@@ -842,6 +842,21 @@ class _ReminderTryoutState extends State<_ReminderTryout> {
           child: Text(card ? 'بطاقة شاشة القفل (الزرين ظاهرين)' : 'بطاقة شاشة القفل تحتاج iOS 17.2 أو أحدث', style: _t(14, c: Colors.white)),
         ),
         const SizedBox(height: 8),
+        FilledButton(
+          onPressed: card
+              ? () async {
+                  final r = await LiveActivity.demoCardAlert();
+                  if (mounted) {
+                    setState(() => _note = r == 'ok'
+                        ? 'افتح فيسبوك أو أي تطبيق ثاني توا. بعد 8 ثواني البطاقة تنفتح كبيرة فوقه لثواني، جرب الزرين وهي مفتوحة.'
+                        : r);
+                  }
+                }
+              : null,
+          style: FilledButton.styleFrom(backgroundColor: const Color(0xFF0B0B0F), minimumSize: const Size.fromHeight(44)),
+          child: Text('وأنت في تطبيق ثاني (بعد 8 ثواني)', style: _t(14, c: Colors.white)),
+        ),
+        const SizedBox(height: 8),
         OutlinedButton(
           onPressed: () async {
             await LiveActivity.demoNotification();

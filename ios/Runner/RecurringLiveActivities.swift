@@ -29,6 +29,12 @@ enum RecurringLiveActivities {
       case "info": result(info())
       case "demoCard":
         if #available(iOS 17.0, *) { result(startDemo()) } else { result("iOS 17 أو أحدث مطلوب لبطاقة شاشة القفل") }
+      case "demoCardAlert":
+        // the card as the evening push brings it: it arrives *with an alert*, which is what makes iOS open it
+        // large over the app in front for a few seconds (the Dynamic Island's expanded view, or the banner on
+        // iPhones without the island). The card starts now (iOS only starts one from the foreground) and
+        // its alert comes 8 s later, while he is in another app.
+        if #available(iOS 17.0, *) { result(startDemo(alertAfter: 8)) } else { result("iOS 17 أو أحدث مطلوب لبطاقة شاشة القفل") }
       case "demoNotification": demoNotification(); result(true)
       case "endDay":
         let id = (call.arguments as? [String: Any])?["id"] as? String ?? ""
@@ -77,8 +83,10 @@ enum RecurringLiveActivities {
       let stale = (j["staleAt"] as? Double).map { Date(timeIntervalSince1970: $0) }
       DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
         do {
-          let a = try Activity.request(attributes: at, content: ActivityContent(state: st, staleDate: stale), pushType: .token)
+          let c = ActivityContent(state: st, staleDate: stale)
+          let a = try Activity.request(attributes: at, content: c, pushType: .token)
           NSLog("TaxistaLive rig card started %@", a.id)
+          if let wait = j["alertAfter"] as? Double { alertLater(a, content: c, after: wait) }
         } catch { NSLog("TaxistaLive rig card failed %@", "\(error)") }
       }
     }
@@ -202,7 +210,7 @@ enum RecurringLiveActivities {
   // MARK: TestFlight tryout (nothing reaches the server)
 
   @available(iOS 17.0, *)
-  private static func startDemo() -> String {
+  private static func startDemo(alertAfter: Double? = nil) -> String {
     guard ActivityAuthorizationInfo().areActivitiesEnabled else {
       return "بطاقات شاشة القفل مقفولة لتاكسيستا: الإعدادات ← تاكسيستا ← الأنشطة الحية (Live Activities)."
     }
@@ -213,10 +221,28 @@ enum RecurringLiveActivities {
                                     deadline: Date().addingTimeInterval(3600).timeIntervalSince1970)
     let state = RecurringDayAttributes.ContentState(phase: "ask", title: "🚕 مشوارك غدًا", line: "9:30 صباحًا · من البيت إلى العمل", note: "")
     do {
-      _ = try Activity.request(attributes: at, content: ActivityContent(state: state, staleDate: Date().addingTimeInterval(3600)), pushType: nil)
+      let content = ActivityContent(state: state, staleDate: Date().addingTimeInterval(3600))
+      let a = try Activity.request(attributes: at, content: content, pushType: nil)
+      if let wait = alertAfter { alertLater(a, content: content, after: wait) }
       return "ok"
     } catch {
       return "ما قدرناش نبدأ البطاقة: \(error.localizedDescription)"
+    }
+  }
+
+  /// the card's alert a few seconds from now, as the evening push brings it (iOS opens the card large over
+  /// the app in front). The app is in the background by then: a short background task keeps it alive.
+  @available(iOS 16.2, *)
+  private static func alertLater(_ a: Activity<RecurringDayAttributes>, content: ActivityContent<RecurringDayAttributes.ContentState>, after wait: Double) {
+    var task: UIBackgroundTaskIdentifier = .invalid
+    task = UIApplication.shared.beginBackgroundTask(withName: "recurring-demo-alert") {
+      UIApplication.shared.endBackgroundTask(task); task = .invalid
+    }
+    Task {
+      try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
+      await a.update(content, alertConfiguration: AlertConfiguration(title: "\(content.state.title.replacingOccurrences(of: "🚕", with: "").trimmingCharacters(in: .whitespaces))", body: "\(content.state.line)", sound: .default))
+      NSLog("TaxistaLive alert sent")
+      if task != .invalid { UIApplication.shared.endBackgroundTask(task); task = .invalid }
     }
   }
 
