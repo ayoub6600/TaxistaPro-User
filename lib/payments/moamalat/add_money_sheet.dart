@@ -113,7 +113,14 @@ class _AddMoneySheetState extends State<AddMoneySheet> {
                 textAlign: TextAlign.center, style: env.style(size: 12.5, weight: FontWeight.w500, color: env.muted)),
             const SizedBox(height: 16),
             if (methods == null)
-              const Padding(padding: EdgeInsets.symmetric(vertical: 28), child: Center(child: CircularProgressIndicator()))
+              Column(children: [
+                for (var i = 0; i < 2; i++)
+                  Container(
+                    height: 74,
+                    margin: const EdgeInsets.only(bottom: 10),
+                    decoration: BoxDecoration(color: env.border.withOpacity(.35), borderRadius: BorderRadius.circular(18)),
+                  ),
+              ])
             else if (methods.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 24),
@@ -141,6 +148,13 @@ class _AddMoneySheetState extends State<AddMoneySheet> {
   }
 }
 
+/// the method's name for the customer: the recharge cards are just «كروت الشحن» (no provider name)
+String _label(MoamalatEnv env, PaymentMethodOption method) {
+  if (method.key == PaymentMethodOption.qareebCard) return env.t('كروت الشحن', 'Recharge cards');
+  if (method.key == PaymentMethodOption.bankCard) return env.t('البطاقة البنكية', 'Bank card');
+  return env.isRtl ? method.labelAr : method.labelEn;
+}
+
 class _MethodTile extends StatelessWidget {
   const _MethodTile({required this.env, required this.method, required this.icon, required this.subtitle, required this.onTap});
 
@@ -154,24 +168,30 @@ class _MethodTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: env.background,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(20),
       child: InkWell(
         key: Key('method-${method.key}'),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(20),
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: env.border)),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), border: Border.all(color: env.border)),
           child: Row(children: [
             Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: env.accent.withOpacity(0.10), borderRadius: BorderRadius.circular(12)),
-              child: Icon(icon, size: 22, color: env.accent),
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: method.key == PaymentMethodOption.bankCard
+                    ? const [Color(0xff102A56), Color(0xff1965BF)]
+                    : const [Color(0xff0873FF), Color(0xff3D9BFF)]),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Icon(icon, size: 24, color: Colors.white),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(env.isRtl ? method.labelAr : method.labelEn, style: env.style(size: 15, weight: FontWeight.w800)),
+                Text(_label(env, method), style: env.style(size: 15.5, weight: FontWeight.w800)),
                 const SizedBox(height: 2),
                 Text(subtitle, style: env.style(size: 12, weight: FontWeight.w500, color: env.muted)),
               ]),

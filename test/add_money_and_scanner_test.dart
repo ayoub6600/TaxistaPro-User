@@ -318,7 +318,7 @@ void main() {
     testWidgets('offers exactly the two methods, named for the customer', (tester) async {
       await openSheet(tester, makeEnv(FakeApi()));
       expect(find.text('إضافة فلوس'), findsOneWidget);
-      expect(find.text('كروت شحن قريب'), findsOneWidget);
+      expect(find.text('كروت الشحن'), findsOneWidget); // the customer sees no provider name
       expect(find.text('البطاقة البنكية'), findsOneWidget);
       expect(find.byKey(const Key('method-qareeb_card')), findsOneWidget);
       expect(find.byKey(const Key('method-bank_card')), findsOneWidget);

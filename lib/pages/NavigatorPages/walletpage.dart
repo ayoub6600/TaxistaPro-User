@@ -12,7 +12,11 @@ import '../noInternet/nointernet.dart';
 import '../../payments/moamalat/moamalat_app_env.dart';
 import '../../payments/moamalat/moamalat_env.dart';
 import '../../payments/moamalat/add_money_sheet.dart';
+import '../../payments/moamalat/saved_card.dart';
+import '../../payments/moamalat/saved_cards_page.dart';
 import '../../community/rewards_page.dart';
+import '../../widgets/v2_sheet.dart';
+import 'package:flutter/services.dart';
 
 class WalletPage extends StatefulWidget {
   const WalletPage({super.key});
@@ -32,6 +36,7 @@ class _WalletPageState extends State<WalletPage> {
   dynamic _shimmer;
   bool _addPayment = false;
   bool _addingMoney = false;
+  Future<List<SavedCard>>? _cardsFuture;
   int ischeckmoneytransfer = 0;
   ScrollController custom = ScrollController();
   late final MoamalatEnv _moamalatEnv = buildMoamalatEnv(onWalletChanged: () {
@@ -108,10 +113,10 @@ class _WalletPageState extends State<WalletPage> {
     );
   }
 
-  /// The existing recharge-card code entry, unchanged.
+  /// The recharge-card code entry (design v2): one big code field, paste, and «اشحن»; the same
+  /// addBalance call, the same toasts and wallet refresh as before.
   void _openQareebRecharge() {
     if (!mounted) return;
-    final media = MediaQuery.of(context).size;
     setState(() {
       addMoneyController.text = '';
       addMoney = null;
@@ -119,155 +124,98 @@ class _WalletPageState extends State<WalletPage> {
     showModalBottomSheet(
         context: context,
         isScrollControlled: true,
+        backgroundColor: Colors.transparent,
         builder: (context) {
-          return Container(
-            width: MediaQuery.of(context).size.width,
-            height: MediaQuery.of(context).size.height * 0.8,
-            // width: media.width * 1,
-            // padding: MediaQuery.of(context)
-            //     .viewInsets,
-            decoration: BoxDecoration(
-                color: page,
-                borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(media.width * 0.05),
-                    topRight: Radius.circular(media.width * 0.05))),
-            // padding:
-            //     EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
-            child: Container(
-              //  width: media.width * 1,
-              padding: EdgeInsets.all(media.width * 0.05),
-              child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: MyText(
-                        textAlign: TextAlign.center,
-                        text: languages[choosenLanguage]
-                            ['text_add_money_wallet'],
-                        size: media.width * sixteen,
-                        fontweight: FontWeight.w600,
-                        color: textColor,
-                      ),
-                    ),
-                    SizedBox(
-                      height: media.width * 0.06,
-                    ),
-                    Container(
-                      height: media.width * 0.128,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: borderLines, width: 1.2),
-                      ),
-                      child: Row(children: [
-                        Expanded(
-                          child: Container(
-                              width: media.width * 0.1,
-                              height: media.width * 0.128,
-                              decoration: const BoxDecoration(
-                                  borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(12),
-                                    bottomLeft: Radius.circular(12),
-                                  ),
-                                  color: Color(0xffF0F0F0)),
-                              alignment: Alignment.center,
-                              child: MyText(
-                                text: walletBalance['currency_symbol'],
-                                size: media.width * twelve,
-                                fontweight: FontWeight.w600,
-                                color: (isDarkTheme == true)
-                                    ? Colors.black
-                                    : textColor,
-                              )),
-                        ),
-                        SizedBox(
-                          width: media.width * 0.05,
-                        ),
-                        Expanded(
-                          child: Container(
-                            height: media.width * 0.128,
-                            width: media.width * 0.6,
-                            alignment: Alignment.center,
-                            child: TextField(
-                              controller: addMoneyController,
-                              onChanged: (val) {
-                                setState(() {
-                                  addMoney = int.parse(val);
-                                });
-                              },
-                              keyboardType: TextInputType.number,
-                              decoration: InputDecoration(
-                                border: InputBorder.none,
-                                hintText: "ادخل رقم الكود",
-                                hintStyle: GoogleFonts.notoSans(
-                                  fontSize: media.width * fourteen,
-                                  fontWeight: FontWeight.normal,
-                                  color: textColor.withOpacity(0.4),
-                                ),
-                              ),
-                              style: GoogleFonts.notoSans(
-                                  fontSize: media.width * fourteen,
-                                  fontWeight: FontWeight.normal,
-                                  color: textColor),
-                              maxLines: 1,
-                            ),
-                          ),
-                        ),
-                      ]),
-                    ),
-                    SizedBox(
-                      height: media.width * 0.05,
-                    ),
-                    SizedBox(
-                      height: media.width * 0.1,
-                    ),
-                    Button(
-                      onTap: () async {
-                        if (_addingMoney) {
-                          return;
-                        }
-                        _addingMoney = true;
-                        var result = await addBalance(addMoneyController.text);
+          return StatefulBuilder(builder: (context, setSheet) {
+            final ready = addMoneyController.text.trim().length >= 6;
+            return Padding(
+              padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+              child: V2SheetFrame(
+                title: 'اشحن بكرت شحن',
+                subtitle: 'اكتب الرقم السري اللي تحت الطبقة الفضية، والرصيد يوصل لمحفظتك على طول',
+                icon: Icons.confirmation_number_outlined,
+                primaryLabel: languages[choosenLanguage]['text_addmoney'] ?? 'اشحن',
+                primaryBusy: _addingMoney,
+                onPrimary: !ready
+                    ? null
+                    : () async {
+                        if (_addingMoney) return;
+                        setSheet(() => _addingMoney = true);
+                        final result = await addBalance(addMoneyController.text.replaceAll(' ', ''));
                         _addingMoney = false;
-                        if (!context.mounted) {
-                          return;
-                        }
+                        if (!context.mounted) return;
                         Navigator.pop(context);
                         result == 'Money added successfully'
-                            ? showSuccessToast(
-                                msg: languages[choosenLanguage]
-                                    ['text_money_added'],
-                              )
+                            ? showSuccessToast(msg: languages[choosenLanguage]['text_money_added'])
                             : showErrorToast(msg: result);
                         await getWallet();
-                        debugPrint('drops $result');
                       },
-                      text: languages[choosenLanguage]['text_addmoney'],
-                      // width:
-                      //     media.width * 0.4,
+                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  // a recharge card, drawn: the code goes where it is printed
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(colors: [Color(0xff0873FF), Color(0xff1965BF)]),
+                      borderRadius: BorderRadius.circular(22),
                     ),
-                    SizedBox(
-                      height: media.width * 0.02,
-                    ),
-                    Button(
-                      color: Colors.red,
-                      onTap: () {
-                        setState(() {
-                          addMoney = null;
-                          FocusManager.instance.primaryFocus?.unfocus();
-                          addMoneyController.clear();
-                          Navigator.pop(context);
-                        });
-                      },
-                      text: languages[choosenLanguage]['text_cancel'],
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Row(children: [
+                        const Icon(Icons.sim_card_outlined, color: Colors.white70, size: 22),
+                        const Spacer(),
+                        Text('كرت شحن', style: GoogleFonts.cairo(color: Colors.white70, fontSize: 12.5, fontWeight: FontWeight.w700)),
+                      ]),
+                      const SizedBox(height: 14),
+                      Container(
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Row(children: [
+                          Expanded(
+                            child: TextField(
+                              controller: addMoneyController,
+                              autofocus: true,
+                              keyboardType: TextInputType.number,
+                              textDirection: TextDirection.ltr,
+                              textAlign: TextAlign.center,
+                              onChanged: (val) => setSheet(() => addMoney = int.tryParse(val.replaceAll(' ', ''))),
+                              style: GoogleFonts.notoSans(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: 3, color: const Color(0xff10213F)),
+                              decoration: InputDecoration(
+                                border: InputBorder.none,
+                                hintText: '•••• •••• ••••',
+                                hintStyle: GoogleFonts.notoSans(fontSize: 22, letterSpacing: 3, color: const Color(0xffB7C3D6)),
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: 'لصق',
+                            icon: const Icon(Icons.content_paste_rounded, color: Color(0xff0873FF)),
+                            onPressed: () async {
+                              final data = await Clipboard.getData('text/plain');
+                              final digits = (data?.text ?? '').replaceAll(RegExp(r'[^0-9]'), '');
+                              if (digits.isEmpty) return;
+                              addMoneyController.text = digits;
+                              setSheet(() => addMoney = int.tryParse(digits));
+                            },
+                          ),
+                        ]),
+                      ),
+                    ]),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(children: [
+                    Icon(Icons.info_outline_rounded, size: 16, color: textColor.withValues(alpha: .5)),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text('الرصيد ${walletBalance['currency_symbol'] ?? ''} يتضاف بعد ما نتأكد من الكرت',
+                          style: GoogleFonts.cairo(color: textColor.withValues(alpha: .55), fontSize: 12.5)),
                     ),
                   ]),
-            ),
-          );
+                ]),
+              ),
+            );
+          });
         });
   }
+
 
   /// the balance, big, on the app's blue card; «إضافة فلوس» and «مكافآتي» under it
   Widget _balanceCard() {
@@ -293,7 +241,12 @@ class _WalletPageState extends State<WalletPage> {
         const SizedBox(height: 16),
         Row(children: [
           _action(Icons.add_rounded, languages[choosenLanguage]['text_addmoney'] ?? 'إضافة فلوس', _startAddMoney),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
+          // money transfer between riders: shown, not ready yet
+          _action(Icons.swap_horiz_rounded, 'تحويل', () {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تحويل الفلوس بين الحسابات قريبًا.')));
+          }, soon: true),
+          const SizedBox(width: 8),
           _action(Icons.emoji_events_outlined, 'مكافآتي',
               () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RewardsPage()))),
         ]),
@@ -301,9 +254,9 @@ class _WalletPageState extends State<WalletPage> {
     );
   }
 
-  Widget _action(IconData icon, String label, VoidCallback onTap) => Expanded(
+  Widget _action(IconData icon, String label, VoidCallback onTap, {bool soon = false}) => Expanded(
         child: Material(
-          color: Colors.white.withValues(alpha: .16),
+          color: Colors.white.withValues(alpha: soon ? .09 : .16),
           borderRadius: BorderRadius.circular(16),
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
@@ -311,14 +264,97 @@ class _WalletPageState extends State<WalletPage> {
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: Column(children: [
-                Icon(icon, color: Colors.white, size: 24),
+                Icon(icon, color: Colors.white.withValues(alpha: soon ? .65 : 1), size: 24),
                 const SizedBox(height: 4),
-                Text(label, style: GoogleFonts.cairo(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800)),
+                Text(label, style: GoogleFonts.cairo(color: Colors.white.withValues(alpha: soon ? .7 : 1), fontSize: 13, fontWeight: FontWeight.w800)),
+                if (soon)
+                  Container(
+                    margin: const EdgeInsets.only(top: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 7),
+                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: .18), borderRadius: BorderRadius.circular(99)),
+                    child: Text('قريبًا', style: GoogleFonts.cairo(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
+                  ),
               ]),
             ),
           ),
         ),
       );
+
+  /// «بطاقاتي»: the bank cards saved on this phone (masked), «إدارة», «إضافة بطاقة»
+  Widget _myCards() {
+    return FutureBuilder<List<SavedCard>>(
+      future: _cardsFuture ??= _moamalatEnv.vault.load(),
+      builder: (context, snap) {
+        final cards = snap.data ?? const <SavedCard>[];
+        Future<void> manage() async {
+          await Navigator.of(context).push(MaterialPageRoute(builder: (_) => SavedCardsPage(env: _moamalatEnv)));
+          if (mounted) setState(() => _cardsFuture = null);
+        }
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Expanded(child: Text('بطاقاتي', style: GoogleFonts.cairo(color: textColor, fontSize: 16, fontWeight: FontWeight.w800))),
+              if (cards.isNotEmpty)
+                TextButton(onPressed: manage, child: Text('إدارة البطاقات', style: GoogleFonts.cairo(fontWeight: FontWeight.w800))),
+            ]),
+            const SizedBox(height: 6),
+            SizedBox(
+              height: 104,
+              child: ListView(scrollDirection: Axis.horizontal, children: [
+                for (final c in cards)
+                  Container(
+                    width: 176,
+                    margin: const EdgeInsetsDirectional.only(end: 10),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(colors: [Color(0xff102A56), Color(0xff1965BF)]),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Row(children: [
+                        const Icon(Icons.credit_card_rounded, color: Colors.white70, size: 20),
+                        const Spacer(),
+                        if (c.isDefault)
+                          Text('الأساسية', style: GoogleFonts.cairo(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w700)),
+                      ]),
+                      const Spacer(),
+                      Text('•••• ${c.last4}',
+                          textDirection: TextDirection.ltr,
+                          style: GoogleFonts.notoSans(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
+                      Text('${c.nickname?.isNotEmpty == true ? c.nickname : c.holderName} · ${c.expiryText}',
+                          maxLines: 1, overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.cairo(color: Colors.white70, fontSize: 11.5)),
+                    ]),
+                  ),
+                // add a card: the same page, its form
+                InkWell(
+                  borderRadius: BorderRadius.circular(18),
+                  onTap: manage,
+                  child: Container(
+                    width: cards.isEmpty ? MediaQuery.of(context).size.width - 32 : 120,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: const Color(0xff0873FF).withValues(alpha: .35), width: 1.4),
+                      color: const Color(0xff0873FF).withValues(alpha: .04),
+                    ),
+                    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      const Icon(Icons.add_card_rounded, color: Color(0xff0873FF), size: 26),
+                      const SizedBox(height: 4),
+                      Text(cards.isEmpty ? 'أضف بطاقتك البنكية للشحن بلمسة' : 'إضافة بطاقة',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.cairo(color: const Color(0xff0873FF), fontSize: 13, fontWeight: FontWeight.w800)),
+                    ]),
+                  ),
+                ),
+              ]),
+            ),
+          ]),
+        );
+      },
+    );
+  }
 
   Widget _entry(Map e) {
     final credit = e['is_credit'] == 1;
@@ -420,6 +456,7 @@ class _WalletPageState extends State<WalletPage> {
                               ),
                             ),
                             SliverToBoxAdapter(child: _balanceCard()),
+                            SliverToBoxAdapter(child: _myCards()),
                             SliverToBoxAdapter(
                               child: Padding(
                                 padding: const EdgeInsets.fromLTRB(20, 18, 20, 6),
