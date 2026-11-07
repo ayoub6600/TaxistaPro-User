@@ -30,6 +30,29 @@ class _InvoiceState extends State<Invoice> {
   String _error = '';
   String myPaymentMethod = '';
 
+  /// «دفعت كمان X رصيد سابق»: the rider's earlier negative balance settled in cash on this ride
+  /// (the server's bill line prior_balance_collected); nothing when there was none
+  Widget _priorBalanceNote(Size media) {
+    final bill = userRequestData['requestBill']?['data'];
+    final prior = double.tryParse('${bill?['prior_balance_collected'] ?? 0}') ?? 0;
+    if (prior <= 0) return const SizedBox.shrink();
+    final rtl = languageDirection == 'rtl';
+    final cur = rtl ? 'دينار' : (userRequestData['requested_currency_symbol']?.toString() ?? 'LYD');
+    return Container(
+      width: media.width * 0.9,
+      margin: EdgeInsets.only(bottom: media.width * 0.04),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: const Color(0xffFFF4DB), borderRadius: BorderRadius.circular(14)),
+      child: Text(
+        rtl
+            ? 'مع الأجرة دفعت ${prior.toStringAsFixed(2)} $cur رصيد سابق كان عليك، ومحفظتك رجعت بنفس المبلغ.'
+            : 'With the fare you paid ${prior.toStringAsFixed(2)} $cur of your earlier balance; your wallet went up by the same.',
+        textAlign: TextAlign.center,
+        style: GoogleFonts.notoSans(fontSize: media.width * fourteen, color: const Color(0xff8A5A00), fontWeight: FontWeight.w600, height: 1.5),
+      ),
+    );
+  }
+
   Widget _bidRidePaymentSummary(Size media) {
     final bill = userRequestData['requestBill']?['data'];
     final estimated = userRequestData['wallet_split_is_estimate'] == true;
@@ -519,6 +542,7 @@ class _InvoiceState extends State<Invoice> {
                                   SizedBox(
                                     height: media.height * 0.03,
                                   ),
+                                  _priorBalanceNote(media),
                                   userRequestData['is_bid_ride'] == 1
                                       ? _bidRidePaymentSummary(media)
                                       : (userRequestData['requestBill'] != null)

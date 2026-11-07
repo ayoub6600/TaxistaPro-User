@@ -85,6 +85,13 @@ class _ChoosePaymentMethodContainerState
     final rtl = languageDirection == 'rtl';
     switch (type) {
       case 'cash':
+        // a negative balance the server would settle on this cash ride (prior_balance_due)
+        final due = double.tryParse('${etaDetails.isNotEmpty && choosenVehicle != null ? etaDetails[choosenVehicle]['prior_balance_due'] ?? 0 : 0}') ?? 0;
+        if (due > 0) {
+          return rtl
+              ? 'تدفع للسائق آخر الرحلة، ومعاها ${due.toStringAsFixed(2)} رصيد سابق عليك'
+              : 'Pay the driver at the end, plus ${due.toStringAsFixed(2)} of your earlier balance';
+        }
         return rtl ? 'تدفع للسائق آخر الرحلة' : 'Pay the driver at the end';
       case 'wallet':
       case 'wallet_and_cash':
