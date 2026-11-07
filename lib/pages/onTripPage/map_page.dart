@@ -60,6 +60,10 @@ import '../../navigation/guarded_navigation.dart';
 import '../../functions/calls/admin_call_controller.dart';
 import '../../update/update_gate.dart' show riderHomeUpdateHook;
 import '../../functions/pulse_api.dart';
+import '../../functions/recurring_api.dart';
+import '../../functions/recurring_push.dart';
+import '../recurring/recurring_home_banner.dart';
+import '../recurring/recurring_rides_page.dart' show RecurringLink;
 // ignore: depend_on_referenced_packages
 
 part 'map_page/map_animation.dart';
@@ -256,6 +260,11 @@ class _MapsState extends State<Maps>
     getadminCurrentMessages(markRead: false);
     // a notification tapped before the home screen was up (cold start): open its conversation now
     WidgetsBinding.instance.addPostFrameCallback((_) => SupportChatLink.appReady());
+    // «رحلاتي المتكررة»: tomorrow's question on the home screen, and a reminder tapped before home was up
+    RecurringApi.rides.addListener(_onRecurringRides);
+    RecurringPush.lastAnswer.addListener(_onRecurringAnswer);
+    unawaited(RecurringApi.refresh());
+    WidgetsBinding.instance.addPostFrameCallback((_) => RecurringLink.appReady());
     unawaited(fetchPendingRecoveryOfferForRider().then((_) {
       if (mounted) setState(() {});
     }));
@@ -392,8 +401,16 @@ class _MapsState extends State<Maps>
     valueNotifierHome.incrementNotifier();
   }
 
+  void _onRecurringRides() {
+    if (mounted) setState(() {});
+  }
+
+  void _onRecurringAnswer() => unawaited(RecurringApi.refresh(force: true));
+
   void _restoreAfterResume() {
     if (!mounted) return;
+    // an answer pressed on the evening reminder while the app was away (another isolate / natively)
+    unawaited(RecurringApi.refresh(force: true));
     // A "where to / home / work" tap that was still waiting when the app went
     // away must not keep the Home destination buttons dead.
     _destinationEntry.reset();
@@ -454,6 +471,8 @@ class _MapsState extends State<Maps>
     // lists) alive for the life of the app and runs on every lifecycle event.
     WidgetsBinding.instance.removeObserver(this);
     PulseBookingIntent.pending.removeListener(_onPulseIntent);
+    RecurringApi.rides.removeListener(_onRecurringRides);
+    RecurringPush.lastAnswer.removeListener(_onRecurringAnswer);
     _pickupSearchController.dispose();
     _controller?.dispose();
     _controller = null;

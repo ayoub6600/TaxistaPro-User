@@ -1,9 +1,14 @@
+import 'dart:convert';
 import 'growth/growth_api.dart';
 import 'growth/my_gifts_page.dart';
+import 'dart:io';
 import 'functions/pulse_api.dart';
+import 'functions/recurring_push.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -33,7 +38,18 @@ Future<void> riderBackgroundMessage(RemoteMessage message) async {
       await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
     }
   } catch (_) {}
+  // Android, the evening reminder of a recurring ride sent data-only to this version: shown here
+  // with its two buttons (✅ تأكيد / ⏭ تخطي), which answer without opening the app
+  if (Platform.isAndroid && message.notification == null && RecurringPush.handles(message.data)) {
+    final plugin = FlutterLocalNotificationsPlugin();
+    await plugin.initialize(const InitializationSettings(android: AndroidInitializationSettings('@mipmap/ic_launcher')),
+        onDidReceiveBackgroundNotificationResponse: recurringNotificationAction);
+    await plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.createNotificationChannel(RecurringPush.channel);
+    await RecurringPush.show(plugin, message.data);
+  }
 }
+
+const _rigRecurringPush = String.fromEnvironment('RIG_RECURRING_PUSH');
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -55,10 +71,13 @@ Future<void> main() async {
   }
 
   await configureLocalFirebase(url);
+  // the iPhone answers the reminder's buttons natively: it needs this build's API address
+  await RecurringPush.rememberApiBase();
 
-  // Local ride rehearsals use RTDB updates; FCM has no local emulator.
+  // Local ride rehearsals use RTDB updates; FCM has no local emulator, but the notifications the
+  // app shows itself (and `simctl push` on the Simulator) still need their handlers there.
+  await initMessaging();
   if (!usesLocalFirebase) {
-    await initMessaging();
     FirebaseMessaging.onBackgroundMessage(riderBackgroundMessage);
   }
 
@@ -78,6 +97,11 @@ Future<void> main() async {
     ..attach();
 
   runApp(const MyApp());
+  // rig only (a debug build given --dart-define=RIG_RECURRING_PUSH=<json>): the evening reminder as
+  // the server sends it, shown 6 s after start, to press its buttons on an emulator without FCM
+  if (kDebugMode && _rigRecurringPush.isNotEmpty) {
+    Future<void>.delayed(const Duration(seconds: 6), () => RecurringPush.show(fltNotification, Map<String, dynamic>.from(jsonDecode(_rigRecurringPush) as Map)));
+  }
 }
 
 class MyApp extends StatelessWidget {

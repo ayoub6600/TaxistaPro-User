@@ -6,11 +6,15 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'calls/admin_call_controller.dart';
 import 'functions.dart';
 import 'pulse_api.dart';
+import 'recurring_api.dart';
+import 'recurring_push.dart';
+import '../pages/recurring/recurring_rides_page.dart' show RecurringLink;
 import 'support_chat_link.dart';
 
 // create an instance
@@ -69,6 +73,12 @@ Future<void> syncDeviceToken({String? token, bool force = false}) async {
     }
     if (fcm == null || fcm.isEmpty) return;
 
+    String? version;
+    try {
+      final info = await PackageInfo.fromPlatform();
+      version = '${info.version}+${info.buildNumber}';
+    } catch (_) {}
+    unawaited(RecurringPush.rememberApiBase());
     final response = await http.post(
       Uri.parse('${url}api/v1/user/device-token'),
       headers: {
@@ -78,6 +88,9 @@ Future<void> syncDeviceToken({String? token, bool force = false}) async {
       body: jsonEncode({
         'device_token': fcm,
         'platform': Platform.isIOS ? 'ios' : 'android',
+        // this version draws buttons on a notification (the evening reminder of a recurring ride)
+        if (version != null) 'app_version': version,
+        'features': RecurringPush.features,
       }),
     );
     if (response.statusCode == 200) {
@@ -95,6 +108,17 @@ Future<void> syncDeviceToken({String? token, bool force = false}) async {
 /// administration opens that conversation; anything else, as before.
 @pragma('vm:entry-point')
 void notificationTapBackground(NotificationResponse notificationResponse) {
+  // the evening reminder of a recurring ride: a button answers it, a tap opens that day
+  final recurring = RecurringPush.fromPayload(notificationResponse.payload);
+  if (recurring != null) {
+    final action = notificationResponse.actionId;
+    if (action == RecurringPush.confirmAction || action == RecurringPush.skipAction) {
+      unawaited(recurringNotificationAction(notificationResponse));
+    } else {
+      RecurringLink.open(recurring);
+    }
+    return;
+  }
   final support = SupportChatLink.fromPayload(notificationResponse.payload);
   if (support != null) {
     SupportChatLink.open(support);
@@ -180,11 +204,22 @@ var initSetting = InitializationSettings(android: androiInit, iOS: iosInit);
 
 Future<void> initMessaging() async {
   await fltNotification.initialize(initSetting,
-      onDidReceiveNotificationResponse: notificationTapBackground);
+      onDidReceiveNotificationResponse: notificationTapBackground,
+      onDidReceiveBackgroundNotificationResponse: recurringNotificationAction);
   _messagingInitialized = true;
+  unawaited(RecurringPush.rememberApiBase());
+  if (Platform.isAndroid) {
+    try {
+      await fltNotification
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+          ?.createNotificationChannel(RecurringPush.channel);
+    } catch (_) {}
+  }
   // the app was started by tapping one of its own notifications
   try {
     final launch = await fltNotification.getNotificationAppLaunchDetails();
+    final recurring = RecurringPush.fromPayload(launch?.notificationResponse?.payload);
+    if (launch?.didNotificationLaunchApp == true && recurring != null) RecurringLink.open(recurring);
     final support = SupportChatLink.fromPayload(launch?.notificationResponse?.payload);
     if (launch?.didNotificationLaunchApp == true && support != null) SupportChatLink.open(support);
   } catch (_) {}
@@ -196,7 +231,12 @@ Future<void> initMessaging() async {
 
   FirebaseMessaging.instance.getInitialMessage().then((message) {
     if (message?.data != null) {
-      if (SupportChatLink.handles(message!.data)) {
+      if (RecurringPush.handles(message!.data)) {
+        // closed app, the reminder itself tapped: that schedule at that day, once home is up
+        RecurringLink.open(message.data);
+        return;
+      }
+      if (SupportChatLink.handles(message.data)) {
         // closed app, tapped: the conversation opens once the home screen is up
         SupportChatLink.open(message.data);
         return;
@@ -225,6 +265,12 @@ Future<void> initMessaging() async {
   FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
     // calls: ring / stop ringing (data-only on Android)
     if (await handleCallPush(message.data, appOpen: true)) return;
+    if (RecurringPush.handles(message.data)) {
+      // the app is open: the same question with its two buttons, and the home card refreshes
+      await RecurringPush.show(fltNotification, message.data);
+      unawaited(RecurringApi.refresh(force: true));
+      return;
+    }
     if (SupportChatLink.handles(message.data)) {
       await _supportPushInForeground(message);
       return;
@@ -254,6 +300,10 @@ Future<void> initMessaging() async {
   });
 
   FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    if (RecurringPush.handles(message.data)) {
+      RecurringLink.open(message.data);
+      return;
+    }
     if (SupportChatLink.handles(message.data)) {
       // in the background, tapped: straight to the conversation (or the call log for a trip call)
       SupportChatLink.open(message.data);
@@ -370,7 +420,7 @@ Future<void> _showBigPictureNotificationURLGeneral(message) async {
         NotificationDetails(android: androidNotificationDetails);
     fltNotification.initialize(initSetting,
         onDidReceiveNotificationResponse: notificationTapBackground,
-        onDidReceiveBackgroundNotificationResponse: notificationTapBackground);
+        onDidReceiveBackgroundNotificationResponse: recurringNotificationAction);
     await fltNotification.show(
         id++, message['title'], message['message'], notificationDetails);
   } else {
@@ -390,7 +440,7 @@ Future<void> _showBigPictureNotificationURLGeneral(message) async {
         NotificationDetails(iOS: iosDetails);
     fltNotification.initialize(initSetting,
         onDidReceiveNotificationResponse: notificationTapBackground,
-        onDidReceiveBackgroundNotificationResponse: notificationTapBackground);
+        onDidReceiveBackgroundNotificationResponse: recurringNotificationAction);
     await fltNotification.show(
         id++, message['title'], message['message'], notificationDetails);
   }
@@ -417,7 +467,7 @@ Future<void> _showGeneralNotification(message) async {
       NotificationDetails(android: androidNotificationDetails, iOS: iosDetails);
   fltNotification.initialize(initSetting,
       onDidReceiveNotificationResponse: notificationTapBackground,
-      onDidReceiveBackgroundNotificationResponse: notificationTapBackground);
+      onDidReceiveBackgroundNotificationResponse: recurringNotificationAction);
   await fltNotification.show(
       id++, message['title'], message['message'], notificationDetails);
   id = id++;

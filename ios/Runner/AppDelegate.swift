@@ -40,6 +40,7 @@ import flutter_callkit_incoming
   UNUserNotificationCenter.current().delegate = self as? UNUserNotificationCenterDelegate
 }
     application.registerForRemoteNotifications()
+    RecurringReminderButtons.register()
  UIApplication.shared.beginReceivingRemoteControlEvents()
 
     // Calls (with the driver of the ride, or the administration): PushKit rings the phone through
@@ -169,6 +170,149 @@ import flutter_callkit_incoming
   func didDeactivateAudioSession(_ audioSession: AVAudioSession) {
     RTCAudioSession.sharedInstance().audioSessionDidDeactivate(audioSession)
     RTCAudioSession.sharedInstance().isAudioEnabled = false
+  }
+
+  // MARK: - Buttons on the evening reminder of a recurring ride (✅ تأكيد / ⏭ تخطي)
+
+  /// A button of the reminder is answered here, natively: the phone may be locked and Flutter not
+  /// running. Everything else (a tap on the notification itself, other notifications) goes on to
+  /// Firebase / the local notifications plugin as before.
+  override func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
+                                       withCompletionHandler completionHandler: @escaping () -> Void) {
+    if RecurringReminderButtons.handle(response, completion: completionHandler) { return }
+    super.userNotificationCenter(center, didReceive: response, withCompletionHandler: completionHandler)
+  }
+
+  /// the answer shown in place of the question also shows while the app is open
+  override func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
+                                       withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+    if notification.request.content.userInfo["recurring_result"] != nil {
+      completionHandler([.banner, .list])
+      return
+    }
+    super.userNotificationCenter(center, willPresent: notification, withCompletionHandler: completionHandler)
+  }
+}
+
+/// «🚕 مشوارك غدًا!»: the APNs category RECURRING_TOMORROW and its two buttons. The day's token is in
+/// the notification; the server checks it and the day's latest state, and its own words replace the
+/// question (an answer that did not reach the server keeps the buttons, to press again).
+enum RecurringReminderButtons {
+  static let category = "RECURRING_TOMORROW"
+  static let confirm = "RECURRING_CONFIRM"
+  static let skip = "RECURRING_SKIP"
+
+  static func register() {
+    // confirm: one tap, even on the lock screen. skip cancels a booked ride: the phone asks Face ID /
+    // the code first (on a lock screen), so nobody else holding the phone can skip his day
+    let yes = UNNotificationAction(identifier: confirm, title: "✅ تأكيد مشوار الغد", options: [])
+    let no = UNNotificationAction(identifier: skip, title: "⏭ تخطي مشوار الغد", options: [.destructive, .authenticationRequired])
+    let cat = UNNotificationCategory(identifier: category, actions: [yes, no], intentIdentifiers: [],
+                                     hiddenPreviewsBodyPlaceholder: "تذكير بمشوارك", options: [])
+    let center = UNUserNotificationCenter.current()
+    center.getNotificationCategories { existing in
+      var all = existing.filter { $0.identifier != category }
+      all.insert(cat)
+      center.setNotificationCategories(all)
+    }
+  }
+
+  /// true when the response was one of the two buttons (then completion is called when done)
+  static func handle(_ response: UNNotificationResponse, completion: @escaping () -> Void) -> Bool {
+    let content = response.notification.request.content
+    let action = response.actionIdentifier
+    guard content.categoryIdentifier == category, action == confirm || action == skip else { return false }
+    let data = fields(content.userInfo)
+    guard let id = data["occurrence_id"], !id.isEmpty, let token = data["day_token"], !token.isEmpty else {
+      completion()
+      return true
+    }
+    // iOS gives a background moment; ask for a little more so a weak line can still answer
+    var task = UIBackgroundTaskIdentifier.invalid
+    task = UIApplication.shared.beginBackgroundTask(withName: "recurring-answer") {
+      UIApplication.shared.endBackgroundTask(task)
+      task = .invalid
+    }
+    let finish = {
+      completion()
+      if task != .invalid { UIApplication.shared.endBackgroundTask(task); task = .invalid }
+    }
+    send(id: id, answer: action == confirm ? "attend" : "skip", token: token, seenAt: data["seen_at"] ?? "", attempt: 0) { ok, retry, title, message in
+      show(id: id, original: response.notification.request.identifier, data: data, title: title, message: message, retry: retry)
+      _ = ok
+      finish()
+    }
+    return true
+  }
+
+  /// remote notifications carry the data at the top level; the app's own ones in "payload" (JSON)
+  private static func fields(_ info: [AnyHashable: Any]) -> [String: String] {
+    var out: [String: String] = [:]
+    for (k, v) in info {
+      guard let key = k as? String else { continue }
+      if let s = v as? String { out[key] = s } else if let n = v as? NSNumber { out[key] = n.stringValue }
+    }
+    if let p = out["payload"], let d = p.data(using: .utf8), let j = (try? JSONSerialization.jsonObject(with: d)) as? [String: Any] {
+      for (k, v) in j { out[k] = "\(v)" }
+    }
+    return out
+  }
+
+  private static var apiBase: String {
+    var base = UserDefaults.standard.string(forKey: "flutter.taxista_api_base") ?? "https://taxista.aljidartech.com/"
+    if !base.hasSuffix("/") { base += "/" }
+    return base
+  }
+
+  private static func send(id: String, answer: String, token: String, seenAt: String, attempt: Int,
+                           done: @escaping (_ ok: Bool, _ retry: Bool, _ title: String, _ message: String) -> Void) {
+    guard let url = URL(string: apiBase + "api/v1/recurring-day/\(id)/\(answer)") else {
+      done(false, true, "ما تسجلش ردك", "صار خطأ في التطبيق. افتح «رحلاتي المتكررة» ورد من هناك.")
+      return
+    }
+    var req = URLRequest(url: url, timeoutInterval: 15)
+    req.httpMethod = "POST"
+    req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    req.setValue("application/json", forHTTPHeaderField: "Accept")
+    req.httpBody = try? JSONSerialization.data(withJSONObject: ["t": token, "seen_at": seenAt, "platform": "ios"])
+    URLSession.shared.dataTask(with: req) { body, resp, error in
+      let status = (resp as? HTTPURLResponse)?.statusCode ?? 0
+      if let body = body, let j = (try? JSONSerialization.jsonObject(with: body)) as? [String: Any], let title = j["title"] as? String {
+        done((j["success"] as? Bool) == true, false, title, (j["message"] as? String) ?? "")
+        return
+      }
+      if attempt == 0 && (error != nil || status >= 500) {
+        DispatchQueue.global().asyncAfter(deadline: .now() + 3) {
+          send(id: id, answer: answer, token: token, seenAt: seenAt, attempt: 1, done: done)
+        }
+        return
+      }
+      done(false, true, "ما تسجلش ردك", error != nil
+           ? "ما فيش اتصال بالإنترنت. ردك ما تسجلش؛ اضغط الزر مرة ثانية لما يرجع الاتصال."
+           : "ما وصلناش رد واضح من تاكسيستا (\(status)). ردك ما تسجلش؛ جرب مرة ثانية.")
+    }.resume()
+  }
+
+  /// the server's answer in place of the question; after a failure the buttons stay (same day data)
+  private static func show(id: String, original: String, data: [String: String], title: String, message: String, retry: Bool) {
+    let center = UNUserNotificationCenter.current()
+    let c = UNMutableNotificationContent()
+    c.threadIdentifier = "rday-\(id)"
+    if retry {
+      c.title = data["title"] ?? "🚕 مشوارك غدًا!"
+      c.body = "⚠️ " + message + "\n" + (data["message"] ?? "")
+      c.categoryIdentifier = category
+      var info: [String: String] = ["recurring_result": "retry"]
+      for k in ["category", "occurrence_id", "recurring_id", "day_token", "seen_at", "expires_at", "date", "title", "message"] { info[k] = data[k] ?? "" }
+      info["category"] = category
+      c.userInfo = info
+    } else {
+      c.title = title
+      c.body = message
+      c.userInfo = ["recurring_result": "done", "recurring_id": data["recurring_id"] ?? "", "occurrence_id": id]
+    }
+    center.removeDeliveredNotifications(withIdentifiers: [original])
+    center.add(UNNotificationRequest(identifier: "rday-\(id)", content: c, trigger: nil))
   }
 }
 

@@ -15,7 +15,18 @@ extension _MapHomeOverlays on _MapsState {
             onTap: _openScheduledOffers,
           ),
         ),
-      if (activePromotionCampaigns.isNotEmpty && _bottom == 0)
+      // tomorrow's recurring day waiting for his answer comes first (it has a deadline)
+      if (_bottom == 0 && RecurringApi.pendingTomorrow(RecurringApi.rides.value) != null)
+        Positioned(
+          top: MediaQuery.of(context).padding.top + (scheduledOfferSummary.hasOffers ? 126 : 72),
+          left: 16,
+          right: 16,
+          child: RecurringTomorrowBanner(
+            ride: RecurringApi.pendingTomorrow(RecurringApi.rides.value)!['ride'] as Map<String, dynamic>,
+            next: RecurringApi.pendingTomorrow(RecurringApi.rides.value)!['next'] as Map<String, dynamic>,
+          ),
+        )
+      else if (activePromotionCampaigns.isNotEmpty && _bottom == 0)
         Positioned(
           top: MediaQuery.of(context).padding.top +
               (scheduledOfferSummary.hasOffers ? 126 : 72),
