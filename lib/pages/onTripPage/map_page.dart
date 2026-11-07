@@ -62,6 +62,7 @@ import '../../update/update_gate.dart' show riderHomeUpdateHook;
 import '../../functions/pulse_api.dart';
 import '../../functions/recurring_api.dart';
 import '../../functions/recurring_push.dart';
+import '../../functions/service_zones.dart';
 import '../recurring/recurring_home_banner.dart';
 import '../../community/rewards_page.dart';
 import '../../functions/schedule_time.dart';

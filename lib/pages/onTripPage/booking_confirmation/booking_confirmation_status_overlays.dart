@@ -55,14 +55,17 @@ mixin _BookingConfirmationStatusOverlays
   Widget buildTripErrorOverlay() {
     if (!tripReqError) return Container();
 
+    // a destination outside Taxista's areas: say so and send him back to choose another
+    final outside = '$tripError'.contains('خارج') || '$tripError'.contains('بلد آخر');
     return BookingStatusSheet(
       title: tripError,
-      actionLabel: languages[choosenLanguage]['text_tryanother'],
-      icon: Icons.sync_problem_rounded,
+      actionLabel: outside ? (choosenLanguage == 'ar' ? 'اختار وجهة ثانية' : 'Choose another destination') : languages[choosenLanguage]['text_tryanother'],
+      icon: outside ? Icons.wrong_location_outlined : Icons.sync_problem_rounded,
       onAction: () async {
         setState(() {
           tripReqError = false;
         });
+        if (outside && mounted) Navigator.of(context).maybePop();
       },
     );
   }

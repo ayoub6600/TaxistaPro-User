@@ -207,7 +207,10 @@ extension _MapCanvas on _MapsState {
             });
           }
           if (mapType == 'google') {
-            return StreamBuilder<List<Marker>>(
+            unawaited(ServiceZones.load());
+            return ValueListenableBuilder<Set<Polygon>>(
+                valueListenable: ServiceZones.polygons,
+                builder: (context, _, __) => StreamBuilder<List<Marker>>(
                 stream: carMarkerStream,
                 builder: (context, snapshot) {
                   return GoogleMap(
@@ -336,11 +339,13 @@ extension _MapCanvas on _MapsState {
                     minMaxZoomPreference: const MinMaxZoomPreference(8.0, 20.0),
                     myLocationButtonEnabled: false,
                     markers: Set<Marker>.from(myMarkers),
+                    // where Taxista works (the market's zones), drawn softly under everything else
+                    polygons: ServiceZones.polygons.value,
                     buildingsEnabled: false,
                     zoomControlsEnabled: false,
                     myLocationEnabled: true,
                   );
-                });
+                }));
           }
           return StreamBuilder<List<Marker>>(
               stream: carMarkerStream,
