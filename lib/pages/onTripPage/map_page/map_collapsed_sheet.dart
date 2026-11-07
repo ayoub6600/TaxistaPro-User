@@ -53,6 +53,9 @@ extension _MapCollapsedSheet on _MapsState {
           }),
         ),
       ],
+      onRecurring: RecurringApi.rides.value.isEmpty
+          ? null
+          : () => guardedPush(context, MaterialPageRoute(builder: (_) => const RecurringRidesPage())),
       onChooseDestination: () =>
           runDestinationEntryOnce(() => prepareDestinationEntry(media)),
       onRideWithoutDestination: () {

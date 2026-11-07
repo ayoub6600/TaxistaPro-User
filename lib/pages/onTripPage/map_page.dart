@@ -63,7 +63,9 @@ import '../../functions/pulse_api.dart';
 import '../../functions/recurring_api.dart';
 import '../../functions/recurring_push.dart';
 import '../recurring/recurring_home_banner.dart';
-import '../recurring/recurring_rides_page.dart' show RecurringLink;
+import '../../community/rewards_page.dart';
+import '../../functions/schedule_time.dart';
+import '../recurring/recurring_rides_page.dart' show RecurringLink, RecurringRidesPage;
 // ignore: depend_on_referenced_packages
 
 part 'map_page/map_animation.dart';

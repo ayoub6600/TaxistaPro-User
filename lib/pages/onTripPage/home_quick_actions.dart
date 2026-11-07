@@ -29,7 +29,11 @@ class HomeQuickActions extends StatelessWidget {
     required this.onRideWithoutDestination,
     required this.showRideWithoutDestination,
     required this.destinations,
+    this.onRecurring,
   });
+
+  /// «مشوار الدوام»: only for a rider who has a recurring ride
+  final VoidCallback? onRecurring;
 
   final bool rtl;
   final VoidCallback onChooseDestination;
@@ -64,17 +68,37 @@ class HomeQuickActions extends StatelessWidget {
               ],
             ],
           ),
-          if (showRideWithoutDestination) ...[
+          if (showRideWithoutDestination || onRecurring != null) ...[
             SizedBox(height: compact ? 7 : 9),
-            _RideWithoutDestinationAction(
-              label: rtl ? 'رحلة بدون وجهة' : 'Ride without destination',
-              onTap: onRideWithoutDestination,
-            ),
+            Row(children: [
+              if (showRideWithoutDestination)
+                Expanded(
+                  flex: 3,
+                  child: _RideWithoutDestinationAction(
+                    label: rtl ? 'رحلة بدون وجهة' : 'Ride without destination',
+                    icon: Icons.navigation_outlined,
+                    onTap: onRideWithoutDestination,
+                  ),
+                ),
+              if (showRideWithoutDestination && onRecurring != null) SizedBox(width: compact ? 7 : 9),
+              if (onRecurring != null)
+                Expanded(
+                  flex: 2,
+                  child: _RideWithoutDestinationAction(
+                    label: rtl ? 'مشوار الدوام' : 'Commute',
+                    icon: Icons.repeat_rounded,
+                    onTap: onRecurring!,
+                    chevron: false,
+                  ),
+                ),
+            ]),
           ],
           SizedBox(height: compact ? 7 : 9),
           _DestinationSearch(
+            title: rtl ? 'إلى أين؟' : 'Where to?',
             label:
                 rtl ? 'ابحث عن مكان أو عنوان' : 'Search for a place or address',
+            now: rtl ? 'الآن' : 'Now',
             onTap: onChooseDestination,
           ),
         ],
@@ -84,9 +108,11 @@ class HomeQuickActions extends StatelessWidget {
 }
 
 class _DestinationSearch extends StatelessWidget {
-  const _DestinationSearch({required this.label, required this.onTap});
+  const _DestinationSearch({required this.title, required this.label, required this.now, required this.onTap});
 
+  final String title;
   final String label;
+  final String now;
   final VoidCallback onTap;
 
   @override
@@ -99,7 +125,7 @@ class _DestinationSearch extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(24),
           child: Container(
-            height: 58,
+            height: 62,
             padding: const EdgeInsetsDirectional.fromSTEB(17, 6, 6, 6),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(24),
@@ -120,19 +146,52 @@ class _DestinationSearch extends StatelessWidget {
                       ),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: Text(
-                          label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: textColor.withValues(alpha: .64),
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              maxLines: 1,
+                              style: TextStyle(
+                                color: textColor,
+                                fontSize: 17,
+                                height: 1.15,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            Text(
+                              label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: textColor.withValues(alpha: .55),
+                                fontSize: 12,
+                                height: 1.2,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
+                ),
+                // «الآن»: the ride leaves now; a later time is chosen on the next step
+                Container(
+                  height: 34,
+                  padding: const EdgeInsets.symmetric(horizontal: 11),
+                  decoration: BoxDecoration(
+                    color: theme.withValues(alpha: .08),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(Icons.schedule_rounded, size: 16, color: textColor.withValues(alpha: .7)),
+                    const SizedBox(width: 5),
+                    Text(now,
+                        style: TextStyle(
+                            color: textColor.withValues(alpha: .8), fontSize: 13, fontWeight: FontWeight.w800)),
+                  ]),
                 ),
                 const SizedBox(width: 8),
                 Container(
@@ -236,10 +295,14 @@ class _RideWithoutDestinationAction extends StatelessWidget {
   const _RideWithoutDestinationAction({
     required this.label,
     required this.onTap,
+    this.icon = Icons.route_rounded,
+    this.chevron = true,
   });
 
   final String label;
   final VoidCallback onTap;
+  final IconData icon;
+  final bool chevron;
 
   @override
   Widget build(BuildContext context) => Material(
@@ -266,7 +329,7 @@ class _RideWithoutDestinationAction extends StatelessWidget {
                     color: theme.withValues(alpha: .12),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.route_rounded, color: theme, size: 18),
+                  child: Icon(icon, color: theme, size: 18),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -281,11 +344,12 @@ class _RideWithoutDestinationAction extends StatelessWidget {
                     ),
                   ),
                 ),
-                Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  color: theme.withValues(alpha: .72),
-                  size: 15,
-                ),
+                if (chevron)
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: theme.withValues(alpha: .72),
+                    size: 15,
+                  ),
               ],
             ),
           ),

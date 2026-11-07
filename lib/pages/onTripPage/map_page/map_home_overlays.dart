@@ -6,7 +6,7 @@ extension _MapHomeOverlays on _MapsState {
       buildRecoveryOfferCard(media),
       if (scheduledOfferSummary.hasOffers)
         Positioned(
-          top: MediaQuery.of(context).padding.top + 68,
+          top: MediaQuery.of(context).padding.top + 82,
           left: 16,
           right: 16,
           child: ScheduledOfferBanner(
@@ -18,7 +18,7 @@ extension _MapHomeOverlays on _MapsState {
       // tomorrow's recurring day waiting for his answer comes first (it has a deadline)
       if (_bottom == 0 && RecurringApi.pendingTomorrow(RecurringApi.rides.value) != null)
         Positioned(
-          top: MediaQuery.of(context).padding.top + (scheduledOfferSummary.hasOffers ? 126 : 72),
+          top: MediaQuery.of(context).padding.top + (scheduledOfferSummary.hasOffers ? 138 : 84),
           left: 16,
           right: 16,
           child: RecurringTomorrowBanner(
@@ -29,7 +29,7 @@ extension _MapHomeOverlays on _MapsState {
       else if (activePromotionCampaigns.isNotEmpty && _bottom == 0)
         Positioned(
           top: MediaQuery.of(context).padding.top +
-              (scheduledOfferSummary.hasOffers ? 126 : 72),
+              (scheduledOfferSummary.hasOffers ? 138 : 84),
           left: 16,
           right: 16,
           child: _RiderPromotionHomeCard(
@@ -302,7 +302,7 @@ extension _MapHomeOverlays on _MapsState {
                                           activeRiderBookings
                                                   .first['is_later'] ==
                                               1)
-                                  ? '${activeRiderBookings.first['trip_start_time'] ?? ''} · ${activeRiderBookings.first['driver_id'] == null ? (languageDirection == 'rtl' ? 'متاحة للسائقين' : 'Available to drivers') : (languageDirection == 'rtl' ? 'أكدها السائق' : 'Driver confirmed')}'
+                                  ? '${_bookingWhen(activeRiderBookings.first as Map)} · ${activeRiderBookings.first['driver_id'] == null ? (languageDirection == 'rtl' ? 'متاحة للسائقين' : 'Available to drivers') : (languageDirection == 'rtl' ? 'أكدها السائق' : 'Driver confirmed')}'
                                   : (languageDirection == 'rtl'
                                       ? '${activeRiderBookings.length} حجوزات · عرض التفاصيل'
                                       : '${activeRiderBookings.length} bookings · View details'),
@@ -348,7 +348,19 @@ extension _MapHomeOverlays on _MapsState {
                           ),
                         ),
                       ),
-                    ],
+                    ] else
+                      const Spacer(),
+                    const SizedBox(width: 12),
+                    // the notifications, one tap from home (they were only in the menu)
+                    MapFloatingMenuButton(
+                      icon: Icons.notifications_none_rounded,
+                      label: languageDirection == 'rtl' ? 'الإشعارات' : 'Notifications',
+                      badge: int.tryParse('${userDetails['notifications_count'] ?? 0}') ?? 0,
+                      onTap: () {
+                        guardedPush(context, MaterialPageRoute(builder: (_) => const NotificationPage()));
+                        setState(() => userDetails['notifications_count'] = 0);
+                      },
+                    ),
                   ],
                 ),
               ))
@@ -498,12 +510,17 @@ class _RiderPromotionHomeCard extends StatelessWidget {
                 ? 'عرض خاص للحسابات الجديدة'
                 : 'A special offer for new accounts'))
         : (rtl
-            ? 'أكملت $rides من $target رحلة'
+            ? 'أكملت $rides من $target رحلة${target > rides ? ' · باقي ${target - rides}' : ''}'
             : '$rides of $target rides completed');
 
+    final ring = !isSignup && target > 0;
     return Material(
       color: Colors.transparent,
-      child: Container(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        // the campaign opens «مكافآتي» (its rules, its progress)
+        onTap: () => guardedPush(context, MaterialPageRoute(builder: (_) => const RewardsPage())),
+        child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: .97),
@@ -516,12 +533,15 @@ class _RiderPromotionHomeCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const CircleAvatar(
-              radius: 19,
-              backgroundColor: Color(0xffE8F5EE),
-              child: Icon(Icons.card_giftcard_rounded,
-                  color: Color(0xff159668), size: 21),
-            ),
+            if (ring)
+              RideProgressRing(done: rides, target: target)
+            else
+              const CircleAvatar(
+                radius: 19,
+                backgroundColor: Color(0xffE8F5EE),
+                child: Icon(Icons.card_giftcard_rounded,
+                    color: Color(0xff159668), size: 21),
+              ),
             const SizedBox(width: 11),
             Expanded(
               child: Column(
@@ -541,17 +561,6 @@ class _RiderPromotionHomeCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                           color: Color(0xff687994), fontSize: 11)),
-                  if (!isSignup && target > 0) ...[
-                    const SizedBox(height: 6),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                          value: (rides / target).clamp(0, 1),
-                          minHeight: 4,
-                          backgroundColor: const Color(0xffE7EFFA),
-                          color: const Color(0xff1677F8)),
-                    ),
-                  ],
                 ],
               ),
             ),
@@ -561,6 +570,50 @@ class _RiderPromotionHomeCard extends StatelessWidget {
           ],
         ),
       ),
+      ),
     );
   }
+}
+
+/// «63» inside a ring that fills toward the campaign's target (the number is the server's count)
+class RideProgressRing extends StatelessWidget {
+  const RideProgressRing({super.key, required this.done, required this.target, this.size = 46});
+
+  final int done;
+  final int target;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final value = target <= 0 ? 0.0 : (done / target).clamp(0.0, 1.0);
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: value),
+      duration: const Duration(milliseconds: 900),
+      curve: Curves.easeOutCubic,
+      builder: (_, v, __) => SizedBox.square(
+        dimension: size,
+        child: Stack(alignment: Alignment.center, children: [
+          SizedBox.square(
+            dimension: size,
+            child: CircularProgressIndicator(
+              value: v,
+              strokeWidth: 4.5,
+              strokeCap: StrokeCap.round,
+              backgroundColor: const Color(0xffE7EFFA),
+              color: const Color(0xff0873FF),
+            ),
+          ),
+          Text('$done',
+              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Color(0xff10264A))),
+        ]),
+      ),
+    );
+  }
+}
+
+/// «غدًا 7:15 ص» from the booking's raw time; the server's own text when it has none
+String _bookingWhen(Map item) {
+  final t = parseTripStart(item);
+  if (t == null) return '${item['trip_start_time'] ?? ''}';
+  return scheduleRelativeLabel(t, isRtl: languageDirection == 'rtl');
 }
