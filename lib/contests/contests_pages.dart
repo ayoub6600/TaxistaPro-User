@@ -539,11 +539,11 @@ class _PredictionSheetState extends State<PredictionSheet> {
               const SizedBox(height: 12),
               if (kind == 'match')
                 Row(children: [
-                  Expanded(child: _team(teams['home'])),
+                  Expanded(child: _team(teams['home'], teams['away'])),
                   _stepper(_home, (v) => setState(() => _home = v)),
                   Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: Text(':', style: p.text(28, weight: FontWeight.w800))),
                   _stepper(_away, (v) => setState(() => _away = v)),
-                  Expanded(child: _team(teams['away'])),
+                  Expanded(child: _team(teams['away'], teams['home'])),
                 ])
               else if (kind == 'number')
                 TextField(
@@ -626,12 +626,27 @@ class _PredictionSheetState extends State<PredictionSheet> {
     );
   }
 
-  Widget _team(dynamic t) {
+  static String _initial(String name) {
+    var t = name.trim().replaceFirst(RegExp(r'^ال'), '');
+    if (RegExp(r'^[اأإآ]').hasMatch(t) && t.length > 1) t = t.substring(1);
+    return t.isEmpty ? '' : t.characters.first;
+  }
+
+  /// The team's letter; when both teams start alike («الأهلي طرابلس» × «الأهلي بنغازي») the last word's.
+  static String teamLetter(String name, String other) {
+    final a = _initial(name);
+    if (a.isNotEmpty && a == _initial(other)) {
+      final words = name.trim().split(RegExp(r'\s+'));
+      if (words.length > 1) return _initial(words.last);
+    }
+    return a;
+  }
+
+  Widget _team(dynamic t, dynamic o) {
     final p = ContestLook.p;
     final m = t is Map ? t : const {};
     final name = '${m['name'] ?? ''}';
-    var letter = name.replaceFirst(RegExp(r'^ال'), '');
-    if (letter.startsWith('ا') && letter.length > 1) letter = letter.substring(1);
+    final letter = teamLetter(name, '${(o is Map ? o['name'] : null) ?? ''}');
     Color color;
     try {
       color = Color(int.parse('FF${'${m['color'] ?? '#0873FF'}'.replaceFirst('#', '')}', radix: 16));
@@ -639,7 +654,7 @@ class _PredictionSheetState extends State<PredictionSheet> {
       color = ContestLook.brand;
     }
     return Column(children: [
-      CircleAvatar(radius: 26, backgroundColor: color, child: Text(letter.isEmpty ? '؟' : letter.characters.first, style: p.text(19, weight: FontWeight.w900, color: Colors.white))),
+      CircleAvatar(radius: 26, backgroundColor: color, child: Text(letter.isEmpty ? '؟' : letter, style: p.text(19, weight: FontWeight.w900, color: Colors.white))),
       const SizedBox(height: 4),
       Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: p.text(12.5, weight: FontWeight.w800)),
     ]);
