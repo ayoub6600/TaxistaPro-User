@@ -294,9 +294,9 @@ class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
                       alignment: Alignment.center,
                       children: [
                         Text(
-                          widget.isRtl
-                              ? 'قريبًا سيتم قبول طلبك'
-                              : 'Your ride will be accepted soon',
+                          offeringDrivers.isNotEmpty
+                              ? (widget.isRtl ? 'وصلتك عروض من السائقين' : 'Drivers sent you offers')
+                              : (widget.isRtl ? 'قريبًا سيتم قبول طلبك' : 'Your ride will be accepted soon'),
                           textAlign: TextAlign.center,
                           style: GoogleFonts.cairo(
                             color: _searchNavy,
@@ -331,6 +331,12 @@ class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
                       const SizedBox(width: 8),
                       _LoadingDots(animation: _pulseController),
                     ],
+                  ),
+                  SizedBox(height: compact ? 9 : 12),
+                  // design v2: where the request is (sent → drivers see it → accepted)
+                  _SearchSteps(
+                    isRtl: widget.isRtl,
+                    step: offeringDrivers.isNotEmpty ? 2 : (viewingDrivers.isNotEmpty || revealedDrivers.isNotEmpty ? 1 : 0),
                   ),
                   SizedBox(height: compact ? 9 : 12),
                   if (widget.fare != null) ...[
@@ -482,7 +488,49 @@ class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
     }
     return visibleCount == 0
         ? 'جارٍ التواصل مع السائقين القريبين'
-        : 'طلبك ظاهر الآن لأقرب $visibleCount سائقين';
+        : visibleCount == 1
+            ? 'طلبك ظاهر الآن لأقرب سائق'
+            : visibleCount == 2
+                ? 'طلبك ظاهر الآن لأقرب سائقَين'
+                : 'طلبك ظاهر الآن لأقرب $visibleCount ${visibleCount <= 10 ? 'سائقين' : 'سائقًا'}';
+  }
+}
+
+/// three short bars under the title: «أرسلنا الطلب», «السائقون يشاهدونه», «قبول»
+class _SearchSteps extends StatelessWidget {
+  const _SearchSteps({required this.isRtl, required this.step});
+  final bool isRtl;
+  final int step;
+
+  @override
+  Widget build(BuildContext context) {
+    final labels = isRtl ? const ['أرسلنا الطلب', 'السائقون يشاهدونه', 'قبول'] : const ['Request sent', 'Drivers see it', 'Accepted'];
+    return Row(children: [
+      for (var i = 0; i < 3; i++) ...[
+        if (i > 0) const SizedBox(width: 6),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeOut,
+              height: 5,
+              decoration: BoxDecoration(
+                color: i <= step ? const Color(0xff0873FF) : const Color(0xffE3E8EF),
+                borderRadius: BorderRadius.circular(99),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(labels[i],
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.cairo(
+                    color: i <= step ? const Color(0xff10213F) : const Color(0xff8593AA),
+                    fontSize: 11,
+                    fontWeight: i == step ? FontWeight.w800 : FontWeight.w600)),
+          ]),
+        ),
+      ],
+    ]);
   }
 }
 
