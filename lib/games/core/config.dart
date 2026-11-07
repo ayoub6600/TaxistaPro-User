@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../catalog.dart';
+import '../web_game.dart';
 import 'game_core.dart';
 
 /// What the admin panel controls. The app ships every game; the server only
@@ -16,12 +17,22 @@ class WaitingGamesConfig {
   static Set<String> newGames = <String>{};
   static List<String> order = <String>[];
 
+  /// games from the server (public/waiting-games): shown with the app's own, no update needed
+  static List<TaxistaGame> webGames = <TaxistaGame>[];
+
+  /// the admin's rules: show while searching / while the driver comes
+  static bool whileSearching = true;
+  static bool whileDriverComing = true;
+
   /// [serverConfig] null (missing / failed / old backend) = off, except in a
   /// tryout build (TestFlight) where [tryoutBuild] turns everything on.
   static void loadFrom(Map? serverConfig, {bool tryoutBuild = false}) {
     disabledGames = <String>{};
     newGames = <String>{};
     order = <String>[];
+    webGames = <TaxistaGame>[];
+    whileSearching = true;
+    whileDriverComing = true;
     if (serverConfig == null) {
       enabled = tryoutBuild;
       return;
@@ -36,7 +47,13 @@ class WaitingGamesConfig {
         order.add(id);
         if (g.containsKey('enabled') && !_flag(g['enabled'])) disabledGames.add(id);
         if (_flag(g['new'])) newGames.add(id);
+        if (g['kind'] == 'web' && '${g['url'] ?? ''}'.startsWith('http')) webGames.add(WebGame.fromJson(g));
       }
+    }
+    final rules = serverConfig['rules'];
+    if (rules is Map) {
+      if (rules.containsKey('while_searching')) whileSearching = _flag(rules['while_searching']);
+      if (rules.containsKey('while_driver_coming')) whileDriverComing = _flag(rules['while_driver_coming']);
     }
     final disabled = serverConfig['disabled'];
     if (disabled is List) disabledGames.addAll(disabled.map((e) => '$e'));
@@ -49,10 +66,11 @@ class WaitingGamesConfig {
   /// Games the rider may see, in the admin's order (unknown ids keep catalog order).
   static List<TaxistaGame> visibleGames() {
     if (!enabled) return const <TaxistaGame>[];
-    final list = GameCatalog.all.where((g) => !disabledGames.contains(g.id)).toList();
+    final all = <TaxistaGame>[...GameCatalog.all, ...webGames];
+    final list = all.where((g) => !disabledGames.contains(g.id)).toList();
     int rank(TaxistaGame g) {
       final i = order.indexOf(g.id);
-      return i >= 0 ? i : 1000 + GameCatalog.all.indexOf(g);
+      return i >= 0 ? i : 1000 + all.indexOf(g);
     }
 
     list.sort((a, b) => rank(a).compareTo(rank(b)));
@@ -62,6 +80,9 @@ class WaitingGamesConfig {
   @visibleForTesting
   static void reset() {
     enabled = false;
+    webGames = <TaxistaGame>[];
+    whileSearching = true;
+    whileDriverComing = true;
     disabledGames = <String>{};
     newGames = <String>{};
     order = <String>[];

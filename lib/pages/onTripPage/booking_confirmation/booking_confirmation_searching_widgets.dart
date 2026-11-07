@@ -206,7 +206,7 @@ class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
     final topPadding = MediaQuery.paddingOf(context).top;
     final compact = media.height < 720;
     final gamesBox = (media.height * 0.24).clamp(150.0, 230.0).toDouble();
-    final showGames = RideGamesHost.enabled;
+    final showGames = RideGamesHost.enabledWhileSearching;
     final sheetHeight = _searchingSheetHeight(media) + (showGames ? (RideGamesHost.boxOpen ? gamesBox + 12 : 58) : 0);
     RideGamesHost.sync(context);
     final revealedDrivers = widget.drivers

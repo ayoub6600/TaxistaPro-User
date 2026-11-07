@@ -454,7 +454,26 @@ class GameThumb extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final g = game;
-    if (g is! WorldGame) return const ColoredBox(color: GamesTheme.night);
+    if (g is! WorldGame) {
+      // a game from the server: its icon on a lit night card (the page itself loads only when played)
+      return DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(center: Alignment(0, -.2), radius: .9, colors: [Color(0xff1E4FA3), GamesTheme.night]),
+        ),
+        child: Center(
+          child: Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: .1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withValues(alpha: .18)),
+            ),
+            child: Icon(g.icon, color: Colors.white, size: 34),
+          ),
+        ),
+      );
+    }
     return RepaintBoundary(child: SizedBox.expand(child: CustomPaint(painter: _ThumbPainter(g, skin))));
   }
 }

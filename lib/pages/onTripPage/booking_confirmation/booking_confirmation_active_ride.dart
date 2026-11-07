@@ -4,6 +4,12 @@ mixin _BookingConfirmationActiveRide
     on State<BookingConfirmation>, _BookingConfirmationController {
   Widget buildActiveRideSheet(Size media) {
     final fare = _resolveRideFare(userRequestData);
+    // a ride resumed after the app restarted: fetch the admin's games once here too
+    if (!RideGamesHost.configured && userRequestData.isNotEmpty) {
+      RideGamesHost.configure().then((_) {
+        if (mounted) setState(() {});
+      });
+    }
     return (userRequestData.isNotEmpty &&
             userRequestData['accepted_at'] != null)
         ? AnimatedPositioned(
@@ -121,7 +127,7 @@ mixin _BookingConfirmationActiveRide
                       ],
                       _activeDriverCard(media),
                       // «العب وأنت تستنى» while the driver is coming: the same box as on the search screen
-                      if (RideGamesHost.enabled && userRequestData['arrived_at'] == null && userRequestData['is_trip_start'] != 1) ...[
+                      if (RideGamesHost.enabledWhileDriverComing && userRequestData['arrived_at'] == null && userRequestData['is_trip_start'] != 1) ...[
                         const SizedBox(height: 12),
                         SizedBox(
                           width: media.width * 0.9,

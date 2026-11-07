@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 import '../functions/functions.dart';
 import '../functions/live_activity.dart';
@@ -16,20 +18,42 @@ class RideGamesHost {
   static VoidCallback? _backToTrip;
   static final ValueNotifier<RideGameStatus> status =
       ValueNotifier(RideGameStatus(phase: 'searching', onBackToTrip: () => _backToTrip?.call()));
-  static bool _configured = false;
+  static DateTime? _fetchedAt;
 
   /// the box in the searching sheet is open (kept here: that sheet is rebuilt every second)
   static bool boxOpen = false;
   static String? _lastPhase;
 
-  /// once per app start: the admin config from the user details, else on only for TestFlight
-  static Future<void> configure() async {
-    if (_configured) return;
-    _configured = true;
-    final server = userDetails['waiting_games'];
+  /// on each search (at most every 5 minutes): the admin's games from the server
+  /// (request/waiting-games, for the pickup's market), else the copy in the user details.
+  /// TestFlight builds always show the games (the admin's per-game switches still apply).
+  static Future<void> configure({bool force = false}) async {
+    if (!force && _fetchedAt != null && DateTime.now().difference(_fetchedAt!) < const Duration(minutes: 5)) return;
+    _fetchedAt = DateTime.now();
+    Map? server = userDetails['waiting_games'] is Map ? userDetails['waiting_games'] as Map : null;
+    try {
+      final lat = userRequestData['pick_lat'], lng = userRequestData['pick_lng'];
+      final q = lat != null && lng != null ? '?lat=$lat&lng=$lng' : '';
+      final r = await http.get(Uri.parse('${url}api/v1/request/waiting-games$q'), headers: {
+        'Authorization': 'Bearer ${bearerToken.isEmpty ? '' : bearerToken[0].token}',
+        'Accept': 'application/json',
+      }).timeout(const Duration(seconds: 8));
+      if (r.statusCode == 200) {
+        final d = jsonDecode(r.body)['data'];
+        if (d is Map) server = d;
+      }
+    } catch (_) {}
     final tryout = await LiveActivity.isTryoutBuild();
-    WaitingGamesConfig.loadFrom(server is Map ? server : null, tryoutBuild: tryout);
+    WaitingGamesConfig.loadFrom(server, tryoutBuild: tryout);
+    if (tryout) WaitingGamesConfig.enabled = true;
   }
+
+  /// fetched at least once since the app started (a ride resumed after a restart fetches it too)
+  static bool get configured => _fetchedAt != null;
+
+  /// the admin's rules: «وقت البحث» and «والسائق جاي»
+  static bool get enabledWhileSearching => enabled && WaitingGamesConfig.whileSearching;
+  static bool get enabledWhileDriverComing => enabled && WaitingGamesConfig.whileDriverComing;
 
   static bool get enabled => WaitingGamesConfig.enabled && WaitingGamesConfig.visibleGames().isNotEmpty;
 
