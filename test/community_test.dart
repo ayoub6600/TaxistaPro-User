@@ -91,8 +91,6 @@ void main() {
     await http.runWithClient(() async {
       await tester.pumpWidget(const MaterialApp(home: RewardsPage()));
       await settle(tester);
-      await tester.tap(find.text('الشروط'));
-      await settle(tester);
     }, () => MockClient((request) async {
           if (request.url.path.endsWith('rewards/summary')) {
             return _json({
@@ -133,9 +131,15 @@ void main() {
     expect(find.text('7.50 د.ل'), findsOneWidget);
     expect(find.text('40 عملة ذهبية'), findsOneWidget);
     expect(find.text('باقي 60 عملة للتحويل إلى رصيد مشاوير.'), findsOneWidget);
-    expect(find.text('55 من 100 رحلة'), findsOneWidget);
-    expect(find.text('أكمل 100 رحلة خلال مدة الحملة واحصل على 100.00 د.ل.'), findsOneWidget);
     expect(find.text('أول سائق في «سواقيني»'), findsOneWidget);
+    // design v2: the ride campaign leads on its own card, and its page holds the count and the terms
+    expect(find.text('باقي 45 رحلة مكتملة'), findsOneWidget);
+    await tester.tap(find.text('100 رحلة = 100 دينار'));
+    await settle(tester);
+    expect(find.text('55'), findsWidgets);
+    expect(find.text('من 100 رحلة'), findsOneWidget);
+    expect(find.text('باقي 45 رحلة على مكافأتك'), findsOneWidget);
+    expect(find.text('أكمل 100 رحلة خلال مدة الحملة واحصل على 100.00 د.ل.'), findsOneWidget);
   });
 
   testWidgets('booking: a free favourite is offered and chosen; the request names him', (tester) async {
