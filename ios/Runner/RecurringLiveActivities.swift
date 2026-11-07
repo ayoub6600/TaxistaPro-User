@@ -8,6 +8,8 @@ import UserNotifications
 /// in the app, and the TestFlight tryout (a card / a notification that never reach the server).
 enum RecurringLiveActivities {
   private static var channel: FlutterMethodChannel?
+  /// a tap on the card itself, kept until Flutter takes it (the app may still be starting)
+  private static var pendingOpen: [String: String]?
   private static var watched = Set<String>()
   private static let tokenKey = "taxista_la_start_token"
 
@@ -32,6 +34,11 @@ enum RecurringLiveActivities {
         let id = (call.arguments as? [String: Any])?["id"] as? String ?? ""
         if #available(iOS 16.2, *) { Task { await end(id, phase: "done", title: "", line: "") } }
         result(nil)
+      case "takeOpen":
+        // the card was tapped while the app was still starting: Flutter collects it once ready
+        let p = pendingOpen
+        pendingOpen = nil
+        result(p)
       default: result(FlutterMethodNotImplemented)
       }
     }
@@ -142,9 +149,20 @@ enum RecurringLiveActivities {
   // MARK: ⏭ تخطي from the card: taxistarider://recurring-day/skip?id=…&t=…&s=…
 
   static func open(_ url: URL) -> Bool {
-    guard url.scheme == "taxistarider", url.host == "recurring-day", url.path == "/skip" else { return false }
+    guard url.scheme == "taxistarider", url.host == "recurring-day" else { return false }
     let q = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
     let v = { (n: String) in q.first { $0.name == n }?.value ?? "" }
+    if url.path == "/open" {
+      // a tap on the card itself (taxistarider://recurring-day/open?id=…&r=…): that schedule, that day.
+      // It is only taken by Flutter («takeOpen»): on its start-up, or when this nudge reaches a running app,
+      // so a cold start never loses it.
+      let oid = v("id"), rid = v("r")
+      guard !rid.isEmpty, oid != "demo" else { return true }
+      pendingOpen = ["recurring_id": rid, "occurrence_id": oid]
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) { channel?.invokeMethod("openDay", arguments: nil) }
+      return true
+    }
+    guard url.path == "/skip" else { return true }
     let id = v("id"), token = v("t"), seenAt = v("s")
     guard !id.isEmpty, !token.isEmpty else { return true }
     // the app may still be starting (opened from the card): ask once its window is up

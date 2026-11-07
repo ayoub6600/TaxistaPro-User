@@ -27,6 +27,7 @@
 		E3016914858C8155C34F9D68 /* RecurringLiveWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0467ECA2A31039A7982A04 /* RecurringLiveWidget.swift */; };
 		F286C70D97D66555AB9C0FFE /* ActivityKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D07268CA3FD85B7771A9421 /* ActivityKit.framework */; };
 		F664E22E2BDAA6A315BD97FD /* RecurringLiveActivities.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D5A2CDCCE96CF10C1776B6 /* RecurringLiveActivities.swift */; };
+		5A1C0E7F2B9D4E61A3C80D12 /* LiveAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5A1C0E7F2B9D4E61A3C80D11 /* LiveAssets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -106,6 +107,7 @@
 		E6E159FD12AF5E7E1BA06CAC /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
 		EE084BA2FF660253B70AE8C4 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		F22570198B1680BB688F2E15 /* Pods-RunnerTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug.xcconfig"; sourceTree = "<group>"; };
+		5A1C0E7F2B9D4E61A3C80D11 /* LiveAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = LiveAssets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -154,6 +156,7 @@
 				B2E65C2B48F23D7D43233982 /* RecurringDayShared.swift */,
 				9F0467ECA2A31039A7982A04 /* RecurringLiveWidget.swift */,
 				1D0C8ADEDC8AE1E00EF4E666 /* Info.plist */,
+				5A1C0E7F2B9D4E61A3C80D11 /* LiveAssets.xcassets */,
 			);
 			name = RecurringLive;
 			path = RecurringLive;
@@ -363,6 +366,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5A1C0E7F2B9D4E61A3C80D12 /* LiveAssets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

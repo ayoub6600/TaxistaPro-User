@@ -216,8 +216,18 @@ enum RecurringReminderButtons {
   static func register() {
     // confirm: one tap, even on the lock screen. skip cancels a booked ride: the phone asks Face ID /
     // the code first (on a lock screen), so nobody else holding the phone can skip his day
-    let yes = UNNotificationAction(identifier: confirm, title: "✅ تأكيد", options: [])
-    let no = UNNotificationAction(identifier: skip, title: "⏭ تخطي", options: [.destructive, .authenticationRequired])
+    // short words with Apple's own action icons (iOS 15+): «تأكيد» / «تخطي», no emoji inside the menu
+    let yes: UNNotificationAction
+    let no: UNNotificationAction
+    if #available(iOS 15.0, *) {
+      yes = UNNotificationAction(identifier: confirm, title: "تأكيد", options: [],
+                                 icon: UNNotificationActionIcon(systemImageName: "checkmark.circle.fill"))
+      no = UNNotificationAction(identifier: skip, title: "تخطي", options: [.destructive, .authenticationRequired],
+                                icon: UNNotificationActionIcon(systemImageName: "forward.end.fill"))
+    } else {
+      yes = UNNotificationAction(identifier: confirm, title: "✅ تأكيد", options: [])
+      no = UNNotificationAction(identifier: skip, title: "⏭ تخطي", options: [.destructive, .authenticationRequired])
+    }
     let cat = UNNotificationCategory(identifier: category, actions: [yes, no], intentIdentifiers: [],
                                      hiddenPreviewsBodyPlaceholder: "تذكير بمشوارك", options: [])
     let center = UNUserNotificationCenter.current()

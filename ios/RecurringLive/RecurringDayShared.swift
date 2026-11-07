@@ -36,6 +36,16 @@ struct RecurringDayAttributes: ActivityAttributes {
     c.queryItems = [URLQueryItem(name: "id", value: occurrenceId), URLQueryItem(name: "t", value: dayToken), URLQueryItem(name: "s", value: seenAt)]
     return c.url ?? URL(string: "taxistarider://recurring-day")!
   }
+
+  /// a tap on the card itself (not on a button): the app opens on this schedule, at this day
+  var openURL: URL {
+    var c = URLComponents()
+    c.scheme = "taxistarider"
+    c.host = "recurring-day"
+    c.path = "/open"
+    c.queryItems = [URLQueryItem(name: "id", value: occurrenceId), URLQueryItem(name: "r", value: recurringId)]
+    return c.url ?? URL(string: "taxistarider://recurring-day")!
+  }
 }
 
 /// ✅ تأكيد on the card: runs in the app's process in the background, the app stays closed
@@ -118,15 +128,27 @@ enum RecurringDayAnswer {
       }
       return reply
     }
+    // the card answers the tap at once: «جاري تأكيد مشوارك…» in place of the buttons, so no second tap
+    // goes out meanwhile. That state is stale after 25 s: if iOS stopped the app mid-way, the buttons
+    // come back by themselves (the server keeps one answer per day, a second tap never counts twice).
+    // Nothing says «done» before the server does.
+    let before = activity?.content
+    if let a = activity, let b = before, b.state.phase == "ask" || b.state.phase == "retry" || b.state.phase == "sending" {
+      await a.update(ActivityContent(state: .init(phase: "sending", title: b.state.title, line: b.state.line, note: answer),
+                                     staleDate: Date().addingTimeInterval(25)))
+    }
     let reply = await post(occurrenceId: occurrenceId, answer: answer, token: token, seenAt: seenAt)
     guard let a = activity else { return reply }
     if reply.network {
-      let s = a.content.state
-      await a.update(ActivityContent(state: .init(phase: "retry", title: s.title, line: s.line, note: "⚠️ ما تسجلش ردك: الاتصال ضعيف. اضغط مرة ثانية."), staleDate: a.content.staleDate))
+      let s = before?.state ?? a.content.state
+      await a.update(ActivityContent(state: .init(phase: "retry", title: s.title, line: s.line, note: "ما تسجلش ردك: الاتصال ضعيف. اضغط مرة ثانية."),
+                                     staleDate: Date(timeIntervalSince1970: a.attributes.deadline)))
     } else {
       let phase = !reply.ok ? "off" : (answer == "attend" ? "done" : "skipped")
+      // a success stays a short moment to be read; a refusal (time changed, too late…) a little longer,
+      // it tells him what to do
       await a.end(ActivityContent(state: .init(phase: phase, title: reply.title, line: reply.message, note: ""), staleDate: nil),
-                  dismissalPolicy: .after(Date().addingTimeInterval(90)))
+                  dismissalPolicy: .after(Date().addingTimeInterval(reply.ok ? 45 : 120)))
     }
     return reply
   }

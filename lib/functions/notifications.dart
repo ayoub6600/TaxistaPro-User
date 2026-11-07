@@ -216,6 +216,7 @@ Future<void> initMessaging() async {
   LiveActivity.listen(
     onToken: () => unawaited(syncDeviceToken(force: true)),
     onAnswered: (_) => unawaited(RecurringApi.refresh(force: true)),
+    onOpen: RecurringLink.open,
   );
   if (Platform.isAndroid) {
     try {
