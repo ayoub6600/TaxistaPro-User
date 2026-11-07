@@ -116,9 +116,9 @@ private func secondLine(_ context: ActivityViewContext<RecurringDayAttributes>) 
   return (s.line, false)
 }
 
-/// the server's title without the old «🚕 » (the real icon is on the card now)
+/// the server's title without its emoji («🚕 », «✅ », «⏭ »): the card draws the real icon and Apple's symbols
 func plainTitle(_ t: String) -> String {
-  t.replacingOccurrences(of: "🚕", with: "").trimmingCharacters(in: .whitespaces)
+  ["🚕", "✅", "⏭️", "⏭"].reduce(t) { $0.replacingOccurrences(of: $1, with: "") }.trimmingCharacters(in: .whitespaces)
 }
 
 /// «9:30 صباحًا · من البيت إلى العمل» → («9:30», «صباحًا»)
@@ -154,12 +154,10 @@ struct AppMark: View {
 
 private struct CompactTrailing: View {
   let context: ActivityViewContext<RecurringDayAttributes>
-  @Environment(\.isDynamicIslandLimitedInWidth) private var limited
+  // (when several activities share the island, iOS shows the minimal view: the icon alone)
 
   var body: some View {
-    if limited {
-      EmptyView() // Apple hides an empty trailing view; the icon alone stays
-    } else if asks(context), let t = clockParts(context.state.line) {
+    if asks(context), let t = clockParts(context.state.line) {
       Text(t.hm).font(.system(size: 15, weight: .semibold, design: .rounded)).monospacedDigit().foregroundStyle(.white)
     } else {
       Image(systemName: statusSymbol(context.state.phase))
