@@ -137,7 +137,7 @@ class _EditProfileState extends State<EditProfile> {
   bool get _changed =>
       profileImageFile != null ||
       name.text.trim() != _initialName ||
-      email.text.trim() != _initialEmail ||
+      _cleanEmail(email.text) != _initialEmail ||
       usergender.text != _initialGender;
 
   @override
@@ -154,11 +154,12 @@ class _EditProfileState extends State<EditProfile> {
     final g = '${userDetails['gender'] ?? ''}';
     usergender.text = (g == 'male' || g == 'female') ? g : '';
     _initialName = name.text.trim();
-    _initialEmail = email.text.trim();
+    _initialEmail = _cleanEmail(email.text);
     _initialGender = usergender.text;
     for (final c in [name, email]) {
       c.addListener(() {
-        if (mounted) setState(() {});
+        // a message about the old value goes as soon as he edits (e.g. he cleared the email)
+        if (mounted) setState(() => _error = '');
       });
     }
   }
@@ -166,6 +167,8 @@ class _EditProfileState extends State<EditProfile> {
   pop() {
     Navigator.pop(context, true);
   }
+
+  static String _cleanEmail(String v) => v.replaceAll(RegExp(r'[\s\u00A0\u200B-\u200F\u202A-\u202E\u2060\uFEFF]'), '');
 
   static final _emailPattern = RegExp(r"^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$");
 
@@ -186,7 +189,8 @@ class _EditProfileState extends State<EditProfile> {
   Future<void> _save() async {
     if (_saving) return;
     FocusScope.of(context).unfocus();
-    final mail = email.text.replaceAll(' ', '');
+    // spaces and invisible marks the keyboard can leave (RTL marks, zero-width, no-break space)
+    final mail = _cleanEmail(email.text);
     setState(() => _error = '');
     if (name.text.trim().length < 2) {
       setState(() => _error = _rtl ? 'اكتب اسمك (حرفين على الأقل)' : 'Write your name');
@@ -410,7 +414,10 @@ class _EditProfileState extends State<EditProfile> {
                           side: BorderSide.none,
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          onSelected: (_) => setState(() => usergender.text = usergender.text == g ? '' : g),
+                          onSelected: (_) => setState(() {
+                            usergender.text = usergender.text == g ? '' : g;
+                            _error = '';
+                          }),
                         ),
                       ),
                       if (g == 'male') const SizedBox(width: 10),
