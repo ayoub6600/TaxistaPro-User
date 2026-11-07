@@ -214,6 +214,12 @@ enum RecurringReminderButtons {
       var all = existing.filter { $0.identifier != category }
       all.insert(cat)
       center.setNotificationCategories(all)
+      // what iOS really holds now (Console / `log stream`): the category id and its two buttons
+      center.getNotificationCategories { now in
+        for c in now where c.identifier == category {
+          NSLog("TaxistaRecurring category=%@ actions=%@", c.identifier, c.actions.map { "\($0.identifier)[\($0.title)] options=\($0.options.rawValue)" }.joined(separator: " | "))
+        }
+      }
     }
   }
 

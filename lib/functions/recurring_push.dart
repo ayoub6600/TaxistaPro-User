@@ -153,7 +153,11 @@ class RecurringPush {
           final r = await c
               .post(uri, headers: {'Content-Type': 'application/json', 'Accept': 'application/json'}, body: body)
               .timeout(const Duration(seconds: 15));
-          final j = jsonDecode(r.body);
+          if (r.statusCode >= 500 && attempt == 0) {
+            await Future<void>.delayed(const Duration(seconds: 3));
+            continue;
+          }
+          final j = jsonDecode(utf8.decode(r.bodyBytes));
           if (j is Map && j['title'] != null) {
             return RecurringAnswer(ok: j['success'] == true, state: '${j['state'] ?? ''}', title: '${j['title']}', message: '${j['message'] ?? ''}');
           }
@@ -162,15 +166,14 @@ class RecurringPush {
             continue;
           }
           return RecurringAnswer.failed('ما وصلناش رد واضح من تاكسيستا (${r.statusCode}). ردك ما تسجلش؛ جرب مرة ثانية.');
-        } on TimeoutException {
-          if (attempt == 0) continue;
-        } on SocketException {
+        } on FormatException {
+          return RecurringAnswer.failed('ما وصلناش رد واضح من تاكسيستا. ردك ما تسجلش؛ جرب مرة ثانية.');
+        } catch (_) {
+          // timeout, no network, connection refused / closed (http's ClientException): once more, then honest
           if (attempt == 0) {
             await Future<void>.delayed(const Duration(seconds: 3));
             continue;
           }
-        } on FormatException {
-          return RecurringAnswer.failed('ما وصلناش رد واضح من تاكسيستا. ردك ما تسجلش؛ جرب مرة ثانية.');
         }
       }
       return RecurringAnswer.failed('ما فيش اتصال بالإنترنت. ردك ما تسجلش؛ جرب الزر مرة ثانية لما يرجع الاتصال.');
@@ -207,7 +210,12 @@ Future<void> recurringNotificationAction(NotificationResponse response) async {
     await plugin.initialize(const InitializationSettings(android: AndroidInitializationSettings('@mipmap/ic_launcher'), iOS: DarwinInitializationSettings()),
         onDidReceiveBackgroundNotificationResponse: recurringNotificationAction);
   } catch (_) {}
-  final a = await RecurringPush.answer(data, action == RecurringPush.confirmAction ? 'attend' : 'skip');
+  RecurringAnswer a;
+  try {
+    a = await RecurringPush.answer(data, action == RecurringPush.confirmAction ? 'attend' : 'skip');
+  } catch (_) {
+    a = RecurringAnswer.failed('صار خطأ وما تسجلش ردك. جرب الزر مرة ثانية أو افتح «رحلاتي المتكررة».');
+  }
   await RecurringPush.showResult(plugin, data, a);
   RecurringPush.lastAnswer.value = a;
 }
