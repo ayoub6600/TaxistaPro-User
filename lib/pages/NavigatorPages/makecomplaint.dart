@@ -8,6 +8,7 @@ import '../../translations/translation.dart';
 import '../../widgets/widgets.dart';
 import '../noInternet/noInternet.dart';
 import '../../navigation/guarded_navigation.dart';
+import 'adminchatpage.dart';
 
 class MakeComplaint extends StatefulWidget {
   const MakeComplaint({super.key});
@@ -289,14 +290,26 @@ class _MakeComplaintState extends State<MakeComplaint> {
                                               fit: BoxFit.contain)),
                                     ),
                                     SizedBox(
-                                      width: media.width * 0.6,
+                                      width: media.width * 0.8,
                                       child: MyText(
-                                          text: languages[choosenLanguage]
-                                              ['text_noDataFound'],
+                                          text: languageDirection == 'rtl'
+                                              ? 'اكتب لنا شكواك في الدردشة، والفريق يرد عليك هناك'
+                                              : 'Write your complaint in the chat; the team answers there',
                                           textAlign: TextAlign.center,
                                           fontweight: FontWeight.w800,
                                           size: media.width * sixteen),
                                     ),
+                                    SizedBox(height: media.width * 0.05),
+                                    // no complaint types set up yet: the chat with Taxista takes it
+                                    if (!isShimmer)
+                                      Button(
+                                        onTap: () => guardedPush(
+                                            context,
+                                            MaterialPageRoute(
+                                                builder: (context) => AdminChatPage(
+                                                    draft: languageDirection == 'rtl' ? 'عندي شكوى: ' : 'I have a complaint: '))),
+                                        text: languageDirection == 'rtl' ? 'اكتب شكواك' : 'Write your complaint',
+                                      ),
                                   ],
                                 ),
                               ),

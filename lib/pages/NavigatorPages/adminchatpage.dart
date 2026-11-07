@@ -22,7 +22,10 @@ class AdminChatPage extends StatefulWidget {
   /// Opened from a notification: the message to bring into view (and briefly highlight).
   final int? focusMessageId;
 
-  const AdminChatPage({super.key, this.focusMessageId});
+  /// Text placed in the message box when the page opens (e.g. a complaint about one ride); he can edit it.
+  final String? draft;
+
+  const AdminChatPage({super.key, this.focusMessageId, this.draft});
 
   /// Whether the chat with the administration is on screen (a tapped notification reuses it).
   static bool get isOpen => adminChatPagesOpen > 0;
@@ -64,6 +67,7 @@ class _AdminChatPageState extends State<AdminChatPage> {
   @override
   void initState() {
     super.initState();
+    if ((widget.draft ?? '').isNotEmpty && _input.text.isEmpty) _input.text = widget.draft!;
     adminChatPagesOpen++;
     _focusId = widget.focusMessageId;
     SupportChatLink.focus.addListener(_onFocusRequest);

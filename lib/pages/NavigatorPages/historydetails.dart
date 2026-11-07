@@ -12,6 +12,8 @@ import '../../widgets/widgets.dart';
 import '../loadingPage/loading.dart';
 import '../noInternet/nointernet.dart';
 import 'history.dart';
+import 'adminchatpage.dart';
+import '../../navigation/guarded_navigation.dart';
 
 class HistoryDetails extends StatefulWidget {
   const HistoryDetails({super.key});
@@ -512,7 +514,7 @@ class _HistoryDetailsState extends State<HistoryDetails> {
                                               details: [
                                                 myHistory[selectedHistory]['driverDetail']['data']['car_make_name'],
                                                 myHistory[selectedHistory]['driverDetail']['data']['car_number'],
-                                              ].where((v) => v != null && '$v'.isNotEmpty).join(' · '),
+                                              ].where((v) => v != null && '$v'.isNotEmpty && '$v' != 'null').join(' · '),
                                             ),
                                             SizedBox(
                                               height: 8.h,
@@ -529,11 +531,13 @@ class _HistoryDetailsState extends State<HistoryDetails> {
                                                   size: 12.sp,
                                                 ),
                                                 Text(
-                                                  myHistory[selectedHistory][
-                                                                  'driverDetail']
-                                                              ['data']
-                                                          ['car_make_name']
-                                                      .toString(),
+                                                  // the car as written (make, model, colour); never «null»
+                                                  () {
+                                                    final d = myHistory[selectedHistory]['driverDetail']['data'];
+                                                    bool real(v) => v != null && '$v'.trim().isNotEmpty && '$v' != 'null';
+                                                    final car = [d['car_make_name'], d['car_model_name'], d['car_color']].where(real).join(' · ');
+                                                    return car.isEmpty ? '—' : car;
+                                                  }(),
                                                   textDirection:
                                                       TextDirection.ltr,
                                                   style: GoogleFonts.cairo(
@@ -1467,6 +1471,19 @@ class _HistoryDetailsState extends State<HistoryDetails> {
                                         media.width * 0.02),
                                     child: Button(
                                         onTap: () {
+                                          // no complaint types set up in the admin panel: the complaint
+                                          // goes to the chat with Taxista, the ride number already written
+                                          if (generalComplaintList.isEmpty) {
+                                            final no = '${myHistory[selectedHistory]['request_number'] ?? ''}';
+                                            guardedPush(
+                                                context,
+                                                MaterialPageRoute(
+                                                    builder: (context) => AdminChatPage(
+                                                        draft: languageDirection == 'rtl'
+                                                            ? 'عندي شكوى على الرحلة $no: '
+                                                            : 'I have a complaint about ride $no: ')));
+                                            return;
+                                          }
                                           setState(() {
                                             _error = '';
 
