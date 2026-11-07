@@ -52,7 +52,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: p.background,
-        appBar: communityAppBar(context, 'سواقيني'),
+        appBar: communityAppBar(context, 'سواقيني', subtitle: 'السواق اللي يعجبوك. نعرضهم عليك أول وقت الطلب لو كانوا قريبين'),
         body: RefreshIndicator(
           onRefresh: _load,
           child: _items == null
@@ -75,15 +75,19 @@ class _FavoritesPageState extends State<FavoritesPage> {
     final rating = d['rating'];
     return Material(
       color: p.surface,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(20),
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         onTap: () => Navigator.of(context)
             .push(MaterialPageRoute(builder: (_) => DriverProfilePage(driverId: int.parse('${d['driver_id']}'))))
             .then((_) => _load()),
         child: Container(
           padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), border: Border.all(color: p.line)),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: p.line),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .04), blurRadius: 12, offset: const Offset(0, 4))],
+          ),
           child: Row(children: [
             CommunityAvatar(photo: d['photo']?.toString(), name: name, size: 52),
             const SizedBox(width: 12),

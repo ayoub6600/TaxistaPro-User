@@ -133,15 +133,31 @@ class GoldCoin extends StatelessWidget {
 }
 
 /// A plain app bar in the screens' palette.
-PreferredSizeWidget communityAppBar(BuildContext context, String title, {List<Widget> actions = const []}) {
+PreferredSizeWidget communityAppBar(BuildContext context, String title, {List<Widget> actions = const [], String? subtitle}) {
   final p = CommunityLook.palette;
-  return AppBar(
-    backgroundColor: p.surface,
-    surfaceTintColor: p.surface,
-    elevation: 0,
-    iconTheme: IconThemeData(color: p.ink),
-    title: Text(title, style: p.text(17, weight: FontWeight.w700)),
-    actions: actions,
-    bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Container(height: 1, color: p.line)),
+  return PreferredSize(
+    preferredSize: Size.fromHeight(subtitle == null ? 64 : 82),
+    child: SafeArea(
+      bottom: false,
+      child: Container(
+        color: p.background,
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
+        child: Row(children: [
+          IconButton(
+            onPressed: () => Navigator.of(context).maybePop(),
+            icon: Icon(Icons.arrow_back_rounded, color: p.ink),
+            style: IconButton.styleFrom(backgroundColor: p.ink.withValues(alpha: .05), fixedSize: const Size(44, 44)),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(title, style: p.text(21, weight: FontWeight.w800)),
+              if (subtitle != null) Text(subtitle, maxLines: 2, overflow: TextOverflow.ellipsis, style: p.text(12, color: p.sub)),
+            ]),
+          ),
+          ...actions,
+        ]),
+      ),
+    ),
   );
 }
