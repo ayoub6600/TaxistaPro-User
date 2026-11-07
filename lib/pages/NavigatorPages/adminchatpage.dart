@@ -9,6 +9,8 @@ import '../../functions/functions.dart';
 import '../../functions/support_chat_link.dart';
 import '../../styles/styles.dart';
 import '../../widgets/chat/chat_kit.dart';
+import '../../widgets/chat/chat_reactions.dart';
+import '../../widgets/v2_skeleton.dart';
 import '../../widgets/support_call_card.dart';
 import '../../widgets/voice/voice_bubble.dart';
 import '../../widgets/voice/voice_send.dart';
@@ -78,6 +80,20 @@ class _AdminChatPageState extends State<AdminChatPage> {
     _inputFocus.dispose();
     _scroll.dispose();
     super.dispose();
+  }
+
+  /// opens the six emojis for one message and sends the choice; the list redraws from the server's answer
+  Future<void> _react(Map m) async {
+    if ('${m['id'] ?? ''}'.isEmpty) return;
+    final choice = await ChatReactions.pick(context, current: ChatReactions.mine(m));
+    if (choice == null || !mounted) return;
+    final ok = await ChatReactions.send(m, choice.isEmpty ? null : choice);
+    if (!mounted) return;
+    if (ok) {
+      setState(() {});
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_t('ما قدرناش نحفظ التفاعل، جرّب مرة ثانية', "Couldn't save the reaction"))));
+    }
   }
 
   Future<void> _load() async {
@@ -297,7 +313,7 @@ class _AdminChatPageState extends State<AdminChatPage> {
   Widget _body(ChatPalette p) {
     final messages = adminChatList.whereType<Map>().toList();
     if (_loading && messages.isEmpty) {
-      return Center(child: SizedBox.square(dimension: 28, child: CircularProgressIndicator(strokeWidth: 2.6, color: theme)));
+      return const V2Skeleton();
     }
     if (_loadFailed && messages.isEmpty) {
       return ChatNotice(
@@ -341,7 +357,10 @@ class _AdminChatPageState extends State<AdminChatPage> {
       rows.add(Padding(
         key: focused ? _focusKey : null,
         padding: EdgeInsets.only(top: groupedWithPrevious ? 2 : 10),
-        child: ChatBubble(
+        // a double tap reacts with an emoji (the same one again removes it)
+        child: GestureDetector(
+          onDoubleTap: () => _react(m),
+          child: ChatBubble(
           palette: p,
           mine: mine,
           tail: lastOfRun,
@@ -352,7 +371,10 @@ class _AdminChatPageState extends State<AdminChatPage> {
           status: mine ? (m['unseen_count'].toString() == '1' ? ChatDelivery.read : ChatDelivery.sent) : null,
           copiedLabel: _t('تم نسخ الرسالة', 'Message copied'),
         ),
+        ),
       ));
+      final reactions = ChatReactions.of(m);
+      if (reactions.isNotEmpty) rows.add(ChatReactionChips(reactions: reactions, mine: mine, onTap: () => _react(m)));
       // a recurring-ride message: its two buttons under the text (the server's action_card)
       if (!mine && RecurringChatCard.handles(m)) {
         rows.add(RecurringChatCard(card: m['action_card'] as Map, onAnswered: () => unawaited(_load())));
