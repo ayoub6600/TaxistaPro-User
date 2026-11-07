@@ -398,9 +398,9 @@ class _TomorrowAnswerCardState extends State<TomorrowAnswerCard> {
                 child: Text(_result!, style: _t(13.5, c: _failed ? const Color(0xffB91C1C) : _ok, w: FontWeight.w700)),
               )
             : Row(key: const ValueKey('buttons'), children: [
-                Expanded(child: _AnswerButton(label: d['answer'] == 'coming' ? '✅ مأكد' : '✅ تأكيد', primary: true, busy: _busy == 'attend', onTap: () => _answer('attend'))),
+                Expanded(child: _AnswerButton(label: d['answer'] == 'coming' ? 'مأكد' : 'تأكيد', icon: Icons.check_rounded, primary: true, busy: _busy == 'attend', onTap: () => _answer('attend'))),
                 const SizedBox(width: 10),
-                Expanded(child: _AnswerButton(label: d['state'] == 'skipped' ? '⏭ متخطى' : '⏭ تخطي', busy: _busy == 'skip', dark: !widget.flat, onTap: d['state'] == 'skipped' ? null : () => _answer('skip'))),
+                Expanded(child: _AnswerButton(label: d['state'] == 'skipped' ? 'متخطى' : 'تخطي', icon: Icons.skip_next_rounded, busy: _busy == 'skip', dark: !widget.flat, onTap: d['state'] == 'skipped' ? null : () => _answer('skip'))),
               ]),
       ),
       if (_failed && _result != null)
@@ -420,8 +420,9 @@ class _TomorrowAnswerCardState extends State<TomorrowAnswerCard> {
 }
 
 class _AnswerButton extends StatelessWidget {
-  const _AnswerButton({required this.label, required this.onTap, this.primary = false, this.busy = false, this.dark = false});
+  const _AnswerButton({required this.label, required this.onTap, this.primary = false, this.busy = false, this.dark = false, this.icon});
   final String label;
+  final IconData? icon;
   final VoidCallback? onTap;
   final bool primary;
   final bool busy;
@@ -440,7 +441,10 @@ class _AnswerButton extends StatelessWidget {
         decoration: BoxDecoration(color: onTap == null ? bg.withValues(alpha: .5) : bg, borderRadius: BorderRadius.circular(16)),
         child: busy
             ? SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.4, color: fg))
-            : Text(label, style: _t(15, w: FontWeight.w800, c: fg)),
+            : Row(mainAxisSize: MainAxisSize.min, children: [
+                if (icon != null) ...[Icon(icon, color: fg, size: 20), const SizedBox(width: 6)],
+                Text(label, style: _t(15, w: FontWeight.w800, c: fg)),
+              ]),
       ),
     );
   }
@@ -658,7 +662,7 @@ class _Header extends StatelessWidget {
           width: 48,
           height: 48,
           decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: _navy.withValues(alpha: .06), blurRadius: 12)]),
-          child: const Icon(Icons.arrow_forward_rounded, color: _ink),
+          child: const Icon(Icons.arrow_back_rounded, color: _ink),
         ),
       ),
       const SizedBox(width: 12),
