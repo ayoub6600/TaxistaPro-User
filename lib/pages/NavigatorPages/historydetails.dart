@@ -62,6 +62,23 @@ class _HistoryDetailsState extends State<HistoryDetails> {
   var _cancelId = '';
   int? inti;
   int makecomplaint = 0;
+
+  /// the chat with Taxista support, the ride number (and what he already wrote) in the message box
+  void _openSupport(String written) {
+    final no = '${myHistory[selectedHistory]['request_number'] ?? ''}';
+    final text = written.trim();
+    setState(() {
+      makecomplaintbool = false;
+      makecomplaint = 1;
+    });
+    guardedPush(
+        context,
+        MaterialPageRoute(
+            builder: (context) => AdminChatPage(
+                draft: languageDirection == 'rtl'
+                    ? 'عندي شكوى على الرحلة $no${text.isEmpty ? ': ' : ':\n$text'}'
+                    : 'I have a complaint about ride $no${text.isEmpty ? ': ' : ':\n$text'}')));
+  }
   bool isShow = false;
   bool makecomplaintbool = false;
   bool _isLoading = false;
@@ -1471,19 +1488,6 @@ class _HistoryDetailsState extends State<HistoryDetails> {
                                         media.width * 0.02),
                                     child: Button(
                                         onTap: () {
-                                          // no complaint types set up in the admin panel: the complaint
-                                          // goes to the chat with Taxista, the ride number already written
-                                          if (generalComplaintList.isEmpty) {
-                                            final no = '${myHistory[selectedHistory]['request_number'] ?? ''}';
-                                            guardedPush(
-                                                context,
-                                                MaterialPageRoute(
-                                                    builder: (context) => AdminChatPage(
-                                                        draft: languageDirection == 'rtl'
-                                                            ? 'عندي شكوى على الرحلة $no: '
-                                                            : 'I have a complaint about ride $no: ')));
-                                            return;
-                                          }
                                           setState(() {
                                             _error = '';
 
@@ -1741,9 +1745,9 @@ class _HistoryDetailsState extends State<HistoryDetails> {
                                                               .spaceBetween,
                                                       children: [
                                                         MyText(
-                                                          text: generalComplaintList[
-                                                                  complaintType]
-                                                              ['title'],
+                                                          text: generalComplaintList.isEmpty
+                                                              ? (languageDirection == 'rtl' ? 'شكوى على هذه الرحلة' : 'A complaint about this ride')
+                                                              : generalComplaintList[complaintType]['title'],
                                                           size: media.width *
                                                               fourteen,
                                                         ),
@@ -1966,6 +1970,11 @@ class _HistoryDetailsState extends State<HistoryDetails> {
                                               });
                                               complaintDesc =
                                                   complaintText.text;
+                                              if (generalComplaintList.isEmpty) {
+                                                setState(() => _isLoading = false);
+                                                _openSupport(complaintText.text);
+                                                return;
+                                              }
                                               dynamic result;
                                               result =
                                                   await makeRequestComplaint();
@@ -1990,7 +1999,15 @@ class _HistoryDetailsState extends State<HistoryDetails> {
                                           }
                                         },
                                         text: languages[choosenLanguage]
-                                            ['text_continue'])
+                                            ['text_continue']),
+                                    if (makecomplaint == 1)
+                                      TextButton.icon(
+                                        style: TextButton.styleFrom(foregroundColor: const Color(0xff0873FF)),
+                                        onPressed: () => _openSupport(complaintText.text),
+                                        icon: const Icon(Icons.support_agent_rounded, size: 20),
+                                        label: Text(languageDirection == 'rtl' ? 'أو تكلم مع دعم تاكسيستا' : 'Or talk to Taxista support',
+                                            style: GoogleFonts.cairo(fontWeight: FontWeight.w800, fontSize: 14.5)),
+                                      ),
                                   ],
                                 )),
                           )
