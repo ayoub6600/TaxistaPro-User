@@ -124,6 +124,7 @@ createRequestLater(val, api) async {
     if (response.statusCode == 200) {
       result = 'success';
       userRequestData = jsonDecode(response.body)['data'];
+      RepeatChoice.commit(val, userRequestData);
       streamRequest();
       valueNotifierBook.incrementNotifier();
     } else if (response.statusCode == 401) {

@@ -1,4 +1,5 @@
 import '../../functions/money_label.dart';
+import '../../functions/repeat_choice.dart';
 import 'dart:convert';
 
 import 'package:firebase_database/firebase_database.dart';
@@ -31,5 +32,6 @@ part 'booking/fare_breakup.dart';
 part 'booking/payment_method_sheet_legacy.dart';
 part 'booking/preferences_sheet.dart';
 part 'booking/ride_later_sheet.dart';
+part 'booking/ride_repeat_picker.dart';
 part 'booking/success_popup.dart';
 part 'booking/vehicle_info_sheet.dart';

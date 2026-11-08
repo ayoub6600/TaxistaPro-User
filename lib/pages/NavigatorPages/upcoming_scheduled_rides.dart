@@ -7,6 +7,8 @@ import 'package:taxista/pages/login/login.dart';
 import 'package:taxista/translations/translation.dart';
 
 import '../../functions/functions.dart';
+import '../../functions/calls/admin_call_controller.dart';
+import '../chatPage/trip_chat_page.dart';
 import '../../utils/scheduled_offers.dart';
 import '../../functions/schedule_time.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -608,6 +610,26 @@ class _UpcomingScheduledRidesPageState
                 ),
               ],
             ),
+            SizedBox(height: media.width * 0.02),
+            Row(children: [
+              Expanded(
+                child: TextButton.icon(
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TripChatPage(requestId: '${item['id']}', driverName: '${driver['name'] ?? ''}', details: '${item['car_number'] ?? ''}'))),
+                  icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                  label: const Text('مراسلة'),
+                ),
+              ),
+              Expanded(
+                child: TextButton.icon(
+                  onPressed: () async {
+                    final error = await AdminCallController.instance.callDriver(requestId: '${item['id']}');
+                    if (error != null && context.mounted) ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(error)));
+                  },
+                  icon: const Icon(Icons.call_outlined, size: 18),
+                  label: const Text('اتصال'),
+                ),
+              ),
+            ]),
           ],
           if (canManage(item)) ...[
             SizedBox(height: media.width * 0.03),

@@ -42,6 +42,7 @@ class _RideLaterBottomSheetState extends State<RideLaterBottomSheet> {
     super.initState();
     final initial = (choosenDateTime is DateTime) ? choosenDateTime : _minDateTime;
     selectedDateTime = initial.isBefore(_minDateTime) ? _minDateTime : initial;
+    RepeatChoice.refreshAvailability();
   }
 
   void _clampAndSet(DateTime value) {
@@ -106,6 +107,7 @@ class _RideLaterBottomSheetState extends State<RideLaterBottomSheet> {
   void _backToPicker() => setState(() => showSummary = false);
 
   void _switchToNow() {
+    RepeatChoice.clear();
     confirmRideLater = false;
     Navigator.pop(context);
     valueNotifierBook.incrementNotifier();
@@ -115,6 +117,7 @@ class _RideLaterBottomSheetState extends State<RideLaterBottomSheet> {
     setState(() {
       choosenDateTime = selectedDateTime;
       confirmRideLater = true;
+      RepeatChoice.at = selectedDateTime;
     });
     Navigator.pop(context);
     valueNotifierBook.incrementNotifier();
@@ -365,6 +368,7 @@ class _RideLaterBottomSheetState extends State<RideLaterBottomSheet> {
             ],
           ),
         ),
+        const _RideRepeatPicker(),
         SizedBox(height: media.width * 0.06),
         Button(
           onTap: _finalizeSchedule,

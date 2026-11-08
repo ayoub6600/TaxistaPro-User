@@ -9,6 +9,7 @@ import '../../functions/calls/admin_call_controller.dart' show appNavigatorKey;
 import '../../functions/functions.dart';
 import '../../functions/recurring_api.dart';
 import '../../functions/recurring_push.dart';
+import 'recurring_regular_card.dart';
 import '../../functions/live_activity.dart';
 
 const _blue = Color(0xff0873FF);
@@ -296,6 +297,7 @@ class _RecurringRidePageState extends State<RecurringRidePage> {
                 if (_error != null) _Note(text: _error!, bad: true),
                 if (r != null) ...[
                   _Appear(index: 0, child: _RouteCard(r: r)),
+                  RecurringRegularCard(ride: r, onChanged: _load),
                   if (_question != null) ...[
                     const SizedBox(height: 14),
                     _Appear(index: 1, child: TomorrowAnswerCard(ride: r, day: _question!, onAnswered: _load)),

@@ -25,6 +25,12 @@ class RecurringApi {
   static Future<RecurringResult> answer(String uuid, String date, String answer) =>
       _send(http.post(_u('recurring-rides/$uuid/$answer'), headers: _headers, body: jsonEncode({'date': date})));
 
+  static Future<RecurringResult> create(Map<String, dynamic> body) => _send(http.post(_u('recurring-rides'), headers: _headers, body: jsonEncode(body)));
+
+  /// yes | no | stop: the regular driver of this schedule
+  static Future<RecurringResult> regular(String uuid, String answer) =>
+      _send(http.post(_u('recurring-rides/$uuid/regular'), headers: _headers, body: jsonEncode({'answer': answer})));
+
   /// the whole schedule ends (every coming day of it is skipped)
   static Future<RecurringResult> cancel(String uuid) =>
       _send(http.post(_u('recurring-rides/$uuid/cancel'), headers: _headers, body: jsonEncode({})));
