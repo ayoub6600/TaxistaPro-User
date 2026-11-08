@@ -50,7 +50,7 @@ class _RecurringRegularCardState extends State<RecurringRegularCard> {
           Text('تبي $name يكون سائقك الثابت؟', style: _t(16, FontWeight.w800)),
           const SizedBox(height: 10),
           Row(children: [
-            Expanded(child: FilledButton(onPressed: _busy ? null : () => _answer('yes'), child: const Text('نعم'))),
+            Expanded(child: FilledButton(onPressed: _busy ? null : () => _answer('yes'), style: FilledButton.styleFrom(backgroundColor: const Color(0xff0A77FF)), child: const Text('نعم'))),
             const SizedBox(width: 8),
             Expanded(child: OutlinedButton(onPressed: _busy ? null : () => _answer('no'), child: const Text('لا'))),
           ]),
