@@ -148,7 +148,7 @@ void main() {
         home: Scaffold(body: FavoriteDriverChoice(pickLat: 32.8872, pickLng: 13.1913, zoneTypeId: 'zone-type-1')),
       ));
       await settle(tester);
-      await tester.tap(find.text('محمد · 5 د'));
+      await tester.tap(find.textContaining('محمد ·'));
       await settle(tester);
     }, () => MockClient((request) async {
           requests.add(request);
@@ -164,9 +164,9 @@ void main() {
 
     expect(requests.single.url.queryParameters, {'pick_lat': '32.8872', 'pick_lng': '13.1913', 'vehicle_type': 'zone-type-1'});
     expect(find.text('سائقك المفضل متاح الآن'), findsOneWidget);
-    expect(chosenFavoriteDriverId, 7);
-    expect(find.textContaining('نعرض طلبك عليه أولًا'), findsOneWidget);
-    expect(jsonDecode(withChosenFavorite(jsonEncode({'pick_lat': 1}))), {'pick_lat': 1, 'preferred_driver_id': 7});
+    expect(chosenFavoriteDriverIds, {7});
+    expect(find.textContaining('يصلهم طلبك أولًا'), findsOneWidget);
+    expect(jsonDecode(withChosenFavorite(jsonEncode({'pick_lat': 1}))), {'pick_lat': 1, 'preferred_driver_ids': [7]});
   });
 
   testWidgets('booking: nobody free, nothing shown', (tester) async {

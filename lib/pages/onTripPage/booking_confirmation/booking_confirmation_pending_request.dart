@@ -3,6 +3,12 @@ part of '../booking_confirmation.dart';
 mixin _BookingConfirmationPendingRequest
     on State<BookingConfirmation>, _BookingConfirmationController {
   Widget buildPendingRequestOverlay(Size media) {
+    if (userRequestData['silent_search'] == true || userRequestData['next_driver'] is Map) {
+      return Positioned(
+        bottom: 0,
+        child: _SearchStatusCard(width: media.width, next: userRequestData['next_driver'] is Map ? userRequestData['next_driver'] as Map : null),
+      );
+    }
     return (userRequestData.isNotEmpty &&
             userRequestData['accepted_at'] == null &&
             (userRequestData['is_later'] == null ||

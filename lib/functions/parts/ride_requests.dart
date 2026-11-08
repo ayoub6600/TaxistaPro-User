@@ -68,6 +68,7 @@ createRequest(value, api) async {
     pendingBookingId = null;
     if (response.statusCode == 200) {
       chosenFavoriteDriverId = null;
+      chosenFavoriteDriverIds.clear();
       userRequestData = jsonDecode(response.body)['data'];
       streamRequest();
       result = 'success';

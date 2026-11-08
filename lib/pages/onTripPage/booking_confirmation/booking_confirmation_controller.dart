@@ -616,6 +616,10 @@ mixin _BookingConfirmationController
       }
       if (mounted) {
         timers = Timer.periodic(const Duration(seconds: 1), (timer) async {
+          // a driver is being arranged on the server: the local countdown must not end this ride
+          if (timing != null && timing < 30 && (userRequestData['silent_search'] == true || userRequestData['next_driver'] is Map)) {
+            timing = 30;
+          }
           if (timing != null) {
             if (userRequestData.isNotEmpty &&
                 userRequestData['accepted_at'] == null &&

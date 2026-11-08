@@ -116,13 +116,20 @@ class CommunityApi {
 /// The favourite driver the rider chose for the next immediate request (null = the usual search).
 int? chosenFavoriteDriverId;
 
+/// Everyone the rider chose: they get the request first, nearest first.
+final Set<int> chosenFavoriteDriverIds = {};
+
 /// Adds the chosen favourite to an immediate request's JSON body; the server checks it again.
 String withChosenFavorite(dynamic body) {
-  if (chosenFavoriteDriverId == null || body is! String) return body.toString();
+  if ((chosenFavoriteDriverId == null && chosenFavoriteDriverIds.isEmpty) || body is! String) return body.toString();
   try {
     final decoded = jsonDecode(body);
     if (decoded is! Map) return body;
-    return jsonEncode({...decoded, 'preferred_driver_id': chosenFavoriteDriverId});
+    return jsonEncode({
+      ...decoded,
+      if (chosenFavoriteDriverId != null) 'preferred_driver_id': chosenFavoriteDriverId,
+      if (chosenFavoriteDriverIds.isNotEmpty) 'preferred_driver_ids': chosenFavoriteDriverIds.toList(),
+    });
   } catch (_) {
     return body;
   }

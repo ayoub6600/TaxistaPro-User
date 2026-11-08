@@ -90,6 +90,7 @@ part 'booking_confirmation/booking_confirmation_vehicle_options.dart';
 part 'booking_confirmation/booking_confirmation_booking_controls.dart';
 part 'booking_confirmation/booking_confirmation_selection_sheet.dart';
 part 'booking_confirmation/booking_confirmation_pending_request.dart';
+part 'booking_confirmation/search_status_card.dart';
 part 'booking_confirmation/booking_confirmation_searching_widgets.dart';
 part 'booking_confirmation/booking_confirmation_searching_offer_card.dart';
 part 'booking_confirmation/booking_confirmation_searching_driver_sheet.dart';

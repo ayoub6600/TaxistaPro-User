@@ -50,7 +50,7 @@ class _FavoriteDriverChoiceState extends State<FavoriteDriverChoice> {
     if (!mounted || key != _key) return;
     setState(() {
       _drivers = drivers;
-      if (!drivers.any((d) => '${d['driver_id']}' == '$chosenFavoriteDriverId')) chosenFavoriteDriverId = null;
+      chosenFavoriteDriverIds.removeWhere((id) => !drivers.any((d) => '${d['driver_id']}' == '$id'));
     });
   }
 
@@ -58,7 +58,7 @@ class _FavoriteDriverChoiceState extends State<FavoriteDriverChoice> {
   Widget build(BuildContext context) {
     if (_drivers.isEmpty) return const SizedBox.shrink();
     final p = CommunityLook.palette;
-    final chosen = chosenFavoriteDriverId;
+    final chosen = chosenFavoriteDriverIds;
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
@@ -81,15 +81,15 @@ class _FavoriteDriverChoiceState extends State<FavoriteDriverChoice> {
           scrollDirection: Axis.horizontal,
           child: Row(children: [
             for (final d in _drivers) ...[
-              _driver(p, d, '${d['driver_id']}' == '$chosen'),
+              _driver(p, d, chosen.contains(int.tryParse('${d['driver_id']}'))),
               const SizedBox(width: 8),
             ],
           ]),
         ),
-        if (chosen != null)
+        if (chosen.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 6),
-            child: Text('نعرض طلبك عليه أولًا، وإن لم يقبل نكمل البحث كالمعتاد.', style: p.text(11.5, color: p.sub)),
+            child: Text('يصلهم طلبك أولًا، وإن لم يقبلوا نكمل البحث عن أقرب سائق.', style: p.text(11.5, color: p.sub)),
           ),
       ]),
     );
@@ -103,7 +103,11 @@ class _FavoriteDriverChoiceState extends State<FavoriteDriverChoice> {
       label: 'اطلب $name',
       child: InkWell(
         borderRadius: BorderRadius.circular(24),
-        onTap: () => setState(() => chosenFavoriteDriverId = selected ? null : int.tryParse('${d['driver_id']}')),
+        onTap: () => setState(() {
+          final id = int.tryParse('${d['driver_id']}');
+          if (id == null) return;
+          selected ? chosenFavoriteDriverIds.remove(id) : chosenFavoriteDriverIds.add(id);
+        }),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 160),
           padding: const EdgeInsets.fromLTRB(6, 5, 12, 5),
@@ -115,7 +119,7 @@ class _FavoriteDriverChoiceState extends State<FavoriteDriverChoice> {
           child: Row(mainAxisSize: MainAxisSize.min, children: [
             CommunityAvatar(photo: d['photo']?.toString(), name: name, size: 30),
             const SizedBox(width: 8),
-            Text('$name · ${d['eta_minutes'] ?? '?'} د',
+            Text('$name · ${d['distance_km'] ?? '?'} كم',
                 style: p.text(13, weight: FontWeight.w700, color: selected ? Colors.white : p.ink)),
             if (selected) ...[const SizedBox(width: 4), const Icon(Icons.check_circle_rounded, size: 16, color: Colors.white)],
           ]),
