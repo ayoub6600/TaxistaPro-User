@@ -14,6 +14,8 @@ class _SearchStatusCard extends StatelessWidget {
     final car = '${next?['car'] ?? ''}';
     return Container(
       width: width,
+      constraints: BoxConstraints(minHeight: MediaQuery.sizeOf(context).height * 0.36),
+      alignment: Alignment.center,
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 30),
       decoration: const BoxDecoration(
         color: Colors.white,
