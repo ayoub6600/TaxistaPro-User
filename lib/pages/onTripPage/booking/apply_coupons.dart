@@ -116,8 +116,8 @@ class _ApplyCouponsContainerState extends State<ApplyCouponsContainer> {
                 final message = savings == null
                     ? languages[choosenLanguage]['text_promoaccepted']
                     : choosenLanguage == 'ar'
-                        ? 'تم الخصم، وفّرت $displaySavings دينار في هذه الرحلة'
-                        : 'Coupon applied — you saved ${userDetails['currency_code'] ?? 'LYD'} $displaySavings on this ride';
+                        ? 'تم الخصم، وفّرت $displaySavings ${moneyLabel(etaDetails[choosenVehicle]['currency'], arabic: true)} في هذه الرحلة'
+                        : 'Coupon applied — you saved ${moneyLabel(etaDetails[choosenVehicle]['currency'], arabic: false)} $displaySavings on this ride';
                 return MyText(
                   text: message,
                   size: media.width * twelve,

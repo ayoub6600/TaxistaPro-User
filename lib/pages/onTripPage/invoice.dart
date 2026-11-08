@@ -1,3 +1,4 @@
+import '../../functions/money_label.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:taxista/pages/NavigatorPages/paymentgateways.dart';
@@ -38,7 +39,7 @@ class _InvoiceState extends State<Invoice> {
     final prior = double.tryParse('${bill?['prior_balance_collected'] ?? 0}') ?? 0;
     if (prior <= 0) return const SizedBox.shrink();
     final rtl = languageDirection == 'rtl';
-    final cur = rtl ? 'دينار' : (userRequestData['requested_currency_symbol']?.toString() ?? 'LYD');
+    final cur = moneyLabel(userRequestData['requested_currency_symbol'], arabic: rtl);
     return Container(
       width: media.width * 0.9,
       margin: EdgeInsets.only(bottom: media.width * 0.04),
@@ -58,8 +59,7 @@ class _InvoiceState extends State<Invoice> {
   Widget _bidRidePaymentSummary(Size media) {
     final bill = userRequestData['requestBill']?['data'];
     final estimated = userRequestData['wallet_split_is_estimate'] == true;
-    final currency =
-        choosenLanguage == 'ar' ? 'دينار' : (userRequestData['requested_currency_symbol']?.toString() ?? 'LYD');
+    final currency = moneyLabel(userRequestData['requested_currency_symbol'], arabic: choosenLanguage == 'ar');
     final gross = double.tryParse(((estimated ? null : bill?['total_amount']) ??
                     userRequestData['accepted_ride_fare'] ??
                     bill?['total_amount'])

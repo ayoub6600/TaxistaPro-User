@@ -45,8 +45,8 @@ mixin _BookingConfirmationImmediateRequest
           if ((freshFare - originalFare).abs() > 0.02) {
             etaDetails[choosenVehicle] = fresh;
             tripError = languageDirection == 'rtl'
-                ? 'تغيّر سعر الرحلة إلى ${freshFare.toStringAsFixed(2)} دينار. راجع السعر ثم اطلب مجددًا.'
-                : 'The fare changed to ${freshFare.toStringAsFixed(2)} LYD. Review it and book again.';
+                ? 'تغيّر سعر الرحلة إلى ${freshFare.toStringAsFixed(2)} ${moneyLabel(fresh['currency'], arabic: true)}. راجع السعر ثم اطلب مجددًا.'
+                : 'The fare changed to ${freshFare.toStringAsFixed(2)} ${moneyLabel(fresh['currency'], arabic: false)}. Review it and book again.';
             tripReqError = true;
             valueNotifierBook.incrementNotifier();
             return 'quote_changed';
