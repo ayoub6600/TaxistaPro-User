@@ -67,15 +67,15 @@ class _ContestsFeedPageState extends State<ContestsFeedPage> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: ContestLook.feed(p),
-        appBar: _bar(context, 'مسابقات تاكسيستا'),
+        appBar: _bar(context, 'منشورات تاكسيستا'),
         body: RefreshIndicator(
           onRefresh: _load,
           child: _posts == null
               ? ListView(children: [
-                  SizedBox(height: 260, child: Center(child: _failed ? _empty('ما قدرناش نجيبوا المسابقات', 'تأكد من الإنترنت واسحب لتحت باش تحاول مرة ثانية.') : const CircularProgressIndicator())),
+                  SizedBox(height: 260, child: Center(child: _failed ? _empty('ما قدرناش نجيبوا المنشورات', 'تأكد من الإنترنت واسحب لتحت باش تحاول مرة ثانية.') : const CircularProgressIndicator())),
                 ])
               : _posts!.isEmpty
-                  ? ListView(children: [SizedBox(height: 320, child: Center(child: _empty('ما فيش مسابقات توا', 'أول ما تنزل مسابقة جديدة تلقاها هنا وفي الصفحة الرئيسية.')))])
+                  ? ListView(children: [SizedBox(height: 320, child: Center(child: _empty('ما فيش منشورات توا', 'المسابقات والأخبار من تاكسيستا تنزل هنا، وتوصلك إشعار أول ما تنزل.')))])
                   : NotificationListener<ScrollNotification>(
                       onNotification: (n) {
                         if (n.metrics.pixels > n.metrics.maxScrollExtent - 600) _more();
@@ -733,7 +733,7 @@ class ContestHomeCard extends StatelessWidget {
         : (winnersPost || status == 'resolved' || status == 'paid')
             ? 'النتيجة طلعت! شوف الفائزين'
             : (teams != null ? 'توقّع: ${teams['home']?['name'] ?? ''} × ${teams['away']?['name'] ?? ''}' : '${c['question'] ?? 'مسابقات تاكسيستا'}');
-    final sub = status == 'open' ? (mine ? 'توقّعك مسجّل ✓ · $n توقّع' : '$n توقّع · ${post['contest']?['prizes']?['riders']?['text'] ?? post['contest']?['prizes']?['drivers']?['text'] ?? 'مسابقة مجانية'}') : (status == 'closed' ? 'قفلت التوقعات · النتيجة قريب' : 'مسابقات تاكسيستا');
+    final sub = status == 'open' ? (mine ? 'توقّعك مسجّل ✓ · $n توقّع' : '$n توقّع · ${post['contest']?['prizes']?['riders']?['text'] ?? post['contest']?['prizes']?['drivers']?['text'] ?? 'مسابقة مجانية'}') : (status == 'closed' ? 'قفلت التوقعات · النتيجة قريب' : 'منشورات تاكسيستا');
     final action = status == 'open' && !mine ? 'توقّع' : 'شوف';
     return Material(
       color: Colors.transparent,

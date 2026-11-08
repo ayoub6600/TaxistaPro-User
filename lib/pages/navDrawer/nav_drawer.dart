@@ -184,8 +184,8 @@ class _NavDrawerState extends State<NavDrawer> {
                             onTap: () => _open(MaterialPageRoute(builder: (context) => const RewardsPage())),
                           ),
                           _DrawerItem(
-                            icon: Icons.emoji_events_rounded,
-                            text: rtl ? 'مسابقات تاكسيستا' : 'Taxista contests',
+                            icon: Icons.campaign_rounded,
+                            text: rtl ? 'منشورات تاكسيستا' : 'Taxista posts',
                             onTap: () => _open(MaterialPageRoute(builder: (context) => const ContestsFeedPage())),
                           ),
                           _DrawerItem(
