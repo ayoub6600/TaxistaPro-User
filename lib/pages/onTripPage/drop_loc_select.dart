@@ -31,6 +31,11 @@ import 'widgets/smooth_page_route.dart';
 part 'drop_location/drop_location_controller.dart';
 part 'drop_location/drop_location_picker_widgets.dart';
 part 'drop_location/drop_location_view.dart';
+part 'drop_location/drop_location_map_layer.dart';
+part 'drop_location/drop_location_address_sheet.dart';
+part 'drop_location/drop_location_saved_addresses.dart';
+part 'drop_location/drop_location_save_address.dart';
+part 'drop_location/drop_location_permission.dart';
 
 // ignore: must_be_immutable
 class DropLocation extends StatefulWidget {

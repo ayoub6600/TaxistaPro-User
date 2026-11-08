@@ -92,7 +92,7 @@ mixin _BookingConfirmationMapCanvas
                       fm.TileLayer(
                         urlTemplate:
                             'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                        userAgentPackageName: 'com.Ayoub.Usertaxista',
+                        userAgentPackageName: 'com.taxistapro.user',
                       ),
                       const fm.RichAttributionWidget(attributions: []),
                     ],

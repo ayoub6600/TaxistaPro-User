@@ -519,7 +519,7 @@ extension _MapCanvas on _MapsState {
                       urlTemplate: (isDarkTheme == false)
                           ? 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
                           : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'com.example.app',
+                      userAgentPackageName: 'com.taxistapro.user',
                     ),
                     fm.MarkerLayer(
                       markers: myMarkers
