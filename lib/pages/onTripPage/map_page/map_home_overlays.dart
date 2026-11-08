@@ -1,59 +1,46 @@
 part of '../map_page.dart';
 
 extension _MapHomeOverlays on _MapsState {
+  Widget _homeCardGap(Widget card) => Padding(padding: const EdgeInsets.only(bottom: 8), child: card);
+
   List<Widget> buildMapHomeOverlays(Size media) {
     return <Widget>[
       buildRecoveryOfferCard(media),
-      if (scheduledOfferSummary.hasOffers)
+      // one column: a new card moves the others down and never covers them
+      if (scheduledOfferSummary.hasOffers ||
+          (_bottom == 0 &&
+              (RecurringApi.pendingTomorrow(RecurringApi.rides.value) != null ||
+                  ContestsApi.homePost.value != null ||
+                  activePromotionCampaigns.isNotEmpty)))
         Positioned(
           top: MediaQuery.of(context).padding.top + 82,
           left: 16,
           right: 16,
-          child: ScheduledOfferBanner(
-            summary: scheduledOfferSummary,
-            rtl: languageDirection == 'rtl',
-            onTap: _openScheduledOffers,
-          ),
-        ),
-      // tomorrow's recurring day waiting for his answer comes first (it has a deadline); the campaigns
-      // stay under it, compact
-      if (_bottom == 0 && RecurringApi.pendingTomorrow(RecurringApi.rides.value) != null)
-        Positioned(
-          top: MediaQuery.of(context).padding.top + (scheduledOfferSummary.hasOffers ? 138 : 84),
-          left: 16,
-          right: 16,
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            RecurringTomorrowBanner(
-              ride: RecurringApi.pendingTomorrow(RecurringApi.rides.value)!['ride'] as Map<String, dynamic>,
-              next: RecurringApi.pendingTomorrow(RecurringApi.rides.value)!['next'] as Map<String, dynamic>,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: media.height * 0.4),
+            child: SingleChildScrollView(
+              child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                if (scheduledOfferSummary.hasOffers)
+                  _homeCardGap(ScheduledOfferBanner(
+                    summary: scheduledOfferSummary,
+                    rtl: languageDirection == 'rtl',
+                    onTap: _openScheduledOffers,
+                  )),
+                if (_bottom == 0) ...[
+                  // tomorrow's recurring day comes first (it has a deadline), then the contest, then the campaigns
+                  if (RecurringApi.pendingTomorrow(RecurringApi.rides.value) != null)
+                    _homeCardGap(RecurringTomorrowBanner(
+                      ride: RecurringApi.pendingTomorrow(RecurringApi.rides.value)!['ride'] as Map<String, dynamic>,
+                      next: RecurringApi.pendingTomorrow(RecurringApi.rides.value)!['next'] as Map<String, dynamic>,
+                    )),
+                  if (ContestsApi.homePost.value != null)
+                    _homeCardGap(ContestHomeCard(post: ContestsApi.homePost.value!)),
+                  if (activePromotionCampaigns.isNotEmpty)
+                    _homeCardGap(_PromotionStrip(campaigns: activePromotionCampaigns, rtl: languageDirection == 'rtl')),
+                ],
+              ]),
             ),
-            if (ContestsApi.homePost.value != null) ...[
-              const SizedBox(height: 8),
-              ContestHomeCard(post: ContestsApi.homePost.value!),
-            ],
-            if (activePromotionCampaigns.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              _PromotionStrip(campaigns: activePromotionCampaigns, rtl: languageDirection == 'rtl'),
-            ],
-          ]),
-        )
-      else if ((activePromotionCampaigns.isNotEmpty || ContestsApi.homePost.value != null) && _bottom == 0)
-        Positioned(
-          top: MediaQuery.of(context).padding.top +
-              (scheduledOfferSummary.hasOffers ? 138 : 84),
-          left: 16,
-          right: 16,
-          // «مسابقات تاكسيستا» first (it has a closing time), then every running campaign, one at a
-          // time: swipe between them (dots under)
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            if (ContestsApi.homePost.value != null) ContestHomeCard(post: ContestsApi.homePost.value!),
-            if (ContestsApi.homePost.value != null && activePromotionCampaigns.isNotEmpty) const SizedBox(height: 8),
-            if (activePromotionCampaigns.isNotEmpty)
-              _PromotionStrip(
-                campaigns: activePromotionCampaigns,
-                rtl: languageDirection == 'rtl',
-              ),
-          ]),
+          ),
         ),
       Positioned(
           top: 0,
