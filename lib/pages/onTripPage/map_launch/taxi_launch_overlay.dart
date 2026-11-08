@@ -99,7 +99,7 @@ class _TaxiLaunchOverlayState extends State<TaxiLaunchOverlay>
                         width: screen.width * 0.6,
                         height: screen.height * 0.6,
                         child: Image.asset(
-                          'assets/images/new_logo.jpeg',
+                          'assets/images/taxista_lockup.png',
                           fit: BoxFit.contain,
                           filterQuality: FilterQuality.medium,
                         ),
