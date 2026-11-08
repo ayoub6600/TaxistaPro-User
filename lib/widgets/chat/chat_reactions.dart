@@ -43,6 +43,29 @@ class ChatReactions {
     }
   }
 
+  /// the same for a line of the ride's chat (rider <-> driver)
+  static Future<bool> sendTrip(Map m, String? emoji) async {
+    final id = '${m['id'] ?? ''}';
+    if (id.isEmpty) return false;
+    try {
+      final r = await http
+          .post(Uri.parse('${url}api/v1/request/chat/$id/react'),
+              headers: {
+                'Authorization': 'Bearer ${bearerToken.isEmpty ? '' : bearerToken[0].token}',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+              },
+              body: jsonEncode({'emoji': emoji}))
+          .timeout(const Duration(seconds: 15));
+      if (r.statusCode != 200) return false;
+      final data = jsonDecode(r.body)['data'];
+      if (data is Map && data['reactions'] is List) m['reactions'] = data['reactions'];
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// the six emojis in a small floating bar; returns the chosen one ('' = remove mine)
   static Future<String?> pick(BuildContext context, {String? current}) {
     return showModalBottomSheet<String>(
@@ -99,10 +122,9 @@ class ChatReactionChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (reactions.isEmpty) return const SizedBox.shrink();
-    final rtl = languageDirection == 'rtl';
-    final alignEnd = mine != rtl; // my bubbles sit on the trailing side
+    // own bubbles are always on the right (both languages): the chip sits under its own bubble
     return Align(
-      alignment: alignEnd ? Alignment.centerRight : Alignment.centerLeft,
+      alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14),
         child: Transform.translate(

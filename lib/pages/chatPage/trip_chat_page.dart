@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../functions/calls/admin_call_api.dart';
 import '../../functions/calls/admin_call_controller.dart';
@@ -9,6 +10,8 @@ import '../../functions/functions.dart';
 import '../../functions/trip_chat_api.dart';
 import '../../styles/styles.dart';
 import '../../widgets/chat/chat_kit.dart';
+import '../../widgets/chat/chat_actions.dart';
+import '../../widgets/chat/chat_reactions.dart';
 import '../../widgets/chat/chat_photos.dart';
 import '../../widgets/voice/voice_bubble.dart';
 import '../../widgets/voice/voice_send.dart';
@@ -32,10 +35,11 @@ class TripChatPage extends StatefulWidget {
 
 class _Outgoing {
   final String text;
+  final Map? reply;
   final DateTime at = DateTime.now();
   bool failed = false;
 
-  _Outgoing(this.text);
+  _Outgoing(this.text, [this.reply]);
 }
 
 class _TripChatPageState extends State<TripChatPage> {
@@ -43,6 +47,46 @@ class _TripChatPageState extends State<TripChatPage> {
   final FocusNode _inputFocus = FocusNode();
   final ScrollController _scroll = ScrollController();
   final List<_Outgoing> _outgoing = [];
+
+  /// chat 2.0: the line being answered ({id, name, text})
+  Map? _replying;
+  String? _flashId;
+
+  Future<void> _menu(Map m, bool mine, String text) async {
+    if ('${m['id'] ?? ''}'.isEmpty) return;
+    final rtl = languageDirection == 'rtl';
+    final mineEmoji = ChatReactions.mine(m);
+    final choice = await ChatMessageMenu.show(context, preview: chatSnippet(m, rtl: rtl, text: text), currentEmoji: mineEmoji, canCopy: text.trim().isNotEmpty, rtl: rtl);
+    if (choice == null || !mounted) return;
+    if (choice.kind == 'reply') return _startReply(m, mine, text);
+    if (choice.kind == 'copy') {
+      await Clipboard.setData(ClipboardData(text: text));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(rtl ? 'تم نسخ الرسالة' : 'Message copied'), behavior: SnackBarBehavior.floating));
+      return;
+    }
+    final ok = await ChatReactions.sendTrip(m, (choice.emoji ?? '').isEmpty ? null : choice.emoji);
+    if (!mounted) return;
+    if (ok) {
+      setState(() {});
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(rtl ? 'ما قدرناش نحفظ التفاعل، جرّب مرة ثانية' : "Couldn't save the reaction")));
+    }
+  }
+
+  void _startReply(Map m, bool mine, String text) {
+    final id = '${m['id'] ?? ''}';
+    if (id.isEmpty) return;
+    final rtl = languageDirection == 'rtl';
+    setState(() => _replying = {'id': id, 'name': mine ? (rtl ? 'أنت' : 'You') : (rtl ? 'السائق' : 'Driver'), 'text': chatSnippet(m, rtl: rtl, text: text)});
+    _inputFocus.requestFocus();
+  }
+
+  void _flash(dynamic id) {
+    setState(() => _flashId = '${id ?? ''}');
+    Future.delayed(const Duration(milliseconds: 2200), () {
+      if (mounted) setState(() => _flashId = null);
+    });
+  }
   List<Map<String, dynamic>> _messages = [];
   bool _loading = true;
   bool _loadFailed = false;
@@ -104,16 +148,17 @@ class _TripChatPageState extends State<TripChatPage> {
   Future<void> _sendText([_Outgoing? retry]) async {
     final text = retry?.text ?? _input.text.trim();
     if (text.isEmpty) return;
-    final item = retry ?? _Outgoing(text);
+    final item = retry ?? _Outgoing(text, _replying);
     setState(() {
       item.failed = false;
       if (retry == null) {
         _outgoing.add(item);
         _input.clear();
+        _replying = null;
       }
     });
     _toBottom();
-    final list = await TripChatApi.send(widget.requestId, text);
+    final list = await TripChatApi.send(widget.requestId, text, replyTo: item.reply == null ? null : '${item.reply!['id']}');
     if (!mounted) return;
     setState(() {
       if (list != null) {
@@ -239,6 +284,13 @@ class _TripChatPageState extends State<TripChatPage> {
               child: _body(p),
             ),
           ),
+          if (_replying != null)
+            ChatReplyBar(
+              name: '${_replying!['name']}',
+              text: '${_replying!['text']}',
+              rtl: languageDirection == 'rtl',
+              onClose: () => setState(() => _replying = null),
+            ),
           ChatComposer(
             palette: p,
             controller: _input,
@@ -310,13 +362,21 @@ class _TripChatPageState extends State<TripChatPage> {
         return ta != null && tb != null && ChatTime.sameDay(ta, tb) && tb.difference(ta).inMinutes.abs() < 3;
       }
 
+      final text = ChatPhotos.of(m).isNotEmpty ? ChatPhotos.caption(m) : '${m['message'] ?? ''}';
+      final quote = m['reply_to'] is Map ? m['reply_to'] as Map : null;
       rows.add(Padding(
         padding: EdgeInsets.only(top: sameRun(prev, m) ? 2 : 10),
         child: ChatBubble(
           palette: p,
           mine: mine,
           tail: !sameRun(m, next),
-          text: ChatPhotos.of(m).isNotEmpty ? ChatPhotos.caption(m) : '${m['message'] ?? ''}',
+          highlighted: _flashId != null && _flashId == '${m['id']}',
+          replyTo: quote,
+          reactions: ChatReactions.of(m),
+          onMenu: '${m['id'] ?? ''}'.isEmpty ? null : () => _menu(m, mine, text),
+          onSwipeReply: '${m['id'] ?? ''}'.isEmpty ? null : () => _startReply(m, mine, text),
+          onQuoteTap: quote == null ? null : () => _flash(quote['id']),
+          text: text,
           photos: ChatPhotos.of(m),
           voice: VoiceBubble.fromMessage(m, mine: mine),
           time: at != null ? ChatTime.clock(at, _ar) : '',
@@ -332,6 +392,7 @@ class _TripChatPageState extends State<TripChatPage> {
           palette: p,
           mine: true,
           tail: true,
+          replyTo: o.reply,
           text: o.text,
           time: ChatTime.clock(o.at, _ar),
           status: o.failed ? ChatDelivery.failed : ChatDelivery.sending,

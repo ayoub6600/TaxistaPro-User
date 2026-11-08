@@ -28,10 +28,10 @@ class TripChatApi {
   }
 
   /// The whole conversation after the message went out, or null when it did not.
-  static Future<List<Map<String, dynamic>>?> send(String requestId, String message) async {
+  static Future<List<Map<String, dynamic>>?> send(String requestId, String message, {String? replyTo}) async {
     try {
       final response = await http.post(_u('send'),
-          headers: _headers, body: jsonEncode({'request_id': requestId, 'message': message}));
+          headers: _headers, body: jsonEncode({'request_id': requestId, 'message': message, if (replyTo != null) 'reply_to': replyTo}));
       if (response.statusCode != 200) return null;
       final body = jsonDecode(response.body);
       if (body is Map && body['success'] == false) return null;

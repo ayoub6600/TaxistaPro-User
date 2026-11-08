@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../functions/calls/admin_call_api.dart';
 import '../../functions/calls/admin_call_controller.dart';
@@ -10,6 +11,7 @@ import '../../functions/support_chat_link.dart';
 import '../../styles/styles.dart';
 import '../../widgets/chat/chat_kit.dart';
 import '../../widgets/chat/chat_photos.dart';
+import '../../widgets/chat/chat_actions.dart';
 import '../../widgets/chat/chat_reactions.dart';
 import '../../widgets/v2_skeleton.dart';
 import '../../widgets/support_call_card.dart';
@@ -38,10 +40,11 @@ class AdminChatPage extends StatefulWidget {
 /// A text message on its way: shown at once, marked when it fails, never lost.
 class _Outgoing {
   final String text;
+  final Map? reply;
   final DateTime at = DateTime.now();
   bool failed = false;
 
-  _Outgoing(this.text);
+  _Outgoing(this.text, [this.reply]);
 }
 
 class _AdminChatPageState extends State<AdminChatPage> {
@@ -60,6 +63,9 @@ class _AdminChatPageState extends State<AdminChatPage> {
   final GlobalKey _focusKey = GlobalKey();
   int? _focusId;
   int? _highlightId;
+
+  /// chat 2.0: the line being answered ({id, name, text}), shown above the composer
+  Map? _replying;
   Timer? _highlightTimer;
 
   bool get _ar => languageDirection == 'rtl';
@@ -87,18 +93,41 @@ class _AdminChatPageState extends State<AdminChatPage> {
     super.dispose();
   }
 
-  /// opens the six emojis for one message and sends the choice; the list redraws from the server's answer
-  Future<void> _react(Map m) async {
+  /// long-press: the six emojis, «رد», «نسخ» (WhatsApp-like)
+  Future<void> _menu(Map m, bool mine, String text) async {
     if ('${m['id'] ?? ''}'.isEmpty) return;
-    final choice = await ChatReactions.pick(context, current: ChatReactions.mine(m));
+    final rtl = languageDirection == 'rtl';
+    final choice = await ChatMessageMenu.show(context,
+        preview: chatSnippet(m, rtl: rtl, text: text), currentEmoji: ChatReactions.mine(m), canCopy: text.trim().isNotEmpty, rtl: rtl);
     if (choice == null || !mounted) return;
-    final ok = await ChatReactions.send(m, choice.isEmpty ? null : choice);
+    if (choice.kind == 'reply') return _startReply(m, mine, text);
+    if (choice.kind == 'copy') {
+      await Clipboard.setData(ClipboardData(text: text));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_t('تم نسخ الرسالة', 'Message copied')), behavior: SnackBarBehavior.floating));
+      return;
+    }
+    final ok = await ChatReactions.send(m, (choice.emoji ?? '').isEmpty ? null : choice.emoji);
     if (!mounted) return;
     if (ok) {
       setState(() {});
     } else {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_t('ما قدرناش نحفظ التفاعل، جرّب مرة ثانية', "Couldn't save the reaction"))));
     }
+  }
+
+  void _startReply(Map m, bool mine, String text) {
+    final id = int.tryParse('${m['id'] ?? ''}');
+    if (id == null) return;
+    setState(() => _replying = {'id': id, 'name': mine ? _t('أنت', 'You') : _t('تاكسيستا', 'Taxista'), 'text': chatSnippet(m, rtl: languageDirection == 'rtl', text: text)});
+    _inputFocus.requestFocus();
+  }
+
+  /// tapping a quoted line: to the original message, outlined for a moment
+  void _jumpTo(dynamic id) {
+    final target = int.tryParse('${id ?? ''}');
+    if (target == null) return;
+    setState(() => _focusId = target);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _revealFocused());
   }
 
   Future<void> _load() async {
@@ -164,16 +193,17 @@ class _AdminChatPageState extends State<AdminChatPage> {
   Future<void> _sendText([_Outgoing? retry]) async {
     final text = retry?.text ?? _input.text.trim();
     if (text.isEmpty) return;
-    final item = retry ?? _Outgoing(text);
+    final item = retry ?? _Outgoing(text, _replying);
     setState(() {
       item.failed = false;
       if (retry == null) {
         _outgoing.add(item);
         _input.clear();
+        _replying = null;
       }
     });
     _toBottom();
-    final result = await sendadminMessage(text);
+    final result = await sendadminMessage(text, replyTo: item.reply?['id']);
     if (!mounted) return;
     setState(() {
       if (result == 'success') {
@@ -309,6 +339,13 @@ class _AdminChatPageState extends State<AdminChatPage> {
                   ),
                 ),
               ),
+              if (_replying != null)
+                ChatReplyBar(
+                  name: '${_replying!['name']}',
+                  text: '${_replying!['text']}',
+                  rtl: languageDirection == 'rtl',
+                  onClose: () => setState(() => _replying = null),
+                ),
               ChatComposer(
                 palette: p,
                 controller: _input,
@@ -375,27 +412,34 @@ class _AdminChatPageState extends State<AdminChatPage> {
       rows.add(Padding(
         key: focused ? _focusKey : null,
         padding: EdgeInsets.only(top: groupedWithPrevious ? 2 : 10),
-        // a double tap reacts with an emoji (the same one again removes it)
-        child: GestureDetector(
-          onDoubleTap: () => _react(m),
-          child: ChatBubble(
-          palette: p,
-          mine: mine,
-          tail: lastOfRun,
-          highlighted: id != null && id == _highlightId,
-          text: ChatPhotos.of(m).isNotEmpty
+        // long-press: emojis / «رد» / copy; a sideways swipe answers it; a double tap opens the same menu
+        child: Builder(builder: (_) {
+          final text = ChatPhotos.of(m).isNotEmpty
               ? ChatPhotos.caption(m)
-              : (RecurringChatCard.handles(m) ? RecurringChatCard.textWithoutLink('${m['message'] ?? ''}') : '${m['message'] ?? ''}'),
-          photos: ChatPhotos.of(m),
-          voice: VoiceBubble.fromMessage(m, mine: mine),
-          time: at != null ? ChatTime.clock(at, _ar) : '${m['user_timezone'] ?? ''}',
-          status: mine ? (m['unseen_count'].toString() == '1' ? ChatDelivery.read : ChatDelivery.sent) : null,
-          copiedLabel: _t('تم نسخ الرسالة', 'Message copied'),
-        ),
-        ),
+              : (RecurringChatCard.handles(m) ? RecurringChatCard.textWithoutLink('${m['message'] ?? ''}') : '${m['message'] ?? ''}');
+          final quote = m['reply_to'] is Map ? m['reply_to'] as Map : null;
+          return GestureDetector(
+            onDoubleTap: () => _menu(m, mine, text),
+            child: ChatBubble(
+              palette: p,
+              mine: mine,
+              tail: lastOfRun,
+              highlighted: id != null && id == _highlightId,
+              text: text,
+              photos: ChatPhotos.of(m),
+              voice: VoiceBubble.fromMessage(m, mine: mine),
+              time: at != null ? ChatTime.clock(at, _ar) : '${m['user_timezone'] ?? ''}',
+              status: mine ? (m['unseen_count'].toString() == '1' ? ChatDelivery.read : ChatDelivery.sent) : null,
+              copiedLabel: _t('تم نسخ الرسالة', 'Message copied'),
+              replyTo: quote,
+              reactions: ChatReactions.of(m),
+              onMenu: id == null ? null : () => _menu(m, mine, text),
+              onSwipeReply: id == null ? null : () => _startReply(m, mine, text),
+              onQuoteTap: quote == null ? null : () => _jumpTo(quote['id']),
+            ),
+          );
+        }),
       ));
-      final reactions = ChatReactions.of(m);
-      if (reactions.isNotEmpty) rows.add(ChatReactionChips(reactions: reactions, mine: mine, onTap: () => _react(m)));
       // a recurring-ride message: its two buttons under the text (the server's action_card)
       if (!mine && RecurringChatCard.handles(m)) {
         rows.add(RecurringChatCard(card: m['action_card'] as Map, onAnswered: () => unawaited(_load())));
@@ -409,6 +453,7 @@ class _AdminChatPageState extends State<AdminChatPage> {
           palette: p,
           mine: true,
           tail: true,
+          replyTo: o.reply,
           text: o.text,
           time: ChatTime.clock(o.at, _ar),
           status: o.failed ? ChatDelivery.failed : ChatDelivery.sending,

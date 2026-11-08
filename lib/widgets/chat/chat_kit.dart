@@ -1,3 +1,4 @@
+import 'chat_actions.dart';
 import 'dart:math';
 import 'dart:ui' as ui;
 
@@ -270,6 +271,12 @@ class ChatBubble extends StatelessWidget {
   final String? failedLabel;
   final VoidCallback? onRetry;
 
+  /// chat 2.0: the line this one answers ({name, text}), the emojis on it, and the gestures:
+  /// long-press opens [onMenu] (else it copies), a sideways swipe calls [onSwipeReply]
+  final Map? replyTo;
+  final List<Map> reactions;
+  final VoidCallback? onMenu, onSwipeReply, onQuoteTap, onReactionsTap;
+
   const ChatBubble({
     super.key,
     required this.palette,
@@ -284,6 +291,12 @@ class ChatBubble extends StatelessWidget {
     this.status,
     this.failedLabel,
     this.onRetry,
+    this.replyTo,
+    this.reactions = const [],
+    this.onMenu,
+    this.onSwipeReply,
+    this.onQuoteTap,
+    this.onReactionsTap,
   });
 
   @override
@@ -321,6 +334,14 @@ class ChatBubble extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (replyTo != null)
+            Padding(
+              padding: photos.isNotEmpty ? const EdgeInsets.fromLTRB(4, 2, 4, 0) : EdgeInsets.zero,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minWidth: 140),
+                child: ChatQuote(quote: replyTo!, onMine: mine, onTap: onQuoteTap),
+              ),
+            ),
           if (photos.isNotEmpty) ...[
             ChatPhotoTiles(urls: photos, width: min(240, MediaQuery.of(context).size.width * 0.66)),
             if (text.trim().isNotEmpty)
@@ -329,7 +350,9 @@ class ChatBubble extends StatelessWidget {
                 child: Align(
                   alignment: AlignmentDirectional.centerStart,
                   widthFactor: 1,
-                  child: SelectableText(text, textDirection: chatTextDirection(text), style: p.text(15, color: fg, height: 1.45)),
+                  child: onMenu != null || onSwipeReply != null
+                      ? Text(text, textDirection: chatTextDirection(text), style: p.text(15, color: fg, height: 1.45))
+                      : SelectableText(text, textDirection: chatTextDirection(text), style: p.text(15, color: fg, height: 1.45)),
                 ),
               ),
           ] else
@@ -337,11 +360,14 @@ class ChatBubble extends StatelessWidget {
               Align(
                 alignment: AlignmentDirectional.centerStart,
                 widthFactor: 1,
-                child: SelectableText(
-                  text,
-                  textDirection: chatTextDirection(text),
-                  style: p.text(15, color: fg, height: 1.45),
-                ),
+                // copy is in the long-press menu (WhatsApp-like): plain text lets the bubble be swiped
+                child: onMenu != null || onSwipeReply != null
+                    ? Text(text, textDirection: chatTextDirection(text), style: p.text(15, color: fg, height: 1.45))
+                    : SelectableText(
+                        text,
+                        textDirection: chatTextDirection(text),
+                        style: p.text(15, color: fg, height: 1.45),
+                      ),
               ),
           const SizedBox(height: 2),
           Padding(
@@ -381,7 +407,7 @@ class ChatBubble extends StatelessWidget {
           alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
           child: GestureDetector(
             onTap: onRetry,
-            onLongPress: voice != null || photos.isNotEmpty || text.isEmpty
+            onLongPress: onMenu ?? (voice != null || photos.isNotEmpty || text.isEmpty
                 ? null
                 : () {
                     Clipboard.setData(ClipboardData(text: text));
@@ -391,8 +417,8 @@ class ChatBubble extends StatelessWidget {
                       behavior: SnackBarBehavior.floating,
                       duration: const Duration(seconds: 2),
                     ));
-                  },
-            child: bubble,
+                  }),
+            child: _decorated(bubble),
           ),
         ),
         if (failed && failedLabel != null)
@@ -413,6 +439,24 @@ class ChatBubble extends StatelessWidget {
           ),
       ],
     );
+  }
+}
+
+extension on ChatBubble {
+  Widget _decorated(Widget bubble) {
+    Widget core = bubble;
+    if (reactions.isNotEmpty) {
+      // the pill hangs on the bubble's own bottom corner (mine on the right, theirs on the left)
+      core = Padding(
+        padding: const EdgeInsets.only(bottom: 14),
+        child: Stack(clipBehavior: Clip.none, children: [
+          bubble,
+          Positioned(bottom: -14, right: mine ? 10 : null, left: mine ? null : 10, child: ChatReactionPill(reactions: reactions, onTap: onReactionsTap ?? onMenu)),
+        ]),
+      );
+    }
+    if (onSwipeReply != null) core = SwipeToReply(onReply: onSwipeReply!, child: core);
+    return core;
   }
 }
 

@@ -221,7 +221,7 @@ getadminCurrentMessages({bool markRead = true}) async {
   }
 }
 
-sendadminMessage(chat) async {
+sendadminMessage(chat, {dynamic replyTo}) async {
   dynamic result;
   try {
     var response =
@@ -231,11 +231,12 @@ sendadminMessage(chat) async {
               'Content-Type': 'application/json'
             },
             body: (isnewchat == 1)
-                ? jsonEncode({'new_chat': isnewchat, 'message': chat})
+                ? jsonEncode({'new_chat': isnewchat, 'message': chat, if (replyTo != null) 'reply_to': replyTo})
                 : jsonEncode({
                     'new_chat': 0,
                     'message': chat,
                     'chat_id': chatid,
+                    if (replyTo != null) 'reply_to': replyTo,
                   }));
     if (response.statusCode == 200) {
       chatid = jsonDecode(response.body)['data']['chat_id'];
