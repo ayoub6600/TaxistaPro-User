@@ -6,6 +6,13 @@ String _formatMoney(double value) => value == value.roundToDouble()
     ? value.toStringAsFixed(0)
     : value.toStringAsFixed(2);
 
+String _finishingNearbyLine(NearbyDriverCandidate driver, bool isRtl) {
+  final eta = driver.nextRideEta ?? 5;
+  return isRtl
+      ? 'ينهي مشوار قريب منك ويوصلك خلال $eta د'
+      : 'Finishing a trip nearby, with you in $eta min';
+}
+
 class _OfferCard extends StatelessWidget {
   const _OfferCard({
     required this.driver,
@@ -71,6 +78,21 @@ class _OfferCard extends StatelessWidget {
                     ? 'أقدر أوصلك بـ ${_formatMoney(offer)} $currency'
                     : 'I can get you there for ${_formatMoney(offer)} $currency',
               ),
+              if (driver.isFinishingNearby) ...[
+                const SizedBox(height: 3),
+                Text(
+                  _finishingNearbyLine(driver, isRtl),
+                  maxLines: 2,
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.cairo(
+                    color: const Color(0xff087F65),
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w800,
+                    height: 1.15,
+                  ),
+                ),
+              ],
               if (previousFare > 0 &&
                   (previousFare - offer).abs() >= 0.005) ...[
                 const SizedBox(height: 2),

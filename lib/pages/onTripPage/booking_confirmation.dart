@@ -33,6 +33,7 @@ import 'package:vector_math/vector_math.dart' as vector;
 
 import '../../functions/api_guard.dart';
 import '../../functions/live_queries.dart';
+import '../../functions/next_ride_offer_api.dart';
 import '../../functions/functions.dart';
 import '../../functions/booking_send.dart';
 import '../../functions/geohash.dart';

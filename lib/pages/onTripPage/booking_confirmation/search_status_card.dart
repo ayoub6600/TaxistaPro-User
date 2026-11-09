@@ -11,7 +11,8 @@ class _SearchStatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final name = '${next?['name'] ?? ''}';
-    final car = '${next?['car'] ?? ''}';
+    final fare = next?['fare'];
+    final car = [if ('${next?['car'] ?? ''}'.isNotEmpty) '${next?['car']}', if (fare != null) 'السعر المتفق عليه ${(fare as num) == fare.roundToDouble() ? fare.toInt() : fare}'].join(' · ');
     return Container(
       width: width,
       constraints: BoxConstraints(minHeight: MediaQuery.sizeOf(context).height * 0.36),

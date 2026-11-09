@@ -65,6 +65,11 @@ class NearbyDriverCandidate {
   String get counterOfferCurrency =>
       data['counter_offer_currency']?.toString() ?? '';
 
+  /// The driver is finishing a trip nearby and comes straight after it.
+  bool get isFinishingNearby => data['next_ride']?.toString() == '1';
+
+  int? get nextRideEta => int.tryParse(data['next_ride_eta']?.toString() ?? '');
+
   String? get vehicleMake =>
       data['vehicle_make']?.toString().trim().isNotEmpty == true
           ? data['vehicle_make'].toString()
@@ -233,6 +238,8 @@ List<NearbyDriverCandidate> prioritizeTargetedDrivers(
         'counter_offer': offer['price'],
         'counter_offer_base': offer['base_price'],
         'counter_offer_currency': offer['currency'],
+        'next_ride': offer['next_ride'],
+        'next_ride_eta': offer['eta_minutes'],
       },
     );
   }
@@ -297,6 +304,8 @@ List<NearbyDriverCandidate> prioritizeTargetedDrivers(
             'counter_offer': offer['price'],
             'counter_offer_base': offer['base_price'],
             'counter_offer_currency': offer['currency'],
+            'next_ride': offer['next_ride'],
+            'next_ride_eta': offer['eta_minutes'],
           },
         },
         distance: double.infinity,

@@ -99,12 +99,14 @@ class _DriverDetailsSheet extends StatelessWidget {
     required this.isRtl,
     required this.isAccepting,
     required this.onAccept,
+    this.onRefuse,
   });
 
   final NearbyDriverCandidate driver;
   final bool isRtl;
   final bool isAccepting;
   final VoidCallback? onAccept;
+  final VoidCallback? onRefuse;
 
   @override
   Widget build(BuildContext context) {
@@ -226,13 +228,25 @@ class _DriverDetailsSheet extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                 ),
               ),
+              if (driver.isFinishingNearby) ...[
+                const SizedBox(height: 4),
+                Text(
+                  _finishingNearbyLine(driver, isRtl),
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.cairo(
+                    color: _searchNavy,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
             ],
             const SizedBox(height: 18),
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: onRefuse ?? () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: _searchNavy,
                       side: const BorderSide(color: Color(0xffD9E2EF)),
@@ -242,7 +256,9 @@ class _DriverDetailsSheet extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: Text(
-                      isRtl ? 'إغلاق' : 'Close',
+                      onRefuse != null
+                          ? (isRtl ? 'لا، شكرًا' : 'No, thanks')
+                          : (isRtl ? 'إغلاق' : 'Close'),
                       style: GoogleFonts.cairo(fontWeight: FontWeight.w700),
                     ),
                   ),

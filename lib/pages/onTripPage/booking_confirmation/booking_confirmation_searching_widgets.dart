@@ -195,6 +195,12 @@ class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
                   Navigator.pop(sheetContext);
                   _acceptOffer(driver);
                 },
+          onRefuse: !driver.isFinishingNearby
+              ? null
+              : () {
+                  Navigator.pop(sheetContext);
+                  refuseNextRideOffer('${userRequestData['id']}', driver.driverId);
+                },
         ),
       ),
     );
