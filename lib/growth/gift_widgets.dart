@@ -87,69 +87,6 @@ class _GiftBannerState extends State<GiftBanner> {
   }
 }
 
-/// Under the fare before «تأكيد الطلب»: what the gift takes off this fare, from the server's own
-/// rule (fixed fare, ride now, no coupon). Nothing shows when no gift applies.
-class GiftPreviewLine extends StatefulWidget {
-  final String? zoneTypeId;
-  final double fare;
-  final String pricingMode;
-  final bool coupon;
-  final bool later;
-
-  const GiftPreviewLine(
-      {super.key, required this.zoneTypeId, required this.fare, required this.pricingMode, this.coupon = false, this.later = false});
-
-  @override
-  State<GiftPreviewLine> createState() => _GiftPreviewLineState();
-}
-
-class _GiftPreviewLineState extends State<GiftPreviewLine> {
-  String? _text;
-  String _key = '';
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _check();
-  }
-
-  @override
-  void didUpdateWidget(covariant GiftPreviewLine oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    _check();
-  }
-
-  Future<void> _check() async {
-    final key = '${widget.zoneTypeId}|${widget.fare}|${widget.pricingMode}|${widget.coupon}|${widget.later}';
-    if (key == _key) return;
-    _key = key;
-    if (widget.zoneTypeId == null || widget.fare <= 0 || widget.pricingMode != 'fixed' || widget.coupon || widget.later) {
-      setState(() => _text = null);
-      return;
-    }
-    final d = await GrowthApi.preview(zoneTypeId: widget.zoneTypeId!, fare: widget.fare, pricingMode: widget.pricingMode);
-    if (!mounted || key != _key) return;
-    setState(() => _text = (d?['gift_minor'] ?? 0) > 0 ? d!['text']?.toString() : null);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_text == null) return const SizedBox.shrink();
-    final p = CommunityLook.palette;
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(color: CommunityLook.goldBackground(p), borderRadius: BorderRadius.circular(12)),
-      child: Row(textDirection: TextDirection.rtl, children: [
-        const Icon(Icons.card_giftcard_rounded, size: 18, color: CommunityLook.gold),
-        const SizedBox(width: 8),
-        Expanded(child: Text(_text!, textDirection: TextDirection.rtl, style: p.text(13, weight: FontWeight.w700))),
-      ]),
-    );
-  }
-}
-
 /// The receipt's "هدية تاكسيستا" line for a ride that used a gift (the bill's discount already holds it).
 class RideGiftLine extends StatefulWidget {
   final String requestId;

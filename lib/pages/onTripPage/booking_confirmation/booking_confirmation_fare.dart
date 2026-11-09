@@ -37,6 +37,8 @@ _RideFareData? _resolveRideFare(Map<dynamic, dynamic> request) {
   // original `is_bid_ride` flag remains false.
   final candidates = hasAcceptedFare
       ? <dynamic>[
+          // a gift came off the agreed fare: what the rider really pays
+          if ((double.tryParse(request['platform_coupon_subsidy']?.toString() ?? '') ?? 0) > 0) request['passenger_payable'],
           request['accepted_ride_fare'],
           request['discounted_total'],
           request['request_eta_amount'],

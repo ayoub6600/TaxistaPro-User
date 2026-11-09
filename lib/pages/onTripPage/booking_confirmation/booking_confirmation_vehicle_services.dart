@@ -101,7 +101,15 @@ mixin _BookingConfirmationVehicleServices
                   ),
                 );
               },
-              child: VehicleServiceCard(
+              child: ServiceGiftLookup(
+                zoneTypeId: etaDetails[index]['zone_type_id']?.toString(),
+                fare: (canAdjustSelectedFare(index) ? chosenFareForService(index) : null) ??
+                    double.tryParse(etaDetails[index]['total']?.toString() ?? '') ?? 0,
+                bidding: RidePricingMode.fromService(etaDetails[index]) != RidePricingMode.fixedFare,
+                coupon: etaDetails[index]['has_discount'] == true,
+                later: confirmRideLater || widget.type == 1 || isOutStation == true || choosenTransportType != 0,
+                builder: (context, gift) => VehicleServiceCard(
+                gift: gift,
                 service: () {
                   final service =
                       Map<String, dynamic>.from(etaDetails[index] as Map);
@@ -167,7 +175,7 @@ mixin _BookingConfirmationVehicleServices
                     ? (direction) => changeFareOffer(index, direction)
                     : null,
                 isArabic: choosenLanguage == 'ar',
-              ),
+              )),
             ));
       },
     );

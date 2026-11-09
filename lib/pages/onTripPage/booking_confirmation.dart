@@ -57,6 +57,8 @@ import 'map_page.dart';
 import 'widgets/booking_status_sheet.dart';
 import 'booking_confirmation/widgets/booking_back_button.dart';
 import 'booking_confirmation/models/ride_pricing_mode.dart';
+import '../../growth/daily_gift/agreed_gift_sheet.dart';
+import '../../growth/daily_gift/service_gift.dart';
 import 'booking_confirmation/widgets/vehicle_service_card.dart';
 import 'booking_confirmation/widgets/vehicle_services_section.dart';
 import 'widgets/cancellation_sheet.dart';
@@ -211,7 +213,7 @@ class _BookingConfirmationState extends State<BookingConfirmation>
   Widget build(BuildContext context) {
     return Theme(
       data: Theme.of(context).copyWith(colorScheme: bookingBrandColorScheme()),
-      child: buildBookingConfirmation(context),
+      child: AgreedGiftWatcher(child: buildBookingConfirmation(context)),
     );
   }
 }

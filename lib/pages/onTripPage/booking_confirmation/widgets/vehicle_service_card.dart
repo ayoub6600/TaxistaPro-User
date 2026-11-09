@@ -2,6 +2,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../growth/daily_gift/gift_box.dart';
+import '../../../../growth/daily_gift/service_gift.dart';
 import '../models/ride_pricing_mode.dart';
 
 class VehicleServiceCard extends StatelessWidget {
@@ -17,7 +19,11 @@ class VehicleServiceCard extends StatelessWidget {
     this.maximumFare,
     this.onFareStep,
     this.isArabic = true,
+    this.gift,
   });
+
+  /// today's gift on this service, when there is one
+  final ServiceGiftQuote? gift;
 
   final Map service;
   final bool selected;
@@ -38,12 +44,16 @@ class VehicleServiceCard extends StatelessWidget {
     final isDelivery = service['transport_type'] == 'delivery';
     final hasDiscount = service['has_discount'] == true;
     final imageUrl = service['icon']?.toString().trim() ?? '';
+    final shortDescription = service['short_description']?.toString().trim() ?? ''; // written in the admin panel
+    final giftOnFare = gift != null && service['automatic_gift_discount'] is! num && mode == RidePricingMode.fixedFare;
+    final giftAfterAgreement = gift != null && mode != RidePricingMode.fixedFare;
+    final baseFare = double.tryParse((hasDiscount ? service['discounted_totel'] : service['total'])?.toString() ?? '') ?? 0;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 220),
       curve: Curves.easeOutCubic,
       constraints: const BoxConstraints(minHeight: 96),
-      padding: const EdgeInsets.all(14),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         gradient: selected
             ? LinearGradient(
@@ -71,6 +81,8 @@ class VehicleServiceCard extends StatelessWidget {
         ],
       ),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
+        if (giftAfterAgreement) _GiftAfterAgreement(words: gift!.words),
+        Padding(padding: const EdgeInsets.all(14), child: Column(mainAxisSize: MainAxisSize.min, children: [
         Row(children: [
           _VehicleImage(
             imageUrl: imageUrl,
@@ -172,6 +184,15 @@ class VehicleServiceCard extends StatelessWidget {
                     ],
                   ],
                 ),
+                if (shortDescription.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    shortDescription,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: accent, height: 1.3),
+                  ),
+                ],
               ],
             ),
           ),
@@ -222,13 +243,15 @@ class VehicleServiceCard extends StatelessWidget {
                   : chosenFare != null
                       ? _formatFare(chosenFare!)
                       : service['total']?.toString() ?? '--',
-              discountedTotal: service['automatic_gift_discount'] is num
-                  ? service['signup_bonus_payable']?.toString()
-                  : hasDiscount
-                      ? service['discounted_totel']?.toString()
-                      : null,
-              giftDiscount: service['automatic_gift_discount']?.toString(),
-              giftLabel: isArabic ? 'هدية أول رحلة' : 'First ride gift',
+              discountedTotal: giftOnFare
+                  ? _formatFare((baseFare - gift!.amount).clamp(0, double.infinity))
+                  : service['automatic_gift_discount'] is num
+                      ? service['signup_bonus_payable']?.toString()
+                      : hasDiscount
+                          ? service['discounted_totel']?.toString()
+                          : null,
+              giftDiscount: giftOnFare ? _formatFare(gift!.amount) : service['automatic_gift_discount']?.toString(),
+              giftLabel: giftOnFare ? (isArabic ? '🎁 هدية اليوم' : 'Today\'s gift') : (isArabic ? 'هدية أول رحلة' : 'First ride gift'),
             ),
         ]),
         if (selected &&
@@ -322,6 +345,7 @@ class VehicleServiceCard extends StatelessWidget {
             ),
           ],
         ],
+        ])),
       ]),
     );
   }
@@ -352,6 +376,36 @@ class VehicleServiceCard extends StatelessWidget {
       );
 }
 
+/// The gift, part of the negotiation card's own frame.
+class _GiftAfterAgreement extends StatelessWidget {
+  const _GiftAfterAgreement({required this.words});
+
+  final String words;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: giftPale,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+      child: Row(children: [
+        const GiftBox(size: 26),
+        const SizedBox(width: 8),
+        Expanded(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: AlignmentDirectional.centerStart,
+            child: Text.rich(TextSpan(style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: giftInk), children: [
+              const TextSpan(text: 'هديتك '),
+              TextSpan(text: words, style: const TextStyle(color: giftBlue, fontWeight: FontWeight.w900)),
+              const TextSpan(text: ' · تنخصم بعد الاتفاق مع السائق'),
+            ])),
+          ),
+        ),
+      ]),
+    );
+  }
+}
+
 class _VehicleImage extends StatelessWidget {
   const _VehicleImage({
     required this.imageUrl,
@@ -366,6 +420,9 @@ class _VehicleImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fallback = Icon(Icons.local_taxi_rounded, color: accent, size: 30);
+    if (imageUrl.toLowerCase().endsWith('.png')) {
+      return CachedNetworkImage(imageUrl: imageUrl, width: 78, height: 66, fit: BoxFit.contain, errorWidget: (_, __, ___) => fallback);
+    }
 
     return Stack(
       clipBehavior: Clip.none,

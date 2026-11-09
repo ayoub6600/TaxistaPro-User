@@ -623,7 +623,7 @@ Map<String, dynamic> languages = {
     "card_not_found_text": "البطاقة غير موجودة او تم استخدامها بالفعل",
     "text_register_for": "سجل ل",
     "text_recommended_fare": "الأجرة الموصى بها",
-    "text_offer_your_fare": "عرض الأجرة الخاصة بك",
+    "text_offer_your_fare": "فاوض",
     "text_offered_fare": "عرضت أجرة الركوب",
     "text_current_fare": "الأجرة الحالية",
     "text_update": "تحديث",
