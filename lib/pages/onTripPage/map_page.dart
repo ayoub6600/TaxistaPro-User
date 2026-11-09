@@ -64,6 +64,7 @@ import '../../functions/recurring_api.dart';
 import '../../functions/recurring_push.dart';
 import '../../functions/service_zones.dart';
 import '../../functions/market_switch.dart';
+import '../../functions/open_ride_sheet.dart';
 import '../recurring/recurring_home_banner.dart';
 import '../../community/rewards_page.dart';
 import '../../functions/schedule_time.dart';

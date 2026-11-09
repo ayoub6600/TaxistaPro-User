@@ -370,7 +370,7 @@ Map<String, dynamic> languages = {
     "text_waiting_time_3": "وقت انتظار مجاني بعد بدء الرحلة",
     "text_waiting_price": "سعر الانتظار",
     "text_discount": "تخفيض",
-    "text_no_service": "الخدمة غير متوفرة في موقعك",
+    "text_no_service": "عذرًا، تاكسيستا ما يخدمش هذا المكان حاليًا",
     "text_something_went_wrong": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
     "text_tax_inclusive": "شامل الضريبة",
     "text_surge_fee": "رسوم الطفرة",

@@ -58,7 +58,9 @@ extension _MapCollapsedSheet on _MapsState {
           : () => guardedPush(context, MaterialPageRoute(builder: (_) => const RecurringRidesPage())),
       onChooseDestination: () =>
           runDestinationEntryOnce(() => prepareDestinationEntry(media)),
-      onRideWithoutDestination: () {
+      onRideWithoutDestination: () async {
+        final at = currentLocation is LatLng ? currentLocation as LatLng : center;
+        if (!await confirmOpenRide(context, at.latitude, at.longitude) || !mounted) return;
         ismulitipleride = false;
         setState(() {
           rideWithoutDestination = true;

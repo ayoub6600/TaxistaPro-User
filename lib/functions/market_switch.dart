@@ -32,11 +32,15 @@ class MarketSwitch {
     _lookedAt = DateTime.now();
     try {
       final prefs = await SharedPreferences.getInstance();
-      if (DateTime.now().millisecondsSinceEpoch < (prefs.getInt(_snoozeKey) ?? 0)) return;
       final r = await http.get(_base.replace(queryParameters: {'lat': '$lat', 'lng': '$lng'}), headers: _headers).timeout(const Duration(seconds: 10));
       if (r.statusCode != 200 || !context.mounted) return;
       final data = Map<String, dynamic>.from(jsonDecode(r.body)['data'] as Map);
-      if (data['state'] != 'ask') return;
+      if (data['banners'] is List) {
+        // an ad belongs to where the rider stands, whatever his account says
+        banners = data['banners'] as List;
+        valueNotifierHome.incrementNotifier();
+      }
+      if (data['state'] != 'ask' || DateTime.now().millisecondsSinceEpoch < (prefs.getInt(_snoozeKey) ?? 0)) return;
       _open = true;
       final yes = await _ask(context, data);
       _open = false;

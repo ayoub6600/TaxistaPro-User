@@ -59,7 +59,7 @@ mixin _BookingConfirmationStatusOverlays
     final outside = '$tripError'.contains('خارج') || '$tripError'.contains('بلد آخر');
     return BookingStatusSheet(
       title: tripError,
-      actionLabel: outside ? (choosenLanguage == 'ar' ? 'اختار وجهة ثانية' : 'Choose another destination') : languages[choosenLanguage]['text_tryanother'],
+      actionLabel: outside ? (choosenLanguage == 'ar' ? 'غيّر الوجهة' : 'Choose another destination') : languages[choosenLanguage]['text_tryanother'],
       icon: outside ? Icons.wrong_location_outlined : Icons.sync_problem_rounded,
       onAction: () async {
         setState(() {
