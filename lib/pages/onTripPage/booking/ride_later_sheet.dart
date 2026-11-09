@@ -114,6 +114,7 @@ class _RideLaterBottomSheetState extends State<RideLaterBottomSheet> {
   }
 
   void _finalizeSchedule() {
+    if (!RepeatChoice.readyToSend) return;
     setState(() {
       choosenDateTime = selectedDateTime;
       confirmRideLater = true;
@@ -368,12 +369,13 @@ class _RideLaterBottomSheetState extends State<RideLaterBottomSheet> {
             ],
           ),
         ),
-        const _RideRepeatPicker(),
+        _RideRepeatPicker(at: selectedDateTime, onChanged: () => setState(() {})),
         SizedBox(height: media.width * 0.06),
         Button(
           onTap: _finalizeSchedule,
-          text: languages[choosenLanguage]['text_schedule_ride'] ??
-              (isRtl ? 'جدولة الرحلة' : 'Schedule ride'),
+          text: RepeatChoice.preset != null
+              ? 'جدول وكرر'
+              : languages[choosenLanguage]['text_schedule_ride'] ?? (isRtl ? 'جدولة الرحلة' : 'Schedule ride'),
         ),
       ],
     );

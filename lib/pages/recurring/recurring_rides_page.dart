@@ -10,6 +10,7 @@ import '../../functions/functions.dart';
 import '../../functions/recurring_api.dart';
 import '../../functions/recurring_push.dart';
 import '../../functions/repeat_choice.dart';
+import 'recurring_start_card.dart';
 import 'recurring_regular_card.dart';
 import '../../functions/live_activity.dart';
 
@@ -72,6 +73,27 @@ class _RecurringRidesPageState extends State<RecurringRidesPage> {
     });
   }
 
+  Future<void> _skipNext(Map<String, dynamic> ride) async {
+    final next = Map<String, dynamic>.from(ride['next'] as Map);
+    final yes = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          title: Text('تتخطى المشوار الجاي؟', style: _t(18, w: FontWeight.w800)),
+          content: Text('ما يجيك سائق هذا اليوم، والأيام الباقية تبقى كما هي.', style: _t(14, c: _muted)),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('لا', style: _t(15, c: _muted))),
+            TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('نعم، تخطى', style: _t(15, w: FontWeight.w800, c: _blue))),
+          ],
+        ),
+      ),
+    );
+    if (yes != true) return;
+    await RecurringApi.answer('${ride['id']}', '${next['date']}', 'skip');
+    await _load();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Directionality(
@@ -96,8 +118,14 @@ class _RecurringRidesPageState extends State<RecurringRidesPage> {
                       index: i,
                       child: _ScheduleCard(
                         ride: rides[i],
+                        onSkip: () => _skipNext(rides[i]),
                         onOpen: () => Navigator.of(context).push(_route(RecurringRidePage(uuid: '${rides[i]['id']}', initial: rides[i]))).then((_) => _load()),
                       ),
+                    ),
+                  if (rides.isNotEmpty)
+                    ValueListenableBuilder<bool>(
+                      valueListenable: RepeatChoice.available,
+                      builder: (_, canCreate, __) => canCreate ? const RecurringAddButton() : const SizedBox.shrink(),
                     ),
                 ],
               ),
@@ -124,8 +152,9 @@ PageRoute<T> _route<T>(Widget page) => PageRouteBuilder<T>(
 
 /// One schedule, the way the design shows it: its name, days and time, and how tomorrow looks.
 class _ScheduleCard extends StatelessWidget {
-  const _ScheduleCard({required this.ride, required this.onOpen});
+  const _ScheduleCard({required this.ride, required this.onOpen, required this.onSkip});
   final Map<String, dynamic> ride;
+  final VoidCallback onSkip;
   final VoidCallback onOpen;
 
   @override
@@ -156,12 +185,26 @@ class _ScheduleCard extends StatelessWidget {
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text('${ride['label'] ?? ''}', style: _t(17, w: FontWeight.w800, c: active ? Colors.white : _ink)),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 2),
+                  child: ride['days'] is List ? RecurringWeekRow(days: ride['days'] as List, active: active) : const SizedBox.shrink(),
+                ),
                 Text('${ride['status_label'] ?? ''} · ${ride['pattern'] ?? ''}', style: _t(12.5, c: active ? Colors.white70 : _muted), maxLines: 2),
                 if (next != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 6),
-                    child: Text('${next['day_word'] == 'بكرة' ? 'غدًا' : next['date']} ${_clock('${next['time']}')} · ${next['label']}',
+                    child: Row(children: [
+                      Expanded(
+                        child: Text('${next['day_word'] == 'بكرة' ? 'غدًا' : next['date']} ${_clock('${next['time']}')} · ${next['label']}',
                         style: _t(13, w: FontWeight.w700, c: active ? Colors.white : _blue)),
+                      ),
+                      if (active && next['answerable'] == true && next['state'] != 'skipped')
+                        TextButton(
+                          onPressed: onSkip,
+                          style: TextButton.styleFrom(backgroundColor: Colors.white.withValues(alpha: .16), foregroundColor: Colors.white, minimumSize: const Size(64, 40), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                          child: Text('تخطي', style: _t(13.5, w: FontWeight.w800, c: Colors.white)),
+                        ),
+                    ]),
                   ),
               ]),
             ),
@@ -759,35 +802,20 @@ class _Empty extends StatelessWidget {
   const _Empty();
 
   @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(22),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22), border: Border.all(color: _line)),
-        child: Column(children: [
-          const Icon(Icons.repeat_rounded, size: 40, color: _blue),
-          const SizedBox(height: 8),
-          Text('ما عندكش رحلات متكررة', style: _t(16, w: FontWeight.w800)),
-          ValueListenableBuilder<bool>(
-            valueListenable: RepeatChoice.available,
-            builder: (context, canCreate, _) => Column(children: [
-              Text(
-                canCreate ? 'مشوار تعمله كل يوم أو كل أسبوع؟ اختر وجهتك، ومن «الوقت» حدد الموعد وفعّل التكرار.' : 'مشوار تعمله كل يوم أو كل أسبوع؟ كلم دعم تاكسيستا ونجهزولك جدول، وكل يوم يجيك سائق متاح في موعدك.',
-                textAlign: TextAlign.center,
-                style: _t(14, w: FontWeight.w500, c: _muted),
+  Widget build(BuildContext context) => ValueListenableBuilder<bool>(
+        valueListenable: RepeatChoice.available,
+        builder: (context, canCreate, _) => canCreate
+            ? const RecurringStartCard()
+            : Container(
+                padding: const EdgeInsets.all(22),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22), border: Border.all(color: _line)),
+                child: Column(children: [
+                  const Icon(Icons.repeat_rounded, size: 40, color: _blue),
+                  const SizedBox(height: 8),
+                  Text('ما عندكش رحلات متكررة', style: _t(16, w: FontWeight.w800)),
+                  Text('مشوار تعمله كل يوم أو كل أسبوع؟ كلم دعم تاكسيستا ونجهزولك جدول، وكل يوم يجيك سائق متاح في موعدك.', textAlign: TextAlign.center, style: _t(13, c: _muted)),
+                ]),
               ),
-              if (canCreate) ...[
-                const SizedBox(height: 14),
-                FilledButton(
-                  onPressed: () {
-                    Navigator.of(context).popUntil((r) => r.isFirst);
-                    RecurringApi.startNew.value++;
-                  },
-                  style: FilledButton.styleFrom(backgroundColor: _blue, minimumSize: const Size.fromHeight(54), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                  child: Text('جدول مشواري', style: _t(16, w: FontWeight.w800, c: Colors.white)),
-                ),
-              ],
-            ]),
-          ),
-        ]),
       );
 }
 

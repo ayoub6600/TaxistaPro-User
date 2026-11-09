@@ -1,10 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'calls/admin_call_controller.dart' show appNavigatorKey;
 import 'recurring_api.dart';
+import '../pages/recurring/recurring_done_sheet.dart';
 
 /// «تكرر المشوار؟»: chosen on the scheduling sheet, sent right after the ride is booked, so the
 /// ride he just scheduled becomes the first day of the pattern.
@@ -28,6 +29,39 @@ class RepeatChoice {
     at = null;
   }
 
+  static const week = [6, 0, 1, 2, 3, 4, 5]; // Saturday first; 0 = Sunday, as the server counts
+  static const _workdays = {6, 0, 1, 2, 3, 4};
+  static const _names = {6: 'السبت', 0: 'الأحد', 1: 'الاثنين', 2: 'الثلاثاء', 3: 'الأربعاء', 4: 'الخميس', 5: 'الجمعة'};
+
+  static Set<int> get selected => switch (preset) {
+        'workdays' => _workdays,
+        'daily' => week.toSet(),
+        'custom' => days,
+        _ => const <int>{},
+      };
+
+  /// a tap on one day: from a preset it becomes his own list
+  static void toggleDay(int day) {
+    final next = {...selected};
+    next.contains(day) ? next.remove(day) : next.add(day);
+    days = next;
+    preset = 'custom';
+  }
+
+  static bool get readyToSend => preset == null || selected.isNotEmpty;
+
+  /// «كل يوم من السبت إلى الخميس»
+  static String get daysLine {
+    if (preset == 'daily') return 'كل يوم';
+    if (preset == 'workdays') return 'كل يوم من السبت إلى الخميس';
+    return 'كل ${week.where(days.contains).map((d) => _names[d]).join('، ')}';
+  }
+
+  static String clock(DateTime when) {
+    final h = when.hour % 12 == 0 ? 12 : when.hour % 12;
+    return '$h:${_two(when.minute)} ${when.hour < 12 ? 'ص' : 'م'}';
+  }
+
   static String _two(int n) => n.toString().padLeft(2, '0');
 
   /// [payload] is the booking body, [ride] the server's answer.
@@ -35,6 +69,7 @@ class RepeatChoice {
     final choice = preset;
     final when = at;
     if (choice == null || when == null || ride is! Map) return;
+    final line = daysLine;
     clear();
     final p = Map<String, dynamic>.from(jsonDecode(payload) as Map);
     final result = await RecurringApi.create({
@@ -49,9 +84,11 @@ class RepeatChoice {
     });
     final context = appNavigatorKey.currentContext;
     if (context != null && context.mounted) {
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(
-        content: Text(result.ok ? 'تم تكرار مشوارك. تقدر تديره من «رحلاتي المتكررة».' : '${result.body['message'] ?? 'رحلتك انحجزت، لكن التكرار ما تمش.'}'),
-      ));
+      if (result.ok) {
+        unawaited(showRecurringDoneSheet(context, days: line, time: clock(when), first: when));
+      } else {
+        ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text('${result.body['message'] ?? 'حُجز مشوارك، لكن ما قدرناش نكرره. جرب من «رحلاتي المتكررة».'}')));
+      }
     }
     RecurringApi.refresh();
   }
