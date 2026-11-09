@@ -40,6 +40,13 @@ void main() {
     expect(find.text('فاوض'), findsOneWidget);
   });
 
+  test('a png from the server is recognised, a jpg is not', () {
+    expect(hasTransparentVehicleImage('https://x/vehicle-type-icons/abc.png/content'), isTrue);
+    expect(hasTransparentVehicleImage('https://x/abc.PNG?v=1'), isTrue);
+    expect(hasTransparentVehicleImage('https://x/vehicle-type-icons/abc.jpg/content'), isFalse);
+    expect(hasTransparentVehicleImage(''), isFalse);
+  });
+
   testWidgets('no description, no empty line', (tester) async {
     await tester.pumpWidget(host(VehicleServiceCard(service: service('fixed'), selected: false, arrivalText: '', offerFareLabel: 'فاوض')));
     expect(tester.takeException(), isNull);

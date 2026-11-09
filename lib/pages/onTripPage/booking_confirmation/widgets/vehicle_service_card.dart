@@ -406,6 +406,9 @@ class _GiftAfterAgreement extends StatelessWidget {
   }
 }
 
+/// a PNG sits straight on the card; the server's links end in «.png/content»
+bool hasTransparentVehicleImage(String url) => RegExp(r'\.png(/|\?|$)', caseSensitive: false).hasMatch(url);
+
 class _VehicleImage extends StatelessWidget {
   const _VehicleImage({
     required this.imageUrl,
@@ -420,7 +423,7 @@ class _VehicleImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fallback = Icon(Icons.local_taxi_rounded, color: accent, size: 30);
-    if (imageUrl.toLowerCase().endsWith('.png')) {
+    if (hasTransparentVehicleImage(imageUrl)) {
       return CachedNetworkImage(imageUrl: imageUrl, width: 78, height: 66, fit: BoxFit.contain, errorWidget: (_, __, ___) => fallback);
     }
 
