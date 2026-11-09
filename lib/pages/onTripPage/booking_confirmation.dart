@@ -29,6 +29,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:taxista/pages/onTripPage/bookingwidgets.dart';
 import '../../widgets/call_options.dart';
 import '../../functions/market_notice.dart';
+import '../../functions/destination_check.dart';
 import 'package:vector_math/vector_math.dart' as vector;
 
 import '../../functions/api_guard.dart';

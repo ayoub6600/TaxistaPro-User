@@ -11,6 +11,7 @@ extension _PickLocSections0 on _PickupLocationState {
           ? (mapType == 'google')
               ? GoogleMap(
                   onMapCreated: _onMapCreated,
+                  polygons: ServiceZones.polygons.value,
                   initialCameraPosition: CameraPosition(
                     target: _center,
                     zoom: 14.0,

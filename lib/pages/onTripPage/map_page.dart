@@ -223,10 +223,15 @@ class _MapsState extends State<Maps>
     ));
   }
 
+  void _startRecurringEntry() {
+    if (mounted) runDestinationEntryOnce(() => prepareDestinationEntry(MediaQuery.sizeOf(context)));
+  }
+
   @override
   void initState() {
     super.initState();
     _showLaunchOverlay = widget.animateColdLaunch;
+    RecurringApi.startNew.addListener(_startRecurringEntry);
     _isDarkTheme = isDarkTheme;
     WidgetsBinding.instance.addObserver(this);
     // a gift link that opened the app before sign-in: open «هداياي» on it now
@@ -481,6 +486,7 @@ class _MapsState extends State<Maps>
   void dispose() {
     // A State that stays registered keeps itself (and its map, markers and
     // lists) alive for the life of the app and runs on every lifecycle event.
+    RecurringApi.startNew.removeListener(_startRecurringEntry);
     WidgetsBinding.instance.removeObserver(this);
     PulseBookingIntent.pending.removeListener(_onPulseIntent);
     RecurringApi.rides.removeListener(_onRecurringRides);

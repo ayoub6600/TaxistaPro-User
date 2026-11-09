@@ -1,3 +1,4 @@
+import 'widgets/keyboard_guard.dart';
 import 'dart:convert';
 import 'growth/growth_api.dart';
 import 'growth/my_gifts_page.dart';
@@ -191,7 +192,7 @@ class MyApp extends StatelessWidget {
                   ),
                   // a call going on behind another screen: the green "return to call" bar on top
                   child: Stack(children: [
-                    botToast(context, widget),
+                    botToast(context, widget == null ? null : KeyboardGuard(child: widget)),
                     const Positioned(top: 0, left: 0, right: 0, child: OngoingCallBar()),
                   ]),
                 );

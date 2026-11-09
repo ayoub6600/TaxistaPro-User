@@ -17,6 +17,8 @@ import 'package:taxista/pages/onTripPage/debouncer.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../functions/functions.dart';
+import '../../functions/destination_check.dart';
+import '../../functions/service_zones.dart';
 import '../../styles/styles.dart';
 import '../../translations/translation.dart';
 import '../../widgets/widgets.dart';

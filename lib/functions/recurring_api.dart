@@ -9,6 +9,9 @@ import 'functions.dart';
 /// «رحلاتي المتكررة» (recurring rides set up with the administration): the rider's schedules, their
 /// days, and his answer for one day (✅ confirm / ⏭ skip). The server is the truth for every state.
 class RecurringApi {
+  /// «جدول مشواري»: the home screen opens the destination search
+  static final ValueNotifier<int> startNew = ValueNotifier(0);
+
   static Map<String, String> get _headers => {
         'Authorization': 'Bearer ${bearerToken.isEmpty ? '' : bearerToken[0].token}',
         'Accept': 'application/json',

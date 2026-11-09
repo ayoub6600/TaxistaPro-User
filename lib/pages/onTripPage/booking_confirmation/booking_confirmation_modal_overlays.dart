@@ -276,7 +276,15 @@ mixin _BookingConfirmationModalOverlays
               },
               onDelete: _deleteDestination,
               onReorder: _reorderDestinations,
-              onConfirm: _confirmTripDetails,
+              onConfirm: () async {
+                final pickups = addressList.where((e) => e.type == 'pickup');
+                if (!isOutStation && pickups.isNotEmpty) {
+                  for (final drop in addressList.where((e) => e.type == 'drop')) {
+                    if (!await destinationAllowed(context, pickups.first.latlng, drop.latlng)) return;
+                  }
+                }
+                _confirmTripDetails();
+              },
             )
           : const SizedBox.shrink(),
       (_editUserDetails)

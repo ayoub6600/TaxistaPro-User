@@ -22,7 +22,20 @@ class _TaxistaCenterPin extends StatelessWidget {
       height: 116,
       child: Stack(
         alignment: Alignment.bottomCenter,
+        clipBehavior: Clip.none,
         children: [
+          Positioned(
+            top: -24,
+            left: -40,
+            right: -40,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(color: selectingPickup ? const Color(0xff1677FF) : const Color(0xffD92D20), borderRadius: BorderRadius.circular(12)),
+                child: Text(selectingPickup ? 'نقطة الانطلاق' : 'الوجهة', style: GoogleFonts.cairo(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800)),
+              ),
+            ),
+          ),
           AnimatedContainer(
             duration: const Duration(milliseconds: 220),
             curve: Curves.easeOutCubic,

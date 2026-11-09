@@ -142,6 +142,13 @@ extension _DropLocationSections1 on _DropLocationView {
                         Button(
                             onTap: () async {
                               if (dropAddressConfirmation != '') {
+                                final pickups = addressList.where((element) => element.type == 'pickup');
+                                if (!(widget.selectingPickup || widget.from == 0) &&
+                                    !isOutStation &&
+                                    pickups.isNotEmpty &&
+                                    !await destinationAllowed(context, pickups.first.latlng, _center)) {
+                                  return;
+                                }
                                 //remove in envato
                                 if (choosenTransportType == 0 && widget.from == null) {
                                   debugPrint("---------->1");

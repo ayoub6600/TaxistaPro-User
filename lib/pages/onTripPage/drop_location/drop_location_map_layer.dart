@@ -28,6 +28,7 @@ extension _DropLocationSections0 on _DropLocationView {
                     }
                   },
                   onCameraIdle: _settleMapSelection,
+                  polygons: ServiceZones.polygons.value,
                   minMaxZoomPreference: const MinMaxZoomPreference(8.0, 20.0),
                   myLocationButtonEnabled: false,
                   buildingsEnabled: false,

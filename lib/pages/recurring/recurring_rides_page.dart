@@ -9,6 +9,7 @@ import '../../functions/calls/admin_call_controller.dart' show appNavigatorKey;
 import '../../functions/functions.dart';
 import '../../functions/recurring_api.dart';
 import '../../functions/recurring_push.dart';
+import '../../functions/repeat_choice.dart';
 import 'recurring_regular_card.dart';
 import '../../functions/live_activity.dart';
 
@@ -56,6 +57,7 @@ class _RecurringRidesPageState extends State<RecurringRidesPage> {
   @override
   void initState() {
     super.initState();
+    RepeatChoice.refreshAvailability();
     _load();
   }
 
@@ -764,7 +766,27 @@ class _Empty extends StatelessWidget {
           const Icon(Icons.repeat_rounded, size: 40, color: _blue),
           const SizedBox(height: 8),
           Text('ما عندكش رحلات متكررة', style: _t(16, w: FontWeight.w800)),
-          Text('مشوار تعمله كل يوم أو كل أسبوع؟ كلم دعم تاكسيستا ونجهزولك جدول، وكل يوم يجيك سائق متاح في موعدك.', textAlign: TextAlign.center, style: _t(13, c: _muted)),
+          ValueListenableBuilder<bool>(
+            valueListenable: RepeatChoice.available,
+            builder: (context, canCreate, _) => Column(children: [
+              Text(
+                canCreate ? 'مشوار تعمله كل يوم أو كل أسبوع؟ اختر وجهتك، ومن «الوقت» حدد الموعد وفعّل التكرار.' : 'مشوار تعمله كل يوم أو كل أسبوع؟ كلم دعم تاكسيستا ونجهزولك جدول، وكل يوم يجيك سائق متاح في موعدك.',
+                textAlign: TextAlign.center,
+                style: _t(14, w: FontWeight.w500, c: _muted),
+              ),
+              if (canCreate) ...[
+                const SizedBox(height: 14),
+                FilledButton(
+                  onPressed: () {
+                    Navigator.of(context).popUntil((r) => r.isFirst);
+                    RecurringApi.startNew.value++;
+                  },
+                  style: FilledButton.styleFrom(backgroundColor: _blue, minimumSize: const Size.fromHeight(54), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                  child: Text('جدول مشواري', style: _t(16, w: FontWeight.w800, c: Colors.white)),
+                ),
+              ],
+            ]),
+          ),
         ]),
       );
 }
