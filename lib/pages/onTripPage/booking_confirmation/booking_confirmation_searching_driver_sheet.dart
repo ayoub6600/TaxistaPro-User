@@ -110,8 +110,7 @@ class _DriverDetailsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vehicle =
-        [driver.vehicleMake, driver.vehicleModel].whereType<String>().join(' ');
+    final vehicle = driver.carLine;
     return SafeArea(
       top: false,
       child: Container(

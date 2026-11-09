@@ -12,6 +12,7 @@
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
 		481C69BB4A56A765A8CF828A /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C93FFC994D44BDCB07A98E1E /* WidgetKit.framework */; };
+		5A1C0E7F2B9D4E61A3C80D12 /* LiveAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5A1C0E7F2B9D4E61A3C80D11 /* LiveAssets.xcassets */; };
 		6AABD63B7680162AFFAD8E26 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DBB9F4BA3A2CE172BE6EB115 /* Foundation.framework */; };
 		7463AFAA035D54E26CE97EB0 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B9E272A12857BF06E351D2A4 /* Pods_Runner.framework */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
@@ -22,12 +23,12 @@
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		A80F22B4E7E38111C9749075 /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2CA31EA07332A8D659CEDAE1 /* AppIntents.framework */; };
 		C8632CF5F84AA800D482E3C8 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EE084BA2FF660253B70AE8C4 /* SwiftUI.framework */; };
+		C9BB9421E38883A9CC535A73 /* RideOfferButtons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F35D9C2395FCC1888FD7A87 /* RideOfferButtons.swift */; };
 		D35973B446D94A7207238BB2 /* RecurringLive.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 96964EE6E87279E3FC561F03 /* RecurringLive.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		DD25E303F5F62C94A24582CC /* RecurringDayShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2E65C2B48F23D7D43233982 /* RecurringDayShared.swift */; };
 		E3016914858C8155C34F9D68 /* RecurringLiveWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0467ECA2A31039A7982A04 /* RecurringLiveWidget.swift */; };
 		F286C70D97D66555AB9C0FFE /* ActivityKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D07268CA3FD85B7771A9421 /* ActivityKit.framework */; };
 		F664E22E2BDAA6A315BD97FD /* RecurringLiveActivities.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D5A2CDCCE96CF10C1776B6 /* RecurringLiveActivities.swift */; };
-		5A1C0E7F2B9D4E61A3C80D12 /* LiveAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5A1C0E7F2B9D4E61A3C80D11 /* LiveAssets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -78,10 +79,12 @@
 		1D0C8ADEDC8AE1E00EF4E666 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		227E0B1B474B4A3C7CBC4458 /* Pods_RunnerTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_RunnerTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		2CA31EA07332A8D659CEDAE1 /* AppIntents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppIntents.framework; path = System/Library/Frameworks/AppIntents.framework; sourceTree = SDKROOT; };
+		2F35D9C2395FCC1888FD7A87 /* RideOfferButtons.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RideOfferButtons.swift; sourceTree = "<group>"; };
 		331C807B294A618700263BE5 /* RunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerTests.swift; sourceTree = "<group>"; };
 		331C8081294A63A400263BE5 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		372B2AA1A56444CEF94A649B /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
+		5A1C0E7F2B9D4E61A3C80D11 /* LiveAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = LiveAssets.xcassets; sourceTree = "<group>"; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
@@ -107,7 +110,6 @@
 		E6E159FD12AF5E7E1BA06CAC /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
 		EE084BA2FF660253B70AE8C4 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		F22570198B1680BB688F2E15 /* Pods-RunnerTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug.xcconfig"; sourceTree = "<group>"; };
-		5A1C0E7F2B9D4E61A3C80D11 /* LiveAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = LiveAssets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -218,6 +220,7 @@
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 				A1D5A2CDCCE96CF10C1776B6 /* RecurringLiveActivities.swift */,
+				2F35D9C2395FCC1888FD7A87 /* RideOfferButtons.swift */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -528,6 +531,7 @@
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				DD25E303F5F62C94A24582CC /* RecurringDayShared.swift in Sources */,
 				F664E22E2BDAA6A315BD97FD /* RecurringLiveActivities.swift in Sources */,
+				C9BB9421E38883A9CC535A73 /* RideOfferButtons.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

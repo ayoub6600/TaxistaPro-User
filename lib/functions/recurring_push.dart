@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api_base_url.dart';
+import 'ride_offer_push.dart';
 
 /// «🚕 مشوارك غدًا!» - the evening reminder of a recurring ride, with two real buttons on the
 /// notification itself: ✅ تأكيد / ⏭ تخطي.
@@ -201,6 +202,7 @@ class RecurringAnswer {
 /// any other notification this app showed. Must stay a top-level entry point.
 @pragma('vm:entry-point')
 Future<void> recurringNotificationAction(NotificationResponse response) async {
+  if (RideOfferPush.isAnswer(response)) return rideOfferNotificationAction(response);
   final data = RecurringPush.fromPayload(response.payload);
   final action = response.actionId;
   if (data == null || (action != RecurringPush.confirmAction && action != RecurringPush.skipAction)) return;

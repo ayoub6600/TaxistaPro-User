@@ -2,8 +2,8 @@ import 'package:http/http.dart' as http;
 
 import 'functions.dart';
 
-/// The rider's no to a higher price from a driver finishing a trip nearby.
-Future<bool> refuseNextRideOffer(String requestId, String driverId) async {
+/// The rider's no to a driver's higher price.
+Future<bool> refuseDriverOffer(String requestId, String driverId) async {
   try {
     final r = await http.post(
       Uri.parse('${url}api/v1/request/next-ride-offer/refuse'),

@@ -4,6 +4,7 @@ import 'growth/my_gifts_page.dart';
 import 'dart:io';
 import 'functions/pulse_api.dart';
 import 'functions/recurring_push.dart';
+import 'functions/ride_offer_push.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -41,6 +42,14 @@ Future<void> riderBackgroundMessage(RemoteMessage message) async {
   } catch (_) {}
   // Android, the evening reminder of a recurring ride sent data-only to this version: shown here
   // with its two buttons (✅ تأكيد / ⏭ تخطي), which answer without opening the app
+  if (Platform.isAndroid && message.notification == null && RideOfferPush.handles(message.data)) {
+    final plugin = FlutterLocalNotificationsPlugin();
+    await plugin.initialize(const InitializationSettings(android: AndroidInitializationSettings('@mipmap/ic_launcher')),
+        onDidReceiveBackgroundNotificationResponse: recurringNotificationAction);
+    await plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.createNotificationChannel(RideOfferPush.channel);
+    await RideOfferPush.show(plugin, message.data);
+    return;
+  }
   if (Platform.isAndroid && message.notification == null && RecurringPush.handles(message.data)) {
     final plugin = FlutterLocalNotificationsPlugin();
     await plugin.initialize(const InitializationSettings(android: AndroidInitializationSettings('@mipmap/ic_launcher')),

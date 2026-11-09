@@ -1,3 +1,4 @@
+import 'ride_offer_push.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -93,7 +94,7 @@ Future<void> syncDeviceToken({String? token, bool force = false}) async {
         'platform': Platform.isIOS ? 'ios' : 'android',
         // this version draws buttons on a notification (the evening reminder of a recurring ride)
         if (version != null) 'app_version': version,
-        'features': [...RecurringPush.features, if (live['live_activity'] == true) LiveActivity.feature],
+        'features': [...RecurringPush.features, RideOfferPush.feature, if (live['live_activity'] == true) LiveActivity.feature],
         // iPhone 17.2+: Apple's push-to-start token for the lock-screen card «مشوارك غدًا»
         if (live['live_activity_token'] != null) 'live_activity_token': live['live_activity_token'],
       }),
@@ -113,6 +114,10 @@ Future<void> syncDeviceToken({String? token, bool force = false}) async {
 /// administration opens that conversation; anything else, as before.
 @pragma('vm:entry-point')
 void notificationTapBackground(NotificationResponse notificationResponse) {
+  if (RideOfferPush.isAnswer(notificationResponse)) {
+    unawaited(rideOfferNotificationAction(notificationResponse));
+    return;
+  }
   // the evening reminder of a recurring ride: a button answers it, a tap opens that day
   final recurring = RecurringPush.fromPayload(notificationResponse.payload);
   if (recurring != null) {
@@ -224,6 +229,9 @@ Future<void> initMessaging() async {
       await fltNotification
           .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
           ?.createNotificationChannel(RecurringPush.channel);
+      await fltNotification
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+          ?.createNotificationChannel(RideOfferPush.channel);
     } catch (_) {}
   }
   // the app was started by tapping one of its own notifications
@@ -281,6 +289,7 @@ Future<void> initMessaging() async {
   FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
     // calls: ring / stop ringing (data-only on Android)
     if (await handleCallPush(message.data, appOpen: true)) return;
+    if (RideOfferPush.handles(message.data)) return; // the open search screen already shows the offer
     if (RecurringPush.handles(message.data)) {
       // the app is open: the same question with its two buttons, and the home card refreshes
       await RecurringPush.show(fltNotification, message.data);

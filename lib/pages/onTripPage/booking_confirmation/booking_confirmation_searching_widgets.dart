@@ -195,11 +195,11 @@ class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
                   Navigator.pop(sheetContext);
                   _acceptOffer(driver);
                 },
-          onRefuse: !driver.isFinishingNearby
+          onRefuse: driver.counterOffer == null
               ? null
               : () {
                   Navigator.pop(sheetContext);
-                  refuseNextRideOffer('${userRequestData['id']}', driver.driverId);
+                  refuseDriverOffer('${userRequestData['id']}', driver.driverId);
                 },
         ),
       ),
@@ -416,6 +416,7 @@ class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
                                                   _OfferCard(
                                                     driver:
                                                         offeringDrivers[index],
+                                                    onRefuse: () => refuseDriverOffer('${userRequestData['id']}', offeringDrivers[index].driverId),
                                                     isRtl: widget.isRtl,
                                                     originalFare:
                                                         widget.originalFare,
@@ -450,6 +451,7 @@ class _SearchingDriverOverlayState extends State<_SearchingDriverOverlay>
                                                   offeringDrivers[index];
                                               return _OfferCard(
                                                 driver: driver,
+                                                onRefuse: () => refuseDriverOffer('${userRequestData['id']}', driver.driverId),
                                                 isRtl: widget.isRtl,
                                                 originalFare:
                                                     widget.originalFare,

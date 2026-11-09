@@ -21,6 +21,7 @@ class _OfferCard extends StatelessWidget {
     required this.signupBonusAmount,
     required this.isAccepting,
     required this.onAccept,
+    required this.onRefuse,
     required this.onTap,
   });
 
@@ -30,6 +31,7 @@ class _OfferCard extends StatelessWidget {
   final double signupBonusAmount;
   final bool isAccepting;
   final VoidCallback onAccept;
+  final VoidCallback onRefuse;
   final VoidCallback onTap;
 
   @override
@@ -210,12 +212,31 @@ class _OfferCard extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                 ),
               ),
+              if (driver.carLine.isNotEmpty)
+                Text(
+                  driver.carLine,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.cairo(color: const Color(0xff55678A), fontSize: 9.5, fontWeight: FontWeight.w700),
+                ),
               const SizedBox(height: 5),
-              _OfferAcceptButton(
-                isRtl: isRtl,
-                isAccepting: isAccepting,
-                onTap: isAccepting ? null : onAccept,
-              ),
+              Row(mainAxisSize: MainAxisSize.min, children: [
+                InkWell(
+                  onTap: isAccepting ? null : onRefuse,
+                  borderRadius: BorderRadius.circular(10),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                    child: Text(isRtl ? 'رفض' : 'Decline',
+                        style: GoogleFonts.cairo(color: const Color(0xff55678A), fontSize: 11, fontWeight: FontWeight.w800)),
+                  ),
+                ),
+                _OfferAcceptButton(
+                  isRtl: isRtl,
+                  isAccepting: isAccepting,
+                  onTap: isAccepting ? null : onAccept,
+                ),
+              ]),
             ],
           ),
         ),

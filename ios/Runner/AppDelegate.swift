@@ -42,6 +42,7 @@ import ActivityKit
 }
     application.registerForRemoteNotifications()
     RecurringReminderButtons.register()
+    RideOfferButtons.register()
     if let registrar = self.registrar(forPlugin: "TaxistaLiveActivity") {
       RecurringLiveActivities.register(messenger: registrar.messenger())
     }
@@ -185,6 +186,7 @@ import ActivityKit
   override func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
                                        withCompletionHandler completionHandler: @escaping () -> Void) {
     if RecurringReminderButtons.handle(response, completion: completionHandler) { return }
+    if RideOfferButtons.handle(response, completion: completionHandler) { return }
     super.userNotificationCenter(center, didReceive: response, withCompletionHandler: completionHandler)
   }
 

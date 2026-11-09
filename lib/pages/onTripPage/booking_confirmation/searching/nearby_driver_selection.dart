@@ -80,6 +80,13 @@ class NearbyDriverCandidate {
           ? data['vehicle_model'].toString()
           : null;
 
+  /// «هيونداي إلنترا 2019 · أسود», or empty when the driver has not filled his car in
+  String get carLine {
+    bool has(Object? v) => (v?.toString().trim() ?? '').isNotEmpty;
+    final name = [vehicleMake, vehicleModel, if (has(data['vehicle_year'])) '${data['vehicle_year']}'].whereType<String>().join(' ');
+    return [if (name.isNotEmpty) name, if (has(data['vehicle_color'])) '${data['vehicle_color']}'].join(' · ');
+  }
+
   double? get rating => double.tryParse(data['rating']?.toString() ?? '');
 
   int? get completedTrips =>
@@ -238,6 +245,10 @@ List<NearbyDriverCandidate> prioritizeTargetedDrivers(
         'counter_offer': offer['price'],
         'counter_offer_base': offer['base_price'],
         'counter_offer_currency': offer['currency'],
+        if (offer['vehicle_make'] != null) 'vehicle_make': offer['vehicle_make'],
+        if (offer['vehicle_model'] != null) 'vehicle_model': offer['vehicle_model'],
+        'vehicle_year': offer['vehicle_year'],
+        'vehicle_color': offer['vehicle_color'],
         'next_ride': offer['next_ride'],
         'next_ride_eta': offer['eta_minutes'],
       },
@@ -304,6 +315,10 @@ List<NearbyDriverCandidate> prioritizeTargetedDrivers(
             'counter_offer': offer['price'],
             'counter_offer_base': offer['base_price'],
             'counter_offer_currency': offer['currency'],
+            if (offer['vehicle_make'] != null) 'vehicle_make': offer['vehicle_make'],
+            if (offer['vehicle_model'] != null) 'vehicle_model': offer['vehicle_model'],
+            'vehicle_year': offer['vehicle_year'],
+            'vehicle_color': offer['vehicle_color'],
             'next_ride': offer['next_ride'],
             'next_ride_eta': offer['eta_minutes'],
           },
