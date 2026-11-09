@@ -46,6 +46,10 @@ class GrowthApi {
     }
   }
 
+  /// «هدية كل يوم» where the rider is now: state, amount, seconds_left, labels
+  static Future<Map<String, dynamic>?> dailyGift({double? lat, double? lng}) =>
+      _get('daily-gift', lat == null || lng == null ? null : {'lat': '$lat', 'lng': '$lng'});
+
   /// balance, server_time, gifts[] (state, amount, remaining, seconds_left), rules
   static Future<Map<String, dynamic>?> gifts() async {
     final d = await _get('gifts');

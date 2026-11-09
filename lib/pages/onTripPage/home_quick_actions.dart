@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../growth/daily_gift/daily_gift_bar.dart';
 import '../../growth/gift_widgets.dart';
 import '../../styles/styles.dart';
 
@@ -30,7 +31,13 @@ class HomeQuickActions extends StatelessWidget {
     required this.showRideWithoutDestination,
     required this.destinations,
     this.onRecurring,
+    this.giftLat,
+    this.giftLng,
   });
+
+  /// where the rider is: the city of «هدية كل يوم»
+  final double? giftLat;
+  final double? giftLng;
 
   /// «مشوار الدوام»: only for a rider who has a recurring ride
   final VoidCallback? onRecurring;
@@ -58,6 +65,7 @@ class HomeQuickActions extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          DailyGiftBar(lat: giftLat, lng: giftLng),
           // a Taxista gift with its countdown (nothing when the rider has none)
           const GiftBanner(),
           Row(

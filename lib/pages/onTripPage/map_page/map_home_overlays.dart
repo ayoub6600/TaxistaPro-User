@@ -224,9 +224,16 @@ extension _MapHomeOverlays on _MapsState {
               ),
             )
           : const SizedBox(),
-      Positioned(
-        right: 18,
-        bottom: 246 + MediaQuery.paddingOf(context).bottom,
+      // steps up while «هدية كل يوم» takes its line above the shortcuts
+      ValueListenableBuilder<bool>(
+        valueListenable: dailyGiftBarShown,
+        builder: (context, gift, child) => AnimatedPositioned(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+          right: 18,
+          bottom: (gift ? 322 : 246) + MediaQuery.paddingOf(context).bottom,
+          child: child!,
+        ),
         child: MapRecenterButton(onTap: recenterMap),
       ),
       // A booking belongs to the rider, not to the current map camera. Route

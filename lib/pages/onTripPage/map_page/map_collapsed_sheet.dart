@@ -15,6 +15,8 @@ extension _MapCollapsedSheet on _MapsState {
 
     return HomeQuickActions(
       rtl: rtl,
+      giftLat: _centerLocation.latitude,
+      giftLng: _centerLocation.longitude,
       showRideWithoutDestination: true,
       destinations: [
         HomeQuickDestination(

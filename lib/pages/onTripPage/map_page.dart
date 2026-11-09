@@ -50,6 +50,7 @@ import 'home_quick_actions.dart';
 import 'widgets/rider_mascot_marker.dart';
 import 'map_page/widgets/map_advertisement_banner.dart';
 import 'map_page/widgets/map_floating_menu_button.dart';
+import '../../growth/daily_gift/daily_gift_bar.dart';
 import 'map_page/widgets/map_recenter_button.dart';
 import 'map_page/widgets/trip_selection_panel.dart';
 import 'widgets/signup_welcome_gift_dialog.dart';
