@@ -29,6 +29,8 @@ import 'navigation/taxista_page_transitions.dart';
 import 'pages/callPage/admin_call_page.dart';
 import 'pages/loadingPage/loadingpage.dart';
 import 'contests/contests_pages.dart';
+import 'widgets/android_nav_safe.dart';
+import 'styles/styles.dart';
 
 /// Calls while the app is in the background or closed (Android: data-only messages): ring with
 /// the full-screen incoming call, or stop ringing. Every other message is left to the system tray.
@@ -192,7 +194,7 @@ class MyApp extends StatelessWidget {
                   ),
                   // a call going on behind another screen: the green "return to call" bar on top
                   child: Stack(children: [
-                    botToast(context, widget == null ? null : KeyboardGuard(child: widget)),
+                    AndroidNavSafe(color: isDarkTheme ? Colors.black : Colors.white, child: botToast(context, widget == null ? null : KeyboardGuard(child: widget))),
                     const Positioned(top: 0, left: 0, right: 0, child: OngoingCallBar()),
                   ]),
                 );
