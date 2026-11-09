@@ -5,6 +5,7 @@ import '../../../functions/functions.dart' as app;
 import '../../../styles/styles.dart';
 import '../agreement.dart';
 import 'auth_policy.dart';
+import 'phone_country_picker.dart';
 import 'signup_location_resolver.dart';
 import '../../../navigation/guarded_navigation.dart';
 
@@ -58,6 +59,15 @@ class _ModernSignupState extends State<ModernSignup> {
   }
 
   String _copy(String ar, String en) => _rtl ? ar : en;
+
+  /// The phone number's country, chosen apart from where the rider rides. Defaults to that country.
+  CountryAuthPolicy? _phoneCountry;
+  CountryAuthPolicy? get _dial => _phoneCountry ?? _country;
+
+  Future<void> _choosePhoneCountry() async {
+    final picked = await pickPhoneCountry(context, _policies, _dial, rtl: _rtl);
+    if (picked != null && mounted) setState(() { _phoneCountry = picked; _error = null; });
+  }
 
   List<SignupField> get _flow =>
       signupFlowFor(locationResolved: _locationResolved);
@@ -161,8 +171,8 @@ class _ModernSignupState extends State<ModernSignup> {
             : null;
       case SignupField.phone:
         final length = _mobile.length;
-        return length < _country!.minPhoneLength ||
-                length > _country!.maxPhoneLength
+        return length < _dial!.minPhoneLength ||
+                length > _dial!.maxPhoneLength
             ? _copy('راجع رقم الهاتف.', 'Check your phone number.')
             : null;
       case SignupField.otp:
@@ -179,7 +189,7 @@ class _ModernSignupState extends State<ModernSignup> {
 
   Future<void> _sendOtp() async {
     setState(() => _loading = true);
-    final result = await app.sendRegistrationOtp(_country!.dialCode, _mobile);
+    final result = await app.sendRegistrationOtp(_dial!.dialCode, _mobile);
     if (!mounted) return;
     setState(() {
       _loading = false;
@@ -197,7 +207,7 @@ class _ModernSignupState extends State<ModernSignup> {
   Future<void> _verifyOtp() async {
     setState(() => _loading = true);
     final result = await app.validateRegistrationOtp(
-      _country!.dialCode,
+      _dial!.dialCode,
       _mobile,
       _otp.text.trim(),
     );
@@ -222,7 +232,7 @@ class _ModernSignupState extends State<ModernSignup> {
       plainPassword: _password.text,
       mobileNumber: _mobile,
       selectedGender: _gender,
-      countryIndex: _country!.index,
+      countryIndex: _dial!.index,
       serviceLocationId: _area!.serviceLocationId,
       zoneId: _area!.id,
     );
@@ -448,13 +458,13 @@ class _ModernSignupState extends State<ModernSignup> {
             key: const ValueKey(SignupField.phone),
             icon: Icons.phone_iphone_rounded,
             title: _copy('رقم هاتفك', 'Your phone number'),
-            subtitle: _copy('الرمز الدولي مضبوط تلقائيًا.',
-                'Your country code is already set.'),
+            subtitle: _copy('رقمك من دولة ثانية؟ اضغط على الرمز وغيّره.',
+                'Number from another country? Tap the code to change it.'),
             child: Column(children: [
               _Field(
                   controller: _phone,
                   hint: _copy('رقم الهاتف', 'Phone number'),
-                  prefixText: '\u2066${_country?.dialCode ?? ''}\u2069  ',
+                  prefix: PhoneCountryButton(country: _dial, onTap: _choosePhoneCountry),
                   keyboardType: TextInputType.phone,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   autofocus: true),
@@ -645,7 +655,7 @@ class _Field extends StatelessWidget {
       this.obscureText = false,
       this.autofocus = false,
       this.suffix,
-      this.prefixText,
+      this.prefix,
       this.inputFormatters,
       this.textInputAction,
       this.onSubmitted,
@@ -657,7 +667,7 @@ class _Field extends StatelessWidget {
   final bool obscureText;
   final bool autofocus;
   final Widget? suffix;
-  final String? prefixText;
+  final Widget? prefix;
   final List<TextInputFormatter>? inputFormatters;
   final TextInputAction? textInputAction;
   final ValueChanged<String>? onSubmitted;
@@ -676,7 +686,8 @@ class _Field extends StatelessWidget {
         style: TextStyle(fontSize: 17, letterSpacing: letterSpacing),
         decoration: InputDecoration(
             hintText: hint,
-            prefixText: prefixText,
+            prefixIcon: prefix,
+            prefixIconConstraints: const BoxConstraints(minHeight: 48),
             suffixIcon: suffix,
             filled: true,
             fillColor: Colors.white,
