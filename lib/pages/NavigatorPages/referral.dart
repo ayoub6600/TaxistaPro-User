@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:package_info_plus/package_info_plus.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../functions/functions.dart';
+import '../../functions/invite_message.dart';
+import '../../functions/share_text.dart';
 import '../../styles/styles.dart';
 import '../../translations/translation.dart';
 import '../../widgets/widgets.dart';
@@ -21,9 +21,6 @@ class ReferralPage extends StatefulWidget {
 class _ReferralPageState extends State<ReferralPage> {
   bool _isLoading = true;
   bool _showToast = false;
-  PackageInfo? _package;
-  String? androidUrl;
-  String? iosUrl;
 
   @override
   void initState() {
@@ -34,15 +31,8 @@ class _ReferralPageState extends State<ReferralPage> {
   // get referral code
   Future<void> _getReferral() async {
     await getReferral(); // تأكد أن getReferral() لا تحتوي على أخطاء
-    _package = await PackageInfo.fromPlatform();
-
-    setState(() {
-      androidUrl =
-          'https://play.google.com/store/apps/details?id=${_package?.packageName}';
-      iosUrl =
-          'https://itunes.apple.com/lookup?bundleId=${_package?.packageName}';
-      _isLoading = false;
-    });
+    if (!mounted) return;
+    setState(() => _isLoading = false);
   }
 
   // show toast for copied
@@ -60,19 +50,8 @@ class _ReferralPageState extends State<ReferralPage> {
   bool get _rtl => languageDirection == 'rtl';
 
   Future<void> _share() async {
-    final code = '${myReferralCode['refferal_code'] ?? ''}';
-    await Share.share(
-      // ignore: prefer_interpolation_to_compose_strings
-      languages[choosenLanguage]['text_invitation_1'].toString().replaceAll('55', _package?.packageName ?? '') +
-          ' ' +
-          code +
-          ' ' +
-          languages[choosenLanguage]['text_invitation_2'] +
-          ' \n \n ' +
-          "https://play.google.com/store/apps/details?id=com.Ayoub.Usertaxista&pcampaignid=web_share" +
-          '\n \n  ' +
-          "https://apps.apple.com/us/app/taxista/id6739538467",
-    );
+    final opened = await shareText(context, inviteMessage('${myReferralCode['refferal_code'] ?? ''}'));
+    if (!opened && mounted) showToast(); // the message is on the clipboard instead
   }
 
   // design v2: the code as the hero (big, copy on tap), how it works in three steps, one share button
@@ -163,7 +142,7 @@ class _ReferralPageState extends State<ReferralPage> {
                           for (final (i, line) in [
                             _rtl ? 'ابعت الكود لصاحبك' : 'Send your code to a friend',
                             _rtl ? 'يحمّل تاكسيستا ويكتب الكود وقت التسجيل' : 'They sign up with your code',
-                            _rtl ? 'تاخذ المكافأة حسب شروط الدعوة' : 'You get the reward per the rules',
+                            _rtl ? 'لما يكمّل أول مشوار، مكافأتك توصل محفظتك' : 'After their first completed ride, your reward reaches your wallet',
                           ].indexed)
                             Padding(
                               padding: const EdgeInsets.only(bottom: 10),

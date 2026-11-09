@@ -25,7 +25,7 @@ import 'package:latlong2/latlong.dart' as fmlt;
 import 'package:location/location.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart' as perm;
-import 'package:share_plus/share_plus.dart';
+import '../../functions/share_text.dart';
 import 'package:taxista/pages/onTripPage/bookingwidgets.dart';
 import '../../widgets/call_options.dart';
 import '../../functions/market_notice.dart';

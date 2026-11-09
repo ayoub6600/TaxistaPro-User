@@ -32,7 +32,7 @@ mixin _BookingConfirmationMapControls
                         borderRadius: BorderRadius.circular(media.width * 0.02),
                         child: InkWell(
                           onTap: () async {
-                            await Share.share(
+                            await shareText(context, 
                                 'Your Driver is ${userRequestData['driverDetail']['data']['name']}. ${userRequestData['driverDetail']['data']['car_color']} ${userRequestData['driverDetail']['data']['car_make_name']} ${userRequestData['driverDetail']['data']['car_model_name']}, Vehicle Number: ${userRequestData['driverDetail']['data']['car_number']}. Track with link: ${url}track/request/${userRequestData['id']}');
                           },
                           child: Container(

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:share_plus/share_plus.dart';
+import '../functions/share_text.dart';
 
 import '../widgets/chat/chat_kit.dart';
 import 'contests_api.dart';
@@ -176,7 +176,7 @@ class _ContestPostCardState extends State<ContestPostCard> {
     final link = '${r?['url'] ?? post['share_url'] ?? ''}';
     if (r != null && mounted) setState(() => post['counts'] = {...counts, 'shares': r['shares']});
     widget.onChanged?.call(post);
-    await Share.share('${post['contest']?['question'] ?? 'مسابقات تاكسيستا'}\nتوقّع داخل تطبيق تاكسيستا 👇\n$link');
+    await shareText(context, '${post['contest']?['question'] ?? 'مسابقات تاكسيستا'}\nتوقّع داخل تطبيق تاكسيستا 👇\n$link');
   }
 
   @override
