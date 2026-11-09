@@ -38,8 +38,8 @@ class ServiceZones {
             polygonId: PolygonId('zone-${z['id']}-$i'),
             points: ring,
             strokeWidth: 2,
-            strokeColor: const Color(0xff0873FF).withValues(alpha: .7),
-            fillColor: const Color(0xff0873FF).withValues(alpha: .05),
+            strokeColor: const Color(0xff0873FF).withValues(alpha: .9),
+            fillColor: const Color(0xff0873FF).withValues(alpha: .012),
             consumeTapEvents: false,
             zIndex: 0,
           ));

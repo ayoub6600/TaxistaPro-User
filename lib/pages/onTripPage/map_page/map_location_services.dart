@@ -118,6 +118,7 @@ extension _MapLocationServices on _MapsState {
     state = '3';
     _loading = false;
     setState(() {});
+    if (userRequestData.isEmpty) unawaited(MarketSwitch.look(context, position.latitude, position.longitude));
 
     if (positionStream == null || positionStream!.isPaused) {
       positionStreamData();

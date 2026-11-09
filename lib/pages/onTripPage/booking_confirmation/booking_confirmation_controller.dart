@@ -1207,7 +1207,6 @@ mixin _BookingConfirmationController
       if (val == 'logout') {
         navigateLogout();
       }
-      if (mounted) unawaited(MarketNotice.maybeShow(context));
     }
     if (widget.type == 1) {
       var val = await rentalEta();
@@ -1331,8 +1330,6 @@ mixin _BookingConfirmationController
       navigateLogout();
       return;
     }
-    // a quote in another country's money: say it once (prices there, cash only)
-    if (widget.type != 1) unawaited(MarketNotice.maybeShow(context));
 
     setState(() {
       isLoading = false;
