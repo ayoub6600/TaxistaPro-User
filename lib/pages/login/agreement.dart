@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import '../../functions/functions.dart';
 import '../../styles/styles.dart';
 import '../loadingPage/loading.dart';
+import '../../functions/invite_link.dart';
+import '../referralcode/invite_welcome_page.dart';
 import '../referralcode/referral_code.dart';
 
 class AggreementPage extends StatefulWidget {
@@ -37,9 +39,11 @@ class _AggreementPageState extends State<AggreementPage> {
     if (!mounted) return;
 
     if (result == 'true') {
+      final inviter = await findInviter(); // nobody, or any doubt: the old code page
+      if (!mounted) return;
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => const Referral()),
+        MaterialPageRoute(builder: (_) => inviter != null ? InviteWelcomePage(match: inviter) : const Referral()),
         (_) => false,
       );
       return;

@@ -1,13 +1,11 @@
-const inviteAndroidLink = 'https://play.google.com/store/apps/details?id=com.ayoub.usertaxista';
-const inviteIosLink = 'https://apps.apple.com/app/id6739538467';
+const inviteBaseLink = 'https://taxista.aljidartech.com/i/';
 
-/// What a rider sends to a friend with their code.
-String inviteMessage(String code) => '''🚕 جرب تاكسيستا لمشاويرك!
+/// What a rider sends to a friend: one link that knows who invited them, and the code just in case.
+String inviteMessage(String code, {String? friendReward}) => '''🚕 جرب تاكسيستا لمشاويرك!
 
 سعر واضح قبل ما تطلب، وسائق قريب منك تتابعه على الخريطة لين يوصلك.
 
-🎁 سجّل واكتب كود الدعوة متاعي: $code
+🎁 سجّل من رابطي توا${friendReward != null ? ' وتاخذ $friendReward بعد أول مشوار' : ''}:
+$inviteBaseLink$code
 
-حمّل التطبيق توا:
-أندرويد: $inviteAndroidLink
-آيفون: $inviteIosLink''';
+ولو طلب منك كود الدعوة: $code''';

@@ -50,9 +50,20 @@ class _ReferralPageState extends State<ReferralPage> {
   bool get _rtl => languageDirection == 'rtl';
 
   Future<void> _share() async {
-    final opened = await shareText(context, inviteMessage('${myReferralCode['refferal_code'] ?? ''}'));
+    final opened = await shareText(context, inviteMessage('${myReferralCode['refferal_code'] ?? ''}', friendReward: myReferralCode['friend_reward']?.toString()));
     if (!opened && mounted) showToast(); // the message is on the clipboard instead
   }
+
+  Widget _stat(String value, String label) => Expanded(
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+          decoration: BoxDecoration(color: const Color(0xff0EA5E9).withValues(alpha: .12), borderRadius: BorderRadius.circular(16)),
+          child: Column(children: [
+            Text(value, style: GoogleFonts.notoSans(color: textColor, fontSize: 22, fontWeight: FontWeight.w900)),
+            Text(label, textAlign: TextAlign.center, style: GoogleFonts.cairo(color: textColor.withValues(alpha: .65), fontSize: 12.5, fontWeight: FontWeight.w700)),
+          ]),
+        ),
+      );
 
   // design v2: the code as the hero (big, copy on tap), how it works in three steps, one share button
   @override
@@ -135,14 +146,22 @@ class _ReferralPageState extends State<ReferralPage> {
                               ),
                             ]),
                           ),
+                          const SizedBox(height: 12),
+                          Row(children: [
+                            _stat('${myReferralCode['invites_waiting'] ?? 0}', _rtl ? 'ينتظرون أول مشوار' : 'Waiting for a first ride'),
+                            const SizedBox(width: 10),
+                            _stat('${myReferralCode['invites_done'] ?? 0}', _rtl ? 'أكملوا وكسبت' : 'Completed'),
+                          ]),
                           const SizedBox(height: 18),
                           Text(_rtl ? 'كيف تشتغل؟' : 'How it works',
                               style: GoogleFonts.cairo(color: textColor, fontSize: 16, fontWeight: FontWeight.w800)),
                           const SizedBox(height: 8),
                           for (final (i, line) in [
-                            _rtl ? 'ابعت الكود لصاحبك' : 'Send your code to a friend',
-                            _rtl ? 'يحمّل تاكسيستا ويكتب الكود وقت التسجيل' : 'They sign up with your code',
-                            _rtl ? 'لما يكمّل أول مشوار، مكافأتك توصل محفظتك' : 'After their first completed ride, your reward reaches your wallet',
+                            _rtl ? 'ابعت الرابط لصاحبك' : 'Send your link to a friend',
+                            _rtl ? 'يحمّل تاكسيستا ويسجّل' : 'They download Taxista and sign up',
+                            _rtl ? 'يكمّل أول مشوار، ومكافأتك توصل محفظتك' : 'After their first completed ride, your reward reaches your wallet',
+                            if (myReferralCode['friend_reward'] != null)
+                              _rtl ? 'وهو كمان ياخذ ${myReferralCode['friend_reward']} في محفظته' : 'They get ${myReferralCode['friend_reward']} too',
                           ].indexed)
                             Padding(
                               padding: const EdgeInsets.only(bottom: 10),
@@ -163,7 +182,7 @@ class _ReferralPageState extends State<ReferralPage> {
                 if (myReferralCode.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                    child: Button(onTap: _share, text: languages[choosenLanguage]['text_invite'] ?? (_rtl ? 'شارك الدعوة' : 'Share')),
+                    child: Button(onTap: _share, text: _rtl ? 'إرسال' : 'Send'),
                   ),
               ]),
             ),

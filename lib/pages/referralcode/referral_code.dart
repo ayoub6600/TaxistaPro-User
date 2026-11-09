@@ -100,9 +100,8 @@ class _ReferralState extends State<Referral> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    _copy(
-                        'أدخل رمز الإحالة للاستفادة من المكافأة. يمكنك تخطي هذه الخطوة.',
-                        'Enter the referral code to claim your reward, or skip this step.'),
+                    _copy('أدخل كوده. المكافأة توصل لما تكمّل أول مشوار لك على تاكسيستا.',
+                        'Enter their code. The reward arrives after you complete your first ride.'),
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       height: 1.55,

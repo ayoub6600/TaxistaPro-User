@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:taxista/functions/invite_link.dart';
 import 'package:taxista/functions/invite_message.dart';
 import 'package:taxista/functions/share_text.dart';
 
@@ -10,9 +11,14 @@ void main() {
   test('the invite carries the code and the real store links', () {
     final m = inviteMessage('ABC123');
     expect(m, contains('ABC123'));
-    expect(m, contains('id=com.ayoub.usertaxista'));
-    expect(m, isNot(contains('com.Ayoub')));
-    expect(m, contains('id6739538467'));
+    expect(m, contains('https://taxista.aljidartech.com/i/ABC123'));
+    expect(inviteMessage('ABC123', friendReward: '2 دينار'), contains('2 دينار بعد أول مشوار'));
+  });
+
+  test('an answer without a code is nobody', () {
+    expect(InviteMatch.fromJson({'code': null}), isNull);
+    expect(InviteMatch.fromJson(null), isNull);
+    expect(InviteMatch.fromJson({'code': 'ABC', 'name': 'محمد', 'reward': '2 دينار'})!.reward, '2 دينار');
   });
 
   testWidgets('the share sheet is told where it comes from', (tester) async {
