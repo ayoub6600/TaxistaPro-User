@@ -15,6 +15,7 @@ class PaymentMethodOption {
 
   static const String qareebCard = 'qareeb_card';
   static const String bankCard = 'bank_card';
+  static const String lypayTransfer = 'lypay_transfer';
 
   /// What every market had before methods were asked of the server: the manual
   /// recharge-card entry only. Used when the server cannot be reached.

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../lypay/lypay_pages.dart';
 import 'moamalat_api.dart';
 import 'moamalat_checkout_page.dart' show PaymentViewBuilder;
 import 'moamalat_env.dart';
@@ -26,6 +27,11 @@ Future<void> showAddMoneySheet(
   );
   if (choice == null || !context.mounted) return;
 
+  if (choice == PaymentMethodOption.lypayTransfer) {
+    final lypay = env.lypay;
+    if (lypay != null) await openLypay(context, env: env, api: lypay);
+    return;
+  }
   if (choice == PaymentMethodOption.qareebCard) {
     onQareeb();
     return;
@@ -74,7 +80,8 @@ class _AddMoneySheetState extends State<AddMoneySheet> {
   Future<void> _load() async {
     try {
       final methods = await env.api.methods();
-      if (mounted) setState(() => _methods = methods);
+      // an app built without the LYPay pages never offers it
+      if (mounted) setState(() => _methods = [for (final m in methods) if (m.key != PaymentMethodOption.lypayTransfer || env.lypay != null) m]);
     } catch (_) {
       // Server unreachable: the manual recharge-card entry always worked
       // without it, so keep that available; the bank card needs the server.
@@ -87,12 +94,17 @@ class _AddMoneySheetState extends State<AddMoneySheet> {
     }
   }
 
-  IconData _icon(String key) =>
-      key == PaymentMethodOption.bankCard ? Icons.credit_card_rounded : Icons.confirmation_number_outlined;
+  IconData _icon(String key) => switch (key) {
+        PaymentMethodOption.bankCard => Icons.credit_card_rounded,
+        PaymentMethodOption.lypayTransfer => Icons.swap_horiz_rounded,
+        _ => Icons.confirmation_number_outlined,
+      };
 
-  String _subtitle(String key) => key == PaymentMethodOption.bankCard
-      ? env.t('ادفع ببطاقتك المصرفية بأمان', 'Pay securely with your bank card')
-      : env.t('أدخل رمز بطاقة الشحن', 'Enter your recharge card code');
+  String _subtitle(String key) => switch (key) {
+        PaymentMethodOption.bankCard => env.t('ادفع ببطاقتك المصرفية بأمان', 'Pay securely with your bank card'),
+        PaymentMethodOption.lypayTransfer => env.t('حوّل من تطبيق مصرفك، ونشحنها لك خلال دقائق', 'Transfer from your bank app; we top up within minutes'),
+        _ => env.t('أدخل رمز بطاقة الشحن', 'Enter your recharge card code'),
+      };
 
   @override
   Widget build(BuildContext context) {

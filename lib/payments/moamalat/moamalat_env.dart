@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../lypay/lypay_api.dart';
 import 'card_vault.dart';
 import 'moamalat_api.dart';
 import 'secure_clipboard.dart';
@@ -16,6 +17,7 @@ class MoamalatEnv {
     required this.isRtl,
     this.onWalletChanged,
     this.smartFill,
+    this.lypay,
     this.accent = const Color(0xff1677FF),
     this.background = const Color(0xffF6F8FC),
     this.surface = Colors.white,
@@ -35,6 +37,9 @@ class MoamalatEnv {
 
   /// Smart Fill (card fill + terms in one tap) when this platform supports it; null keeps the classic helper.
   final SmartFillSupport? smartFill;
+
+  /// «تحويل LYPay»: transfer from the customer's bank app, screenshot, the admin credits.
+  final LypayApi? lypay;
 
   final Color accent;
   final Color background;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../functions/functions.dart';
 import '../../styles/styles.dart';
+import '../lypay/lypay_api.dart';
 import 'card_vault.dart';
 import 'moamalat_api.dart';
 import 'moamalat_env.dart';
@@ -22,6 +23,7 @@ MoamalatEnv buildMoamalatEnv({VoidCallback? onWalletChanged}) {
     clipboard: SecureClipboard(),
     isRtl: languageDirection == 'rtl',
     onWalletChanged: onWalletChanged,
+    lypay: HttpLypayApi(baseUrl: url, token: () => bearerToken.isEmpty ? '' : bearerToken[0].token.toString()),
     // One-tap card fill + terms on the bank's form, with this app's own existing character.
     smartFill: SmartFillSupport(bridge: ChannelSmartFillBridge.instance, assistantAsset: 'assets/images/driver_offer_mascot.png'),
     accent: theme,
