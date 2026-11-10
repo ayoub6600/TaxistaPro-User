@@ -28,4 +28,25 @@ void main() {
     expect(tester.getBottomLeft(find.byKey(const Key('button'))).dy, 800);
     debugDefaultTargetPlatformOverride = null;
   });
+
+  testWidgets('a page that takes the whole screen height still ends above the phone buttons', (tester) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    await tester.pumpWidget(MediaQuery(
+      data: const MediaQueryData(size: Size(400, 800), padding: EdgeInsets.only(bottom: 48), viewPadding: EdgeInsets.only(bottom: 48)),
+      child: Directionality(
+        textDirection: TextDirection.rtl,
+        child: AndroidNavSafe(
+          child: Builder(builder: (context) => Align(
+                alignment: Alignment.topCenter,
+                child: SizedBox(key: const Key('page'), height: MediaQuery.of(context).size.height, width: 100),
+              )),
+        ),
+      ),
+    ));
+    expect(tester.getBottomLeft(find.byKey(const Key('page'))).dy, 800 - 48);
+    debugDefaultTargetPlatformOverride = null;
+  });
 }
