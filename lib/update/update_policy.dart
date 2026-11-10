@@ -1,4 +1,5 @@
 import '../utils/version.dart';
+import 'update_images.dart';
 
 /// What the app must do about the version policy the backend published.
 enum UpdateDecision {
@@ -116,6 +117,7 @@ class UpdatePolicy {
     this.urlIos = '',
     this.android,
     this.ios,
+    this.images = const [],
   });
 
   final String version;
@@ -129,6 +131,9 @@ class UpdatePolicy {
   final String urlIos;
   final PlatformRelease? android;
   final PlatformRelease? ios;
+
+  /// «صور التحديث» from Taxista Admin (up to 3), shown on the update page and sheet.
+  final List<UpdateImage> images;
 
   /// Tolerant of the loosely typed values Firebase hands back.
   factory UpdatePolicy.fromMap(Map<dynamic, dynamic> data) {
@@ -149,6 +154,7 @@ class UpdatePolicy {
       urlIos: text('url_ios'),
       android: platform('android'),
       ios: platform('ios'),
+      images: UpdateImage.listFrom(data['images']),
     );
   }
 
@@ -162,6 +168,7 @@ class UpdatePolicy {
         'release_notes': notes,
         'url': urlAndroid,
         'url_ios': urlIos,
+        if (images.isNotEmpty) 'images': [for (final i in images) i.toJson()],
         if (android != null || ios != null)
           'platforms': {
             if (android != null) 'android': android!.toJson(),

@@ -1,3 +1,4 @@
+import 'update_images.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -18,6 +19,7 @@ class ForcedUpdatePage extends StatelessWidget {
     required this.mandatory,
     required this.onUpdate,
     this.notes = '',
+    this.images = const [],
     this.onLater,
     this.updateFailed = false,
     this.installedOutsideStore = false,
@@ -29,6 +31,9 @@ class ForcedUpdatePage extends StatelessWidget {
   final String languageCode;
   final bool mandatory;
   final String notes;
+
+  /// «صور التحديث»: when there are some they take the place of the update icon.
+  final List<UpdateImage> images;
 
   /// Opens the store listing. The page never decides the URL itself.
   final VoidCallback onUpdate;
@@ -79,7 +84,7 @@ class ForcedUpdatePage extends StatelessWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Container(
+                        if (images.isNotEmpty) UpdateImagesCarousel(images: images, accent: accent) else Container(
                           width: 96,
                           height: 96,
                           decoration: BoxDecoration(

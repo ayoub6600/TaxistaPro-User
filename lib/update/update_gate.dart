@@ -119,6 +119,7 @@ class _RiderUpdateScreenState extends State<RiderUpdateScreen> {
       languageCode: language,
       mandatory: widget.result.decision == UpdateDecision.mandatory,
       notes: widget.result.policy?.message(isIos: Platform.isIOS, languageCode: language) ?? '',
+      images: widget.result.policy?.images ?? const [],
       onUpdate: _update,
       onLater: widget.onLater,
       updateFailed: _failed,

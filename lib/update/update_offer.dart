@@ -5,6 +5,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'update_checker.dart';
+import 'update_images.dart';
 import 'update_policy.dart';
 
 /// Remembers, across restarts, that a ride was in progress: a mandatory update must not stop a
@@ -99,6 +100,7 @@ class UpdateOffer {
         languageCode: languageCode,
         message: result.policy?.message(isIos: isIos, languageCode: languageCode) ?? '',
         version: live?.liveVersion ?? '',
+        images: result.policy?.images ?? const [],
         installedOutsideStore: outside,
         isIos: isIos,
         onUpdate: () => openStore(result.policy),
@@ -120,6 +122,7 @@ class UpdateOfferSheet extends StatefulWidget {
     required this.languageCode,
     required this.message,
     required this.version,
+    this.images = const [],
     required this.installedOutsideStore,
     required this.isIos,
     required this.onUpdate,
@@ -128,6 +131,7 @@ class UpdateOfferSheet extends StatefulWidget {
   final String languageCode;
   final String message;
   final String version;
+  final List<UpdateImage> images;
   final bool installedOutsideStore;
   final bool isIos;
   final Future<bool> Function() onUpdate;
@@ -182,7 +186,7 @@ class _UpdateOfferSheetState extends State<UpdateOfferSheet> {
                 decoration: BoxDecoration(color: ink.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(2)),
               ),
             ),
-            Center(
+            if (widget.images.isNotEmpty) UpdateImagesCarousel(images: widget.images, accent: _accent) else Center(
               child: Container(
                 width: 72,
                 height: 72,
