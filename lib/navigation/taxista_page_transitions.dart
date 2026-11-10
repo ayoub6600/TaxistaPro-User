@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 
 class TaxistaPageTransitionsBuilder extends PageTransitionsBuilder {
@@ -43,10 +44,11 @@ class TaxistaPageTransitionsBuilder extends PageTransitionsBuilder {
   }
 }
 
+/// iPhone keeps its own slide and the swipe-back gesture; Android gets the soft Taxista slide.
 const taxistaPageTransitionsTheme = PageTransitionsTheme(
   builders: <TargetPlatform, PageTransitionsBuilder>{
     TargetPlatform.android: TaxistaPageTransitionsBuilder(),
-    TargetPlatform.iOS: TaxistaPageTransitionsBuilder(),
+    TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
     TargetPlatform.macOS: TaxistaPageTransitionsBuilder(),
     TargetPlatform.windows: TaxistaPageTransitionsBuilder(),
     TargetPlatform.linux: TaxistaPageTransitionsBuilder(),
