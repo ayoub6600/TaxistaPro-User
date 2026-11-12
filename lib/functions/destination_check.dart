@@ -5,8 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 
-import '../pages/intercity/intercity_car_form.dart' show IcPlace;
-import '../pages/intercity/intercity_page.dart';
+import '../pages/intercity/intercity_flow.dart';
 import 'functions.dart';
 import 'intercity_api.dart';
 import '../pages/onTripPage/map_page.dart' show addressList;
@@ -40,11 +39,12 @@ Future<bool> destinationAllowed(BuildContext context, LatLng pick, LatLng drop) 
     final home = IntercityApi.last ?? await IntercityApi.home(pick.latitude, pick.longitude);
     if (home != null && home.enabled && context.mounted) {
       final pickup = addressList.where((e) => e.type == 'pickup');
-      await IntercityPage.open(context,
+      await IntercityFlow.ask(context,
           home: home,
           pick: IcPlace(pick.latitude, pick.longitude, pickup.isNotEmpty ? pickup.first.address : ''),
           drop: IcPlace(drop.latitude, drop.longitude, '${intercity['to'] ?? ''}'),
-          routeId: (intercity['route_id'] as num?)?.toInt());
+          routeId: (intercity['route_id'] as num?)?.toInt(),
+          from: intercity['suggested'] as num?);
       return false;
     }
   }

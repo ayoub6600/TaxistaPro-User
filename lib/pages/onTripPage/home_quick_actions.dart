@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../growth/daily_gift/daily_gift_bar.dart';
 import '../../growth/gift_widgets.dart';
 import '../../styles/styles.dart';
+import 'home_services_row.dart';
 
 class HomeQuickDestination {
   const HomeQuickDestination({
@@ -31,6 +32,8 @@ class HomeQuickActions extends StatelessWidget {
     required this.showRideWithoutDestination,
     required this.destinations,
     this.onRecurring,
+    this.onTravel,
+    this.onSoon,
     this.giftLat,
     this.giftLng,
   });
@@ -41,6 +44,12 @@ class HomeQuickActions extends StatelessWidget {
 
   /// «مشوار الدوام»: only for a rider who has a recurring ride
   final VoidCallback? onRecurring;
+
+  /// «سفر»: only where the rider's city has intercity routes
+  final VoidCallback? onTravel;
+
+  /// a «قريبًا» service was tapped (الشحن، توصيل، ونش)
+  final void Function(String service)? onSoon;
 
   final bool rtl;
   final VoidCallback onChooseDestination;
@@ -76,31 +85,8 @@ class HomeQuickActions extends StatelessWidget {
               ],
             ],
           ),
-          if (showRideWithoutDestination || onRecurring != null) ...[
-            SizedBox(height: compact ? 7 : 9),
-            Row(children: [
-              if (showRideWithoutDestination)
-                Expanded(
-                  flex: 3,
-                  child: _RideWithoutDestinationAction(
-                    label: rtl ? 'رحلة بدون وجهة' : 'Ride without destination',
-                    icon: Icons.navigation_outlined,
-                    onTap: onRideWithoutDestination,
-                  ),
-                ),
-              if (showRideWithoutDestination && onRecurring != null) SizedBox(width: compact ? 7 : 9),
-              if (onRecurring != null)
-                Expanded(
-                  flex: 2,
-                  child: _RideWithoutDestinationAction(
-                    label: rtl ? 'مشوار الدوام' : 'Commute',
-                    icon: Icons.repeat_rounded,
-                    onTap: onRecurring!,
-                    chevron: false,
-                  ),
-                ),
-            ]),
-          ],
+          SizedBox(height: compact ? 5 : 7),
+          HomeServicesRow(rtl: rtl, services: _services()),
           SizedBox(height: compact ? 7 : 9),
           _DestinationSearch(
             title: rtl ? 'إلى أين؟' : 'Where to?',
@@ -112,6 +98,75 @@ class HomeQuickActions extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+extension on HomeQuickActions {
+  /// بدون وجهة · سفر · مشوار الدوام · الشحن · توصيل · ونش
+  List<HomeService> _services() {
+    void soon(String what) => onSoon?.call(what);
+    return [
+      if (showRideWithoutDestination)
+        HomeService(
+          label: rtl ? 'بدون وجهة' : 'No destination',
+          icon: Icons.navigation_rounded,
+          background: Colors.white,
+          foreground: const Color(0xFF0873FF),
+          iconBackground: const Color(0xFF0873FF),
+          iconColor: Colors.white,
+          onTap: onRideWithoutDestination,
+        ),
+      if (onTravel != null)
+        HomeService(
+          label: rtl ? 'سفر' : 'Travel',
+          icon: Icons.luggage_rounded,
+          background: const Color(0xFF102A56),
+          foreground: Colors.white,
+          iconBackground: const Color(0xFFFFD34E),
+          iconColor: const Color(0xFF102A56),
+          onTap: onTravel!,
+        ),
+      if (onRecurring != null)
+        HomeService(
+          label: rtl ? 'مشوار الدوام' : 'Commute',
+          icon: Icons.repeat_rounded,
+          background: const Color(0xFFEAF2FF),
+          foreground: const Color(0xFF102A56),
+          iconBackground: const Color(0xFF2381E9),
+          iconColor: Colors.white,
+          onTap: onRecurring!,
+        ),
+      HomeService(
+        label: rtl ? 'الشحن' : 'Freight',
+        icon: Icons.local_shipping_rounded,
+        background: const Color(0xFFFFF1E6),
+        foreground: const Color(0xFF9A3412),
+        iconBackground: const Color(0xFFEA580C),
+        iconColor: Colors.white,
+        soon: true,
+        onTap: () => soon(rtl ? 'الشحن' : 'Freight'),
+      ),
+      HomeService(
+        label: rtl ? 'توصيل' : 'Delivery',
+        icon: Icons.inventory_2_rounded,
+        background: const Color(0xFFE7F8EF),
+        foreground: const Color(0xFF166534),
+        iconBackground: const Color(0xFF16A34A),
+        iconColor: Colors.white,
+        soon: true,
+        onTap: () => soon(rtl ? 'التوصيل' : 'Delivery'),
+      ),
+      HomeService(
+        label: rtl ? 'ونش' : 'Tow',
+        icon: Icons.car_crash_rounded,
+        background: const Color(0xFFFEF3C7),
+        foreground: const Color(0xFF854D0E),
+        iconBackground: const Color(0xFFCA8A04),
+        iconColor: Colors.white,
+        soon: true,
+        onTap: () => soon(rtl ? 'الونش' : 'Tow'),
+      ),
+    ];
   }
 }
 
@@ -293,72 +348,6 @@ class _QuickDestinationCard extends StatelessWidget {
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-        ),
-      );
-}
-
-class _RideWithoutDestinationAction extends StatelessWidget {
-  const _RideWithoutDestinationAction({
-    required this.label,
-    required this.onTap,
-    this.icon = Icons.route_rounded,
-    this.chevron = true,
-  });
-
-  final String label;
-  final VoidCallback onTap;
-  final IconData icon;
-  final bool chevron;
-
-  @override
-  Widget build(BuildContext context) => Material(
-        color: isDarkTheme ? const Color(0xFF171B22) : Colors.white,
-        elevation: 6,
-        shadowColor: Colors.black.withValues(alpha: .13),
-        borderRadius: BorderRadius.circular(20),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
-          child: Container(
-            height: 44,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: theme.withValues(alpha: .14)),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 30,
-                  height: 30,
-                  decoration: BoxDecoration(
-                    color: theme.withValues(alpha: .12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(icon, color: theme, size: 18),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-                if (chevron)
-                  Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    color: theme.withValues(alpha: .72),
-                    size: 15,
-                  ),
               ],
             ),
           ),

@@ -8,23 +8,8 @@ extension _MapDestinationSheet on _MapsState {
     final pickup = addressList.where((element) => element.type == 'pickup');
     final pickupAddress = pickup.isNotEmpty ? pickup.first.address : '';
 
-    final pickPoint = pickup.isNotEmpty ? pickup.first.latlng : null;
-    if (pickPoint != null) unawaited(IntercityApi.refresh(pickPoint.latitude, pickPoint.longitude));
-
     return TripSelectionOverlay(
       rtl: rtl,
-      extra: _pickaddress || pickPoint == null
-          ? const SizedBox.shrink()
-          : ValueListenableBuilder<IntercityHome?>(
-              valueListenable: IntercityApi.notifier,
-              builder: (context, home, _) => home == null
-                  ? const SizedBox.shrink()
-                  : IntercityEntryCard(
-                      home: home,
-                      onOpen: (routeId, seats) => IntercityPage.open(context,
-                          home: home, pick: IcPlace(pickPoint.latitude, pickPoint.longitude, pickupAddress), routeId: routeId, seats: seats),
-                    ),
-            ),
       pickupAddress: pickupAddress,
       pickupSearchController: _pickupSearchController,
       destinationController: dropAddressController,

@@ -5,6 +5,14 @@ import 'package:http/http.dart' as http;
 
 import 'functions.dart';
 
+/// a place on the trip: where he leaves from, or the exact place in the other city
+class IcPlace {
+  const IcPlace(this.lat, this.lng, this.address);
+  final double lat;
+  final double lng;
+  final String address;
+}
+
 /// «سفر بين المدن»: a city the rider can travel to from where he stands, with the admin's price.
 class IntercityRoute {
   IntercityRoute(this.raw);
@@ -149,6 +157,25 @@ class IntercityApi {
       });
 
   static Future<IntercityResult> cancelSeats(int bookingId) => _post('api/v1/request/intercity/seats/cancel', {'booking_id': bookingId});
+
+  /// the whole-car request with its offers (scheduled_offers), as the rider sees it
+  static Future<Map?> ride(String id) async {
+    try {
+      final r = await http.get(Uri.parse('${url}api/v1/request/scheduled/$id'), headers: _headers).timeout(const Duration(seconds: 12));
+      if (r.statusCode != 200) return null;
+      final d = jsonDecode(r.body)['data'];
+      return d is Map ? (d['data'] is Map ? d['data'] as Map : d) : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<IntercityResult> acceptOffer(int offerId) => _post('api/v1/request/scheduled/offers/accept', {'offer_id': offerId});
+
+  static Future<IntercityResult> raise(String rideId, num fare) => _post('api/v1/request/intercity/$rideId/raise', {'fare': fare});
+
+  static Future<IntercityResult> cancel(String rideId, String reason) =>
+      _post('api/v1/request/cancel', {'request_id': rideId, 'custom_reason': reason});
 
   /// the market wall clock the server expects: Y-m-d H:i:s
   static String wallClock(DateTime t) {

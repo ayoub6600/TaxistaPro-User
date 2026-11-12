@@ -45,11 +45,7 @@ class TripSelectionOverlay extends StatelessWidget {
     this.infoMessage = '',
     this.quickChips = const [],
     this.hasResults = false,
-    this.extra = const SizedBox.shrink(),
   });
-
-  /// under «آخر الأماكن»: «سفر لمدينة ثانية» where the city has intercity routes
-  final Widget extra;
 
   /// «البيت», «الشغل», «اختر من الخريطة»: one tap under the two fields
   final List<TripSelectionPlaceData> quickChips;
@@ -236,8 +232,6 @@ class TripSelectionOverlay extends StatelessWidget {
                             ],
                             const SizedBox(height: 14),
                             _RecentPlacesCard(rtl: rtl, places: places),
-                            const SizedBox(height: 12),
-                            extra,
                           ],
                         ),
                       ),

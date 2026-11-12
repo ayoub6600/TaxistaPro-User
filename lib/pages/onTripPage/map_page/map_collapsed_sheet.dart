@@ -13,66 +13,92 @@ extension _MapCollapsedSheet on _MapsState {
         languages[choosenLanguage]['text_tap_add_address']?.toString() ??
             (rtl ? 'أضف عنواناً' : 'Add address');
 
-    return HomeQuickActions(
-      rtl: rtl,
-      giftLat: _centerLocation.latitude,
-      giftLng: _centerLocation.longitude,
-      showRideWithoutDestination: true,
-      destinations: [
-        HomeQuickDestination(
-          label: languages[choosenLanguage]['text_home']?.toString() ??
-              (rtl ? 'المنزل' : 'Home'),
-          subtitle: home?['pick_address']?.toString() ?? addAddressLabel,
-          icon: Icons.home_rounded,
-          accent: theme,
-          isConfigured: home != null,
-          onTap: () =>
-              runDestinationEntryOnce(() => useQuickFavorite(media, 'Home')),
-        ),
-        HomeQuickDestination(
-          label: languages[choosenLanguage]['text_work']?.toString() ??
-              (rtl ? 'العمل' : 'Work'),
-          subtitle: work?['pick_address']?.toString() ?? addAddressLabel,
-          icon: Icons.work_rounded,
-          accent: const Color(0xFF2381E9),
-          isConfigured: work != null,
-          onTap: () =>
-              runDestinationEntryOnce(() => useQuickFavorite(media, 'Work')),
-        ),
-        HomeQuickDestination(
-          label: rtl ? 'مؤخراً' : 'Recent',
-          subtitle: recent?['address']?.toString() ??
-              (rtl ? 'لا توجد وجهة سابقة' : 'No recent destination'),
-          icon: Icons.history_rounded,
-          accent: const Color(0xFF14A47B),
-          isConfigured: recent != null,
-          onTap: () => runDestinationEntryOnce(() async {
-            if (recent == null) {
-              await prepareDestinationEntry(media);
-            } else {
-              await selectRecentDestination(recent);
-            }
-          }),
-        ),
-      ],
-      onRecurring: RecurringApi.rides.value.isEmpty
-          ? null
-          : () => guardedPush(context, MaterialPageRoute(builder: (_) => const RecurringRidesPage())),
-      onChooseDestination: () =>
-          runDestinationEntryOnce(() => prepareDestinationEntry(media)),
-      onRideWithoutDestination: () async {
-        final at = currentLocation is LatLng ? currentLocation as LatLng : center;
-        if (!await confirmOpenRide(context, at.latitude, at.longitude) || !mounted) return;
-        ismulitipleride = false;
-        setState(() {
-          rideWithoutDestination = true;
-          rentalRide = false;
-        });
-        guardedPush(
-          context,
-          MaterialPageRoute(builder: (_) => PickupLocation()),
-        );
-      },
+    // «سفر» shows where the rider's city has intercity routes
+    unawaited(IntercityApi.refresh(
+        _centerLocation.latitude, _centerLocation.longitude));
+
+    return ValueListenableBuilder<IntercityHome?>(
+      valueListenable: IntercityApi.notifier,
+      builder: (context, intercity, _) => HomeQuickActions(
+        rtl: rtl,
+        onTravel: intercity == null || !intercity.enabled
+            ? null
+            : () {
+                final at = currentLocation is LatLng
+                    ? currentLocation as LatLng
+                    : center;
+                final pickup = addressList.where((e) => e.type == 'pickup');
+                IntercityFlow.start(context,
+                    home: intercity,
+                    pick: IcPlace(at.latitude, at.longitude,
+                        pickup.isNotEmpty ? pickup.first.address : ''));
+              },
+        onSoon: (what) => ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+            SnackBar(
+                content: Text('$what قريبًا في تاكسيستا.',
+                    textDirection: TextDirection.rtl))),
+        giftLat: _centerLocation.latitude,
+        giftLng: _centerLocation.longitude,
+        showRideWithoutDestination: true,
+        destinations: [
+          HomeQuickDestination(
+            label: languages[choosenLanguage]['text_home']?.toString() ??
+                (rtl ? 'المنزل' : 'Home'),
+            subtitle: home?['pick_address']?.toString() ?? addAddressLabel,
+            icon: Icons.home_rounded,
+            accent: theme,
+            isConfigured: home != null,
+            onTap: () =>
+                runDestinationEntryOnce(() => useQuickFavorite(media, 'Home')),
+          ),
+          HomeQuickDestination(
+            label: languages[choosenLanguage]['text_work']?.toString() ??
+                (rtl ? 'العمل' : 'Work'),
+            subtitle: work?['pick_address']?.toString() ?? addAddressLabel,
+            icon: Icons.work_rounded,
+            accent: const Color(0xFF2381E9),
+            isConfigured: work != null,
+            onTap: () =>
+                runDestinationEntryOnce(() => useQuickFavorite(media, 'Work')),
+          ),
+          HomeQuickDestination(
+            label: rtl ? 'مؤخراً' : 'Recent',
+            subtitle: recent?['address']?.toString() ??
+                (rtl ? 'لا توجد وجهة سابقة' : 'No recent destination'),
+            icon: Icons.history_rounded,
+            accent: const Color(0xFF14A47B),
+            isConfigured: recent != null,
+            onTap: () => runDestinationEntryOnce(() async {
+              if (recent == null) {
+                await prepareDestinationEntry(media);
+              } else {
+                await selectRecentDestination(recent);
+              }
+            }),
+          ),
+        ],
+        onRecurring: RecurringApi.rides.value.isEmpty
+            ? null
+            : () => guardedPush(context,
+                MaterialPageRoute(builder: (_) => const RecurringRidesPage())),
+        onChooseDestination: () =>
+            runDestinationEntryOnce(() => prepareDestinationEntry(media)),
+        onRideWithoutDestination: () async {
+          final at =
+              currentLocation is LatLng ? currentLocation as LatLng : center;
+          if (!await confirmOpenRide(context, at.latitude, at.longitude) ||
+              !mounted) return;
+          ismulitipleride = false;
+          setState(() {
+            rideWithoutDestination = true;
+            rentalRide = false;
+          });
+          guardedPush(
+            context,
+            MaterialPageRoute(builder: (_) => PickupLocation()),
+          );
+        },
+      ),
     );
   }
 }

@@ -3,30 +3,33 @@ import 'package:flutter/material.dart';
 import '../../functions/intercity_api.dart';
 import 'intercity_style.dart';
 
-/// «كرسي في رحلة»: trips chosen drivers posted, seat by seat; he pays his seats only, cash.
-class IntercitySeats extends StatefulWidget {
-  const IntercitySeats({super.key, required this.home, required this.pickAddress, required this.onWholeCar, this.book});
+/// و · كرسي في رحلة: trips chosen drivers posted, by city; pick seats on the seat strip and book (cash).
+class IntercitySeatsPage extends StatefulWidget {
+  const IntercitySeatsPage({super.key, required this.home, required this.pickAddress, this.routeTo, this.book});
 
   final IntercityHome home;
   final String pickAddress;
-  final VoidCallback onWholeCar;
+  final String? routeTo;
 
   /// tests replace the network call
   final Future<IntercityResult> Function(int tripId, int seats)? book;
 
   @override
-  State<IntercitySeats> createState() => _IntercitySeatsState();
+  State<IntercitySeatsPage> createState() => _IntercitySeatsPageState();
 }
 
-class _IntercitySeatsState extends State<IntercitySeats> {
-  final Map<int, int> _seats = {};
+class _IntercitySeatsPageState extends State<IntercitySeatsPage> {
+  late String? _city = widget.routeTo;
+  int? _open;
+  int _seats = 1;
   int? _busy;
   final Set<int> _booked = {};
 
+  List<SharedTrip> get _trips => widget.home.shared.where((t) => _city == null || t.to == _city).toList();
+
   Future<void> _book(SharedTrip t) async {
-    final n = _seats[t.id] ?? 1;
     setState(() => _busy = t.id);
-    final r = widget.book != null ? await widget.book!(t.id, n) : await IntercityApi.bookSeats(t.id, n, pickAddress: widget.pickAddress);
+    final r = widget.book != null ? await widget.book!(t.id, _seats) : await IntercityApi.bookSeats(t.id, _seats, pickAddress: widget.pickAddress);
     if (!mounted) return;
     setState(() {
       _busy = null;
@@ -37,48 +40,92 @@ class _IntercitySeatsState extends State<IntercitySeats> {
 
   @override
   Widget build(BuildContext context) {
-    final trips = widget.home.shared;
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Text('سائقين مختارين من الإدارة مسافرين وعندهم كراسي فاضية. تدفع كرسيك بس، نقدًا للسائق.', style: IcStyle.t(12.5, w: FontWeight.w600, c: IcStyle.muted)),
-      const SizedBox(height: 10),
-      if (trips.isEmpty)
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: IcStyle.soft, borderRadius: BorderRadius.circular(18)),
-          child: Text('ما فيش رحلات بالكراسي الآن.', textAlign: TextAlign.center, style: IcStyle.t(14.5)),
+    final trips = _trips;
+    final open = trips.any((t) => t.id == _open) ? _open : (trips.isEmpty ? null : trips.first.id);
+    return IcScaffold(
+      title: 'كرسي في رحلة',
+      mapHeight: 170,
+      children: [
+        Text('كرسي في رحلة', style: IcStyle.t(21, w: FontWeight.w900)),
+        Text('سائقين مختارين من تاكسيستا · تدفع كرسيك نقدًا', style: IcStyle.t(13, w: FontWeight.w600, c: IcStyle.muted)),
+        const SizedBox(height: 10),
+        Wrap(spacing: 6, runSpacing: 6, children: [
+          IcChip(text: 'الكل', selected: _city == null, onTap: () => setState(() => _city = null)),
+          for (final r in widget.home.routes) IcChip(text: r.to, selected: _city == r.to, onTap: () => setState(() => _city = r.to)),
+        ]),
+        const SizedBox(height: 12),
+        if (trips.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: IcStyle.soft, borderRadius: BorderRadius.circular(18)),
+            child: Text('ما فيش رحلات بالكراسي الآن${_city == null ? '' : ' إلى $_city'}.', textAlign: TextAlign.center, style: IcStyle.t(14.5)),
+          ),
+        for (final t in trips) t.id == open ? _openCard(t) : _closedCard(t),
+        const SizedBox(height: 10),
+        InkWell(
+          onTap: () => Navigator.of(context).maybePop(),
+          borderRadius: BorderRadius.circular(18),
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(color: IcStyle.soft, borderRadius: BorderRadius.circular(18)),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('ما لقيتش وقت يناسبك؟', style: IcStyle.t(14, w: FontWeight.w800)),
+              Text('اطلب سيارة كاملة بسعرك ←', style: IcStyle.t(12.5, w: FontWeight.w800, c: IcStyle.blue)),
+            ]),
+          ),
         ),
-      for (final t in trips) _card(t),
-      const SizedBox(height: 10),
-      InkWell(
-        onTap: widget.onWholeCar,
-        borderRadius: BorderRadius.circular(18),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(color: IcStyle.navy, borderRadius: BorderRadius.circular(18)),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('ما لقيتش وقت يناسبك؟', style: IcStyle.t(14, c: Colors.white)),
-            Text('اطلب سيارة كاملة بسعرك، والسائقين يبعتولك عروضهم.', style: IcStyle.t(12.5, w: FontWeight.w600, c: const Color(0xffC9D6EE))),
-          ]),
-        ),
-      ),
-    ]);
+      ],
+    );
   }
 
-  Widget _card(SharedTrip t) {
-    final n = _seats[t.id] ?? 1;
+  String _who(SharedTrip t) {
     final d = t.driver;
+    return [
+      if ('${d['name'] ?? ''}'.isNotEmpty) d['name'],
+      if ((d['rating'] as num? ?? 0) > 0) '${d['rating']}',
+      if ('${d['car'] ?? ''}'.trim().isNotEmpty) d['car'],
+    ].join(' · ');
+  }
+
+  Widget _closedCard(SharedTrip t) => Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: InkWell(
+          key: ValueKey('trip-${t.id}'),
+          onTap: () => setState(() {
+            _open = t.id;
+            _seats = 1;
+          }),
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), border: Border.all(color: IcStyle.line, width: 1.5)),
+            child: Row(children: [
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('← ${t.to} · ${IntercityApi.dayLabel(t.departAt)}', style: IcStyle.t(15.5, w: FontWeight.w800)),
+                  Text('${_who(t)} · باقي ${t.seatsLeft}', style: IcStyle.t(12.5, w: FontWeight.w600, c: IcStyle.muted)),
+                ]),
+              ),
+              Text('LYD ${IcStyle.money(t.seatPrice)}', style: IcStyle.t(17, w: FontWeight.w900)),
+            ]),
+          ),
+        ),
+      );
+
+  Widget _openCard(SharedTrip t) {
+    final taken = t.seatsTotal - t.seatsLeft;
     final done = _booked.contains(t.id);
     return Container(
-      key: ValueKey('shared-${t.id}'),
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22), border: Border.all(color: IcStyle.line, width: 1.5)),
+      key: ValueKey('trip-${t.id}'),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), border: Border.all(color: IcStyle.blue, width: 2)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Row(children: [
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('${widget.home.from} ← ${t.to}', style: IcStyle.t(16.5, w: FontWeight.w900)),
-              Text([IntercityApi.dayLabel(t.departAt), if (t.meetingPoint.isNotEmpty) 'من ${t.meetingPoint}'].join(' · '), style: IcStyle.t(12.5, w: FontWeight.w600, c: IcStyle.muted)),
+              Text('← ${t.to} · ${IntercityApi.dayLabel(t.departAt)}', style: IcStyle.t(16, w: FontWeight.w900)),
+              Text([if (t.meetingPoint.isNotEmpty) 'من ${t.meetingPoint}', _who(t)].join(' · '), style: IcStyle.t(12.5, w: FontWeight.w600, c: IcStyle.muted)),
             ]),
           ),
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -86,36 +133,38 @@ class _IntercitySeatsState extends State<IntercitySeats> {
             Text('للكرسي', style: IcStyle.t(11, w: FontWeight.w600, c: IcStyle.muted)),
           ]),
         ]),
-        const SizedBox(height: 6),
-        Text(
-          [if ('${d['name'] ?? ''}'.isNotEmpty) d['name'], if ((d['rating'] as num? ?? 0) > 0) '★ ${d['rating']}', if (d['completed'] != null) '${d['completed']} رحلة', if ('${d['car'] ?? ''}'.trim().isNotEmpty) d['car']].join(' · '),
-          style: IcStyle.t(13, w: FontWeight.w600),
+        const SizedBox(height: 8),
+        Semantics(
+          label: '$taken محجوز و${t.seatsLeft} فاضي',
+          child: Row(children: [
+            for (var i = 0; i < t.seatsTotal; i++) ...[
+              if (i > 0) const SizedBox(width: 5),
+              Expanded(
+                child: Container(
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: i < taken ? const Color(0xffCBD5E1) : (i < taken + _seats ? IcStyle.blue : Colors.transparent),
+                    borderRadius: BorderRadius.circular(9),
+                    border: i >= taken + _seats ? Border.all(color: IcStyle.blue, width: 2) : null,
+                  ),
+                ),
+              ),
+            ],
+          ]),
         ),
-        const SizedBox(height: 4),
-        Text('باقي ${t.seatsLeft} من ${t.seatsTotal}', style: IcStyle.t(12, w: FontWeight.w600, c: IcStyle.muted)),
         const SizedBox(height: 8),
         if (done)
-          Text('محجوز ✅ السائق يتواصل معاك قبل الموعد.', style: IcStyle.t(14, c: const Color(0xff0F8A4B)))
+          Text('محجوز ✅ السائق يكلمك قبل الموعد.', style: IcStyle.t(14, c: const Color(0xff16803C)))
         else
           Row(children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-              decoration: BoxDecoration(color: IcStyle.soft, borderRadius: BorderRadius.circular(14)),
-              child: IcStepper(
-                value: '$n',
-                onPlus: n < t.seatsLeft ? () => setState(() => _seats[t.id] = n + 1) : null,
-                onMinus: n > 1 ? () => setState(() => _seats[t.id] = n - 1) : null,
-              ),
+            IcStepper(
+              value: '$_seats',
+              onPlus: _seats < t.seatsLeft ? () => setState(() => _seats++) : null,
+              onMinus: _seats > 1 ? () => setState(() => _seats--) : null,
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: FilledButton(
-                onPressed: _busy == null ? () => _book(t) : null,
-                style: FilledButton.styleFrom(backgroundColor: IcStyle.blue, minimumSize: const Size.fromHeight(46), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-                child: _busy == t.id
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white))
-                    : Text('احجز · LYD ${IcStyle.money(t.seatPrice * n)}', style: IcStyle.t(15, w: FontWeight.w900, c: Colors.white)),
-              ),
+              child: IcButton(text: 'احجز · LYD ${IcStyle.money(t.seatPrice * _seats)}', height: 44, busy: _busy == t.id, onTap: () => _book(t)),
             ),
           ]),
       ]),
