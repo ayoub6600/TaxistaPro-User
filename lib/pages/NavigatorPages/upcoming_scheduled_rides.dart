@@ -134,7 +134,12 @@ class _UpcomingScheduledRidesPageState
           Expanded(
             child: FilledButton(
               key: ValueKey('accept-offer-${offer.offerId}'),
-              onPressed: busy ? null : () => _answerOffer(offer, accept: true),
+              // a travel request answers on its own page: it may pay online first («أكّد حجزك»)
+              onPressed: busy
+                  ? null
+                  : IntercityLink.isIntercity(item)
+                      ? () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => IntercityLink.pageFor(item))).then((_) => _refreshOffers())
+                      : () => _answerOffer(offer, accept: true),
               child: Text(mine
                   ? (isRtl ? 'جارٍ التأكيد…' : 'Confirming…')
                   : (isRtl ? 'قبول العرض' : 'Accept offer')),
