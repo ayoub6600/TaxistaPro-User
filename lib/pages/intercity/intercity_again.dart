@@ -173,7 +173,10 @@ class _IntercityRateSheetState extends State<IntercityRateSheet> {
             label: '$i نجوم',
             excludeSemantics: true,
             child: GestureDetector(
-              onTap: () => setState(() => _stars = i),
+              onTap: () => setState(() {
+                _stars = i;
+                _error = null;
+              }),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 3),
                 child: Icon(i <= _stars ? Icons.star_rounded : Icons.star_outline_rounded, size: 42, color: i <= _stars ? const Color(0xffF5A400) : const Color(0xffC9D3E3)),

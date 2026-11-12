@@ -74,7 +74,9 @@ class IntercityTypePage extends StatefulWidget {
 }
 
 class _IntercityTypePageState extends State<IntercityTypePage> {
-  late IntercityRoute _route = widget.home.routes.firstWhere((r) => r.id == widget.routeId, orElse: () => widget.home.routes.first);
+  // the city he chose, else the one he travelled to last time, else the first
+  late IntercityRoute _route = widget.home.routes
+      .firstWhere((r) => r.id == (widget.routeId ?? widget.home.lastTrip?.routeId), orElse: () => widget.home.routes.first);
   bool _seats = false;
 
   int get _sharedHere => widget.home.shared.where((t) => t.to == _route.to).length;

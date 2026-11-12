@@ -80,7 +80,9 @@ class _IntercityFarePageState extends State<IntercityFarePage> {
   /// «ترجع حوالي 6:00 بالليل»
   String get _returnLabel {
     final back = _start.add(Duration(minutes: _travel ?? 0, hours: _wait));
-    return IntercityApi.dayLabel(IntercityApi.wallClock(back));
+    // «حوالي» to the quarter hour: 8:22 reads as 8:30
+    final q = DateTime(back.year, back.month, back.day, back.hour, ((back.minute + 7) ~/ 15) * 15);
+    return IntercityApi.dayLabel(IntercityApi.wallClock(q));
   }
 
   void _setRound(bool on) {
