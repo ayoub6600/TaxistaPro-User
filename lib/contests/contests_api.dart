@@ -77,7 +77,7 @@ class ContestsApi {
   }
 
   /// A comment; with [answer] it is the person's prediction. Returns (data, null) or (null, message).
-  static Future<(Map<String, dynamic>?, String?)> comment(int id, {String? body, Map<String, dynamic>? answer}) async {
+  static Future<(Map<String, dynamic>?, String?)> comment(int id, {String? body, Map<String, dynamic>? answer, int? replyTo}) async {
     if (bearerToken.isEmpty) return (null, 'سجّل الدخول أول.');
     String? device;
     try {
@@ -91,6 +91,7 @@ class ContestsApi {
               body: jsonEncode({
                 if (body != null && body.trim().isNotEmpty) 'body': body.trim(),
                 if (answer != null) 'answer': answer,
+                if (replyTo != null) 'reply_to': replyTo,
                 if (device != null && device.isNotEmpty) 'device_id': device.length > 120 ? device.substring(0, 120) : device,
               }))
           .timeout(const Duration(seconds: 20));

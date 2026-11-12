@@ -154,6 +154,9 @@ class _ContestPostPageState extends State<ContestPostPage> {
   bool _gone = false;
   bool _sending = false;
   final _text = TextEditingController();
+  /// «رد»: the comment the next words answer
+  Map<String, dynamic>? _replyTo;
+  final _focus = FocusNode();
 
   @override
   void initState() {
@@ -164,6 +167,7 @@ class _ContestPostPageState extends State<ContestPostPage> {
   @override
   void dispose() {
     _text.dispose();
+    _focus.dispose();
     super.dispose();
   }
 
@@ -207,11 +211,13 @@ class _ContestPostPageState extends State<ContestPostPage> {
     final t = _text.text.trim();
     if (t.isEmpty || _sending) return;
     setState(() => _sending = true);
-    final (data, error) = await ContestsApi.comment(widget.postId, body: t);
+    final reply = _replyTo;
+    final (data, error) = await ContestsApi.comment(widget.postId, body: t, replyTo: (reply?['id'] as num?)?.toInt());
     if (!mounted) return;
     setState(() => _sending = false);
     if (error != null) return _say(error);
     _text.clear();
+    setState(() => _replyTo = null);
     FocusScope.of(context).unfocus();
     _applyComment(data!);
   }
@@ -321,7 +327,11 @@ class _ContestPostPageState extends State<ContestPostPage> {
                         padding: const EdgeInsets.fromLTRB(12, 6, 12, 10),
                         child: Column(children: [
                           if (_pinned.isNotEmpty) ContestCommentTile(comment: const {}, postId: widget.postId, pinnedText: _pinned),
-                          for (final c in _comments) ContestCommentTile(key: ValueKey('c-${c['id']}'), comment: c, postId: widget.postId),
+                          for (final c in _comments)
+                            ContestCommentTile(key: ValueKey('c-${c['id']}'), comment: c, postId: widget.postId, onReply: (x) {
+                              setState(() => _replyTo = x);
+                              _focus.requestFocus();
+                            }),
                           if (_comments.isEmpty) Padding(padding: const EdgeInsets.all(20), child: Text('ما فيش تعليقات بعد. كن الأول!', style: p.text(14, color: p.sub))),
                           if (_next != null) TextButton(onPressed: _moreComments, child: Text('عرض توقعات أكثر', style: p.text(13.5, weight: FontWeight.w800, color: p.sub))),
                         ]),
@@ -428,7 +438,25 @@ class _ContestPostPageState extends State<ContestPostPage> {
         Text('وصلت للحد المسموح من التعليقات', style: p.text(13.5, color: p.sub, weight: FontWeight.w700)),
       ]));
     }
-    return wrap(Row(children: [
+    final replying = _replyTo;
+    return wrap(Column(mainAxisSize: MainAxisSize.min, children: [
+      if (replying != null)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: Row(children: [
+            const Icon(Icons.reply_rounded, size: 18, color: ContestLook.brand),
+            const SizedBox(width: 6),
+            Expanded(child: Text('ترد على ${replying['name'] ?? ''}', maxLines: 1, overflow: TextOverflow.ellipsis, style: p.text(13, weight: FontWeight.w700, color: ContestLook.brand))),
+            IconButton(
+              key: const ValueKey('reply-cancel'),
+              visualDensity: VisualDensity.compact,
+              tooltip: 'إلغاء الرد',
+              onPressed: () => setState(() => _replyTo = null),
+              icon: Icon(Icons.close_rounded, size: 18, color: p.sub),
+            ),
+          ]),
+        ),
+      Row(children: [
       if (post['my_entry'] != null && post['contest']?['status'] == 'open') ...[
         const Icon(Icons.check_circle_rounded, size: 18, color: Color(0xFF14A47B)),
         const SizedBox(width: 6),
@@ -436,6 +464,7 @@ class _ContestPostPageState extends State<ContestPostPage> {
       Expanded(
         child: TextField(
           controller: _text,
+          focusNode: _focus,
           maxLength: 200,
           minLines: 1,
           maxLines: 3,
@@ -456,6 +485,7 @@ class _ContestPostPageState extends State<ContestPostPage> {
       ),
       const SizedBox(width: 8),
       _sending ? const SizedBox(width: 40, height: 40, child: Padding(padding: EdgeInsets.all(10), child: CircularProgressIndicator(strokeWidth: 2.4))) : _sendButton(_sendPlain),
+      ]),
     ]));
   }
 

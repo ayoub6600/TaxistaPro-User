@@ -310,8 +310,10 @@ class _ContestPostCardState extends State<ContestPostCard> {
 /// One comment. A prediction shows as a chip under the words (green with ✓ when right after the
 /// result; a lock when answers stay hidden until the contest closes).
 class ContestCommentTile extends StatefulWidget {
-  const ContestCommentTile({super.key, required this.comment, required this.postId, this.compact = false, this.pinnedText});
+  const ContestCommentTile({super.key, required this.comment, required this.postId, this.compact = false, this.pinnedText, this.onReply});
   final Map<String, dynamic> comment;
+  /// «رد»: answer this comment (the post page fills the composer); null hides the button
+  final ValueChanged<Map<String, dynamic>>? onReply;
   final int postId;
   final bool compact;
   final String? pinnedText;
@@ -364,6 +366,7 @@ class _ContestCommentTileState extends State<ContestCommentTile> {
                   border: mine ? Border.all(color: const Color(0xFFB7791F), width: 1.3) : null,
                 ),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                  if (c['reply_to'] is Map) _quote(Map<String, dynamic>.from(c['reply_to'])),
                   Wrap(spacing: 5, runSpacing: 2, crossAxisAlignment: WrapCrossAlignment.center, children: [
                     Text(name, style: p.text(13, weight: FontWeight.w800)),
                     if (pinned) const _Verified(),
@@ -401,10 +404,36 @@ class _ContestCommentTileState extends State<ContestCommentTile> {
                     onTap: _like,
                     child: Text('أعجبني', style: p.text(11.5, weight: FontWeight.w800, color: c['liked'] == true ? ContestLook.brand : p.sub)),
                   ),
+                  if (widget.onReply != null) ...[
+                    const SizedBox(width: 14),
+                    GestureDetector(
+                      key: ValueKey('reply-${c['id']}'),
+                      onTap: () => widget.onReply!(c),
+                      child: Text('رد', style: p.text(11.5, weight: FontWeight.w800, color: p.sub)),
+                    ),
+                  ],
                 ]),
               ),
           ]),
         ),
+      ]),
+    );
+  }
+
+  /// the comment this one answers: its writer and its words, small, above the reply
+  Widget _quote(Map<String, dynamic> q) {
+    final p = ContestLook.p;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsetsDirectional.fromSTEB(8, 3, 8, 4),
+      decoration: BoxDecoration(
+        color: p.dark ? Colors.white.withValues(alpha: .06) : Colors.black.withValues(alpha: .04),
+        borderRadius: BorderRadius.circular(10),
+        border: BorderDirectional(start: BorderSide(color: ContestLook.brand.withValues(alpha: .7), width: 3)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+        Text('↩ ${q['name'] ?? ''}', style: p.text(11.5, weight: FontWeight.w800, color: ContestLook.brand)),
+        if ((q['text'] ?? '').toString().isNotEmpty) Text('${q['text']}', maxLines: 2, overflow: TextOverflow.ellipsis, style: p.text(12, color: p.sub)),
       ]),
     );
   }
