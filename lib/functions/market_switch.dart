@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'city_launch.dart';
 import 'functions.dart';
 import 'service_zones.dart';
 
@@ -39,6 +40,11 @@ class MarketSwitch {
         // an ad belongs to where the rider stands, whatever his account says
         banners = data['banners'] as List;
         valueNotifierHome.incrementNotifier();
+      }
+      if (data['coming_soon'] is Map) {
+        // a city we drew but haven't opened: «قريبًا» + «بلّغني لما تفتح» instead of a booking
+        await CityLaunch.maybeShow(context, data['coming_soon']);
+        return;
       }
       if (data['state'] != 'ask' || DateTime.now().millisecondsSinceEpoch < (prefs.getInt(_snoozeKey) ?? 0)) return;
       _open = true;
