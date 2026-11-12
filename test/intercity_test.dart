@@ -14,7 +14,7 @@ IntercityHome _home({List shared = const [], bool enabled = true}) => IntercityH
       'zone_type_id': 'zt-1',
       'routes': [
         {'route_id': 1, 'to': 'زليتن', 'suggested': 60, 'min': 45, 'max': 90, 'seat_price': 15, 'to_lat': 32.46, 'to_lng': 14.56},
-        {'route_id': 3, 'to': 'طرابلس', 'suggested': 180, 'min': 145, 'max': 270, 'seat_price': 40, 'to_lat': 32.88, 'to_lng': 13.19},
+        {'route_id': 3, 'to': 'طرابلس', 'suggested': 180, 'min': 145, 'max': 270, 'seat_price': 40, 'to_lat': 32.88, 'to_lng': 13.19, 'accepted_from': 175},
       ],
       'shared': shared,
       'rules': {'horizon_days': 7, 'max_passengers': 4},
@@ -76,6 +76,12 @@ void main() {
       },
     )));
     expect(find.text('LYD 180'), findsOneWidget);
+    expect(find.text('أغلب الطلبات تنقبل من LYD 175 وفوق 👍'), findsOneWidget);
+    await t.tap(find.bySemanticsLabel('نقص'));
+    await t.pump();
+    expect(find.textContaining('سعرك أقل من اللي تنقبل بيه'), findsOneWidget);
+    await t.tap(find.bySemanticsLabel('زيادة'));
+    await t.pump();
     for (var i = 0; i < 12; i++) {
       await t.tap(find.bySemanticsLabel('زيادة'));
       await t.pump();

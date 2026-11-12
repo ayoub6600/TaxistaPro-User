@@ -25,6 +25,9 @@ class IntercityRoute {
   num get min => (raw['min'] as num?) ?? 0;
   num get max => (raw['max'] as num?) ?? 0;
   num? get seatPrice => raw['seat_price'] as num?;
+
+  /// «أغلب الطلبات تنقبل من X» (only once the route has enough taken rides)
+  num? get acceptedFrom => raw['accepted_from'] as num?;
   double get lat => ((raw['to_lat'] as num?) ?? 0).toDouble();
   double get lng => ((raw['to_lng'] as num?) ?? 0).toDouble();
 }

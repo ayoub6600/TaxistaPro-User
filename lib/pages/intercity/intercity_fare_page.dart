@@ -52,6 +52,7 @@ class _IntercityFarePageState extends State<IntercityFarePage> {
   num get _max => (_quote?['max'] as num?) ?? widget.route.max;
   num get _suggested => (_quote?['suggested'] as num?) ?? widget.route.suggested;
   num get _step => _max - _min >= 100 ? 10 : 5;
+  num? get _hint => (_quote?['accepted_from'] as num?) ?? widget.route.acceptedFrom;
   DateTime get _start => _time < _times.length ? _times[_time].at() : (_custom ?? DateTime.now().add(const Duration(hours: 2)));
   String get _timeLabel => _time < _times.length ? _times[_time].label : IntercityApi.dayLabel(IntercityApi.wallClock(_custom!));
   IcPlace get _drop => widget.drop ?? IcPlace(widget.route.lat, widget.route.lng, '${widget.route.to} · وسط المدينة');
@@ -236,6 +237,14 @@ class _IntercityFarePageState extends State<IntercityFarePage> {
         const SizedBox(height: 4),
         Text('من ${IcStyle.money(_min)} إلى ${IcStyle.money(_max)} · السعر لوسط ${widget.route.to}، أبعد يزيد شوية',
             style: IcStyle.t(12, w: FontWeight.w600, c: IcStyle.muted)),
+        if (_hint != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            _fare < _hint! ? 'سعرك أقل من اللي تنقبل بيه الطلبات عادة (من LYD ${IcStyle.money(_hint!)})' : 'أغلب الطلبات تنقبل من LYD ${IcStyle.money(_hint!)} وفوق 👍',
+            key: const ValueKey('ic-hint'),
+            style: IcStyle.t(12.5, w: FontWeight.w800, c: _fare < _hint! ? const Color(0xffB45309) : const Color(0xff16803C)),
+          ),
+        ],
         const SizedBox(height: 10),
         const Divider(height: 1, color: Color(0xffEEF2F7)),
         IcRow(icon: Icons.schedule_rounded, text: _timeLabel, onTap: _pickTime),
