@@ -24,7 +24,7 @@ class RideOfferPush {
   static int notificationId(Map data) => 770000 + ((int.tryParse('${data['offer_id']}') ?? 0) % 100000);
 
   static AndroidNotificationChannel get channel =>
-      const AndroidNotificationChannel(channelId, 'عروض السائقين', description: 'عرض سائق على طلبك، بزرين: قبول أو رفض', importance: Importance.high);
+      const AndroidNotificationChannel(channelId, 'عروض السائقين', description: 'عرض سائق على طلبك، بزرين: قبول أو غالي شوية', importance: Importance.high);
 
   static String payload(Map data) => jsonEncode({
         'category': category,
@@ -63,7 +63,7 @@ class RideOfferPush {
             timeoutAfter: left,
             actions: const [
               AndroidNotificationAction(acceptAction, 'قبول', showsUserInterface: false, cancelNotification: false),
-              AndroidNotificationAction(refuseAction, 'رفض', showsUserInterface: false, cancelNotification: false),
+              AndroidNotificationAction(refuseAction, 'غالي شوية', showsUserInterface: false, cancelNotification: false),
             ]),
       ),
       payload: payload(data),

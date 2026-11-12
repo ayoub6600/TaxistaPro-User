@@ -11,7 +11,7 @@ enum RideOfferButtons {
 
   static func register() {
     let yes = UNNotificationAction(identifier: accept, title: "قبول", options: [])
-    let no = UNNotificationAction(identifier: refuse, title: "رفض", options: [.destructive])
+    let no = UNNotificationAction(identifier: refuse, title: "غالي شوية", options: [])
     let cat = UNNotificationCategory(identifier: category, actions: [yes, no], intentIdentifiers: [], options: [])
     let center = UNUserNotificationCenter.current()
     center.getNotificationCategories { existing in

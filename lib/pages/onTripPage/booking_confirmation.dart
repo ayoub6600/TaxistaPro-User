@@ -35,6 +35,7 @@ import 'package:vector_math/vector_math.dart' as vector;
 import '../../functions/api_guard.dart';
 import '../../functions/live_queries.dart';
 import '../../functions/next_ride_offer_api.dart';
+import '../../functions/offers_v2_api.dart';
 import '../../functions/functions.dart';
 import '../../functions/booking_send.dart';
 import '../../functions/geohash.dart';
@@ -98,6 +99,8 @@ part 'booking_confirmation/search_status_card.dart';
 part 'booking_confirmation/booking_confirmation_searching_widgets.dart';
 part 'booking_confirmation/booking_confirmation_searching_offer_card.dart';
 part 'booking_confirmation/booking_confirmation_searching_driver_sheet.dart';
+part 'booking_confirmation/offers_v2_overlay.dart';
+part 'booking_confirmation/offers_v2_card.dart';
 part 'booking_confirmation/booking_confirmation_fare.dart';
 part 'booking_confirmation/booking_confirmation_active_ride.dart';
 part 'booking_confirmation/booking_confirmation_map_controls.dart';
@@ -155,6 +158,9 @@ dynamic promoStatus;
 dynamic choosenVehicle;
 int payingVia = 0;
 dynamic timing;
+
+/// «العروض والبحث» v2: the search minute ran out and «مازلت تدوّر؟» is open (its own minute to answer)
+bool offersV2Asking = false;
 dynamic mapPadding = 0.0;
 String goodsSize = '';
 bool noDriverFound = false;

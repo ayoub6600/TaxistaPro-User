@@ -70,6 +70,15 @@ class NearbyDriverCandidate {
 
   int? get nextRideEta => int.tryParse(data['next_ride_eta']?.toString() ?? '');
 
+  /// the server's time (ms) the price was sent, when known
+  int? get bidTime => int.tryParse(data['bid_time']?.toString() ?? '');
+
+  /// the rider's favourite driver («❤ سائقك المفضل»)
+  bool get isFavorite => data['favorite'] == true || data['favorite']?.toString() == '1' || data['favorite']?.toString() == 'true';
+
+  /// minutes to the pickup at a city pace (about 30 km/h; [distance] is in metres), null when unknown
+  int? get etaMinutes => nextRideEta ?? (distance.isFinite ? ((distance / 1000) * 2).ceil().clamp(1, 60) : null);
+
   String? get vehicleMake =>
       data['vehicle_make']?.toString().trim().isNotEmpty == true
           ? data['vehicle_make'].toString()
@@ -251,6 +260,11 @@ List<NearbyDriverCandidate> prioritizeTargetedDrivers(
         'vehicle_color': offer['vehicle_color'],
         'next_ride': offer['next_ride'],
         'next_ride_eta': offer['eta_minutes'],
+        // «العروض والبحث» v2: when the price was sent (its time drains on the accept button), the heart
+        'bid_time': offer['bid_time'],
+        'favorite': offer['favorite'],
+        if (offer['rating'] != null) 'rating': offer['rating'],
+        if (offer['rides'] != null) 'driver_completed_rides_count': offer['rides'],
       },
     );
   }
@@ -321,6 +335,10 @@ List<NearbyDriverCandidate> prioritizeTargetedDrivers(
             'vehicle_color': offer['vehicle_color'],
             'next_ride': offer['next_ride'],
             'next_ride_eta': offer['eta_minutes'],
+            'bid_time': offer['bid_time'],
+            'favorite': offer['favorite'],
+            if (offer['rating'] != null) 'rating': offer['rating'],
+            if (offer['rides'] != null) 'driver_completed_rides_count': offer['rides'],
           },
         },
         distance: double.infinity,

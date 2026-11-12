@@ -785,6 +785,19 @@ mixin _BookingConfirmationPendingRequest
       counterOfferMetadata,
     );
 
+    // «العروض والبحث» v2: the new screen for a negotiated ride, when the admin turned it on
+    if (OffersV2.activeFor(userRequestData, userDetails)) {
+      return _OffersV2Overlay(
+        drivers: candidates,
+        remainingSeconds: max(remaining, 0),
+        isRtl: languageDirection == 'rtl',
+        onMenu: _showSearchingRequestMenu,
+        onSupport: () => guardedPush(context, MaterialPageRoute(builder: (_) => const SupportPage())),
+        onAcceptOffer: _acceptRegularCounterOffer,
+        onCancel: _confirmAndCancelSearchingRequest,
+      );
+    }
+
     return _SearchingDriverOverlay(
       drivers: candidates,
       fare: _resolveRideFare(userRequestData),

@@ -598,6 +598,10 @@ mixin _BookingConfirmationController
           userRequestData['maximum_time_for_find_drivers_for_regular_ride'] ??
               userDetails['maximum_time_for_find_drivers_for_regular_ride'];
       timing = int.tryParse(configuredDuration?.toString() ?? '') ?? 0;
+      // the new search screen: two minutes (the admin's), then «مازلت تدوّر؟» instead of ending it
+      final offersV2 = OffersV2.activeFor(userRequestData, userDetails);
+      offersV2Asking = false;
+      if (offersV2) timing = OffersV2.searchSeconds(userRequestData, userDetails);
       // The backend's own no-driver-found dispatch doesn't fire until the
       // dispatch-retry cron has ticked PAST this same duration (it cancels
       // once attempts exceed it, one attempt per ~1-minute tick - so it can
@@ -611,7 +615,7 @@ mixin _BookingConfirmationController
                       '') ??
               0) >
           0;
-      if (recoveryEnabled && timing > 0) {
+      if (recoveryEnabled && timing > 0 && !offersV2) {
         timing = timing + 90;
       }
       if (mounted) {
@@ -639,6 +643,13 @@ mixin _BookingConfirmationController
             } else if (userRequestData.isNotEmpty &&
                 userRequestData['accepted_at'] == null &&
                 timing == 0) {
+              // v2: the search time is up; ask before ending it (a minute to answer)
+              if (offersV2 && !offersV2Asking) {
+                offersV2Asking = true;
+                timing = 60;
+                valueNotifierBook.incrementNotifier();
+                return;
+              }
               // Missed-ride recovery: before giving up client-side, check
               // whether the backend already kept this ride open for a
               // recovery window instead of cancelling it (see
