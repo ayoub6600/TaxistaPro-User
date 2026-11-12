@@ -1,3 +1,4 @@
+import 'package:taxista/functions/intercity_api.dart';
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
@@ -100,6 +101,23 @@ class _UpcomingScheduledRidesPageState
           key: ValueKey('offer-fare-${offer.offerId}'),
           style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
         ),
+        if (offer.proposedTime != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(
+              '${isRtl ? 'يقترح' : 'Proposes'}: ${IntercityApi.dayLabel(offer.proposedTime!)}',
+              key: ValueKey('offer-time-${offer.offerId}'),
+              style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xffB45309)),
+            ),
+          ),
+        if (offer.driverRating != null || offer.driverCompleted != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(
+              [if (offer.driverRating != null) '★ ${offer.driverRating}', if (offer.driverCompleted != null) '${offer.driverCompleted} ${isRtl ? 'رحلة' : 'rides'}'].join(' · '),
+              style: TextStyle(color: Colors.grey[700]),
+            ),
+          ),
         if ((offer.driverName ?? '').isNotEmpty || offer.vehicle != null)
           Padding(
             padding: const EdgeInsets.only(top: 2),

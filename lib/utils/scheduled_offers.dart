@@ -22,6 +22,9 @@ class ScheduledOffer {
     this.driverPhoto,
     this.vehicle,
     this.version = 1,
+    this.proposedTime,
+    this.driverRating,
+    this.driverCompleted,
   });
 
   final int offerId;
@@ -32,6 +35,11 @@ class ScheduledOffer {
   final String? driverPhoto;
   final String? vehicle;
   final int version;
+
+  /// «سفر بين المدن»: the driver may propose another time (market wall clock, Y-m-d H:i:s)
+  final String? proposedTime;
+  final num? driverRating;
+  final int? driverCompleted;
 
   static ScheduledOffer? fromJson(Object? raw) {
     if (raw is! Map) return null;
@@ -57,6 +65,9 @@ class ScheduledOffer {
       driverPhoto: raw['driver_photo']?.toString(),
       vehicle: vehicle.isEmpty ? null : vehicle,
       version: raw['version'] is num ? (raw['version'] as num).toInt() : 1,
+      proposedTime: (raw['proposed_time'] ?? '').toString().isEmpty ? null : raw['proposed_time'].toString(),
+      driverRating: raw['driver_rating'] is num && (raw['driver_rating'] as num) > 0 ? raw['driver_rating'] as num : null,
+      driverCompleted: raw['driver_completed'] is num ? (raw['driver_completed'] as num).toInt() : null,
     );
   }
 }

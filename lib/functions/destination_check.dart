@@ -5,12 +5,17 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 
+import '../pages/intercity/intercity_car_form.dart' show IcPlace;
+import '../pages/intercity/intercity_page.dart';
 import 'functions.dart';
+import 'intercity_api.dart';
+import '../pages/onTripPage/map_page.dart' show addressList;
 
 /// Asked the moment a destination is pinned: outside the city the rider hears why, right there.
 /// No answer from the server lets him go on; the booking itself is refused there too.
 Future<bool> destinationAllowed(BuildContext context, LatLng pick, LatLng drop) async {
   String? why;
+  Map? intercity;
   try {
     final r = await http.get(
       Uri.parse('${url}api/v1/request/drop-check').replace(queryParameters: {
@@ -21,11 +26,28 @@ Future<bool> destinationAllowed(BuildContext context, LatLng pick, LatLng drop) 
       }),
       headers: {'Authorization': 'Bearer ${bearerToken[0].token}', 'Accept': 'application/json'},
     ).timeout(const Duration(seconds: 10));
-    if (r.statusCode == 200) why = jsonDecode(r.body)['refused']?.toString();
+    if (r.statusCode == 200) {
+      final j = jsonDecode(r.body);
+      why = j['refused']?.toString();
+      if (j['intercity'] is Map) intercity = j['intercity'] as Map;
+    }
   } catch (_) {
     return true;
   }
   if (why == null) return true;
+  // another city on an intercity route: «سفر لمدينة ثانية» with this exact place, instead of a refusal
+  if (intercity != null && context.mounted) {
+    final home = IntercityApi.last ?? await IntercityApi.home(pick.latitude, pick.longitude);
+    if (home != null && home.enabled && context.mounted) {
+      final pickup = addressList.where((e) => e.type == 'pickup');
+      await IntercityPage.open(context,
+          home: home,
+          pick: IcPlace(pick.latitude, pick.longitude, pickup.isNotEmpty ? pickup.first.address : ''),
+          drop: IcPlace(drop.latitude, drop.longitude, '${intercity['to'] ?? ''}'),
+          routeId: (intercity['route_id'] as num?)?.toInt());
+      return false;
+    }
+  }
   if (context.mounted) await _showRefusal(context, why);
   return false;
 }
