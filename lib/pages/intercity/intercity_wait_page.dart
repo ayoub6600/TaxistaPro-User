@@ -291,6 +291,15 @@ class _IntercityWaitPageState extends State<IntercityWaitPage> {
         child: Text(t, style: IcStyle.t(11, w: FontWeight.w800, c: fg)),
       );
 
+  /// «الإلغاء مجاني», or with money paid: free until N hours before, then the driver's share
+  String _cancelRule() {
+    final p = widget.payment;
+    if (_paid <= 0 || p == null || p.latePercent <= 0) return 'الإلغاء مجاني';
+    final h = p.freeCancelHours;
+    final hours = h == 1 ? 'بساعة' : (h == 2 ? 'بساعتين' : 'بـ$h ساعات');
+    return 'إلغاء مجاني قبل الموعد $hours، بعدها ${p.latePercent}٪ للكابتن';
+  }
+
   Widget _bookedView(Map o) {
     final time = (o['proposed_time'] ?? '').toString();
     return Directionality(
@@ -328,7 +337,7 @@ class _IntercityWaitPageState extends State<IntercityWaitPage> {
                     ]),
                   ),
                   Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                    Text('نقدًا', style: IcStyle.t(12, w: FontWeight.w600, c: IcStyle.muted)),
+                    Text(_paid > 0 ? 'مدفوع ✅' : 'نقدًا', style: IcStyle.t(12, w: FontWeight.w600, c: IcStyle.muted)),
                     Text('LYD ${moneyLabel(o['proposed_fare'])}', style: IcStyle.t(17, w: FontWeight.w900)),
                   ]),
                 ]),
@@ -336,7 +345,7 @@ class _IntercityWaitPageState extends State<IntercityWaitPage> {
               const SizedBox(height: 10),
               Text('${o['driver_name'] ?? 'السائق'}${(o['driver_rating'] as num? ?? 0) > 0 ? ' · ${o['driver_rating']}' : ''}', style: IcStyle.t(16, w: FontWeight.w800)),
               const SizedBox(height: 10),
-              Text('• الإلغاء مجاني\n• تذكير لك وللسائق قبل الموعد بساعتين\n• يوم السفر: رحلة عادية بالتتبع والمشاركة',
+              Text('• ${_cancelRule()}\n• تذكير لك وللسائق قبل الموعد بساعتين\n• يوم السفر: رحلة عادية بالتتبع والمشاركة',
                   style: IcStyle.t(14, w: FontWeight.w600, c: IcStyle.muted).copyWith(height: 1.9)),
               const Spacer(),
               IcButton(text: 'تمام', onTap: () => Navigator.of(context).maybePop()),

@@ -72,7 +72,11 @@ class IntercityLink {
       fare: fare,
       max: max,
       step: max - fare >= 100 ? 10 : 5,
-      summary: [if (when.isNotEmpty) when, '$passengers ${passengers == 1 ? 'راكب' : 'ركاب'}'].join(' · '),
+      summary: [
+        if (when.isNotEmpty) when,
+        '$passengers ${passengers == 1 ? 'راكب' : 'ركاب'}',
+        if (ic['round_trip'] == true) 'ذهاب ورجوع · يستناك ${ic['wait_hours'] ?? ''} س',
+      ].join(' · '),
       pickAddress: '${ride['pick_address'] ?? ''}',
       dropAddress: '${ride['drop_address'] ?? ''}',
       note: '${ic['note'] ?? ''}',

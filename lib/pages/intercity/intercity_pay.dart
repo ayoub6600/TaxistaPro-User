@@ -37,7 +37,7 @@ class IcPay {
           ),
           const SizedBox(height: 8),
           Text(rules.latePercent > 0
-              ? 'إلغاء مجاني قبل الموعد بـ${rules.freeCancelHours} ساعات، وفلوسك ترجع لمحفظتك. بعدها ${rules.latePercent}٪ تروح للكابتن. لو الكابتن لغى أو ما جاش، ترجعلك كاملة.'
+              ? 'إلغاء مجاني قبل الموعد ${_hours(rules.freeCancelHours)}، وفلوسك ترجع لمحفظتك. بعدها ${rules.latePercent}٪ تروح للكابتن. لو الكابتن لغى أو ما جاش، ترجعلك كاملة.'
               : 'لو لغيت أو الكابتن ما جاش، فلوسك ترجع لمحفظتك كاملة.',
               style: IcStyle.t(12.5, w: FontWeight.w600, c: IcStyle.muted)),
           const SizedBox(height: 12),
@@ -87,6 +87,8 @@ class IcPay {
       await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const WalletPage()));
     }
   }
+
+  static String _hours(int h) => h == 1 ? 'بساعة' : (h == 2 ? 'بساعتين' : 'بـ$h ساعات');
 
   static Widget _line(String label, num v) => Row(children: [
         Expanded(child: Text(label, style: IcStyle.t(13.5, w: FontWeight.w700, c: IcStyle.muted))),
