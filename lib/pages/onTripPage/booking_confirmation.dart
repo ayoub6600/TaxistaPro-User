@@ -36,6 +36,7 @@ import '../../functions/api_guard.dart';
 import '../../functions/live_queries.dart';
 import '../../functions/next_ride_offer_api.dart';
 import '../../functions/offers_v2_api.dart';
+import '../parcels/parcel_code_card.dart';
 import '../../functions/functions.dart';
 import '../../functions/booking_send.dart';
 import '../../functions/geohash.dart';

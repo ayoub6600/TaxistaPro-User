@@ -97,6 +97,9 @@ mixin _BookingConfirmationActiveRide
                             ),
                         ]),
                       ),
+                      // «توصيل»: the delivery code the receiver gives the driver
+                      if (ParcelCodeCard.of(userRequestData) case final card?)
+                        Padding(padding: const EdgeInsets.only(top: 8), child: SizedBox(width: media.width * 0.9, child: card)),
                       if (userRequestData['accepted_at'] != null &&
                           userRequestData['arrived_at'] != null &&
                           userRequestData['is_trip_start'] == 0 &&
