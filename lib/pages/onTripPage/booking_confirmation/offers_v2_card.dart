@@ -192,7 +192,9 @@ class _OfferStripV2 extends StatelessWidget {
       child: Row(children: [
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-            Text('${top.isFavorite ? '❤' : '🚕'} ${count == 1 ? 'عرض من $name' : '$count عروض · أفضلها من $name'} · $currency $price',
+            Text(
+                // the favourite comes first even when another price is lower: never call it «أفضلها»
+                '${top.isFavorite ? '❤' : '🚕'} ${count == 1 ? 'عرض من $name' : (top.isFavorite ? '$count عروض · سائقك المفضل $name' : '$count عروض · أفضلها من $name')} · $currency $price',
                 maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.cairo(color: _searchNavy, fontSize: 13, fontWeight: FontWeight.w800)),
             if (top.carLine.isNotEmpty)
               Text([top.carLine, if (top.etaMinutes != null) '${top.etaMinutes} د'].join(' · '),
