@@ -60,17 +60,21 @@ class IcStepper extends StatelessWidget {
 }
 
 class IcChip extends StatelessWidget {
-  const IcChip({super.key, required this.text, required this.selected, required this.onTap});
+  const IcChip({super.key, required this.text, required this.selected, required this.onTap, this.fill = false});
 
   final String text;
   final bool selected;
   final VoidCallback onTap;
+
+  /// it fills its slot (riders 1·2·3·4): the label sits in the middle
+  final bool fill;
 
   @override
   Widget build(BuildContext context) => InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
         child: Container(
+          alignment: fill ? Alignment.center : null,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           decoration: BoxDecoration(
             color: selected ? IcStyle.blue : Colors.white,
@@ -257,7 +261,7 @@ class IcScaffold extends StatelessWidget {
                 child: IconButton(
                   tooltip: 'رجوع',
                   onPressed: () => Navigator.of(context).maybePop(),
-                  icon: const Icon(Icons.arrow_forward_rounded, color: IcStyle.navy),
+                  icon: const Icon(Icons.arrow_back_rounded, color: IcStyle.navy),
                 ),
               ),
               const SizedBox(width: 10),

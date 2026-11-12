@@ -218,7 +218,7 @@ class _IntercityFarePageState extends State<IntercityFarePage> {
           for (var n = 1; n <= widget.home.maxPassengers; n++) ...[
             if (n > 1) const SizedBox(width: 8),
             Expanded(
-              child: IcChip(text: n == _passengers && n > 1 ? '$n ركاب' : '$n', selected: n == _passengers, onTap: () => setState(() => _passengers = n)),
+              child: IcChip(fill: true, text: n == _passengers && n > 1 ? '$n ركاب' : '$n', selected: n == _passengers, onTap: () => setState(() => _passengers = n)),
             ),
           ],
         ]),

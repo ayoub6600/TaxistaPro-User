@@ -73,7 +73,10 @@ class _IntercityWaitPageState extends State<IntercityWaitPage> {
       return;
     }
     final raw = ride['scheduled_offers'];
-    setState(() => _offers = raw is List ? [for (final o in raw) if (o is Map) o] : const []);
+    final list = raw is List ? [for (final o in raw) if (o is Map) o] : <Map>[];
+    // the cheapest first
+    list.sort((a, b) => ((a['proposed_fare'] as num?) ?? 0).compareTo((b['proposed_fare'] as num?) ?? 0));
+    setState(() => _offers = list);
   }
 
   void _say(String m) => ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(m, textDirection: TextDirection.rtl)));
@@ -207,7 +210,7 @@ class _IntercityWaitPageState extends State<IntercityWaitPage> {
   Widget _offer(Map o, bool first) {
     final name = '${o['driver_name'] ?? 'سائق'}';
     final time = (o['proposed_time'] ?? '').toString();
-    final rating = o['driver_rating'];
+    final rating = (o['driver_rating'] as num?) != null && (o['driver_rating'] as num) > 0 ? o['driver_rating'] : null;
     final done = o['driver_completed'];
     final car = [o['vehicle_make'], o['vehicle_model'], o['vehicle_color']].where((x) => x != null && '$x'.trim().isNotEmpty).join(' ');
     return Container(
@@ -303,7 +306,7 @@ class _IntercityWaitPageState extends State<IntercityWaitPage> {
                 ]),
               ),
               const SizedBox(height: 10),
-              Text('${o['driver_name'] ?? 'السائق'} ${o['driver_rating'] != null ? '· ${o['driver_rating']}' : ''}', style: IcStyle.t(16, w: FontWeight.w800)),
+              Text('${o['driver_name'] ?? 'السائق'}${(o['driver_rating'] as num? ?? 0) > 0 ? ' · ${o['driver_rating']}' : ''}', style: IcStyle.t(16, w: FontWeight.w800)),
               const SizedBox(height: 10),
               Text('• الإلغاء مجاني\n• تذكير لك وللسائق قبل الموعد بساعتين\n• يوم السفر: رحلة عادية بالتتبع والمشاركة',
                   style: IcStyle.t(14, w: FontWeight.w600, c: IcStyle.muted).copyWith(height: 1.9)),
@@ -327,11 +330,12 @@ class _WaitArt extends CustomPainter {
     canvas.drawCircle(c, 70, Paint()..color = const Color(0xffDCE8FB));
     canvas.drawCircle(c, 49, Paint()..color = const Color(0xffBFD7FB));
     canvas.drawCircle(c, 30, Paint()..color = IcStyle.blue);
-    final car = Paint()..color = Colors.white..style = PaintingStyle.stroke..strokeWidth = 3..strokeCap = StrokeCap.round;
-    canvas.drawLine(c + const Offset(-14, 6), c + const Offset(14, 6), car);
-    canvas.drawPath(Path()..moveTo(c.dx - 11, c.dy + 1)..lineTo(c.dx - 8, c.dy - 7)..lineTo(c.dx + 8, c.dy - 7)..lineTo(c.dx + 11, c.dy + 1), car);
-    canvas.drawCircle(c + const Offset(-7, 8), 2.6, Paint()..color = Colors.white);
-    canvas.drawCircle(c + const Offset(7, 8), 2.6, Paint()..color = Colors.white);
+    const icon = Icons.directions_car_filled_rounded;
+    final tp = TextPainter(
+      text: TextSpan(text: String.fromCharCode(icon.codePoint), style: TextStyle(fontFamily: icon.fontFamily, package: icon.fontPackage, fontSize: 30, color: Colors.white)),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    tp.paint(canvas, c - Offset(tp.width / 2, tp.height / 2));
     final clock = c + const Offset(84, -38);
     canvas.drawCircle(clock, 15, Paint()..color = IcStyle.gold);
     final hand = Paint()..color = IcStyle.navy..strokeWidth = 2.4..strokeCap = StrokeCap.round;
