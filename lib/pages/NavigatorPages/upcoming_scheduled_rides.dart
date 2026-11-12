@@ -1,4 +1,5 @@
 import 'package:taxista/functions/intercity_api.dart';
+import 'package:taxista/pages/intercity/intercity_link.dart';
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
@@ -649,7 +650,18 @@ class _UpcomingScheduledRidesPageState
               ),
             ]),
           ],
-          if (canManage(item)) ...[
+          if (IntercityLink.isIntercity(item) && driver == null) ...[
+            // a travel request: its own page (offers, «زيد سعرك», cancel), not the city ride's reschedule
+            SizedBox(height: media.width * 0.03),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => IntercityLink.pageFor(item))),
+                style: FilledButton.styleFrom(backgroundColor: const Color(0xff0873FF), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                child: Text(hasOffer ? 'شوف العروض وزيد سعرك' : 'افتح السفرة · زيد سعرك', style: GoogleFonts.cairo(fontWeight: FontWeight.w800)),
+              ),
+            ),
+          ] else if (canManage(item)) ...[
             SizedBox(height: media.width * 0.03),
             Row(
               children: [

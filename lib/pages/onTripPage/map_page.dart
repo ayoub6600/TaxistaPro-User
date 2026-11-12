@@ -1,5 +1,6 @@
 // ignore_for_file: deprecated_member_use, prefer_typing_uninitialized_variables
 
+import '../intercity/intercity_link.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
@@ -284,6 +285,7 @@ class _MapsState extends State<Maps>
     ContestsApi.homePost.addListener(_onRecurringRides);
     unawaited(ContestsApi.refreshHome());
     WidgetsBinding.instance.addPostFrameCallback((_) => ContestLink.flush());
+    WidgetsBinding.instance.addPostFrameCallback((_) => IntercityLink.flush());
     unawaited(fetchPendingRecoveryOfferForRider().then((_) {
       if (mounted) setState(() {});
     }));

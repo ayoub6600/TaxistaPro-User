@@ -1,3 +1,4 @@
+import '../pages/intercity/intercity_link.dart';
 import 'ride_offer_push.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -265,6 +266,11 @@ Future<void> initMessaging() async {
         ContestLink.openPush(message.data);
         return;
       }
+      if (IntercityLink.handles(message.data)) {
+        // a travel request: its page opens once the home screen is up
+        IntercityLink.openPush(message.data);
+        return;
+      }
       if (message.data['push_type'] == 'admin_call') {
         AdminCallController.answerFromNotification(message.data);
       }
@@ -336,6 +342,11 @@ Future<void> initMessaging() async {
     }
     if (ContestLink.handles(message.data)) {
       ContestLink.openPush(message.data);
+      return;
+    }
+    if (IntercityLink.handles(message.data)) {
+      // «ما جاتكش عروض» and friends: straight to that travel request
+      IntercityLink.openPush(message.data);
       return;
     }
     if (message.data['push_type'].toString() == 'admin_call') {
