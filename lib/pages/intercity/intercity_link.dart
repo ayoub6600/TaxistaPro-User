@@ -4,6 +4,7 @@ import '../../functions/calls/admin_call_controller.dart' show appNavigatorKey;
 import '../../functions/functions.dart' show bearerToken;
 import '../../functions/intercity_api.dart';
 import '../../functions/schedule_time.dart';
+import 'intercity_again.dart';
 import 'intercity_wait_page.dart';
 
 /// Back to one travel request from anywhere: a push («ما جاتكش عروض», «الكابتن ما وصلش»,
@@ -12,18 +13,42 @@ import 'intercity_wait_page.dart';
 class IntercityLink {
   static const pushTypes = {'intercity_no_offers', 'intercity_reopened', 'intercity_eve', 'intercity_booking'};
   static String? _pending;
+  static bool _rate = false;
 
-  static bool handles(Map data) => pushTypes.contains('${data['push_type'] ?? ''}') && '${data['request_id'] ?? ''}'.isNotEmpty;
+  static bool handles(Map data) =>
+      '${data['push_type'] ?? ''}' == 'intercity_rate' || (pushTypes.contains('${data['push_type'] ?? ''}') && '${data['request_id'] ?? ''}'.isNotEmpty);
 
   static void openPush(Map data) {
-    _pending = '${data['request_id']}';
+    if ('${data['push_type'] ?? ''}' == 'intercity_rate') {
+      _rate = true; // «وصلت بالسلامة 🌟» → «كيف كانت السفرة؟»
+    } else {
+      _pending = '${data['request_id']}';
+    }
+    flush();
+  }
+
+  static void _retry() {
+    IntercityApi.notifier.removeListener(_retry);
     flush();
   }
 
   /// once the home screen is up and the person is signed in
   static Future<void> flush() async {
-    final id = _pending;
     final nav = appNavigatorKey.currentState;
+    if (_rate && nav != null && bearerToken.isEmpty == false) {
+      final place = IntercityApi.lastPlace;
+      if (place == null) {
+        // opened from a cold start: wait for the home screen's first travel read
+        IntercityApi.notifier.removeListener(_retry);
+        IntercityApi.notifier.addListener(_retry);
+      } else {
+        _rate = false;
+        final home = await IntercityApi.home(place.$1, place.$2);
+        final ctx = appNavigatorKey.currentContext;
+        if (home?.toRate != null && ctx != null && ctx.mounted) await IntercityRateSheet.maybeShow(ctx, home!.toRate);
+      }
+    }
+    final id = _pending;
     if (id == null || nav == null || bearerToken.isEmpty) return;
     _pending = null;
     final ride = await IntercityApi.ride(id);

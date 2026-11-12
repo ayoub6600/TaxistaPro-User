@@ -28,6 +28,12 @@ class IntercityRoute {
 
   /// «أغلب الطلبات تنقبل من X» (only once the route has enough taken rides)
   num? get acceptedFrom => raw['accepted_from'] as num?;
+
+  /// «ذهاب ورجوع · الكابتن يستناك»: {suggested, min, max, max_wait_hours}, null when the admin turned it off
+  Map? get roundTrip => raw['round_trip'] is Map ? raw['round_trip'] as Map : null;
+
+  /// the drive one way, roughly (from where he stands)
+  int? get travelMinutes => (raw['travel_minutes'] as num?)?.toInt();
   double get lat => ((raw['to_lat'] as num?) ?? 0).toDouble();
   double get lng => ((raw['to_lng'] as num?) ?? 0).toDouble();
 }
@@ -47,6 +53,53 @@ class SharedTrip {
   Map get driver => raw['driver'] is Map ? raw['driver'] as Map : const {};
 }
 
+/// «نفس السفرة مرة ثانية»: his last finished travel from this city, with the price to book it again.
+/// The price is what he paid while the route's price is the same; once the admin changed it, the new one.
+class IntercityLastTrip {
+  IntercityLastTrip(this.raw);
+  final Map raw;
+
+  bool get isSeat => raw['kind'] == 'seat';
+  int get routeId => (raw['route_id'] as num?)?.toInt() ?? 0;
+  String get to => '${raw['to'] ?? ''}';
+  String get date => '${raw['date'] ?? ''}';
+  int get passengers => (raw['passengers'] as num?)?.toInt() ?? 1;
+  int get seats => (raw['seats'] as num?)?.toInt() ?? 1;
+  bool get bigBag => raw['big_bag'] == true;
+  bool get roundTrip => raw['round_trip'] == true;
+  int get waitHours => (raw['wait_hours'] as num?)?.toInt() ?? 4;
+  num get paid => (raw['paid'] as num?) ?? 0;
+  num get price => (raw['price'] as num?) ?? paid;
+  bool get priceChanged => raw['price_changed'] == true;
+  int get openTrips => (raw['open_trips'] as num?)?.toInt() ?? 0;
+  num? get cheapestSeat => raw['cheapest_seat'] as num?;
+  IcPlace? get drop {
+    final d = raw['drop'];
+    if (d is! Map || d['lat'] is! num || d['lng'] is! num) return null;
+    return IcPlace((d['lat'] as num).toDouble(), (d['lng'] as num).toDouble(), '${d['address'] ?? ''}');
+  }
+
+  /// «3 نوفمبر»
+  String get dateLabel {
+    final t = DateTime.tryParse(date);
+    if (t == null) return date;
+    const months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+    return '${t.day} ${months[t.month - 1]}';
+  }
+}
+
+/// «كيف كانت السفرة مع محمد؟»: a seat he travelled in and has not rated yet
+class IntercityToRate {
+  IntercityToRate(this.raw);
+  final Map raw;
+
+  int get bookingId => (raw['booking_id'] as num?)?.toInt() ?? 0;
+  String get to => '${raw['to'] ?? ''}';
+  String get driver => '${raw['driver'] ?? 'الكابتن'}';
+  int get seats => (raw['seats'] as num?)?.toInt() ?? 1;
+  num get price => (raw['price'] as num?) ?? 0;
+}
+
 class IntercityHome {
   IntercityHome(this.raw);
   final Map raw;
@@ -60,6 +113,10 @@ class IntercityHome {
   int get horizonDays => ((raw['rules'] is Map ? raw['rules']['horizon_days'] : null) as num?)?.toInt() ?? 7;
   int get maxPassengers => ((raw['rules'] is Map ? raw['rules']['max_passengers'] : null) as num?)?.toInt() ?? 4;
   int get freeCancelHours => ((raw['rules'] is Map ? raw['rules']['free_cancel_hours'] : null) as num?)?.toInt() ?? 2;
+  bool get roundTripOn => (raw['rules'] is Map ? raw['rules']['round_trip'] : null) == true;
+  int get maxWaitHours => ((raw['rules'] is Map ? raw['rules']['max_wait_hours'] : null) as num?)?.toInt() ?? 8;
+  IntercityLastTrip? get lastTrip => raw['last_trip'] is Map ? IntercityLastTrip(raw['last_trip'] as Map) : null;
+  IntercityToRate? get toRate => raw['to_rate'] is Map ? IntercityToRate(raw['to_rate'] as Map) : null;
 }
 
 /// The answer of a call: ok with data, or the server's own Arabic reason.
@@ -76,6 +133,9 @@ class IntercityApi {
   static final notifier = ValueNotifier<IntercityHome?>(null);
   static DateTime? _askedAt;
   static double? _askedLat, _askedLng;
+
+  /// where he stood the last time the travel offer was read (a push opens with it)
+  static (double, double)? get lastPlace => _askedLat == null ? null : (_askedLat!, _askedLng!);
 
   /// ask again only when the last answer is old (3 minutes) or he moved (about 2 km)
   static Future<void> refresh(double lat, double lng) async {
@@ -138,6 +198,7 @@ class IntercityApi {
     required int passengers,
     required bool bigBag,
     String note = '',
+    int? waitHours,
   }) {
     return _post('api/v1/request/create', {
       'pick_lat': pickLat, 'pick_lng': pickLng, 'pick_address': pickAddress,
@@ -148,8 +209,14 @@ class IntercityApi {
       'rider_proposed_fare': fare, 'offerred_ride_fare': fare,
       'passengers': passengers, 'big_bag': bigBag, 'is_luggage_available': bigBag,
       if (note.trim().isNotEmpty) 'intercity_note': note.trim(),
+      // «ذهاب ورجوع · الكابتن يستناك» the same day
+      if (waitHours != null) 'intercity_round_trip': 1,
+      if (waitHours != null) 'intercity_wait_hours': waitHours,
     });
   }
+
+  static Future<IntercityResult> rateSeat(int bookingId, int stars, List<String> tags) =>
+      _post('api/v1/request/intercity/seats/rate', {'booking_id': bookingId, 'rating': stars, 'tags': tags});
 
   static Future<IntercityResult> bookSeats(int tripId, int seats, {String pickAddress = '', double? pickLat, double? pickLng}) =>
       _post('api/v1/request/intercity/seats/book', {

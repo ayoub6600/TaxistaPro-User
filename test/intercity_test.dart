@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:taxista/functions/intercity_api.dart';
+import 'package:taxista/pages/intercity/intercity_again.dart';
 import 'package:taxista/pages/intercity/intercity_fare_page.dart';
 import 'package:taxista/pages/intercity/intercity_flow.dart';
 import 'package:taxista/pages/intercity/intercity_seats.dart';
@@ -166,5 +167,113 @@ void main() {
     expect(page.summary, endsWith('2 ركاب'));
     expect(IntercityLink.isIntercity({'is_out_station': 1}), isTrue);
     expect(IntercityLink.isIntercity({'is_out_station': 0}), isFalse);
+  });
+
+  group('round trip, the same trip again, seat stars', () {
+    IntercityHome home({Map? last, Map? rate}) => IntercityHome({
+          'enabled': true,
+          'from': 'مصراتة',
+          'zone_type_id': 'zt-1',
+          'routes': [
+            {
+              'route_id': 3, 'to': 'طرابلس', 'suggested': 180, 'min': 145, 'max': 270, 'seat_price': 40, 'to_lat': 32.88, 'to_lng': 13.19, 'travel_minutes': 120,
+              'round_trip': {'suggested': 324, 'min': 261, 'max': 486, 'max_wait_hours': 8},
+            },
+          ],
+          'shared': const [],
+          'rules': {'horizon_days': 7, 'max_passengers': 4, 'round_trip': true, 'max_wait_hours': 8},
+          if (last != null) 'last_trip': last,
+          if (rate != null) 'to_rate': rate,
+        });
+
+    testWidgets('«ذهاب ورجوع»: the admin round-trip price, the hours he waits, and the time back', (t) async {
+      await t.binding.setSurfaceSize(const Size(430, 1800));
+      addTearDown(() => t.binding.setSurfaceSize(null));
+      Map<String, Object?>? sent;
+      final h = home();
+      await t.pumpWidget(_app(IntercityFarePage(
+        home: h,
+        pick: const IcPlace(32.35, 15.1, 'السكت'),
+        route: h.routes.first,
+        send: (b) async {
+          sent = b;
+          return IntercityResult(false, 'x');
+        },
+      )));
+      expect(find.text('LYD 180'), findsOneWidget);
+      await t.tap(find.bySemanticsLabel('ذهاب ورجوع ⇄'));
+      await t.pump();
+      expect(find.text('LYD 324'), findsOneWidget, reason: 'the round-trip price from the admin');
+      expect(find.text('نفس اليوم · الكابتن يستناك'), findsOneWidget);
+      expect(find.text('8 س'), findsOneWidget, reason: 'up to the admin\'s longest wait');
+      await t.tap(find.text('6 س'));
+      await t.pump();
+      expect(find.byKey(const ValueKey('ic-back')), findsOneWidget);
+      await t.ensureVisible(find.text('اطلب عروض السائقين'));
+      await t.tap(find.text('اطلب عروض السائقين'));
+      await t.pump();
+      expect(sent!['wait_hours'], 6);
+      expect(sent!['fare'], 324);
+      await t.tap(find.bySemanticsLabel('ذهاب بس'));
+      await t.pump();
+      expect(find.text('LYD 180'), findsOneWidget);
+    });
+
+    testWidgets('«نفس السفرة مرة ثانية»: one tap fills it, and a changed price is said plainly', (t) async {
+      await t.binding.setSurfaceSize(const Size(430, 1800));
+      addTearDown(() => t.binding.setSurfaceSize(null));
+      final h = home(last: {
+        'kind': 'car', 'route_id': 3, 'to': 'طرابلس', 'date': '2026-11-03', 'passengers': 2, 'big_bag': true, 'round_trip': true, 'wait_hours': 4,
+        'drop': {'lat': 32.88, 'lng': 13.19, 'address': 'طرابلس · سوق الجمعة'}, 'paid': 300, 'price': 330, 'price_changed': true,
+      });
+      await t.pumpWidget(_app(IntercityTypePage(home: h, pick: const IcPlace(32.35, 15.1, 'السكت'))));
+      await t.pump();
+      expect(find.text('سفرتك الأخيرة · 3 نوفمبر'), findsOneWidget);
+      expect(find.text('مصراتة ⇄ طرابلس'), findsOneWidget);
+      expect(find.text('راكبين · ذهاب ورجوع · LYD 330'), findsOneWidget);
+      expect(find.byKey(const ValueKey('ic-price-changed')), findsOneWidget);
+      await t.tap(find.text('اطلبها مرة ثانية'));
+      await t.pumpAndSettle();
+      expect(find.text('نفس سفرتك مرة ثانية'), findsOneWidget);
+      expect(find.text('LYD 330'), findsOneWidget);
+      expect(find.text('2 ركاب'), findsOneWidget);
+      expect(find.text('نفس اليوم · الكابتن يستناك'), findsOneWidget);
+    });
+
+    testWidgets('a seat: «شوف الكراسي», and the stars sheet once', (t) async {
+      int? stars;
+      List<String>? tags;
+      final h = home(last: {'kind': 'seat', 'route_id': 3, 'to': 'طرابلس', 'date': '2026-11-03', 'seats': 2, 'paid': 80, 'open_trips': 2, 'cheapest_seat': 35});
+      await t.pumpWidget(_app(IntercityTypePage(home: h, pick: const IcPlace(32.35, 15.1, 'السكت'))));
+      await t.pump();
+      expect(find.text('كرسيين · LYD 80'), findsOneWidget);
+      expect(find.text('2 رحلات متاحة · من LYD 35'), findsOneWidget);
+      expect(find.text('شوف الكراسي إلى طرابلس'), findsOneWidget);
+
+      await t.pumpWidget(_app(Scaffold(
+        body: Directionality(
+          textDirection: TextDirection.rtl,
+          child: IntercityRateSheet(
+            toRate: IntercityToRate(const {'booking_id': 9, 'to': 'طرابلس', 'driver': 'محمد', 'seats': 2, 'price': 80}),
+            send: (s, tg) async {
+              stars = s;
+              tags = tg;
+              return IntercityResult(true, 'شكرًا');
+            },
+          ),
+        ),
+      )));
+      expect(find.text('كيف كانت السفرة مع محمد؟'), findsOneWidget);
+      await t.tap(find.text('أرسل التقييم'));
+      await t.pump();
+      expect(find.text('اختار عدد النجوم.'), findsOneWidget);
+      await t.tap(find.bySemanticsLabel('4 نجوم'));
+      await t.tap(find.text('في الموعد'));
+      await t.pump();
+      await t.tap(find.text('أرسل التقييم'));
+      await t.pump();
+      expect(stars, 4);
+      expect(tags, ['on_time']);
+    });
   });
 }

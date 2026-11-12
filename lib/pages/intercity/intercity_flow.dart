@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../functions/intercity_api.dart';
+import 'intercity_again.dart';
 import 'intercity_fare_page.dart';
 import 'intercity_seats.dart';
 import 'intercity_style.dart';
@@ -78,6 +79,19 @@ class _IntercityTypePageState extends State<IntercityTypePage> {
 
   int get _sharedHere => widget.home.shared.where((t) => t.to == _route.to).length;
 
+  @override
+  void initState() {
+    super.initState();
+    // a seat he travelled in and has not rated: ask once, gently
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final sent = await IntercityRateSheet.maybeShow(context, widget.home.toRate);
+      if (sent == true && mounted) {
+        ScaffoldMessenger.maybeOf(context)?.showSnackBar(const SnackBar(content: Text('شكرًا على تقييمك 🌟', textDirection: TextDirection.rtl)));
+      }
+    });
+  }
+
   void _next() {
     final nav = Navigator.of(context);
     if (_seats) {
@@ -95,6 +109,10 @@ class _IntercityTypePageState extends State<IntercityTypePage> {
       title: '${widget.home.from} ← ${_route.to}',
       mapHeight: 330,
       children: [
+        if (widget.home.lastTrip != null) ...[
+          IcAgainCard(home: widget.home, last: widget.home.lastTrip!, pick: widget.pick),
+          const SizedBox(height: 14),
+        ],
         Text('كيف تحب تسافر؟', style: IcStyle.t(22, w: FontWeight.w900)),
         const SizedBox(height: 10),
         Wrap(spacing: 6, runSpacing: 6, children: [
