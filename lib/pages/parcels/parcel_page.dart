@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-import '../../functions/functions.dart' show getUserDetails, geoCoding;
+import '../../functions/functions.dart' show getUserDetails, geoCoding, mapType, userRequestData;
 import '../../functions/intercity_api.dart' show IcPlace, IntercityResult;
 import '../../functions/parcel_api.dart';
 import '../intercity/intercity_style.dart';
@@ -28,6 +28,24 @@ class ParcelPage extends StatefulWidget {
       return Future.value();
     }
     return Navigator.of(context).push(MaterialPageRoute(builder: (_) => ParcelPage(home: home, pick: pick)));
+  }
+
+  static Timer? _watch;
+
+  /// A booked parcel has no searching screen of its own: look every 8 seconds (for 3 minutes)
+  /// until a driver took it, so the home screen turns into the ride with the delivery code.
+  static void watchForDriver() {
+    _watch?.cancel();
+    var left = 22;
+    unawaited(Future(() => getUserDetails()));
+    _watch = Timer.periodic(const Duration(seconds: 8), (t) async {
+      if (--left <= 0 || userRequestData.isNotEmpty) {
+        t.cancel();
+        return;
+      }
+      await getUserDetails();
+      if (userRequestData.isNotEmpty) t.cancel();
+    });
   }
 
   static const labels = {'small': 'صغير', 'medium': 'متوسط', 'large': 'كبير'};
@@ -69,6 +87,8 @@ class _ParcelPageState extends State<ParcelPage> {
               role: TripPointRole.destination,
               initialCenter: LatLng(widget.pick.lat, widget.pick.lng),
               reverseGeocode: (p) => geoCoding(p.latitude, p.longitude),
+              // the same map the home screen uses
+              useGoogleMap: mapType == 'google',
             ),
           )).then((p) => p?.coordinates == null ? null : IcPlace(p!.coordinates!.latitude, p.coordinates!.longitude, p.address));
     if (place == null || !mounted) return;
@@ -137,8 +157,8 @@ class _ParcelPageState extends State<ParcelPage> {
       setState(() => _error = r.message);
       return;
     }
-    // the parcel is a ride now: the home screen follows it like any ride
-    if (widget.send == null) unawaited(Future(() => getUserDetails()));
+    // the parcel is a ride now: the home screen follows it like any ride once a driver takes it
+    if (widget.send == null) ParcelPage.watchForDriver();
     ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(r.message, textDirection: TextDirection.rtl)));
     Navigator.of(context).maybePop();
   }

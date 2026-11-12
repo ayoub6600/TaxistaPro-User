@@ -170,6 +170,8 @@ class IntercityApi {
 
   /// ask again only when the last answer is old (3 minutes) or he moved (about 2 km)
   static Future<void> refresh(double lat, double lng) async {
+    // not signed in yet: ask on the next build, never mark it as asked
+    if (bearerToken.isEmpty) return;
     final at = _askedAt;
     final moved = _askedLat == null || (lat - _askedLat!).abs() > 0.02 || (lng - _askedLng!).abs() > 0.02;
     if (at != null && !moved && DateTime.now().difference(at) < const Duration(minutes: 3)) return;
@@ -177,7 +179,11 @@ class IntercityApi {
     _askedLat = lat;
     _askedLng = lng;
     final h = await home(lat, lng);
-    if (h != null) notifier.value = h;
+    if (h != null) {
+      notifier.value = h;
+    } else {
+      _askedAt = null; // a failed answer is asked again on the next build
+    }
   }
 
   static Map<String, String> get _headers =>

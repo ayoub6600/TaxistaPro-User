@@ -29,20 +29,26 @@ class ParcelApi {
 
   /// ask again only when the last answer is old (3 minutes) or he moved (about 2 km)
   static Future<void> refresh(double lat, double lng) async {
+    // not signed in yet: ask on the next build, never mark it as asked
+    if (bearerToken.isEmpty) return;
     final moved = _lat == null || (lat - _lat!).abs() > 0.02 || (lng - _lng!).abs() > 0.02;
     if (_askedAt != null && !moved && DateTime.now().difference(_askedAt!) < const Duration(minutes: 3)) return;
     _askedAt = DateTime.now();
     _lat = lat;
     _lng = lng;
-    if (bearerToken.isEmpty) return;
     try {
       final r = await http
           .get(Uri.parse('${url}api/v1/request/parcels').replace(queryParameters: {'lat': '$lat', 'lng': '$lng'}), headers: _headers)
           .timeout(const Duration(seconds: 10));
-      if (r.statusCode != 200) return;
-      final d = jsonDecode(r.body)['data'];
-      if (d is Map) notifier.value = ParcelHome(d);
-    } catch (_) {}
+      final d = r.statusCode == 200 ? jsonDecode(r.body)['data'] : null;
+      if (d is Map) {
+        notifier.value = ParcelHome(d);
+      } else {
+        _askedAt = null; // a failed answer is asked again on the next build
+      }
+    } catch (_) {
+      _askedAt = null;
+    }
   }
 
   static Future<IntercityResult> _post(String path, Map body) async {

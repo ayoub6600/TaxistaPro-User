@@ -37,7 +37,8 @@ class ParcelCodeCard extends StatelessWidget {
         const SizedBox(height: 6),
         Text('كود التسليم: $name يعطيه للكابتن', style: GoogleFonts.cairo(color: const Color(0xff55678A), fontSize: 12, fontWeight: FontWeight.w700)),
         const SizedBox(height: 4),
-        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        // the digits read left to right, whatever the page direction
+        Row(mainAxisAlignment: MainAxisAlignment.center, textDirection: TextDirection.ltr, children: [
           for (final d in code.split(''))
             Container(
               width: 38,
