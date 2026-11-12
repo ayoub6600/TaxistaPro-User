@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../functions/intercity_api.dart';
 import '../../utils/scheduled_offers.dart';
 import 'intercity_fare_page.dart' show IcFareBar, IcChoiceRow;
+import 'intercity_pay.dart';
 import 'intercity_style.dart';
 
 /// د · العروض توصل: the drivers' offers arrive (price, rating, their time), he can raise his price,
@@ -23,6 +24,9 @@ class IntercityWaitPage extends StatefulWidget {
     required this.dropAddress,
     this.note = '',
     this.load,
+    this.payOnline = false,
+    this.payment,
+    this.accept,
   });
 
   final String rideId;
@@ -38,6 +42,11 @@ class IntercityWaitPage extends StatefulWidget {
 
   /// tests replace the network
   final Future<Map?> Function()? load;
+  final Future<IntercityResult> Function(int offerId)? accept;
+
+  /// «الدفع أونلاين قبل التأكيد»: taking a driver pays from the wallet first
+  final bool payOnline;
+  final IcPayment? payment;
 
   @override
   State<IntercityWaitPage> createState() => _IntercityWaitPageState();
@@ -50,6 +59,7 @@ class _IntercityWaitPageState extends State<IntercityWaitPage> {
   Timer? _poll;
   bool _busy = false;
   Map? _booked;
+  num _paid = 0;
 
   @override
   void initState() {
@@ -95,13 +105,27 @@ class _IntercityWaitPageState extends State<IntercityWaitPage> {
   Future<void> _choose(Map o) async {
     final id = (o['offer_id'] as num?)?.toInt();
     if (id == null) return;
+    final fare = (o['proposed_fare'] as num?) ?? (num.tryParse('${o['proposed_fare']}') ?? 0);
+    final rules = widget.payment ?? IcPayment(const {});
+    final amount = rules.firstPart(fare);
+    if (widget.payOnline) {
+      // money leaves his wallet: he sees the amount and the rules first
+      final yes = await IcPay.confirm(context,
+          title: 'أكّد حجزك مع ${o['driver_name'] ?? 'الكابتن'} 🚗', details: '${widget.from} ← ${widget.to} · ${widget.summary}', amount: amount, fare: fare, rules: rules);
+      if (!yes || !mounted) return;
+    }
     setState(() => _busy = true);
-    final r = await IntercityApi.acceptOffer(id);
+    final r = widget.accept != null ? await widget.accept!(id) : await IntercityApi.acceptOffer(id);
     if (!mounted) return;
     setState(() => _busy = false);
     if (r.ok) {
       _poll?.cancel();
-      setState(() => _booked = o);
+      setState(() {
+        _booked = o;
+        if (widget.payOnline) _paid = amount;
+      });
+    } else if (r.needsTopUp) {
+      await IcPay.topUp(context, r);
     } else {
       _say(r.message);
       _refresh();
@@ -252,7 +276,7 @@ class _IntercityWaitPageState extends State<IntercityWaitPage> {
             Expanded(child: Text(widget.summary, style: IcStyle.t(14, w: FontWeight.w800))),
             _tag('سيارة كاملة', const Color(0xffEAF2FF), IcStyle.blue),
             const SizedBox(width: 4),
-            _tag('نقدًا', const Color(0xffECFDF3), const Color(0xff16803C)),
+            _tag(widget.payOnline ? 'من المحفظة' : 'نقدًا', const Color(0xffECFDF3), const Color(0xff16803C)),
           ]),
           const SizedBox(height: 4),
           Text('● ${widget.from} · ${widget.pickAddress}', maxLines: 1, overflow: TextOverflow.ellipsis, style: IcStyle.t(12.5, w: FontWeight.w600)),
@@ -288,6 +312,10 @@ class _IntercityWaitPageState extends State<IntercityWaitPage> {
               const SizedBox(height: 10),
               Text('سفرتك محجوزة', textAlign: TextAlign.center, style: IcStyle.t(23, w: FontWeight.w900)),
               Text('تلقاها في «الرحلات القادمة»', textAlign: TextAlign.center, style: IcStyle.t(14, w: FontWeight.w600, c: IcStyle.muted)),
+              if (_paid > 0) ...[
+                const SizedBox(height: 10),
+                IcPayNote(text: 'دفعت LYD ${IcStyle.money(_paid)} من محفظتك ✅ توصل للكابتن بعد الرحلة.'),
+              ],
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(14),

@@ -96,11 +96,14 @@ class IcSheet extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         padding: EdgeInsets.fromLTRB(18, 10, 18, 18 + MediaQuery.of(context).padding.bottom),
         decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
-        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Center(child: Container(width: 42, height: 5, decoration: BoxDecoration(color: IcStyle.line, borderRadius: BorderRadius.circular(3)))),
-          const SizedBox(height: 14),
-          ...children,
-        ]),
+        // a short phone (or a big font) scrolls the sheet instead of cutting it
+        child: SingleChildScrollView(
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Center(child: Container(width: 42, height: 5, decoration: BoxDecoration(color: IcStyle.line, borderRadius: BorderRadius.circular(3)))),
+            const SizedBox(height: 14),
+            ...children,
+          ]),
+        ),
       );
 }
 

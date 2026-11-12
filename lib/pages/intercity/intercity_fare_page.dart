@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../functions/intercity_api.dart';
+import 'intercity_pay.dart';
 import 'intercity_style.dart';
 import 'intercity_wait_page.dart';
 
@@ -44,6 +45,11 @@ class _IntercityFarePageState extends State<IntercityFarePage> {
   late int _wait = widget.again?.waitHours ?? 4;
   late num _fare = widget.again?.price ?? (_round ? (widget.route.roundTrip!['suggested'] as num? ?? widget.route.suggested) : widget.route.suggested);
   late bool _bag = widget.again?.bigBag ?? false;
+
+  /// «الزبون يختار»: what he picked; «online»/«cash» decide on their own
+  bool _choseOnline = false;
+  IcPayment get _pay => widget.home.payment;
+  bool get _payOnline => _pay.onlineFor(true, chose: _choseOnline);
   String _note = '';
   int _time = 0;
   DateTime? _custom;
@@ -195,6 +201,7 @@ class _IntercityFarePageState extends State<IntercityFarePage> {
     final booking = <String, Object?>{
       'zone_type_id': zt, 'drop': _drop, 'start': _start, 'fare': _fare, 'passengers': _passengers, 'big_bag': _bag, 'note': _note,
       'wait_hours': _round ? _wait : null,
+      'pay_online': _payOnline,
     };
     setState(() {
       _busy = true;
@@ -216,6 +223,7 @@ class _IntercityFarePageState extends State<IntercityFarePage> {
             bigBag: _bag,
             note: _note,
             waitHours: _round ? _wait : null,
+            payOnline: _payOnline,
           );
     if (!mounted) return;
     setState(() => _busy = false);
@@ -240,6 +248,8 @@ class _IntercityFarePageState extends State<IntercityFarePage> {
         pickAddress: widget.pick.address,
         dropAddress: _drop.address,
         note: _note,
+        payOnline: _payOnline,
+        payment: _pay,
       ),
     ));
   }
@@ -302,6 +312,17 @@ class _IntercityFarePageState extends State<IntercityFarePage> {
         const SizedBox(height: 4),
         Text('من ${IcStyle.money(_min)} إلى ${IcStyle.money(_max)} · السعر لوسط ${widget.route.to}، أبعد يزيد شوية',
             style: IcStyle.t(12, w: FontWeight.w600, c: IcStyle.muted)),
+        if (_pay.choiceFor(true)) ...[
+          const SizedBox(height: 10),
+          IcPayChoice(online: _choseOnline, onChanged: (v) => setState(() => _choseOnline = v)),
+        ],
+        if (_payOnline) ...[
+          const SizedBox(height: 8),
+          IcPayNote(
+              text: _pay.depositPercent < 100
+                  ? 'عربون ${_pay.depositPercent}٪ من محفظتك لما تختار الكابتن، والباقي نقدًا · رصيدك LYD ${IcStyle.money(_pay.balance)}'
+                  : 'تدفع من محفظتك لما تختار الكابتن · رصيدك LYD ${IcStyle.money(_pay.balance)}'),
+        ],
         if (_hint != null) ...[
           const SizedBox(height: 4),
           Text(

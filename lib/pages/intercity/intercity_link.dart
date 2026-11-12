@@ -76,6 +76,8 @@ class IntercityLink {
       pickAddress: '${ride['pick_address'] ?? ''}',
       dropAddress: '${ride['drop_address'] ?? ''}',
       note: '${ic['note'] ?? ''}',
+      payOnline: ic['pay_online'] == true,
+      payment: IntercityApi.last?.payment,
     );
   }
 

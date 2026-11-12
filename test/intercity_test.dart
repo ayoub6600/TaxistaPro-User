@@ -129,7 +129,7 @@ void main() {
     await t.pumpWidget(_app(IntercitySeatsPage(
       home: _home(shared: [_trip]),
       pickAddress: '',
-      book: (id, n) async {
+      book: (id, n, _) async {
         calls.add([id, n]);
         return IntercityResult(true, 'تم حجز $n كرسي ✅');
       },
@@ -274,6 +274,86 @@ void main() {
       await t.pump();
       expect(stars, 4);
       expect(tags, ['on_time']);
+    });
+  });
+
+  group('pay online first', () {
+    IntercityHome home(Map payment, {List shared = const []}) => IntercityHome({
+          'enabled': true,
+          'from': 'مصراتة',
+          'zone_type_id': 'zt-1',
+          'routes': [
+            {'route_id': 3, 'to': 'طرابلس', 'suggested': 180, 'min': 145, 'max': 270, 'seat_price': 40, 'to_lat': 32.88, 'to_lng': 13.19},
+          ],
+          'shared': shared,
+          'rules': {'horizon_days': 7, 'max_passengers': 4},
+          'payment': payment,
+        });
+
+    testWidgets('the admin\'s way: «online» says so, «choice» lets him pick, and the booking carries it', (t) async {
+      await t.binding.setSurfaceSize(const Size(430, 1800));
+      addTearDown(() => t.binding.setSurfaceSize(null));
+      Map<String, Object?>? sent;
+      Future<IntercityResult> send(Map<String, Object?> b) async {
+        sent = b;
+        return IntercityResult(false, 'x');
+      }
+
+      var h = home({'mode': 'online', 'car': true, 'seats': true, 'deposit_percent': 100, 'balance': 250});
+      await t.pumpWidget(_app(IntercityFarePage(home: h, pick: const IcPlace(32.35, 15.1, 'السكت'), route: h.routes.first, send: send)));
+      expect(find.text('تدفع من محفظتك لما تختار الكابتن · رصيدك LYD 250'), findsOneWidget);
+      await t.tap(find.text('اطلب عروض السائقين'));
+      await t.pump();
+      expect(sent!['pay_online'], isTrue);
+
+      h = home({'mode': 'choice', 'car': true, 'seats': true, 'deposit_percent': 20, 'balance': 0});
+      await t.pumpWidget(_app(IntercityFarePage(key: UniqueKey(), home: h, pick: const IcPlace(32.35, 15.1, 'السكت'), route: h.routes.first, send: send)));
+      expect(find.byKey(const ValueKey('ic-pay-note')), findsNothing, reason: 'cash until he picks the wallet');
+      await t.tap(find.bySemanticsLabel('💳 من المحفظة'));
+      await t.pump();
+      expect(find.textContaining('عربون 20٪ من محفظتك'), findsOneWidget);
+      await t.tap(find.text('اطلب عروض السائقين'));
+      await t.pump();
+      expect(sent!['pay_online'], isTrue);
+
+      h = home({'mode': 'online', 'car': false, 'seats': true});
+      await t.pumpWidget(_app(IntercityFarePage(key: UniqueKey(), home: h, pick: const IcPlace(32.35, 15.1, 'السكت'), route: h.routes.first, send: send)));
+      expect(find.byKey(const ValueKey('ic-pay-note')), findsNothing, reason: 'the admin left whole cars in cash');
+    });
+
+    testWidgets('taking a driver: «أكّد حجزك» with the amount, then «اشحن محفظتك» when short', (t) async {
+      final calls = <int>[];
+      await t.pumpWidget(_app(IntercityWaitPage(
+        rideId: 'r1', from: 'مصراتة', to: 'طرابلس', fare: 180, max: 270, step: 10, summary: 'بكرة 7:00 الصبح · راكب', pickAddress: 'السكت', dropAddress: 'طرابلس',
+        payOnline: true,
+        payment: IcPayment(const {'mode': 'online', 'deposit_percent': 100, 'late_cancel_driver_percent': 10, 'free_cancel_hours': 2}),
+        load: () async => {
+          'scheduled_offers': [
+            {'offer_id': 5, 'driver_name': 'محمد', 'proposed_fare': 190},
+          ],
+        },
+        accept: (id) async {
+          calls.add(id);
+          return IntercityResult(false, 'رصيد محفظتك 100', {'amount': 190, 'balance': 100, 'missing': 90}, 'intercity_needs_topup');
+        },
+      )));
+      await t.pumpAndSettle();
+      await t.tap(find.text('اختار'));
+      await t.pumpAndSettle();
+      expect(find.text('أكّد حجزك مع محمد 🚗'), findsOneWidget);
+      expect(find.textContaining('10٪ تروح للكابتن'), findsOneWidget);
+      await t.tap(find.byKey(const ValueKey('ic-pay-confirm')));
+      await t.pumpAndSettle();
+      expect(calls, [5]);
+      expect(find.byKey(const ValueKey('ic-missing')), findsOneWidget);
+      expect(find.text('ناقصك LYD 90. اشحن وارجع، والعرض مازال مستنيك.'), findsOneWidget);
+    });
+
+    test('the first part: the whole price, or the deposit', () {
+      expect(IcPayment(const {'deposit_percent': 100}).firstPart(340), 340);
+      expect(IcPayment(const {'deposit_percent': 20}).firstPart(150), 30);
+      expect(IcPayment(const {'mode': 'cash'}).onlineFor(true, chose: true), isFalse);
+      expect(IcPayment(const {'mode': 'choice'}).onlineFor(false, chose: true), isTrue);
     });
   });
 }

@@ -117,14 +117,45 @@ class IntercityHome {
   int get maxWaitHours => ((raw['rules'] is Map ? raw['rules']['max_wait_hours'] : null) as num?)?.toInt() ?? 8;
   IntercityLastTrip? get lastTrip => raw['last_trip'] is Map ? IntercityLastTrip(raw['last_trip'] as Map) : null;
   IntercityToRate? get toRate => raw['to_rate'] is Map ? IntercityToRate(raw['to_rate'] as Map) : null;
+  IcPayment get payment => IcPayment(raw['payment'] is Map ? raw['payment'] as Map : const {});
 }
 
 /// The answer of a call: ok with data, or the server's own Arabic reason.
 class IntercityResult {
-  IntercityResult(this.ok, this.message, [this.data]);
+  IntercityResult(this.ok, this.message, [this.data, this.code]);
   final bool ok;
   final String message;
   final dynamic data;
+  final String? code;
+
+  /// «اشحن محفظتك»: the booking pays online first and the wallet is short
+  bool get needsTopUp => code == 'intercity_needs_topup';
+  num get amount => (data is Map ? data['amount'] as num? : null) ?? 0;
+  num get balance => (data is Map ? data['balance'] as num? : null) ?? 0;
+  num get missing => (data is Map ? data['missing'] as num? : null) ?? 0;
+}
+
+/// «الدفع» in travel, as the admin set it: cash to the driver, online first from the wallet, or the
+/// rider chooses — for a whole car and/or seats — and how much first (100 = the whole price).
+class IcPayment {
+  IcPayment(this.raw);
+  final Map raw;
+
+  String get mode => '${raw['mode'] ?? 'cash'}';
+  bool get car => raw['car'] != false;
+  bool get seats => raw['seats'] != false;
+  int get depositPercent => (raw['deposit_percent'] as num?)?.toInt() ?? 100;
+  int get latePercent => (raw['late_cancel_driver_percent'] as num?)?.toInt() ?? 10;
+  int get freeCancelHours => (raw['free_cancel_hours'] as num?)?.toInt() ?? 2;
+  num get balance => (raw['balance'] as num?) ?? 0;
+
+  /// may he choose? (else it is forced one way)
+  bool choiceFor(bool isCar) => mode == 'choice' && (isCar ? car : seats);
+
+  /// does this booking pay online, given what he picked when he could choose
+  bool onlineFor(bool isCar, {bool chose = false}) => (isCar ? car : seats) && (mode == 'online' || (mode == 'choice' && chose));
+
+  num firstPart(num fare) => (fare * depositPercent / 100 * 100).round() / 100;
 }
 
 class IntercityApi {
@@ -172,7 +203,7 @@ class IntercityApi {
       final j = jsonDecode(r.body);
       final ok = r.statusCode == 200 && j is Map && j['success'] == true;
       final msg = j is Map ? '${j['message'] ?? ''}' : '';
-      return IntercityResult(ok, msg.isEmpty ? (ok ? 'تم' : 'ما قدرناش، جرّب مرة ثانية.') : msg, j is Map ? j['data'] : null);
+      return IntercityResult(ok, msg.isEmpty ? (ok ? 'تم' : 'ما قدرناش، جرّب مرة ثانية.') : msg, j is Map ? j['data'] : null, j is Map ? j['code']?.toString() : null);
     } catch (_) {
       return IntercityResult(false, 'تعذر الاتصال. تأكد من الإنترنت.');
     }
@@ -199,6 +230,7 @@ class IntercityApi {
     required bool bigBag,
     String note = '',
     int? waitHours,
+    bool payOnline = false,
   }) {
     return _post('api/v1/request/create', {
       'pick_lat': pickLat, 'pick_lng': pickLng, 'pick_address': pickAddress,
@@ -212,15 +244,18 @@ class IntercityApi {
       // «ذهاب ورجوع · الكابتن يستناك» the same day
       if (waitHours != null) 'intercity_round_trip': 1,
       if (waitHours != null) 'intercity_wait_hours': waitHours,
+      // «الزبون يختار»: he picked online (the server decides for «online» and «cash»)
+      if (payOnline) 'intercity_pay_online': 1,
     });
   }
 
   static Future<IntercityResult> rateSeat(int bookingId, int stars, List<String> tags) =>
       _post('api/v1/request/intercity/seats/rate', {'booking_id': bookingId, 'rating': stars, 'tags': tags});
 
-  static Future<IntercityResult> bookSeats(int tripId, int seats, {String pickAddress = '', double? pickLat, double? pickLng}) =>
+  static Future<IntercityResult> bookSeats(int tripId, int seats, {String pickAddress = '', double? pickLat, double? pickLng, bool payOnline = false}) =>
       _post('api/v1/request/intercity/seats/book', {
         'trip_id': tripId, 'seats': seats,
+        if (payOnline) 'pay_online': true,
         if (pickAddress.isNotEmpty) 'pick_address': pickAddress,
         if (pickLat != null) 'pick_lat': pickLat,
         if (pickLng != null) 'pick_lng': pickLng,

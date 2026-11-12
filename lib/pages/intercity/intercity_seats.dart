@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../functions/intercity_api.dart';
+import 'intercity_pay.dart';
 import 'intercity_style.dart';
 
 /// و · كرسي في رحلة: trips chosen drivers posted, by city; pick seats on the seat strip and book (cash).
@@ -12,7 +13,7 @@ class IntercitySeatsPage extends StatefulWidget {
   final String? routeTo;
 
   /// tests replace the network call
-  final Future<IntercityResult> Function(int tripId, int seats)? book;
+  final Future<IntercityResult> Function(int tripId, int seats, bool payOnline)? book;
 
   @override
   State<IntercitySeatsPage> createState() => _IntercitySeatsPageState();
@@ -24,17 +25,36 @@ class _IntercitySeatsPageState extends State<IntercitySeatsPage> {
   int _seats = 1;
   int? _busy;
   final Set<int> _booked = {};
+  bool _choseOnline = false;
+  IcPayment get _pay => widget.home.payment;
+  bool get _payOnline => _pay.onlineFor(false, chose: _choseOnline);
 
   List<SharedTrip> get _trips => widget.home.shared.where((t) => _city == null || t.to == _city).toList();
 
   Future<void> _book(SharedTrip t) async {
+    final total = t.seatPrice * _seats;
+    if (_payOnline) {
+      final yes = await IcPay.confirm(context,
+          title: 'احجز ${_seats == 1 ? 'كرسيك' : '$_seats كراسي'} إلى ${t.to} 🪑',
+          details: '${IntercityApi.dayLabel(t.departAt)} · ${t.driver['name'] ?? 'الكابتن'}',
+          amount: _pay.firstPart(total),
+          fare: total,
+          rules: _pay);
+      if (!yes || !mounted) return;
+    }
     setState(() => _busy = t.id);
-    final r = widget.book != null ? await widget.book!(t.id, _seats) : await IntercityApi.bookSeats(t.id, _seats, pickAddress: widget.pickAddress);
+    final r = widget.book != null
+        ? await widget.book!(t.id, _seats, _payOnline)
+        : await IntercityApi.bookSeats(t.id, _seats, pickAddress: widget.pickAddress, payOnline: _payOnline);
     if (!mounted) return;
     setState(() {
       _busy = null;
       if (r.ok) _booked.add(t.id);
     });
+    if (r.needsTopUp) {
+      await IcPay.topUp(context, r);
+      return;
+    }
     ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(r.message, textDirection: TextDirection.rtl)));
   }
 
@@ -47,7 +67,11 @@ class _IntercitySeatsPageState extends State<IntercitySeatsPage> {
       mapHeight: 170,
       children: [
         Text('كرسي في رحلة', style: IcStyle.t(21, w: FontWeight.w900)),
-        Text('سائقين مختارين من تاكسيستا · تدفع كرسيك نقدًا', style: IcStyle.t(13, w: FontWeight.w600, c: IcStyle.muted)),
+        Text('سائقين مختارين من تاكسيستا · ${_payOnline ? 'تدفع كرسيك من محفظتك' : 'تدفع كرسيك نقدًا'}', style: IcStyle.t(13, w: FontWeight.w600, c: IcStyle.muted)),
+        if (_pay.choiceFor(false)) ...[
+          const SizedBox(height: 8),
+          IcPayChoice(online: _choseOnline, onChanged: (v) => setState(() => _choseOnline = v)),
+        ],
         const SizedBox(height: 10),
         Wrap(spacing: 6, runSpacing: 6, children: [
           IcChip(text: 'الكل', selected: _city == null, onTap: () => setState(() => _city = null)),
