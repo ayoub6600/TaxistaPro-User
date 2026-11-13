@@ -38,6 +38,8 @@ import '../../functions/parcel_api.dart';
 import '../parcels/parcel_page.dart';
 import '../../functions/tow_api.dart';
 import '../tow/tow_page.dart';
+import '../../functions/freight_api.dart';
+import '../freight/freight_page.dart';
 import '../../styles/styles.dart';
 import '../../translations/translation.dart';
 import '../../widgets/clippers.dart';

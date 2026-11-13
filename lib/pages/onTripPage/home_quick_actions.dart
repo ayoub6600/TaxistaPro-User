@@ -35,6 +35,7 @@ class HomeQuickActions extends StatelessWidget {
     this.onTravel,
     this.onDelivery,
     this.onTow,
+    this.onFreight,
     this.onSoon,
     this.giftLat,
     this.giftLng,
@@ -55,6 +56,9 @@ class HomeQuickActions extends StatelessWidget {
 
   /// «ونش»: only where the rider's city has the tow open (else «قريبًا»)
   final VoidCallback? onTow;
+
+  /// «الشحن»: only where the rider's city has a freight class open (else «قريبًا»)
+  final VoidCallback? onFreight;
 
   /// a «قريبًا» service was tapped (الشحن، توصيل، ونش)
   final void Function(String service)? onSoon;
@@ -151,8 +155,8 @@ extension on HomeQuickActions {
         foreground: const Color(0xFF9A3412),
         iconBackground: const Color(0xFFEA580C),
         iconColor: Colors.white,
-        soon: true,
-        onTap: () => soon(rtl ? 'الشحن' : 'Freight'),
+        soon: onFreight == null,
+        onTap: onFreight ?? () => soon(rtl ? 'الشحن' : 'Freight'),
       ),
       HomeService(
         label: rtl ? 'توصيل' : 'Delivery',

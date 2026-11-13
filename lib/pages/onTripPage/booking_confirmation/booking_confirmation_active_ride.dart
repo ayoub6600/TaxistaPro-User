@@ -103,6 +103,9 @@ mixin _BookingConfirmationActiveRide
                       // «ونش»: what was asked and what to do now
                       if (TowRideCard.of(userRequestData) case final card?)
                         Padding(padding: const EdgeInsets.only(top: 8), child: SizedBox(width: media.width * 0.9, child: card)),
+                      // «الشحن»: the load, workers, floors and photos
+                      if (FreightRideCard.of(userRequestData) case final card?)
+                        Padding(padding: const EdgeInsets.only(top: 8), child: SizedBox(width: media.width * 0.9, child: card)),
                       if (userRequestData['accepted_at'] != null &&
                           userRequestData['arrived_at'] != null &&
                           userRequestData['is_trip_start'] == 0 &&
