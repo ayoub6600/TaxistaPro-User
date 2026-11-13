@@ -41,11 +41,11 @@ void main() {
     await t.pumpWidget(_app(Scaffold(
       body: Directionality(
         textDirection: TextDirection.rtl,
-        child: Center(child: HomeServicesRow(services: [svc('بدون وجهة'), svc('سفر', tap: () => travel++), svc('الشحن', soon: true), svc('توصيل', soon: true), svc('ونش', soon: true)])),
+        child: Center(child: HomeServicesRow(services: [svc('بدون وجهة'), svc('سفر', tap: () => travel++), svc('الشحن', soon: true), svc('توصيل', soon: true), svc('ساحبة', soon: true)])),
       ),
     )));
     await t.pumpAndSettle();
-    for (final l in ['بدون وجهة', 'سفر', 'الشحن', 'توصيل', 'ونش']) {
+    for (final l in ['بدون وجهة', 'سفر', 'الشحن', 'توصيل', 'ساحبة']) {
       expect(find.text(l), findsOneWidget, reason: l);
     }
     await t.tap(find.text('سفر'));

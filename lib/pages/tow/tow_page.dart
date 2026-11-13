@@ -7,11 +7,12 @@ import 'package:image_picker/image_picker.dart';
 import '../../functions/intercity_api.dart' show IcPlace, IntercityResult;
 import '../../functions/tow_api.dart';
 import '../intercity/intercity_style.dart';
+import '../common/price_mode_box.dart';
 import '../onTripPage/open_booked_ride.dart';
 import '../onTripPage/place_on_map.dart';
 import '../onTripPage/trip_place.dart';
 
-/// «ونش · شن صار للسيارة؟»: what happened and which car (that decides if a flatbed is needed),
+/// «ساحبة · شن صار للسيارة؟»: what happened and which car (that decides if a flatbed is needed),
 /// where the car is and where it goes (a known workshop or any place), an optional photo, the
 /// owner's word (and, in an accident, that nobody is hurt or the police allowed it), the fixed
 /// price line by line — then the nearest approved tow truck of the right kind is asked.
@@ -28,7 +29,7 @@ class TowPage extends StatefulWidget {
 
   static Future<void> open(BuildContext context, {required TowHome home, required IcPlace pick}) {
     if (!home.enabled) {
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(const SnackBar(content: Text('الونش مش متاح في مدينتك حاليًا.', textDirection: TextDirection.rtl)));
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(const SnackBar(content: Text('الساحبة مش متاحة في مدينتك حاليًا.', textDirection: TextDirection.rtl)));
       return Future.value();
     }
     return Navigator.of(context).push(MaterialPageRoute(builder: (_) => TowPage(home: home, pick: pick)));
@@ -52,6 +53,9 @@ class _TowPageState extends State<TowPage> {
   bool _owner = false;
   bool _injuries = false;
   TowQuote? _quote;
+  // «طريقة السعر»: offers when the admin says so (or he picks it)
+  late bool _offers = widget.home.priceMode == 'offers';
+  num? _fare;
   bool _quoting = false;
   bool _busy = false;
   String? _error;
@@ -81,6 +85,7 @@ class _TowPageState extends State<TowPage> {
     setState(() {
       _quoting = false;
       _quote = q;
+      if (q != null) _fare = PriceModeBox.start(q.total);
       if (q == null) _error = 'ما قدرناش نحسب السعر. تأكد إن المكانين داخل ${widget.home.city}.';
     });
   }
@@ -151,6 +156,7 @@ class _TowPageState extends State<TowPage> {
     final tow = <String, Object?>{
       'condition': _condition, 'car_type': _car, 'pick': _pick, 'drop': d, 'workshop_id': _workshop?.id, 'note': _note.text.trim(),
       'injuries_cleared': _injuries, 'photo': _photo != null,
+      if (_offers) 'fare': _fare,
     };
     setState(() {
       _busy = true;
@@ -160,7 +166,7 @@ class _TowPageState extends State<TowPage> {
         ? await widget.send!(tow)
         : await TowApi.create(
             pickLat: _pick.lat, pickLng: _pick.lng, pickAddress: _pick.address, dropLat: d.lat, dropLng: d.lng, dropAddress: d.address,
-            condition: _condition!, car: _car!, workshopId: _workshop?.id, note: _note.text, injuriesCleared: _injuries);
+            condition: _condition!, car: _car!, workshopId: _workshop?.id, note: _note.text, injuriesCleared: _injuries, offerFare: _offers ? _fare : null);
     if (!mounted) return;
     if (!r.ok) {
       setState(() {
@@ -188,14 +194,27 @@ class _TowPageState extends State<TowPage> {
     final h = widget.home;
     final q = _quote;
     return IcScaffold(
-      title: 'ونش · ${h.city}',
+      title: 'ساحبة · ${h.city}',
       mapHeight: 130,
       bottom: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         if (_error != null) ...[
           Text(_error!, key: const ValueKey('tow-error'), textAlign: TextAlign.center, style: IcStyle.t(13.5, c: const Color(0xffD92D20))),
           const SizedBox(height: 6),
         ],
-        IcButton(text: q == null ? 'اطلب ونش' : 'اطلب ونش · ${h.currency} ${IcStyle.money(q.total)}', busy: _busy, onTap: _send),
+        if (q != null)
+          PriceModeBox(
+            mode: h.priceMode, offers: _offers, onOffers: (v) => setState(() => _offers = v),
+            suggested: q.total, fare: _fare, onFare: (v) => setState(() => _fare = v),
+            minPercent: h.offerMinPercent, maxPercent: h.offerMaxPercent, currency: h.currency,
+          ),
+        IcButton(
+            text: q == null
+                ? 'اطلب ساحبة'
+                : _offers
+                    ? 'اطلب عروض · ${h.currency} ${IcStyle.money(_fare ?? q.total)}'
+                    : 'اطلب ساحبة · ${h.currency} ${IcStyle.money(q.total)}',
+            busy: _busy,
+            onTap: _send),
       ]),
       children: [
         Text('شن صار للسيارة؟ 🛻', style: IcStyle.t(22, w: FontWeight.w900)),
@@ -219,7 +238,7 @@ class _TowPageState extends State<TowPage> {
         ]),
         if (_needsFlatbed) ...[
           const SizedBox(height: 8),
-          _note2('🛻 تحتاج سطحة (السيارة تطلع فوق الونش كاملة)', const Color(0xffEAF2FF), IcStyle.blue, key: const ValueKey('tow-flatbed')),
+          _note2('🛻 تحتاج سطحة (السيارة تطلع فوق الساحبة كاملة)', const Color(0xffEAF2FF), IcStyle.blue, key: const ValueKey('tow-flatbed')),
         ],
         if (_accident) ...[
           const SizedBox(height: 10),
@@ -278,8 +297,8 @@ class _TowPageState extends State<TowPage> {
         const SizedBox(height: 8),
         Text(
           h.trucksOnline > 0
-              ? '${h.trucksOnline == 1 ? 'ونش واحد متاح' : '${h.trucksOnline} ونشات متاحة'} في ${h.city} الآن'
-              : 'كل الونشات مشغولة الآن. نطلبه ويوصلك أول ما يتوفر واحد.',
+              ? '${h.trucksOnline == 1 ? 'ساحبة وحدة متاحة' : '${h.trucksOnline} ساحبات متاحة'} في ${h.city} الآن'
+              : 'كل الساحبات مشغولة الآن. نطلبها وتوصلك أول ما تتوفر وحدة.',
           textAlign: TextAlign.center,
           style: IcStyle.t(12.5, w: FontWeight.w700, c: h.trucksOnline > 0 ? const Color(0xff16803C) : _amber),
         ),
@@ -301,7 +320,7 @@ class _TowPageState extends State<TowPage> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(color: const Color(0xffEAF2FF), borderRadius: BorderRadius.circular(16)),
       child: Column(children: [
-        line('رفع السيارة (يشمل مشوار الونش لعندك)', q.lift),
+        line('رفع السيارة (يشمل مشوار الساحبة لعندك)', q.lift),
         line('المسافة · ${IcStyle.money(q.km)} كم', q.distance),
         if (q.flatbed > 0) line('سطحة', q.flatbed),
         if (q.night > 0) line('زيادة الليل', q.night),

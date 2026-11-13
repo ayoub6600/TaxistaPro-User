@@ -100,7 +100,7 @@ mixin _BookingConfirmationActiveRide
                       // «توصيل»: the delivery code the receiver gives the driver
                       if (ParcelCodeCard.of(userRequestData) case final card?)
                         Padding(padding: const EdgeInsets.only(top: 8), child: SizedBox(width: media.width * 0.9, child: card)),
-                      // «ونش»: what was asked and what to do now
+                      // «ساحبة»: what was asked and what to do now
                       if (TowRideCard.of(userRequestData) case final card?)
                         Padding(padding: const EdgeInsets.only(top: 8), child: SizedBox(width: media.width * 0.9, child: card)),
                       // «الشحن»: the load, workers, floors and photos

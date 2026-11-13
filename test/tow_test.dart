@@ -45,14 +45,14 @@ void main() {
         },
         send: (tow) async {
           sent = tow;
-          return IntercityResult(true, 'طلبنا لك أقرب ونش 🛻');
+          return IntercityResult(true, 'طلبنا لك أقرب ساحبة 🛻');
         },
       ),
     ));
     expect(find.text('شن صار للسيارة؟ 🛻'), findsOneWidget);
-    expect(find.text('2 ونشات متاحة في مصراتة الآن'), findsOneWidget);
+    expect(find.text('2 ساحبات متاحة في مصراتة الآن'), findsOneWidget);
 
-    await t.tap(find.text('اطلب ونش'));
+    await t.tap(find.text('اطلب ساحبة'));
     await t.pump();
     expect(find.text('اختار شن صار للسيارة.'), findsOneWidget);
 
@@ -62,15 +62,15 @@ void main() {
     await t.pumpAndSettle();
     expect(quotes.last, 'not_starting/sedan/ورشة الحاج سالم');
     expect(find.byKey(const ValueKey('tow-flatbed')), findsNothing);
-    expect(find.text('رفع السيارة (يشمل مشوار الونش لعندك)'), findsOneWidget);
+    expect(find.text('رفع السيارة (يشمل مشوار الساحبة لعندك)'), findsOneWidget);
     expect(find.text('LYD 102'), findsWidgets);
 
-    await t.tap(find.textContaining('اطلب ونش'));
+    await t.tap(find.textContaining('اطلب ساحبة'));
     await t.pump();
     expect(find.text('أكّد إن السيارة متاعك أو عندك إذن تحركها.'), findsOneWidget);
     await t.tap(find.byKey(const ValueKey('tow-owner')));
     await t.pump();
-    await t.tap(find.textContaining('اطلب ونش'));
+    await t.tap(find.textContaining('اطلب ساحبة'));
     await t.pumpAndSettle();
     expect(sent!['condition'], 'not_starting');
     expect(sent!['workshop_id'], 3);
@@ -91,7 +91,7 @@ void main() {
         },
       ),
     ));
-    expect(find.text('كل الونشات مشغولة الآن. نطلبه ويوصلك أول ما يتوفر واحد.'), findsOneWidget);
+    expect(find.text('كل الساحبات مشغولة الآن. نطلبها وتوصلك أول ما تتوفر وحدة.'), findsOneWidget);
     await t.tap(find.text('حادث'));
     await t.tap(find.text('صالون'));
     await t.pump();
@@ -104,13 +104,13 @@ void main() {
     expect(find.text('زيادة الليل'), findsOneWidget);
     await t.tap(find.byKey(const ValueKey('tow-owner')));
     await t.pump();
-    await t.tap(find.textContaining('اطلب ونش'));
+    await t.tap(find.textContaining('اطلب ساحبة'));
     await t.pump();
     expect(find.text('في الحادث: أكّد إن ما فيش إصابات أو إن الشرطة سمحت.'), findsOneWidget);
     expect(sent, isNull);
     await t.tap(find.byKey(const ValueKey('tow-injuries')));
     await t.pump();
-    await t.tap(find.textContaining('اطلب ونش'));
+    await t.tap(find.textContaining('اطلب ساحبة'));
     await t.pumpAndSettle();
     expect(sent!['injuries_cleared'], isTrue);
     expect(sent!['workshop_id'], isNull);
@@ -122,7 +122,7 @@ void main() {
       'tow': {'kind_label': 'سطحة', 'condition_label': 'حادث', 'car_label': 'صالون', 'before_sides': ['front', 'back'], 'emergency_text': 'اتصل بالإسعاف', 'workshop': {'name': 'ورشة الحاج سالم'}},
     })!;
     await t.pumpWidget(MaterialApp(home: Scaffold(body: Directionality(textDirection: TextDirection.rtl, child: card))));
-    expect(find.text('ونش · سطحة'), findsOneWidget);
+    expect(find.text('ساحبة · سطحة'), findsOneWidget);
     expect(find.text('الكابتن عند السيارة يصوّرها قبل الرفع (2 من 4).'), findsOneWidget);
     expect(find.text('⚠️ اتصل بالإسعاف'), findsOneWidget);
     expect(TowRideCard.of({'id': 'x'}), isNull);
@@ -137,7 +137,7 @@ void main() {
       ),
     ));
     await t.pumpAndSettle();
-    await t.tap(find.text('ونش'));
+    await t.tap(find.text('ساحبة'));
     expect(opened, 1);
   });
 }

@@ -12,7 +12,7 @@ extension _MapCollapsedSheet on _MapsState {
     unawaited(IntercityApi.refresh(_centerLocation.latitude, _centerLocation.longitude));
     // «توصيل» opens where the admin opened parcels for the rider's city
     unawaited(ParcelApi.refresh(_centerLocation.latitude, _centerLocation.longitude));
-    // «ونش» opens where the admin opened the tow for the rider's city
+    // «ساحبة» opens where the admin opened the tow for the rider's city
     unawaited(TowApi.refresh(_centerLocation.latitude, _centerLocation.longitude));
     // «الشحن» opens where the admin opened a freight class for the rider's city
     unawaited(FreightApi.refresh(_centerLocation.latitude, _centerLocation.longitude));

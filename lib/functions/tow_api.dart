@@ -26,7 +26,7 @@ class TowWorkshop {
   double get lng => ((raw['lng'] as num?) ?? 0).toDouble();
 }
 
-/// «ونش» where he stands: open or not, the choices, the known workshops, the price rules.
+/// «ساحبة» where he stands: open or not, the choices, the known workshops, the price rules.
 class TowHome {
   TowHome(this.raw);
   final Map raw;
@@ -35,6 +35,10 @@ class TowHome {
   String get city => '${raw['city'] ?? ''}';
   String get currency => '${raw['currency'] ?? 'LYD'}';
   String get emergencyText => '${raw['emergency_text'] ?? ''}';
+  /// «طريقة السعر»: fixed, offers or choice (the admin's)
+  String get priceMode => const ['offers', 'choice'].contains(raw['price_mode']) ? '${raw['price_mode']}' : 'fixed';
+  int get offerMinPercent => (raw['offer_min_percent'] as num?)?.toInt() ?? 80;
+  int get offerMaxPercent => (raw['offer_max_percent'] as num?)?.toInt() ?? 200;
   int get trucksOnline => (raw['trucks_online'] as num?)?.toInt() ?? 0;
   num get liftFee => (raw['lift_fee'] as num?) ?? 0;
 
@@ -128,12 +132,14 @@ class TowApi {
     int? workshopId,
     String note = '',
     required bool injuriesCleared,
+    num? offerFare,
   }) =>
       _post('api/v1/request/tow', {
         ..._places(pickLat, pickLng, pickAddress, dropLat, dropLng, dropAddress),
         'condition': condition, 'car_type': car, if (workshopId != null) 'workshop_id': workshopId,
         if (note.trim().isNotEmpty) 'note': note.trim(),
         'owner_confirmed': true, 'injuries_cleared': injuriesCleared,
+        if (offerFare != null) ...{'price_mode': 'offers', 'fare': offerFare},
       });
 
   /// the owner's photo of the car, after the request (optional)

@@ -4,6 +4,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../functions/intercity_api.dart' show IcPlace, IntercityResult;
 import '../../functions/parcel_api.dart';
 import '../intercity/intercity_style.dart';
+import '../common/price_mode_box.dart';
 import '../onTripPage/open_booked_ride.dart';
 import '../onTripPage/place_on_map.dart';
 
@@ -44,6 +45,9 @@ class _ParcelPageState extends State<ParcelPage> {
   String _payer = 'sender';
   bool _rules = false;
   num? _price;
+  // «طريقة السعر»: offers when the admin says so (or he picks it)
+  late bool _offers = widget.home.priceMode == 'offers';
+  num? _fare;
   num? _km;
   bool _quoting = false;
   bool _busy = false;
@@ -79,6 +83,7 @@ class _ParcelPageState extends State<ParcelPage> {
       _quoting = false;
       if (r.ok && r.data is Map) {
         _price = (r.data as Map)['price'] as num?;
+        if (_price != null) _fare = PriceModeBox.start(_price!);
         _km = (r.data as Map)['km'] as num?;
       } else {
         _price = null;
@@ -110,6 +115,7 @@ class _ParcelPageState extends State<ParcelPage> {
     final d = _drop!;
     final parcel = <String, Object?>{
       'size': _size, 'drop': d, 'receiver_name': _name.text.trim(), 'receiver_phone': _phone.text.trim(), 'note': _note.text.trim(), 'payer': _payer,
+      if (_offers) 'fare': _fare,
     };
     setState(() {
       _busy = true;
@@ -120,7 +126,7 @@ class _ParcelPageState extends State<ParcelPage> {
         : await ParcelApi.create(
             pickLat: widget.pick.lat, pickLng: widget.pick.lng, pickAddress: widget.pick.address,
             dropLat: d.lat, dropLng: d.lng, dropAddress: d.address, size: _size,
-            receiverName: _name.text.trim(), receiverPhone: _phone.text.trim(), note: _note.text, payer: _payer, payment: 'cash');
+            receiverName: _name.text.trim(), receiverPhone: _phone.text.trim(), note: _note.text, payer: _payer, payment: 'cash', offerFare: _offers ? _fare : null);
     if (!mounted) return;
     setState(() => _busy = false);
     if (!r.ok) {
@@ -147,7 +153,20 @@ class _ParcelPageState extends State<ParcelPage> {
           Text(_error!, key: const ValueKey('parcel-error'), textAlign: TextAlign.center, style: IcStyle.t(13.5, c: const Color(0xffD92D20))),
           const SizedBox(height: 6),
         ],
-        IcButton(text: _price == null ? 'اطلب توصيل' : 'اطلب توصيل · $cur ${IcStyle.money(_price!)}', busy: _busy, onTap: _send),
+        if (_price != null)
+          PriceModeBox(
+            mode: widget.home.priceMode, offers: _offers, onOffers: (v) => setState(() => _offers = v),
+            suggested: _price!, fare: _fare, onFare: (v) => setState(() => _fare = v),
+            minPercent: widget.home.offerMinPercent, maxPercent: widget.home.offerMaxPercent, currency: cur,
+          ),
+        IcButton(
+            text: _price == null
+                ? 'اطلب توصيل'
+                : _offers
+                    ? 'اطلب عروض · $cur ${IcStyle.money(_fare ?? _price!)}'
+                    : 'اطلب توصيل · $cur ${IcStyle.money(_price!)}',
+            busy: _busy,
+            onTap: _send),
       ]),
       children: [
         Text('شن تبعت؟ 📦', style: IcStyle.t(22, w: FontWeight.w900)),

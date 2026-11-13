@@ -36,7 +36,7 @@ class TowRideCard extends StatelessWidget {
         Row(children: [
           const Text('🛻', style: TextStyle(fontSize: 20)),
           const SizedBox(width: 6),
-          Expanded(child: Text('ونش · ${tow['kind_label'] ?? ''}', style: _t(15, w: FontWeight.w900))),
+          Expanded(child: Text('ساحبة · ${tow['kind_label'] ?? ''}', style: _t(15, w: FontWeight.w900))),
         ]),
         Text([tow['condition_label'], tow['car_label'], if (workshop.isNotEmpty) '← $workshop'].whereType<Object>().join(' · '),
             style: _t(12.5, w: FontWeight.w600, c: const Color(0xff55678A))),

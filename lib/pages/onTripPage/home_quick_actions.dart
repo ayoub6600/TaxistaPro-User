@@ -54,13 +54,13 @@ class HomeQuickActions extends StatelessWidget {
   /// «توصيل»: only where the rider's city has parcels open (else «قريبًا»)
   final VoidCallback? onDelivery;
 
-  /// «ونش»: only where the rider's city has the tow open (else «قريبًا»)
+  /// «ساحبة»: only where the rider's city has the tow open (else «قريبًا»)
   final VoidCallback? onTow;
 
   /// «الشحن»: only where the rider's city has a freight class open (else «قريبًا»)
   final VoidCallback? onFreight;
 
-  /// a «قريبًا» service was tapped (الشحن، توصيل، ونش)
+  /// a «قريبًا» service was tapped (الشحن، توصيل، ساحبة)
   final void Function(String service)? onSoon;
 
   final bool rtl;
@@ -114,7 +114,7 @@ class HomeQuickActions extends StatelessWidget {
 }
 
 extension on HomeQuickActions {
-  /// بدون وجهة · سفر · مشوار الدوام · الشحن · توصيل · ونش
+  /// بدون وجهة · سفر · مشوار الدوام · الشحن · توصيل · ساحبة
   List<HomeService> _services() {
     void soon(String what) => onSoon?.call(what);
     return [
@@ -169,14 +169,14 @@ extension on HomeQuickActions {
         onTap: onDelivery ?? () => soon(rtl ? 'التوصيل' : 'Delivery'),
       ),
       HomeService(
-        label: rtl ? 'ونش' : 'Tow',
+        label: rtl ? 'ساحبة' : 'Tow',
         icon: Icons.car_crash_rounded,
         background: const Color(0xFFFEF3C7),
         foreground: const Color(0xFF854D0E),
         iconBackground: const Color(0xFFCA8A04),
         iconColor: Colors.white,
         soon: onTow == null,
-        onTap: onTow ?? () => soon(rtl ? 'الونش' : 'Tow'),
+        onTap: onTow ?? () => soon(rtl ? 'الساحبة' : 'Tow'),
       ),
     ];
   }

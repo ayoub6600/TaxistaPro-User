@@ -15,6 +15,10 @@ class ParcelHome {
   String get city => '${raw['city'] ?? ''}';
   String get currency => '${raw['currency'] ?? 'LYD'}';
   String get banned => '${raw['banned'] ?? ''}';
+  /// «طريقة السعر»: fixed, offers or choice (the admin's)
+  String get priceMode => const ['offers', 'choice'].contains(raw['price_mode']) ? '${raw['price_mode']}' : 'fixed';
+  int get offerMinPercent => (raw['offer_min_percent'] as num?)?.toInt() ?? 80;
+  int get offerMaxPercent => (raw['offer_max_percent'] as num?)?.toInt() ?? 200;
   int get waitMinutes => (raw['receiver_wait_minutes'] as num?)?.toInt() ?? 10;
   List<Map> get sizes => [for (final s in (raw['sizes'] as List? ?? const [])) if (s is Map) s];
 }
@@ -86,11 +90,13 @@ class ParcelApi {
     required String note,
     required String payer,
     required String payment,
+    num? offerFare,
   }) =>
       _post('api/v1/request/parcels', {
         ..._places(pickLat, pickLng, pickAddress, dropLat, dropLng, dropAddress),
         'size': size, 'receiver_name': receiverName, 'receiver_phone': receiverPhone,
         if (note.trim().isNotEmpty) 'note': note.trim(),
         'payer': payer, 'payment': payment, 'accept_rules': true,
+        if (offerFare != null) ...{'price_mode': 'offers', 'fare': offerFare},
       });
 }
