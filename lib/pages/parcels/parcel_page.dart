@@ -1,14 +1,11 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-import '../../functions/functions.dart' show getUserDetails, geoCoding, mapType, userRequestData;
 import '../../functions/intercity_api.dart' show IcPlace, IntercityResult;
 import '../../functions/parcel_api.dart';
 import '../intercity/intercity_style.dart';
-import '../onTripPage/trip_map_picker.dart';
-import '../onTripPage/trip_place.dart';
+import '../../functions/ride_watch.dart';
+import '../onTripPage/place_on_map.dart';
 
 /// «توصيل · شن تبعت؟»: the size, where it goes (on the map), who receives it, who pays, the admin's
 /// price for it, and the rules agreed once. Booking it makes a ride the nearest parcel driver takes.
@@ -30,23 +27,8 @@ class ParcelPage extends StatefulWidget {
     return Navigator.of(context).push(MaterialPageRoute(builder: (_) => ParcelPage(home: home, pick: pick)));
   }
 
-  static Timer? _watch;
-
-  /// A booked parcel has no searching screen of its own: look every 8 seconds (for 3 minutes)
-  /// until a driver took it, so the home screen turns into the ride with the delivery code.
-  static void watchForDriver() {
-    _watch?.cancel();
-    var left = 22;
-    unawaited(Future(() => getUserDetails()));
-    _watch = Timer.periodic(const Duration(seconds: 8), (t) async {
-      if (--left <= 0 || userRequestData.isNotEmpty) {
-        t.cancel();
-        return;
-      }
-      await getUserDetails();
-      if (userRequestData.isNotEmpty) t.cancel();
-    });
-  }
+  /// kept for older callers: the shared watch
+  static void watchForDriver() => RideWatch.untilDriver();
 
   static const labels = {'small': 'صغير', 'medium': 'متوسط', 'large': 'كبير'};
   static const hints = {'small': 'ظرف أو علبة', 'medium': 'شنطة أو كرتونة', 'large': 'الكرسي الخلفي'};
@@ -81,16 +63,7 @@ class _ParcelPageState extends State<ParcelPage> {
   Future<void> _chooseDrop() async {
     final place = widget.pickDrop != null
         ? await widget.pickDrop!()
-        : await Navigator.of(context).push<TripPlace?>(MaterialPageRoute(
-            builder: (_) => TripMapPicker(
-              rtl: true,
-              role: TripPointRole.destination,
-              initialCenter: LatLng(widget.pick.lat, widget.pick.lng),
-              reverseGeocode: (p) => geoCoding(p.latitude, p.longitude),
-              // the same map the home screen uses
-              useGoogleMap: mapType == 'google',
-            ),
-          )).then((p) => p?.coordinates == null ? null : IcPlace(p!.coordinates!.latitude, p.coordinates!.longitude, p.address));
+        : await placeOnMap(context, center: LatLng(widget.pick.lat, widget.pick.lng));
     if (place == null || !mounted) return;
     setState(() => _drop = place);
     _quote();

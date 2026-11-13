@@ -34,6 +34,7 @@ class HomeQuickActions extends StatelessWidget {
     this.onRecurring,
     this.onTravel,
     this.onDelivery,
+    this.onTow,
     this.onSoon,
     this.giftLat,
     this.giftLng,
@@ -51,6 +52,9 @@ class HomeQuickActions extends StatelessWidget {
 
   /// «توصيل»: only where the rider's city has parcels open (else «قريبًا»)
   final VoidCallback? onDelivery;
+
+  /// «ونش»: only where the rider's city has the tow open (else «قريبًا»)
+  final VoidCallback? onTow;
 
   /// a «قريبًا» service was tapped (الشحن، توصيل، ونش)
   final void Function(String service)? onSoon;
@@ -167,8 +171,8 @@ extension on HomeQuickActions {
         foreground: const Color(0xFF854D0E),
         iconBackground: const Color(0xFFCA8A04),
         iconColor: Colors.white,
-        soon: true,
-        onTap: () => soon(rtl ? 'الونش' : 'Tow'),
+        soon: onTow == null,
+        onTap: onTow ?? () => soon(rtl ? 'الونش' : 'Tow'),
       ),
     ];
   }
