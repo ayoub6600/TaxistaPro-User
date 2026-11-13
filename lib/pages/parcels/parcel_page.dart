@@ -4,7 +4,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../functions/intercity_api.dart' show IcPlace, IntercityResult;
 import '../../functions/parcel_api.dart';
 import '../intercity/intercity_style.dart';
-import '../../functions/ride_watch.dart';
+import '../onTripPage/open_booked_ride.dart';
 import '../onTripPage/place_on_map.dart';
 
 /// «توصيل · شن تبعت؟»: the size, where it goes (on the map), who receives it, who pays, the admin's
@@ -26,9 +26,6 @@ class ParcelPage extends StatefulWidget {
     }
     return Navigator.of(context).push(MaterialPageRoute(builder: (_) => ParcelPage(home: home, pick: pick)));
   }
-
-  /// kept for older callers: the shared watch
-  static void watchForDriver() => RideWatch.untilDriver();
 
   static const labels = {'small': 'صغير', 'medium': 'متوسط', 'large': 'كبير'};
   static const hints = {'small': 'ظرف أو علبة', 'medium': 'شنطة أو كرتونة', 'large': 'الكرسي الخلفي'};
@@ -130,10 +127,13 @@ class _ParcelPageState extends State<ParcelPage> {
       setState(() => _error = r.message);
       return;
     }
-    // the parcel is a ride now: the home screen follows it like any ride once a driver takes it
-    if (widget.send == null) ParcelPage.watchForDriver();
     ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(r.message, textDirection: TextDirection.rtl)));
-    Navigator.of(context).maybePop();
+    // the parcel is a ride now: the same searching screen as any ride
+    if (widget.send == null) {
+      await openBookedRide(context);
+    } else {
+      Navigator.of(context).maybePop();
+    }
   }
 
   @override

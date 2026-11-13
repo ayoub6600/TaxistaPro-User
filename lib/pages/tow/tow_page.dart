@@ -5,9 +5,9 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../functions/intercity_api.dart' show IcPlace, IntercityResult;
-import '../../functions/ride_watch.dart';
 import '../../functions/tow_api.dart';
 import '../intercity/intercity_style.dart';
+import '../onTripPage/open_booked_ride.dart';
 import '../onTripPage/place_on_map.dart';
 import '../onTripPage/trip_place.dart';
 
@@ -172,12 +172,15 @@ class _TowPageState extends State<TowPage> {
     if (widget.send == null) {
       final id = r.data is Map ? '${(r.data as Map)['id'] ?? ''}' : '';
       if (_photo != null && id.isNotEmpty) await TowApi.photo(id, _photo!);
-      RideWatch.untilDriver();
     }
     if (!mounted) return;
     setState(() => _busy = false);
     ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(r.message, textDirection: TextDirection.rtl)));
-    Navigator.of(context).maybePop();
+    if (widget.send == null) {
+      await openBookedRide(context);
+    } else {
+      Navigator.of(context).maybePop();
+    }
   }
 
   @override
