@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../../functions/tr.dart';
 
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -29,7 +30,7 @@ class TowPage extends StatefulWidget {
 
   static Future<void> open(BuildContext context, {required TowHome home, required IcPlace pick}) {
     if (!home.enabled) {
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(const SnackBar(content: Text('الساحبة مش متاحة في مدينتك حاليًا.', textDirection: TextDirection.rtl)));
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(tr('الساحبة مش متاحة في مدينتك حاليًا.', 'Towing is not available in your city yet.'), textDirection: (appRtl ? TextDirection.rtl : TextDirection.ltr))));
       return Future.value();
     }
     return Navigator.of(context).push(MaterialPageRoute(builder: (_) => TowPage(home: home, pick: pick)));
@@ -86,7 +87,7 @@ class _TowPageState extends State<TowPage> {
       _quoting = false;
       _quote = q;
       if (q != null) _fare = PriceModeBox.start(q.total);
-      if (q == null) _error = 'ما قدرناش نحسب السعر. تأكد إن المكانين داخل ${widget.home.city}.';
+      if (q == null) _error = tr('ما قدرناش نحسب السعر. تأكد إن المكانين داخل ${widget.home.city}.', 'We could not work out the price. Make sure both places are in ${widget.home.city}.');
     });
   }
 
@@ -115,14 +116,14 @@ class _TowPageState extends State<TowPage> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: (appRtl ? TextDirection.rtl : TextDirection.ltr),
         child: IcSheet(children: [
-          Text('صورة السيارة', style: IcStyle.t(20, w: FontWeight.w900)),
-          Text('تساعد الكابتن يعرف شن يجيب معاه.', style: IcStyle.t(13, w: FontWeight.w600, c: IcStyle.muted)),
+          Text(tr('صورة السيارة', 'Photo of the car'), style: IcStyle.t(20, w: FontWeight.w900)),
+          Text(tr('تساعد الكابتن يعرف شن يجيب معاه.', 'Helps the captain know what to bring.'), style: IcStyle.t(13, w: FontWeight.w600, c: IcStyle.muted)),
           const SizedBox(height: 10),
-          IcButton(text: 'صوّر الآن 📷', onTap: () => Navigator.pop(ctx, ImageSource.camera)),
+          IcButton(text: tr('صوّر الآن 📷', 'Take a photo now 📷'), onTap: () => Navigator.pop(ctx, ImageSource.camera)),
           const SizedBox(height: 6),
-          IcButton(text: 'من الصور', ghost: true, onTap: () => Navigator.pop(ctx, ImageSource.gallery)),
+          IcButton(text: tr('من الصور', 'From photos'), ghost: true, onTap: () => Navigator.pop(ctx, ImageSource.gallery)),
         ]),
       ),
     );
@@ -137,12 +138,12 @@ class _TowPageState extends State<TowPage> {
   }
 
   String? get _missing {
-    if (_condition == null) return 'اختار شن صار للسيارة.';
-    if (_car == null) return 'اختار نوع السيارة.';
-    if (_drop == null) return 'اختار وين تمشي السيارة.';
-    if (_accident && !_injuries) return 'في الحادث: أكّد إن ما فيش إصابات أو إن الشرطة سمحت.';
-    if (!_owner) return 'أكّد إن السيارة متاعك أو عندك إذن تحركها.';
-    if (_quote == null) return 'نستنوا السعر…';
+    if (_condition == null) return tr('اختار شن صار للسيارة.', 'Choose what happened to the car.');
+    if (_car == null) return tr('اختار نوع السيارة.', 'Choose the vehicle type.');
+    if (_drop == null) return tr('اختار وين تمشي السيارة.', 'Choose where the car goes.');
+    if (_accident && !_injuries) return tr('في الحادث: أكّد إن ما فيش إصابات أو إن الشرطة سمحت.', 'In an accident: confirm there are no injuries or the police allowed it.');
+    if (!_owner) return tr('أكّد إن السيارة متاعك أو عندك إذن تحركها.', 'Confirm the car is yours or you have permission to move it.');
+    if (_quote == null) return tr('نستنوا السعر…', 'Waiting for the price…');
     return null;
   }
 
@@ -181,7 +182,7 @@ class _TowPageState extends State<TowPage> {
     }
     if (!mounted) return;
     setState(() => _busy = false);
-    ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(r.message, textDirection: TextDirection.rtl)));
+    ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(r.message, textDirection: (appRtl ? TextDirection.rtl : TextDirection.ltr))));
     if (widget.send == null) {
       await openBookedRide(context);
     } else {
@@ -194,7 +195,7 @@ class _TowPageState extends State<TowPage> {
     final h = widget.home;
     final q = _quote;
     return IcScaffold(
-      title: 'ساحبة · ${h.city}',
+      title: tr('ساحبة · ${h.city}', 'Tow truck · ${h.city}'),
       mapHeight: 130,
       bottom: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         if (_error != null) ...[
@@ -209,15 +210,15 @@ class _TowPageState extends State<TowPage> {
           ),
         IcButton(
             text: q == null
-                ? 'اطلب ساحبة'
+                ? tr('اطلب ساحبة', 'Request a tow truck')
                 : _offers
-                    ? 'اطلب عروض · ${h.currency} ${IcStyle.money(_fare ?? q.total)}'
-                    : 'اطلب ساحبة · ${h.currency} ${IcStyle.money(q.total)}',
+                    ? tr('اطلب عروض · ${h.currency} ${IcStyle.money(_fare ?? q.total)}', 'Ask for offers · ${h.currency} ${IcStyle.money(_fare ?? q.total)}')
+                    : tr('اطلب ساحبة · ${h.currency} ${IcStyle.money(q.total)}', 'Request a tow truck · ${h.currency} ${IcStyle.money(q.total)}'),
             busy: _busy,
             onTap: _send),
       ]),
       children: [
-        Text('شن صار للسيارة؟ 🛻', style: IcStyle.t(22, w: FontWeight.w900)),
+        Text(tr('شن صار للسيارة؟ 🛻', 'What happened to the car? 🛻'), style: IcStyle.t(22, w: FontWeight.w900)),
         const SizedBox(height: 8),
         Wrap(spacing: 6, runSpacing: 6, children: [
           for (final c in h.conditions)
@@ -227,7 +228,7 @@ class _TowPageState extends State<TowPage> {
             }),
         ]),
         const SizedBox(height: 12),
-        Text('نوع السيارة', style: IcStyle.t(15, w: FontWeight.w900)),
+        Text(tr('نوع السيارة', 'Vehicle type'), style: IcStyle.t(15, w: FontWeight.w900)),
         const SizedBox(height: 6),
         Wrap(spacing: 6, runSpacing: 6, children: [
           for (final c in h.cars)
@@ -238,7 +239,7 @@ class _TowPageState extends State<TowPage> {
         ]),
         if (_needsFlatbed) ...[
           const SizedBox(height: 8),
-          _note2('🛻 تحتاج سطحة (السيارة تطلع فوق الساحبة كاملة)', const Color(0xffEAF2FF), IcStyle.blue, key: const ValueKey('tow-flatbed')),
+          _note2(tr('🛻 تحتاج سطحة (السيارة تطلع فوق الساحبة كاملة)', '🛻 Needs a flatbed (the whole car rides on the truck)'), const Color(0xffEAF2FF), IcStyle.blue, key: const ValueKey('tow-flatbed')),
         ],
         if (_accident) ...[
           const SizedBox(height: 10),
@@ -249,16 +250,16 @@ class _TowPageState extends State<TowPage> {
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               Text('⚠️ ${h.emergencyText}', style: IcStyle.t(13.5, w: FontWeight.w800, c: _red)),
               const SizedBox(height: 6),
-              _check(_injuries, 'ما فيش إصابات، أو الشرطة سمحت نحركوا السيارة', () => setState(() => _injuries = !_injuries), const ValueKey('tow-injuries')),
+              _check(_injuries, tr('ما فيش إصابات، أو الشرطة سمحت نحركوا السيارة', 'No injuries, or the police allowed moving the car'), () => setState(() => _injuries = !_injuries), const ValueKey('tow-injuries')),
             ]),
           ),
         ],
         const SizedBox(height: 14),
-        Text('السيارة وين؟', style: IcStyle.t(15, w: FontWeight.w900)),
+        Text(tr('السيارة وين؟', 'Where is the car?'), style: IcStyle.t(15, w: FontWeight.w900)),
         const SizedBox(height: 6),
-        _row(Icons.my_location_rounded, _pick.address.isEmpty ? 'مكانك الحالي' : _pick.address, 'غيّر', _changePick, const ValueKey('tow-pick')),
+        _row(Icons.my_location_rounded, _pick.address.isEmpty ? tr('مكانك الحالي', 'Your current place') : _pick.address, tr('غيّر', 'Change'), _changePick, const ValueKey('tow-pick')),
         const SizedBox(height: 12),
-        Text('وين تمشي؟', style: IcStyle.t(15, w: FontWeight.w900)),
+        Text(tr('وين تمشي؟', 'Where to?'), style: IcStyle.t(15, w: FontWeight.w900)),
         const SizedBox(height: 6),
         for (final w in h.workshops) ...[
           _choice(w.name, w.address, _workshop?.id == w.id, () {
@@ -270,8 +271,8 @@ class _TowPageState extends State<TowPage> {
           }, ValueKey('tow-ws-${w.id}')),
           const SizedBox(height: 6),
         ],
-        _choice(_otherDrop == null ? 'مكان ثاني على الخريطة' : _otherDrop!.address.isEmpty ? 'المكان على الخريطة' : _otherDrop!.address,
-            _otherDrop == null ? 'البيت، ورشة مش في القائمة…' : 'غيّر المكان', _otherDrop != null, _chooseOther, const ValueKey('tow-other')),
+        _choice(_otherDrop == null ? tr('مكان ثاني على الخريطة', 'Another place on the map') : _otherDrop!.address.isEmpty ? tr('المكان على الخريطة', 'The place on the map') : _otherDrop!.address,
+            _otherDrop == null ? tr('البيت، ورشة مش في القائمة…', 'Home, a workshop not on the list…') : tr('غيّر المكان', 'Change the place'), _otherDrop != null, _chooseOther, const ValueKey('tow-other')),
         const SizedBox(height: 12),
         TextField(
           controller: _note,
@@ -280,25 +281,25 @@ class _TowPageState extends State<TowPage> {
           decoration: InputDecoration(
             isDense: true,
             counterText: '',
-            hintText: 'ملاحظة للكابتن (اختياري): قدام المخبز، المفتاح معاي…',
+            hintText: tr('ملاحظة للكابتن (اختياري): قدام المخبز، المفتاح معاي…', 'Note for the captain (optional): in front of the bakery, I have the key…'),
             hintStyle: IcStyle.t(13, w: FontWeight.w500, c: IcStyle.muted),
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: IcStyle.line, width: 1.5)),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
           ),
         ),
         const SizedBox(height: 8),
-        _row(Icons.photo_camera_outlined, _photo == null ? 'صورة السيارة (اختياري)' : 'تمت إضافة الصورة ✅', _photo == null ? 'أضف' : 'غيّر', _takePhoto,
+        _row(Icons.photo_camera_outlined, _photo == null ? tr('صورة السيارة (اختياري)', 'Photo of the car (optional)') : tr('تمت إضافة الصورة ✅', 'Photo added ✅'), _photo == null ? tr('أضف', 'Add') : tr('غيّر', 'Change'), _takePhoto,
             const ValueKey('tow-photo')),
         const SizedBox(height: 12),
         if (_quoting) const Center(child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator(strokeWidth: 2))),
         if (q != null && !_quoting) _price(q),
         const SizedBox(height: 10),
-        _check(_owner, 'السيارة متاعي، أو عندي إذن صاحبها نحركها', () => setState(() => _owner = !_owner), const ValueKey('tow-owner')),
+        _check(_owner, tr('السيارة متاعي، أو عندي إذن صاحبها نحركها', 'The car is mine, or I have the owner\'s permission to move it'), () => setState(() => _owner = !_owner), const ValueKey('tow-owner')),
         const SizedBox(height: 8),
         Text(
           h.trucksOnline > 0
-              ? '${h.trucksOnline == 1 ? 'ساحبة وحدة متاحة' : '${h.trucksOnline} ساحبات متاحة'} في ${h.city} الآن'
-              : 'كل الساحبات مشغولة الآن. نطلبها وتوصلك أول ما تتوفر وحدة.',
+              ? tr('${h.trucksOnline == 1 ? 'ساحبة وحدة متاحة' : '${h.trucksOnline} ساحبات متاحة'} في ${h.city} الآن', '${h.trucksOnline == 1 ? 'One tow truck' : '${h.trucksOnline} tow trucks'} available in ${h.city} now')
+              : tr('كل الساحبات مشغولة الآن. نطلبها وتوصلك أول ما تتوفر وحدة.', 'All tow trucks are busy now. We will request one and it comes as soon as one is free.'),
           textAlign: TextAlign.center,
           style: IcStyle.t(12.5, w: FontWeight.w700, c: h.trucksOnline > 0 ? const Color(0xff16803C) : _amber),
         ),
@@ -320,16 +321,16 @@ class _TowPageState extends State<TowPage> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(color: const Color(0xffEAF2FF), borderRadius: BorderRadius.circular(16)),
       child: Column(children: [
-        line('رفع السيارة (يشمل مشوار الساحبة لعندك)', q.lift),
-        line('المسافة · ${IcStyle.money(q.km)} كم', q.distance),
-        if (q.flatbed > 0) line('سطحة', q.flatbed),
-        if (q.night > 0) line('زيادة الليل', q.night),
+        line(tr('رفع السيارة (يشمل مشوار الساحبة لعندك)', 'Lifting the car (includes the truck\'s drive to you)'), q.lift),
+        line(tr('المسافة · ${IcStyle.money(q.km)} كم', 'Distance · ${IcStyle.money(q.km)} km'), q.distance),
+        if (q.flatbed > 0) line(tr('سطحة', 'Flatbed'), q.flatbed),
+        if (q.night > 0) line(tr('زيادة الليل', 'Night extra'), q.night),
         const Divider(height: 14),
         Row(children: [
-          Expanded(child: Text('السعر الثابت', style: IcStyle.t(15, w: FontWeight.w900))),
+          Expanded(child: Text(tr('السعر الثابت', 'Fixed price'), style: IcStyle.t(15, w: FontWeight.w900))),
           Text('$cur ${IcStyle.money(q.total)}', style: IcStyle.t(22, w: FontWeight.w900)),
         ]),
-        Text('ما يتغيرش في الطريق. نقدًا للكابتن.', style: IcStyle.t(12, w: FontWeight.w600, c: IcStyle.muted)),
+        Text(tr('ما يتغيرش في الطريق. نقدًا للكابتن.', 'It does not change on the way. Cash to the captain.'), style: IcStyle.t(12, w: FontWeight.w600, c: IcStyle.muted)),
       ]),
     );
   }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../functions/tr.dart';
 
 import 'package:flutter/material.dart';
 
@@ -89,7 +90,7 @@ class _IntercityWaitPageState extends State<IntercityWaitPage> {
     setState(() => _offers = list);
   }
 
-  void _say(String m) => ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(m, textDirection: TextDirection.rtl)));
+  void _say(String m) => ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(m, textDirection: (appRtl ? TextDirection.rtl : TextDirection.ltr))));
 
   Future<void> _raise() async {
     setState(() => _busy = true);
@@ -111,7 +112,7 @@ class _IntercityWaitPageState extends State<IntercityWaitPage> {
     if (widget.payOnline) {
       // money leaves his wallet: he sees the amount and the rules first
       final yes = await IcPay.confirm(context,
-          title: 'أكّد حجزك مع ${o['driver_name'] ?? 'الكابتن'} 🚗', details: '${widget.from} ← ${widget.to} · ${widget.summary}', amount: amount, fare: fare, rules: rules);
+          title: tr('أكّد حجزك مع ${o['driver_name'] ?? 'الكابتن'} 🚗', 'Confirm your booking with ${o['driver_name'] ?? 'the captain'} 🚗'), details: '${widget.from} ← ${widget.to} · ${widget.summary}', amount: amount, fare: fare, rules: rules);
       if (!yes || !mounted) return;
     }
     setState(() => _busy = true);
@@ -133,7 +134,7 @@ class _IntercityWaitPageState extends State<IntercityWaitPage> {
   }
 
   Future<void> _cancel() async {
-    const reasons = ['غيّرت رأيي', 'ما جاتنيش عروض', 'العروض غالية', 'نبي نغيّر الموعد أو الوجهة', 'لقيت وسيلة ثانية', 'سبب ثاني'];
+    final reasons = [tr('غيّرت رأيي', 'I changed my mind'), tr('ما جاتنيش عروض', 'I got no offers'), tr('العروض غالية', 'The offers are expensive'), tr('نبي نغيّر الموعد أو الوجهة', 'We want to change the time or destination'), tr('لقيت وسيلة ثانية', 'I found another way'), tr('سبب ثاني', 'Another reason')];
     final reason = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
@@ -142,9 +143,9 @@ class _IntercityWaitPageState extends State<IntercityWaitPage> {
         String? pick;
         return StatefulBuilder(
           builder: (ctx, set) => Directionality(
-            textDirection: TextDirection.rtl,
+            textDirection: (appRtl ? TextDirection.rtl : TextDirection.ltr),
             child: IcSheet(children: [
-              Text('ليش تبي تلغي؟', style: IcStyle.t(20, w: FontWeight.w900)),
+              Text(tr('ليش تبي تلغي؟', 'Why do you want to cancel?'), style: IcStyle.t(20, w: FontWeight.w900)),
               const SizedBox(height: 8),
               for (final r in reasons) ...[
                 IcChoiceRow(text: r, selected: pick == r, onTap: () => set(() => pick = r)),
@@ -153,11 +154,11 @@ class _IntercityWaitPageState extends State<IntercityWaitPage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(color: const Color(0xffFFF7E6), borderRadius: BorderRadius.circular(14)),
-                child: Text('الإلغاء مجاني. لو تبي عروض أكثر، جرّب ترفع سعرك شوية.', style: IcStyle.t(13, c: const Color(0xff92400E))),
+                child: Text(tr('الإلغاء مجاني. لو تبي عروض أكثر، جرّب ترفع سعرك شوية.', 'Cancellation is free. For more offers, try raising your price a little.'), style: IcStyle.t(13, c: const Color(0xff92400E))),
               ),
               const SizedBox(height: 10),
-              IcButton(text: 'إلغاء الطلب', danger: true, onTap: pick == null ? null : () => Navigator.pop(ctx, pick)),
-              TextButton(onPressed: () => Navigator.pop(ctx), child: Text('رجوع، نستنى العروض', style: IcStyle.t(15, c: IcStyle.blue))),
+              IcButton(text: tr('إلغاء الطلب', 'Cancel request'), danger: true, onTap: pick == null ? null : () => Navigator.pop(ctx, pick)),
+              TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('رجوع، نستنى العروض', 'Back, wait for offers'), style: IcStyle.t(15, c: IcStyle.blue))),
             ]),
           ),
         );
@@ -170,7 +171,7 @@ class _IntercityWaitPageState extends State<IntercityWaitPage> {
     setState(() => _busy = false);
     if (r.ok) {
       _poll?.cancel();
-      _say('تم إلغاء طلبك');
+      _say(tr('تم إلغاء طلبك', 'Your request is cancelled'));
       Navigator.of(context).maybePop();
     } else {
       _say(r.message);
@@ -181,20 +182,20 @@ class _IntercityWaitPageState extends State<IntercityWaitPage> {
   Widget build(BuildContext context) {
     if (_booked != null) return _bookedView(_booked!);
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: (appRtl ? TextDirection.rtl : TextDirection.ltr),
       child: Scaffold(
         backgroundColor: IcStyle.soft,
         body: SafeArea(
           child: Column(children: [
             const SizedBox(height: 8),
-            Text('نجمعولك العروض', style: IcStyle.t(16, w: FontWeight.w900)),
+            Text(tr('نجمعولك العروض', 'Collecting offers for you'), style: IcStyle.t(16, w: FontWeight.w900)),
             const SizedBox(height: 4),
             const SizedBox(height: 150, child: CustomPaint(painter: _WaitArt(), size: Size(double.infinity, 150))),
             Expanded(
               child: Container(
                 decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
                 child: ListView(padding: const EdgeInsets.fromLTRB(16, 14, 16, 20), children: [
-                  Text('السائقين يردوا خلال دقائق · الطلب مفتوح حتى قبل الموعد بساعة',
+                  Text(tr('السائقين يردوا خلال دقائق · الطلب مفتوح حتى قبل الموعد بساعة', 'Drivers answer within minutes · the request stays open until an hour before'),
                       textAlign: TextAlign.center, style: IcStyle.t(13, w: FontWeight.w700, c: IcStyle.muted)),
                   const SizedBox(height: 10),
                   Container(
@@ -209,19 +210,19 @@ class _IntercityWaitPageState extends State<IntercityWaitPage> {
                       ),
                       const SizedBox(height: 6),
                       if (_fare > _sent)
-                        IcButton(text: 'ارفع السعر إلى ${IcStyle.money(_fare)}', height: 44, busy: _busy, onTap: _raise)
+                        IcButton(text: tr('ارفع السعر إلى ${IcStyle.money(_fare)}', 'Raise the price to ${IcStyle.money(_fare)}'), height: 44, busy: _busy, onTap: _raise)
                       else
-                        Text('ارفع سعرك تجيك عروض أكثر', style: IcStyle.t(12, w: FontWeight.w700, c: const Color(0xff3B4E72))),
+                        Text(tr('ارفع سعرك تجيك عروض أكثر', 'Raise your price for more offers'), style: IcStyle.t(12, w: FontWeight.w700, c: const Color(0xff3B4E72))),
                     ]),
                   ),
                   const SizedBox(height: 12),
-                  Text(_offers.isEmpty ? 'نستنوا أول عرض…' : 'العروض (${_offers.length})', style: IcStyle.t(15, w: FontWeight.w900)),
+                  Text(_offers.isEmpty ? tr('نستنوا أول عرض…', 'Waiting for the first offer…') : tr('العروض (${_offers.length})', 'Offers (${_offers.length})'), style: IcStyle.t(15, w: FontWeight.w900)),
                   const SizedBox(height: 6),
                   for (var i = 0; i < _offers.length; i++) _offer(_offers[i], i == 0),
                   const SizedBox(height: 8),
                   _summary(),
                   const SizedBox(height: 12),
-                  IcButton(text: 'إلغاء الطلب', ghost: true, danger: true, height: 48, onTap: _busy ? null : _cancel),
+                  IcButton(text: tr('إلغاء الطلب', 'Cancel request'), ghost: true, danger: true, height: 48, onTap: _busy ? null : _cancel),
                 ]),
               ),
             ),
@@ -232,7 +233,7 @@ class _IntercityWaitPageState extends State<IntercityWaitPage> {
   }
 
   Widget _offer(Map o, bool first) {
-    final name = '${o['driver_name'] ?? 'سائق'}';
+    final name = '${o['driver_name'] ?? tr('سائق', 'driver')}';
     final time = (o['proposed_time'] ?? '').toString();
     final rating = (o['driver_rating'] as num?) != null && (o['driver_rating'] as num) > 0 ? o['driver_rating'] : null;
     final done = o['driver_completed'];
@@ -247,8 +248,8 @@ class _IntercityWaitPageState extends State<IntercityWaitPage> {
         const SizedBox(width: 10),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text([name, if (rating != null) '$rating', if (done != null) '$done رحلة'].join(' · '), style: IcStyle.t(14.5, w: FontWeight.w800)),
-            Text(time.isNotEmpty ? 'يقترح ${IntercityApi.dayLabel(time)}' : (car.isEmpty ? 'في وقتك' : '$car · في وقتك'),
+            Text([name, if (rating != null) '$rating', if (done != null) tr('$done رحلة', '$done trips')].join(' · '), style: IcStyle.t(14.5, w: FontWeight.w800)),
+            Text(time.isNotEmpty ? tr('يقترح ${IntercityApi.dayLabel(time)}', 'Suggests ${IntercityApi.dayLabel(time)}') : (car.isEmpty ? tr('في وقتك', 'At your time') : tr('$car · في وقتك', '$car · at your time')),
                 style: IcStyle.t(12, w: time.isNotEmpty ? FontWeight.w800 : FontWeight.w600, c: time.isNotEmpty ? const Color(0xffB45309) : IcStyle.muted)),
           ]),
         ),
@@ -260,7 +261,7 @@ class _IntercityWaitPageState extends State<IntercityWaitPage> {
             child: FilledButton(
               onPressed: _busy ? null : () => _choose(o),
               style: FilledButton.styleFrom(backgroundColor: IcStyle.blue, padding: const EdgeInsets.symmetric(horizontal: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-              child: Text('اختار', style: IcStyle.t(13, w: FontWeight.w900, c: Colors.white)),
+              child: Text(tr('اختار', 'Choose'), style: IcStyle.t(13, w: FontWeight.w900, c: Colors.white)),
             ),
           ),
         ]),
@@ -274,9 +275,9 @@ class _IntercityWaitPageState extends State<IntercityWaitPage> {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Expanded(child: Text(widget.summary, style: IcStyle.t(14, w: FontWeight.w800))),
-            _tag('سيارة كاملة', const Color(0xffEAF2FF), IcStyle.blue),
+            _tag(tr('سيارة كاملة', 'Whole car'), const Color(0xffEAF2FF), IcStyle.blue),
             const SizedBox(width: 4),
-            _tag(widget.payOnline ? 'من المحفظة' : 'نقدًا', const Color(0xffECFDF3), const Color(0xff16803C)),
+            _tag(widget.payOnline ? tr('من المحفظة', 'From the wallet') : tr('نقدًا', 'Cash'), const Color(0xffECFDF3), const Color(0xff16803C)),
           ]),
           const SizedBox(height: 4),
           Text('● ${widget.from} · ${widget.pickAddress}', maxLines: 1, overflow: TextOverflow.ellipsis, style: IcStyle.t(12.5, w: FontWeight.w600)),
@@ -294,16 +295,16 @@ class _IntercityWaitPageState extends State<IntercityWaitPage> {
   /// «الإلغاء مجاني», or with money paid: free until N hours before, then the driver's share
   String _cancelRule() {
     final p = widget.payment;
-    if (_paid <= 0 || p == null || p.latePercent <= 0) return 'الإلغاء مجاني';
+    if (_paid <= 0 || p == null || p.latePercent <= 0) return tr('الإلغاء مجاني', 'Cancellation is free');
     final h = p.freeCancelHours;
-    final hours = h == 1 ? 'بساعة' : (h == 2 ? 'بساعتين' : 'بـ$h ساعات');
-    return 'إلغاء مجاني قبل الموعد $hours، بعدها ${p.latePercent}٪ للكابتن';
+    final hours = h == 1 ? tr('بساعة', 'by an hour') : (h == 2 ? tr('بساعتين', 'by two hours') : tr('بـ$h ساعات', 'by $h hours'));
+    return tr('إلغاء مجاني قبل الموعد $hours، بعدها ${p.latePercent}٪ للكابتن', 'Free cancellation until $hours before, then ${p.latePercent}% goes to the captain');
   }
 
   Widget _bookedView(Map o) {
     final time = (o['proposed_time'] ?? '').toString();
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: (appRtl ? TextDirection.rtl : TextDirection.ltr),
       child: Scaffold(
         backgroundColor: Colors.white,
         body: SafeArea(
@@ -319,11 +320,11 @@ class _IntercityWaitPageState extends State<IntercityWaitPage> {
                 ),
               ),
               const SizedBox(height: 10),
-              Text('سفرتك محجوزة', textAlign: TextAlign.center, style: IcStyle.t(23, w: FontWeight.w900)),
-              Text('تلقاها في «الرحلات القادمة»', textAlign: TextAlign.center, style: IcStyle.t(14, w: FontWeight.w600, c: IcStyle.muted)),
+              Text(tr('سفرتك محجوزة', 'Your trip is booked'), textAlign: TextAlign.center, style: IcStyle.t(23, w: FontWeight.w900)),
+              Text(tr('تلقاها في «الرحلات القادمة»', 'Find it in «Upcoming rides»'), textAlign: TextAlign.center, style: IcStyle.t(14, w: FontWeight.w600, c: IcStyle.muted)),
               if (_paid > 0) ...[
                 const SizedBox(height: 10),
-                IcPayNote(text: 'دفعت LYD ${IcStyle.money(_paid)} من محفظتك ✅ توصل للكابتن بعد الرحلة.'),
+                IcPayNote(text: tr('دفعت LYD ${IcStyle.money(_paid)} من محفظتك ✅ توصل للكابتن بعد الرحلة.', 'You paid LYD ${IcStyle.money(_paid)} from your wallet ✅ It reaches the captain after the trip.')),
               ],
               const SizedBox(height: 16),
               Container(
@@ -332,23 +333,23 @@ class _IntercityWaitPageState extends State<IntercityWaitPage> {
                 child: Row(children: [
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('الموعد', style: IcStyle.t(12, w: FontWeight.w600, c: IcStyle.muted)),
+                      Text(tr('الموعد', 'Time'), style: IcStyle.t(12, w: FontWeight.w600, c: IcStyle.muted)),
                       Text(time.isNotEmpty ? IntercityApi.dayLabel(time) : widget.summary.split(' · ').first, style: IcStyle.t(17, w: FontWeight.w900)),
                     ]),
                   ),
                   Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                    Text(_paid > 0 ? 'مدفوع ✅' : 'نقدًا', style: IcStyle.t(12, w: FontWeight.w600, c: IcStyle.muted)),
+                    Text(_paid > 0 ? tr('مدفوع ✅', 'Paid ✅') : tr('نقدًا', 'Cash'), style: IcStyle.t(12, w: FontWeight.w600, c: IcStyle.muted)),
                     Text('LYD ${moneyLabel(o['proposed_fare'])}', style: IcStyle.t(17, w: FontWeight.w900)),
                   ]),
                 ]),
               ),
               const SizedBox(height: 10),
-              Text('${o['driver_name'] ?? 'السائق'}${(o['driver_rating'] as num? ?? 0) > 0 ? ' · ${o['driver_rating']}' : ''}', style: IcStyle.t(16, w: FontWeight.w800)),
+              Text('${o['driver_name'] ?? tr('السائق', 'Driver')}${(o['driver_rating'] as num? ?? 0) > 0 ? ' · ${o['driver_rating']}' : ''}', style: IcStyle.t(16, w: FontWeight.w800)),
               const SizedBox(height: 10),
-              Text('• ${_cancelRule()}\n• تذكير لك وللسائق قبل الموعد بساعتين\n• يوم السفر: رحلة عادية بالتتبع والمشاركة',
+              Text(tr('• ${_cancelRule()}\n• تذكير لك وللسائق قبل الموعد بساعتين\n• يوم السفر: رحلة عادية بالتتبع والمشاركة', '• ${_cancelRule()}\n• A reminder for you and the driver two hours before\n• On the day: a normal ride with tracking and sharing'),
                   style: IcStyle.t(14, w: FontWeight.w600, c: IcStyle.muted).copyWith(height: 1.9)),
               const Spacer(),
-              IcButton(text: 'تمام', onTap: () => Navigator.of(context).maybePop()),
+              IcButton(text: tr('تمام', 'OK'), onTap: () => Navigator.of(context).maybePop()),
             ]),
           ),
         ),

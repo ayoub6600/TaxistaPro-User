@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../functions/tr.dart';
 
 import '../../functions/intercity_api.dart';
 import '../NavigatorPages/walletpage.dart';
@@ -15,7 +16,7 @@ class IcPay {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: (appRtl ? TextDirection.rtl : TextDirection.ltr),
         child: IcSheet(children: [
           Text(title, style: IcStyle.t(21, w: FontWeight.w900)),
           Text(details, style: IcStyle.t(13, w: FontWeight.w600, c: IcStyle.muted)),
@@ -25,25 +26,25 @@ class IcPay {
             decoration: BoxDecoration(color: IcStyle.soft, borderRadius: BorderRadius.circular(16)),
             child: Column(children: [
               Row(children: [
-                Expanded(child: Text(amount < fare ? 'عربون من محفظتك' : 'من محفظتك', style: IcStyle.t(13.5, w: FontWeight.w700, c: IcStyle.muted))),
+                Expanded(child: Text(amount < fare ? tr('عربون من محفظتك', 'Deposit from your wallet') : tr('من محفظتك', 'From your wallet'), style: IcStyle.t(13.5, w: FontWeight.w700, c: IcStyle.muted))),
                 Text('LYD ${IcStyle.money(amount)}', style: IcStyle.t(24, w: FontWeight.w900)),
               ]),
               if (amount < fare)
                 Row(children: [
-                  Expanded(child: Text('الباقي نقدًا للكابتن', style: IcStyle.t(13, w: FontWeight.w700, c: IcStyle.muted))),
+                  Expanded(child: Text(tr('الباقي نقدًا للكابتن', 'The rest in cash to the captain'), style: IcStyle.t(13, w: FontWeight.w700, c: IcStyle.muted))),
                   Text('LYD ${IcStyle.money(fare - amount)}', style: IcStyle.t(15, w: FontWeight.w800)),
                 ]),
             ]),
           ),
           const SizedBox(height: 8),
           Text(rules.latePercent > 0
-              ? 'إلغاء مجاني قبل الموعد ${_hours(rules.freeCancelHours)}، وفلوسك ترجع لمحفظتك. بعدها ${rules.latePercent}٪ تروح للكابتن. لو الكابتن لغى أو ما جاش، ترجعلك كاملة.'
-              : 'لو لغيت أو الكابتن ما جاش، فلوسك ترجع لمحفظتك كاملة.',
+              ? tr('إلغاء مجاني قبل الموعد ${_hours(rules.freeCancelHours)}، وفلوسك ترجع لمحفظتك. بعدها ${rules.latePercent}٪ تروح للكابتن. لو الكابتن لغى أو ما جاش، ترجعلك كاملة.', 'Free cancellation until ${_hours(rules.freeCancelHours)} before, and your money returns to your wallet. After that ${rules.latePercent}% goes to the captain. If the captain cancels or does not come, you get it all back.')
+              : tr('لو لغيت أو الكابتن ما جاش، فلوسك ترجع لمحفظتك كاملة.', 'If you cancel or the captain does not come, your money returns to your wallet in full.'),
               style: IcStyle.t(12.5, w: FontWeight.w600, c: IcStyle.muted)),
           const SizedBox(height: 12),
-          IcButton(key: const ValueKey('ic-pay-confirm'), text: 'ادفع LYD ${IcStyle.money(amount)} وأكّد', onTap: () => Navigator.pop(ctx, true)),
+          IcButton(key: const ValueKey('ic-pay-confirm'), text: tr('ادفع LYD ${IcStyle.money(amount)} وأكّد', 'Pay LYD ${IcStyle.money(amount)} and confirm'), onTap: () => Navigator.pop(ctx, true)),
           const SizedBox(height: 6),
-          IcButton(text: 'رجوع', ghost: true, onTap: () => Navigator.pop(ctx, false)),
+          IcButton(text: tr('رجوع', 'Return'), ghost: true, onTap: () => Navigator.pop(ctx, false)),
         ]),
       ),
     );
@@ -57,16 +58,16 @@ class IcPay {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: (appRtl ? TextDirection.rtl : TextDirection.ltr),
         child: IcSheet(children: [
-          Text('اشحن محفظتك وكمّل', style: IcStyle.t(21, w: FontWeight.w900)),
+          Text(tr('اشحن محفظتك وكمّل', 'Top up your wallet and continue'), style: IcStyle.t(21, w: FontWeight.w900)),
           const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(color: IcStyle.soft, borderRadius: BorderRadius.circular(16)),
             child: Column(children: [
-              _line('الحجز يحتاج', r.amount),
-              _line('رصيد محفظتك', r.balance),
+              _line(tr('الحجز يحتاج', 'Booking needs'), r.amount),
+              _line(tr('رصيد محفظتك', 'Your wallet balance'), r.balance),
             ]),
           ),
           const SizedBox(height: 8),
@@ -74,12 +75,12 @@ class IcPay {
             key: const ValueKey('ic-missing'),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
             decoration: BoxDecoration(color: const Color(0xffFFF8E6), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xffFDE3A7))),
-            child: Text('ناقصك LYD ${IcStyle.money(r.missing)}. اشحن وارجع، والعرض مازال مستنيك.', style: IcStyle.t(13.5, w: FontWeight.w800, c: const Color(0xff9A6700))),
+            child: Text(tr('ناقصك LYD ${IcStyle.money(r.missing)}. اشحن وارجع، والعرض مازال مستنيك.', 'You are LYD ${IcStyle.money(r.missing)} short. Top up and come back, the offer is still waiting.'), style: IcStyle.t(13.5, w: FontWeight.w800, c: const Color(0xff9A6700))),
           ),
           const SizedBox(height: 12),
-          IcButton(text: 'اشحن محفظتك', onTap: () => Navigator.pop(ctx, true)),
+          IcButton(text: tr('اشحن محفظتك', 'Top up your wallet'), onTap: () => Navigator.pop(ctx, true)),
           const SizedBox(height: 6),
-          IcButton(text: 'بعدين', ghost: true, onTap: () => Navigator.pop(ctx, false)),
+          IcButton(text: tr('بعدين', 'Later'), ghost: true, onTap: () => Navigator.pop(ctx, false)),
         ]),
       ),
     );
@@ -88,7 +89,7 @@ class IcPay {
     }
   }
 
-  static String _hours(int h) => h == 1 ? 'بساعة' : (h == 2 ? 'بساعتين' : 'بـ$h ساعات');
+  static String _hours(int h) => h == 1 ? tr('بساعة', 'by an hour') : (h == 2 ? tr('بساعتين', 'by two hours') : tr('بـ$h ساعات', 'by $h hours'));
 
   static Widget _line(String label, num v) => Row(children: [
         Expanded(child: Text(label, style: IcStyle.t(13.5, w: FontWeight.w700, c: IcStyle.muted))),
@@ -128,13 +129,13 @@ class IcPayChoice extends StatelessWidget {
           ),
         );
     return Row(children: [
-      Text('الدفع', style: IcStyle.t(15, w: FontWeight.w900)),
+      Text(tr('الدفع', 'Payment'), style: IcStyle.t(15, w: FontWeight.w900)),
       const SizedBox(width: 10),
       Expanded(
         child: Container(
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(color: IcStyle.soft, borderRadius: BorderRadius.circular(15)),
-          child: Row(children: [side('💵 نقدًا', !online, false), const SizedBox(width: 4), side('💳 من المحفظة', online, true)]),
+          child: Row(children: [side(tr('💵 نقدًا', '💵 Cash'), !online, false), const SizedBox(width: 4), side(tr('💳 من المحفظة', '💳 From the wallet'), online, true)]),
         ),
       ),
     ]);

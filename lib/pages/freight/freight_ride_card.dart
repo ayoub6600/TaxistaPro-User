@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../functions/tr.dart';
 
 /// On the ride the passenger follows: what is being moved, the vehicle, workers, the floors at each
 /// end, the photos he sent, and what happens now.
@@ -17,6 +18,14 @@ class FreightRideCard extends StatelessWidget {
         freight: f, arrived: ride['is_driver_arrived'] == 1 || ride['is_driver_arrived'] == true, started: ride['is_trip_start'] == 1 || ride['is_trip_start'] == true);
   }
 
+  static const _classEn = {'pickup': 'Pickup', 'van': 'Closed van', 'truck': 'Truck'};
+  static const _catEn = {'furniture': 'Furniture', 'appliances': 'Appliances', 'building': 'Building materials', 'shop': 'Shop goods', 'other': 'Other'};
+
+  static String _floorEn(Object? floor, Object? lift) {
+    final n = (floor as num?)?.toInt() ?? 0;
+    return n <= 0 ? 'Ground' : 'Floor $n · ${lift == true ? 'lift' : 'no lift'}';
+  }
+
   static const icons = {'pickup': '🛻', 'van': '🚐', 'truck': '🚚'};
 
   TextStyle _t(double s, {FontWeight w = FontWeight.w700, Color c = const Color(0xff102A56)}) => GoogleFonts.cairo(fontSize: s, fontWeight: w, color: c);
@@ -29,10 +38,10 @@ class FreightRideCard extends StatelessWidget {
     final photos = [for (final p in (f['photos'] as List? ?? const [])) '$p'];
     final items = '${f['items'] ?? ''}';
     final now = started
-        ? 'الحمولة في الطريق.'
+        ? tr('الحمولة في الطريق.', 'The load is on its way.')
         : arrived
-            ? 'صاحب السيارة وصل. أول $free دقيقة تحميل مجانية.'
-            : 'صاحب السيارة جاي. جهّز الحمولة قرب الباب لو تقدر.';
+            ? tr('صاحب السيارة وصل. أول $free دقيقة تحميل مجانية.', 'The owner has arrived. The first $free minutes of loading are free.')
+            : tr('صاحب السيارة جاي. جهّز الحمولة قرب الباب لو تقدر.', 'The owner is coming. Have the load near the door if you can.');
     return Container(
       key: const ValueKey('freight-ride-card'),
       padding: const EdgeInsets.all(12),
@@ -41,14 +50,14 @@ class FreightRideCard extends StatelessWidget {
         Row(children: [
           Text(icons['${f['class']}'] ?? '🚚', style: const TextStyle(fontSize: 20)),
           const SizedBox(width: 6),
-          Expanded(child: Text('شحن · ${f['category_label'] ?? ''} · ${f['class_label'] ?? ''}', style: _t(15, w: FontWeight.w900))),
+          Expanded(child: Text(tr('شحن · ${f['category_label'] ?? ''} · ${f['class_label'] ?? ''}', 'Freight · ${_catEn[f['category']] ?? f['category'] ?? ''} · ${_classEn[f['class']] ?? f['class'] ?? ''}'), style: _t(15, w: FontWeight.w900))),
         ]),
         if (items.isNotEmpty) Text('«$items»', style: _t(12.5, w: FontWeight.w700, c: const Color(0xff55678A))),
         Text(
             [
-              workers == 0 ? 'بدون عمال' : (workers == 1 ? 'عامل واحد' : '$workers عمال'),
-              'التحميل: ${f['pick_floor_label'] ?? 'أرضي'}',
-              'التنزيل: ${f['drop_floor_label'] ?? 'أرضي'}',
+              workers == 0 ? tr('بدون عمال', 'No workers') : (workers == 1 ? tr('عامل واحد', 'One worker') : tr('$workers عمال', '$workers workers')),
+              tr('التحميل: ${f['pick_floor_label'] ?? 'أرضي'}', 'Pick-up: ${_floorEn(f['pick_floor'], f['pick_lift'])}'),
+              tr('التنزيل: ${f['drop_floor_label'] ?? 'أرضي'}', 'Drop-off: ${_floorEn(f['drop_floor'], f['drop_lift'])}'),
             ].join(' · '),
             style: _t(12.5, w: FontWeight.w600, c: const Color(0xff55678A))),
         if (photos.isNotEmpty) ...[

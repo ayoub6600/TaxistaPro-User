@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'tr.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -14,13 +15,18 @@ class FreightClass {
 
   String get key => '${raw['key']}';
   String get zoneTypeId => '${raw['zone_type_id'] ?? ''}';
-  String get label => '${raw['label'] ?? ''}';
-  String get load => '${raw['load'] ?? ''}';
+  static const _en = {'pickup': 'Pickup', 'van': 'Closed van', 'truck': 'Truck'};
+
+  /// the admin writes Arabic; English by key
+  String get label => tr('${raw['label'] ?? ''}', _en[key] ?? '${raw['label'] ?? ''}');
+  String get load => tr('${raw['load'] ?? ''}', '${raw['load'] ?? ''}'.replaceAll('حتى', 'up to').replaceAll('طن', 't'));
   String get box => '${raw['box'] ?? ''}';
   num get base => (raw['base'] as num?) ?? 0;
 }
 
 /// «الشحن» where he stands: open or not, what he can move, the classes, worker and floor prices.
+const _categoriesEn = {'furniture': 'Furniture', 'appliances': 'Appliances', 'building': 'Building materials', 'shop': 'Shop goods', 'other': 'Something else'};
+
 class FreightHome {
   FreightHome(this.raw);
   final Map raw;
@@ -36,7 +42,7 @@ class FreightHome {
   num get floorPrice => (raw['floor_price'] as num?) ?? 0;
   List<(String, String)> get categories => [
         for (final c in (raw['categories'] as List? ?? const []))
-          if (c is Map) ('${c['key']}', '${c['label']}'),
+          if (c is Map) ('${c['key']}', tr('${c['label']}', _categoriesEn['${c['key']}'] ?? '${c['label']}')),
       ];
   List<FreightClass> get classes => [for (final c in (raw['classes'] as List? ?? const [])) if (c is Map) FreightClass(c)];
 }
@@ -97,9 +103,9 @@ class FreightApi {
         final first = (j['errors'] as Map).values.first;
         if (first is List && first.isNotEmpty) msg = '${first.first}';
       }
-      return IntercityResult(ok, msg.isEmpty ? (ok ? 'تم' : 'ما قدرناش، جرّب مرة ثانية.') : msg, j is Map ? j['data'] : null);
+      return IntercityResult(ok, msg.isEmpty ? (ok ? tr('تم', 'Done') : tr('ما قدرناش، جرّب مرة ثانية.', 'We could not do it, try again.')) : msg, j is Map ? j['data'] : null);
     } catch (_) {
-      return IntercityResult(false, 'تعذر الاتصال. تأكد من الإنترنت.');
+      return IntercityResult(false, tr('تعذر الاتصال. تأكد من الإنترنت.', 'No connection. Check the internet.'));
     }
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../functions/tr.dart';
 
 import '../../functions/intercity_api.dart';
 import 'intercity_again.dart';
@@ -11,7 +12,7 @@ class IntercityFlow {
   /// from the home «سفر» button
   static Future<void> start(BuildContext context, {required IntercityHome home, required IcPlace pick, IcPlace? drop, int? routeId}) {
     if (!home.enabled || home.routes.isEmpty) {
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(const SnackBar(content: Text('السفر مش متاح من مدينتك حاليًا.', textDirection: TextDirection.rtl)));
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(tr('السفر مش متاح من مدينتك حاليًا.', 'Intercity travel is not available from your city yet.'), textDirection: (appRtl ? TextDirection.rtl : TextDirection.ltr))));
       return Future.value();
     }
     return Navigator.of(context).push(MaterialPageRoute(builder: (_) => IntercityTypePage(home: home, pick: pick, drop: drop, routeId: routeId)));
@@ -24,15 +25,15 @@ class IntercityFlow {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: (appRtl ? TextDirection.rtl : TextDirection.ltr),
         child: IcSheet(children: [
           Row(children: [
             const IcIconTile(icon: Icons.luggage_rounded, background: Color(0xffEAF2FF), color: IcStyle.blue),
             const SizedBox(width: 12),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('وجهتك في ${route.to}', style: IcStyle.t(21, w: FontWeight.w900)),
-                Text('تحب تحجزها سفر؟ تحط سعرك والسائقين يبعتولك عروض.', style: IcStyle.t(13.5, w: FontWeight.w600, c: IcStyle.muted)),
+                Text(tr('وجهتك في ${route.to}', 'Your destination in ${route.to}'), style: IcStyle.t(21, w: FontWeight.w900)),
+                Text(tr('تحب تحجزها سفر؟ تحط سعرك والسائقين يبعتولك عروض.', 'Book it as a trip? Set your price and drivers send you offers.'), style: IcStyle.t(13.5, w: FontWeight.w600, c: IcStyle.muted)),
               ]),
             ),
           ]),
@@ -42,13 +43,13 @@ class IntercityFlow {
             decoration: BoxDecoration(color: IcStyle.soft, borderRadius: BorderRadius.circular(16)),
             child: Row(children: [
               Expanded(child: Text('${home.from} ← ${route.to}', style: IcStyle.t(14.5))),
-              Text('من LYD ${IcStyle.money(from ?? route.suggested)}', style: IcStyle.t(14.5, w: FontWeight.w900, c: IcStyle.blue)),
+              Text(tr('من LYD ${IcStyle.money(from ?? route.suggested)}', 'From LYD ${IcStyle.money(from ?? route.suggested)}'), style: IcStyle.t(14.5, w: FontWeight.w900, c: IcStyle.blue)),
             ]),
           ),
           const SizedBox(height: 12),
-          IcButton(text: 'سفر إلى ${route.to}', onTap: () => Navigator.pop(ctx, true)),
+          IcButton(text: tr('سفر إلى ${route.to}', 'Trip to ${route.to}'), onTap: () => Navigator.pop(ctx, true)),
           const SizedBox(height: 8),
-          IcButton(text: 'غيّر الوجهة', ghost: true, onTap: () => Navigator.pop(ctx, false)),
+          IcButton(text: tr('غيّر الوجهة', 'Change the destination'), ghost: true, onTap: () => Navigator.pop(ctx, false)),
         ]),
       ),
     );
@@ -89,7 +90,7 @@ class _IntercityTypePageState extends State<IntercityTypePage> {
       if (!mounted) return;
       final sent = await IntercityRateSheet.maybeShow(context, widget.home.toRate);
       if (sent == true && mounted) {
-        ScaffoldMessenger.maybeOf(context)?.showSnackBar(const SnackBar(content: Text('شكرًا على تقييمك 🌟', textDirection: TextDirection.rtl)));
+        ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(tr('شكرًا على تقييمك 🌟', 'Thanks for your rating 🌟'), textDirection: (appRtl ? TextDirection.rtl : TextDirection.ltr))));
       }
     });
   }
@@ -115,7 +116,7 @@ class _IntercityTypePageState extends State<IntercityTypePage> {
           IcAgainCard(home: widget.home, last: widget.home.lastTrip!, pick: widget.pick),
           const SizedBox(height: 14),
         ],
-        Text('كيف تحب تسافر؟', style: IcStyle.t(22, w: FontWeight.w900)),
+        Text(tr('كيف تحب تسافر؟', 'How would you like to travel?'), style: IcStyle.t(22, w: FontWeight.w900)),
         const SizedBox(height: 10),
         Wrap(spacing: 6, runSpacing: 6, children: [
           for (final r in widget.home.routes) IcChip(text: r.to, selected: r.id == _route.id, onTap: () => setState(() => _route = r)),
@@ -126,8 +127,8 @@ class _IntercityTypePageState extends State<IntercityTypePage> {
           icon: Icons.directions_car_filled_rounded,
           iconBackground: IcStyle.blue,
           iconColor: Colors.white,
-          title: 'سيارة كاملة',
-          subtitle: 'أنت ومن معاك بس · من LYD ${IcStyle.money(_route.suggested)}',
+          title: tr('سيارة كاملة', 'Whole car'),
+          subtitle: tr('أنت ومن معاك بس · من LYD ${IcStyle.money(_route.suggested)}', 'Just you and your company · from LYD ${IcStyle.money(_route.suggested)}'),
           onTap: () => setState(() => _seats = false),
         ),
         const SizedBox(height: 10),
@@ -136,14 +137,14 @@ class _IntercityTypePageState extends State<IntercityTypePage> {
           icon: Icons.event_seat_rounded,
           iconBackground: const Color(0xffFFF4D6),
           iconColor: const Color(0xffB45309),
-          title: 'كرسي في رحلة',
+          title: tr('كرسي في رحلة', 'A seat on a trip'),
           subtitle: _sharedHere == 0
-              ? 'تدفع كرسيك بس${_route.seatPrice != null ? ' · من LYD ${IcStyle.money(_route.seatPrice!)}' : ''}'
-              : 'تدفع كرسيك بس · $_sharedHere ${_sharedHere == 1 ? 'رحلة متاحة' : 'رحلات متاحة'}',
+              ? tr('تدفع كرسيك بس${_route.seatPrice != null ? ' · من LYD ${IcStyle.money(_route.seatPrice!)}' : ''}', 'You pay only your seat${_route.seatPrice != null ? ' · from LYD ${IcStyle.money(_route.seatPrice!)}' : ''}')
+              : tr('تدفع كرسيك بس · $_sharedHere ${_sharedHere == 1 ? 'رحلة متاحة' : 'رحلات متاحة'}', 'You pay only your seat · $_sharedHere ${_sharedHere == 1 ? 'trip available' : 'trips available'}'),
           onTap: () => setState(() => _seats = true),
         ),
         const SizedBox(height: 14),
-        IcButton(text: 'التالي', onTap: _next),
+        IcButton(text: tr('التالي', 'Next'), onTap: _next),
       ],
     );
   }

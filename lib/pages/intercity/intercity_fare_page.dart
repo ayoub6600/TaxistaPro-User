@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../functions/tr.dart';
 
 import '../../functions/intercity_api.dart';
 import 'intercity_pay.dart';
@@ -62,9 +63,9 @@ class _IntercityFarePageState extends State<IntercityFarePage> {
   }
 
   final List<_IcTime> _times = [
-    _IcTime('أقرب وقت (خلال ساعة)', () => DateTime.now().add(const Duration(minutes: 45))),
-    _IcTime('بكرة 7:00 الصبح', () => _day(1, 7)),
-    _IcTime('بكرة 2:00 الظهر', () => _day(1, 14)),
+    _IcTime(tr('أقرب وقت (خلال ساعة)', 'As soon as possible (within an hour)'), () => DateTime.now().add(const Duration(minutes: 45))),
+    _IcTime(tr('بكرة 7:00 الصبح', 'Tomorrow 7:00 am'), () => _day(1, 7)),
+    _IcTime(tr('بكرة 2:00 الظهر', 'Tomorrow 2:00 pm'), () => _day(1, 14)),
   ];
 
   /// «ذهاب ورجوع»: the admin's round-trip range, else the one-way one
@@ -103,7 +104,7 @@ class _IntercityFarePageState extends State<IntercityFarePage> {
   num? get _hint => (_quote?['accepted_from'] as num?) ?? widget.route.acceptedFrom;
   DateTime get _start => _time < _times.length ? _times[_time].at() : (_custom ?? DateTime.now().add(const Duration(hours: 2)));
   String get _timeLabel => _time < _times.length ? _times[_time].label : IntercityApi.dayLabel(IntercityApi.wallClock(_custom!));
-  IcPlace get _drop => widget.drop ?? IcPlace(widget.route.lat, widget.route.lng, '${widget.route.to} · وسط المدينة');
+  IcPlace get _drop => widget.drop ?? IcPlace(widget.route.lat, widget.route.lng, tr('${widget.route.to} · وسط المدينة', '${widget.route.to} · city centre'));
 
   @override
   void initState() {
@@ -127,15 +128,15 @@ class _IntercityFarePageState extends State<IntercityFarePage> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: (appRtl ? TextDirection.rtl : TextDirection.ltr),
         child: IcSheet(children: [
-          Text('متى تسافر؟', style: IcStyle.t(21, w: FontWeight.w900)),
+          Text(tr('متى تسافر؟', 'When do you travel?'), style: IcStyle.t(21, w: FontWeight.w900)),
           const SizedBox(height: 10),
           for (var i = 0; i <= _times.length; i++) ...[
-            IcChoiceRow(text: i < _times.length ? _times[i].label : 'يوم وساعة ثانيين…', selected: _time == i, onTap: () => Navigator.pop(ctx, i)),
+            IcChoiceRow(text: i < _times.length ? _times[i].label : tr('يوم وساعة ثانيين…', 'Another day and time…'), selected: _time == i, onTap: () => Navigator.pop(ctx, i)),
             const SizedBox(height: 6),
           ],
-          Text('الحجز من الآن حتى ${widget.home.horizonDays} أيام قدام.', style: IcStyle.t(12, w: FontWeight.w600, c: IcStyle.muted)),
+          Text(tr('الحجز من الآن حتى ${widget.home.horizonDays} أيام قدام.', 'Book from now up to ${widget.home.horizonDays} days ahead.'), style: IcStyle.t(12, w: FontWeight.w600, c: IcStyle.muted)),
         ]),
       ),
     );
@@ -162,11 +163,11 @@ class _IntercityFarePageState extends State<IntercityFarePage> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: (appRtl ? TextDirection.rtl : TextDirection.ltr),
         child: Padding(
           padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
           child: IcSheet(children: [
-            Text('ملاحظة للسائق', style: IcStyle.t(21, w: FontWeight.w900)),
+            Text(tr('ملاحظة للسائق', 'Note for the driver'), style: IcStyle.t(21, w: FontWeight.w900)),
             const SizedBox(height: 8),
             TextField(
               controller: c,
@@ -176,14 +177,14 @@ class _IntercityFarePageState extends State<IntercityFarePage> {
               maxLines: 4,
               style: IcStyle.t(14, w: FontWeight.w600),
               decoration: InputDecoration(
-                hintText: 'مثلًا: عندي كرسي أطفال، أو نستناك قدام الجامع',
+                hintText: tr('مثلًا: عندي كرسي أطفال، أو نستناك قدام الجامع', 'e.g. I have a child seat, or we wait in front of the mosque'),
                 hintStyle: IcStyle.t(13, w: FontWeight.w500, c: IcStyle.muted),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
               ),
             ),
-            Text('ما تكتبش رقم تليفون: الرقم يتوقف قبل ما يوصل للسائق.', style: IcStyle.t(12, w: FontWeight.w600, c: IcStyle.muted)),
+            Text(tr('ما تكتبش رقم تليفون: الرقم يتوقف قبل ما يوصل للسائق.', 'Do not write a phone number: it is removed before it reaches the driver.'), style: IcStyle.t(12, w: FontWeight.w600, c: IcStyle.muted)),
             const SizedBox(height: 10),
-            IcButton(text: 'تم', onTap: () => Navigator.pop(ctx, c.text.trim())),
+            IcButton(text: tr('تم', 'Done'), onTap: () => Navigator.pop(ctx, c.text.trim())),
           ]),
         ),
       ),
@@ -195,7 +196,7 @@ class _IntercityFarePageState extends State<IntercityFarePage> {
   Future<void> _send() async {
     final zt = widget.home.zoneTypeId;
     if (zt == null || zt.isEmpty) {
-      setState(() => _error = 'الخدمة مش جاهزة في مدينتك. جرّب بعد شوي.');
+      setState(() => _error = tr('الخدمة مش جاهزة في مدينتك. جرّب بعد شوي.', 'The service is not ready in your city. Try again soon.'));
       return;
     }
     final booking = <String, Object?>{
@@ -242,8 +243,8 @@ class _IntercityFarePageState extends State<IntercityFarePage> {
         step: _step,
         summary: [
           _timeLabel,
-          '$_passengers ${_passengers == 1 ? 'راكب' : 'ركاب'}',
-          if (_round) 'ذهاب ورجوع · يستناك $_wait س',
+          '$_passengers ${_passengers == 1 ? tr('راكب', 'passenger') : tr('ركاب', 'passengers')}',
+          if (_round) tr('ذهاب ورجوع · يستناك $_wait س', 'Round trip · waits $_wait h'),
         ].join(' · '),
         pickAddress: widget.pick.address,
         dropAddress: _drop.address,
@@ -264,14 +265,14 @@ class _IntercityFarePageState extends State<IntercityFarePage> {
           Text(_error!, textAlign: TextAlign.center, style: IcStyle.t(13.5, c: const Color(0xffD92D20))),
           const SizedBox(height: 6),
         ],
-        IcButton(text: 'اطلب عروض السائقين', busy: _busy, onTap: _send),
+        IcButton(text: tr('اطلب عروض السائقين', 'Ask drivers for offers'), busy: _busy, onTap: _send),
       ]),
       children: [
         Row(children: [
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(widget.again != null ? 'نفس سفرتك مرة ثانية' : 'سيارة كاملة', style: IcStyle.t(21, w: FontWeight.w900)),
-              Text(widget.again != null ? 'عبّينا كل شي. اختار الوقت بس' : 'حدد عدد الركاب وأجرتك',
+              Text(widget.again != null ? tr('نفس سفرتك مرة ثانية', 'Your trip again') : tr('سيارة كاملة', 'Whole car'), style: IcStyle.t(21, w: FontWeight.w900)),
+              Text(widget.again != null ? tr('عبّينا كل شي. اختار الوقت بس', 'We filled everything in. Just choose the time') : tr('حدد عدد الركاب وأجرتك', 'Set the passengers and your fare'),
                   style: IcStyle.t(13.5, w: FontWeight.w600, c: IcStyle.muted)),
             ]),
           ),
@@ -290,7 +291,7 @@ class _IntercityFarePageState extends State<IntercityFarePage> {
           for (var n = 1; n <= widget.home.maxPassengers; n++) ...[
             if (n > 1) const SizedBox(width: 8),
             Expanded(
-              child: IcChip(fill: true, text: n == _passengers && n > 1 ? '$n ركاب' : '$n', selected: n == _passengers, onTap: () => setState(() => _passengers = n)),
+              child: IcChip(fill: true, text: n == _passengers && n > 1 ? tr('$n ركاب', '$n passengers') : '$n', selected: n == _passengers, onTap: () => setState(() => _passengers = n)),
             ),
           ],
         ]),
@@ -300,8 +301,8 @@ class _IntercityFarePageState extends State<IntercityFarePage> {
           const SizedBox(height: 8),
         ],
         Row(children: [
-          Expanded(child: Text(_round ? 'أجرة الذهاب والرجوع' : 'أجرة رحلتك', style: IcStyle.t(17, w: FontWeight.w900))),
-          Text('المقترحة LYD ${IcStyle.money(_suggested)}', style: IcStyle.t(13, w: FontWeight.w800, c: IcStyle.blue)),
+          Expanded(child: Text(_round ? tr('أجرة الذهاب والرجوع', 'Round-trip fare') : tr('أجرة رحلتك', 'Your fare'), style: IcStyle.t(17, w: FontWeight.w900))),
+          Text(tr('المقترحة LYD ${IcStyle.money(_suggested)}', 'Suggested LYD ${IcStyle.money(_suggested)}'), style: IcStyle.t(13, w: FontWeight.w800, c: IcStyle.blue)),
         ]),
         const SizedBox(height: 6),
         IcFareBar(
@@ -310,7 +311,7 @@ class _IntercityFarePageState extends State<IntercityFarePage> {
           onMinus: _fare - _step >= _min ? () => setState(() => _fare -= _step) : null,
         ),
         const SizedBox(height: 4),
-        Text('من ${IcStyle.money(_min)} إلى ${IcStyle.money(_max)} · السعر لوسط ${widget.route.to}، أبعد يزيد شوية',
+        Text(tr('من ${IcStyle.money(_min)} إلى ${IcStyle.money(_max)} · السعر لوسط ${widget.route.to}، أبعد يزيد شوية', 'From ${IcStyle.money(_min)} to ${IcStyle.money(_max)} · the price to central ${widget.route.to}, a bit more further away'),
             style: IcStyle.t(12, w: FontWeight.w600, c: IcStyle.muted)),
         if (_pay.choiceFor(true)) ...[
           const SizedBox(height: 10),
@@ -320,13 +321,13 @@ class _IntercityFarePageState extends State<IntercityFarePage> {
           const SizedBox(height: 8),
           IcPayNote(
               text: _pay.depositPercent < 100
-                  ? 'عربون ${_pay.depositPercent}٪ من محفظتك لما تختار الكابتن، والباقي نقدًا · رصيدك LYD ${IcStyle.money(_pay.balance)}'
-                  : 'تدفع من محفظتك لما تختار الكابتن · رصيدك LYD ${IcStyle.money(_pay.balance)}'),
+                  ? tr('عربون ${_pay.depositPercent}٪ من محفظتك لما تختار الكابتن، والباقي نقدًا · رصيدك LYD ${IcStyle.money(_pay.balance)}', 'A ${_pay.depositPercent}% deposit from your wallet when you choose the captain, the rest in cash · balance LYD ${IcStyle.money(_pay.balance)}')
+                  : tr('تدفع من محفظتك لما تختار الكابتن · رصيدك LYD ${IcStyle.money(_pay.balance)}', 'You pay from your wallet when you choose the captain · balance LYD ${IcStyle.money(_pay.balance)}')),
         ],
         if (_hint != null) ...[
           const SizedBox(height: 4),
           Text(
-            _fare < _hint! ? 'سعرك أقل من اللي تنقبل بيه الطلبات عادة (من LYD ${IcStyle.money(_hint!)})' : 'أغلب الطلبات تنقبل من LYD ${IcStyle.money(_hint!)} وفوق 👍',
+            _fare < _hint! ? tr('سعرك أقل من اللي تنقبل بيه الطلبات عادة (من LYD ${IcStyle.money(_hint!)})', 'Your price is lower than what requests are usually accepted at (from LYD ${IcStyle.money(_hint!)})') : tr('أغلب الطلبات تنقبل من LYD ${IcStyle.money(_hint!)} وفوق 👍', 'Most requests are accepted from LYD ${IcStyle.money(_hint!)} up 👍'),
             key: const ValueKey('ic-hint'),
             style: IcStyle.t(12.5, w: FontWeight.w800, c: _fare < _hint! ? const Color(0xffB45309) : const Color(0xff16803C)),
           ),
@@ -334,10 +335,10 @@ class _IntercityFarePageState extends State<IntercityFarePage> {
         const SizedBox(height: 10),
         const Divider(height: 1, color: Color(0xffEEF2F7)),
         IcRow(icon: Icons.schedule_rounded, text: _timeLabel, onTap: _pickTime),
-        IcRow(icon: Icons.chat_bubble_outline_rounded, text: _note.isEmpty ? 'ملاحظة للسائق' : _note, muted: _note.isEmpty, onTap: _pickNote),
+        IcRow(icon: Icons.chat_bubble_outline_rounded, text: _note.isEmpty ? tr('ملاحظة للسائق', 'Note for the driver') : _note, muted: _note.isEmpty, onTap: _pickNote),
         IcRow(
           icon: Icons.luggage_outlined,
-          text: 'شنطة كبيرة',
+          text: tr('شنطة كبيرة', 'Big bag'),
           trailing: Switch.adaptive(value: _bag, activeTrackColor: IcStyle.blue, onChanged: (v) => setState(() => _bag = v)),
           onTap: () => setState(() => _bag = !_bag),
           last: true,
@@ -381,7 +382,7 @@ class IcTripKind extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(color: IcStyle.soft, borderRadius: BorderRadius.circular(15)),
-      child: Row(children: [side('ذهاب بس', !round, false), const SizedBox(width: 4), side('ذهاب ورجوع ⇄', round, true)]),
+      child: Row(children: [side(tr('ذهاب بس', 'One way'), !round, false), const SizedBox(width: 4), side(tr('ذهاب ورجوع ⇄', 'Round trip ⇄'), round, true)]),
     );
   }
 }
@@ -406,8 +407,8 @@ class IcWaitCard extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('نفس اليوم · الكابتن يستناك', style: IcStyle.t(15, w: FontWeight.w900)),
-              Text('ترجع حوالي $back', key: const ValueKey('ic-back'), style: IcStyle.t(12.5, w: FontWeight.w700, c: const Color(0xff9A6700))),
+              Text(tr('نفس اليوم · الكابتن يستناك', 'Same day · the captain waits for you'), style: IcStyle.t(15, w: FontWeight.w900)),
+              Text(tr('ترجع حوالي $back', 'Back around $back'), key: const ValueKey('ic-back'), style: IcStyle.t(12.5, w: FontWeight.w700, c: const Color(0xff9A6700))),
             ]),
           ),
         ]),
@@ -415,7 +416,7 @@ class IcWaitCard extends StatelessWidget {
         Row(children: [
           for (final h in waits) ...[
             if (h != waits.first) const SizedBox(width: 6),
-            Expanded(child: IcChip(fill: true, text: '$h س', selected: h == wait, onTap: () => onWait(h))),
+            Expanded(child: IcChip(fill: true, text: tr('$h س', '$h h'), selected: h == wait, onTap: () => onWait(h))),
           ],
         ]),
       ]),
@@ -440,9 +441,9 @@ class IcPriceChanged extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text.rich(TextSpan(children: [
-              const TextSpan(text: 'السعر تغيّر · كان '),
+              TextSpan(text: tr('السعر تغيّر · كان ', 'The price changed · it was ')),
               TextSpan(text: 'LYD ${IcStyle.money(was)}', style: const TextStyle(decoration: TextDecoration.lineThrough)),
-              TextSpan(text: '، توا LYD ${IcStyle.money(now)}'),
+              TextSpan(text: tr('، توا LYD ${IcStyle.money(now)}', ', now LYD ${IcStyle.money(now)}')),
             ]), style: IcStyle.t(13, w: FontWeight.w800, c: const Color(0xffB45309))),
           ),
         ]),
@@ -476,7 +477,7 @@ class IcFareBar extends StatelessWidget {
           ),
         );
     return Row(children: [
-      sq('+', onPlus, 'زيادة'),
+      sq('+', onPlus, tr('زيادة', 'Increase')),
       const SizedBox(width: 8),
       Expanded(
         child: Container(
@@ -487,7 +488,7 @@ class IcFareBar extends StatelessWidget {
         ),
       ),
       const SizedBox(width: 8),
-      sq('−', onMinus, 'نقص'),
+      sq('−', onMinus, tr('نقص', 'Decrease')),
     ]);
   }
 }

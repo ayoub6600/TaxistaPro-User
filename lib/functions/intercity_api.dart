@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'tr.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -83,7 +84,7 @@ class IntercityLastTrip {
   String get dateLabel {
     final t = DateTime.tryParse(date);
     if (t == null) return date;
-    const months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+    final months = [tr('يناير', 'January'), tr('فبراير', 'February'), tr('مارس', 'March'), tr('أبريل', 'April'), tr('مايو', 'May'), tr('يونيو', 'June'), tr('يوليو', 'July'), tr('أغسطس', 'August'), tr('سبتمبر', 'September'), tr('أكتوبر', 'October'), tr('نوفمبر', 'November'), tr('ديسمبر', 'December')];
     return '${t.day} ${months[t.month - 1]}';
   }
 }
@@ -95,7 +96,7 @@ class IntercityToRate {
 
   int get bookingId => (raw['booking_id'] as num?)?.toInt() ?? 0;
   String get to => '${raw['to'] ?? ''}';
-  String get driver => '${raw['driver'] ?? 'الكابتن'}';
+  String get driver => '${raw['driver'] ?? tr('الكابتن', 'The captain')}';
   int get seats => (raw['seats'] as num?)?.toInt() ?? 1;
   num get price => (raw['price'] as num?) ?? 0;
 }
@@ -209,9 +210,9 @@ class IntercityApi {
       final j = jsonDecode(r.body);
       final ok = r.statusCode == 200 && j is Map && j['success'] == true;
       final msg = j is Map ? '${j['message'] ?? ''}' : '';
-      return IntercityResult(ok, msg.isEmpty ? (ok ? 'تم' : 'ما قدرناش، جرّب مرة ثانية.') : msg, j is Map ? j['data'] : null, j is Map ? j['code']?.toString() : null);
+      return IntercityResult(ok, msg.isEmpty ? (ok ? tr('تم', 'Done') : tr('ما قدرناش، جرّب مرة ثانية.', 'We could not do it, try again.')) : msg, j is Map ? j['data'] : null, j is Map ? j['code']?.toString() : null);
     } catch (_) {
-      return IntercityResult(false, 'تعذر الاتصال. تأكد من الإنترنت.');
+      return IntercityResult(false, tr('تعذر الاتصال. تأكد من الإنترنت.', 'No connection. Check the internet.'));
     }
   }
 
@@ -301,10 +302,10 @@ class IntercityApi {
     final today = now ?? DateTime.now();
     final d0 = DateTime(today.year, today.month, today.day);
     final diff = DateTime(t.year, t.month, t.day).difference(d0).inDays;
-    const days = ['الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد'];
-    final day = diff == 0 ? 'اليوم' : diff == 1 ? 'بكرة' : days[t.weekday - 1];
+    final days = [tr('الاثنين', 'Monday'), tr('الثلاثاء', 'Tuesday'), tr('الأربعاء', 'Wednesday'), tr('الخميس', 'Thursday'), tr('الجمعة', 'Friday'), tr('السبت', 'Saturday'), tr('الأحد', 'Sunday')];
+    final day = diff == 0 ? tr('اليوم', 'Today') : diff == 1 ? tr('بكرة', 'Tomorrow') : days[t.weekday - 1];
     final h = t.hour % 12 == 0 ? 12 : t.hour % 12;
-    final part = t.hour < 12 ? 'الصبح' : (t.hour < 17 ? 'الظهر' : 'بالليل');
+    final part = t.hour < 12 ? tr('الصبح', 'morning') : (t.hour < 17 ? tr('الظهر', 'noon') : tr('بالليل', 'at night'));
     return '$day $h:${t.minute.toString().padLeft(2, '0')} $part';
   }
 }

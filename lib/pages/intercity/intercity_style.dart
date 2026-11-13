@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../functions/tr.dart';
 
 /// The rider app's own colours for «سفر بين المدن» (same blue / navy as booking).
 class IcStyle {
@@ -46,7 +47,7 @@ class IcStepper extends StatelessWidget {
           ),
         );
     return Row(mainAxisSize: MainAxisSize.min, children: [
-      b('+', onPlus, 'زيادة'),
+      b('+', onPlus, tr('زيادة', 'Increase')),
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -54,7 +55,7 @@ class IcStepper extends StatelessWidget {
           Text(value, style: IcStyle.t(big ? 26 : 16, w: FontWeight.w900, c: big ? IcStyle.blue : IcStyle.navy)),
         ]),
       ),
-      b('−', onMinus, 'نقص'),
+      b('−', onMinus, tr('نقص', 'Decrease')),
     ]);
   }
 }
@@ -247,7 +248,7 @@ class IcScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final top = MediaQuery.of(context).padding.top;
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: (appRtl ? TextDirection.rtl : TextDirection.ltr),
       child: Scaffold(
         backgroundColor: const Color(0xffEDEAE3),
         body: Stack(children: [
@@ -262,7 +263,7 @@ class IcScaffold extends StatelessWidget {
                 shape: const CircleBorder(),
                 elevation: 3,
                 child: IconButton(
-                  tooltip: 'رجوع',
+                  tooltip: tr('رجوع', 'Return'),
                   onPressed: () => Navigator.of(context).maybePop(),
                   icon: const Icon(Icons.arrow_back_rounded, color: IcStyle.navy),
                 ),

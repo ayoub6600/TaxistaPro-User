@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../functions/tr.dart';
 
 /// On the owner's ride screen: what was asked (flatbed or not, what happened, which car, where it
 /// goes), what to do now, and — once the truck is there — how many of the four photos it took.
@@ -24,10 +25,10 @@ class TowRideCard extends StatelessWidget {
     final workshop = tow['workshop'] is Map ? '${(tow['workshop'] as Map)['name'] ?? ''}' : '';
     final emergency = '${tow['emergency_text'] ?? ''}';
     final now = started
-        ? 'السيارة مرفوعة وفي الطريق${workshop.isEmpty ? '' : ' لـ$workshop'}.'
+        ? tr('السيارة مرفوعة وفي الطريق${workshop.isEmpty ? '' : ' لـ$workshop'}.', 'The car is lifted and on its way${workshop.isEmpty ? '' : ' to $workshop'}.')
         : arrived
-            ? 'الكابتن عند السيارة يصوّرها قبل الرفع ($photos من 4).'
-            : 'خليك قريب من السيارة. الكابتن يصوّرها من 4 جهات قبل ما يرفعها.';
+            ? tr('الكابتن عند السيارة يصوّرها قبل الرفع ($photos من 4).', 'The captain is at the car, photographing it before lifting ($photos of 4).')
+            : tr('خليك قريب من السيارة. الكابتن يصوّرها من 4 جهات قبل ما يرفعها.', 'Stay near the car. The captain photographs it from 4 sides before lifting it.');
     return Container(
       key: const ValueKey('tow-ride-card'),
       padding: const EdgeInsets.all(12),
@@ -36,7 +37,7 @@ class TowRideCard extends StatelessWidget {
         Row(children: [
           const Text('🛻', style: TextStyle(fontSize: 20)),
           const SizedBox(width: 6),
-          Expanded(child: Text('ساحبة · ${tow['kind_label'] ?? ''}', style: _t(15, w: FontWeight.w900))),
+          Expanded(child: Text(tr('ساحبة · ${tow['kind_label'] ?? ''}', 'Tow truck${tow['needs_flatbed'] == true ? ' · Flatbed' : ''}'), style: _t(15, w: FontWeight.w900))),
         ]),
         Text([tow['condition_label'], tow['car_label'], if (workshop.isNotEmpty) '← $workshop'].whereType<Object>().join(' · '),
             style: _t(12.5, w: FontWeight.w600, c: const Color(0xff55678A))),

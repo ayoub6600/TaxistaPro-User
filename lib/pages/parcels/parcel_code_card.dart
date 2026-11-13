@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../functions/tr.dart';
 
 import '../../functions/share_text.dart';
 
@@ -19,7 +20,7 @@ class ParcelCodeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final code = '${parcel['code']}';
-    final name = '${parcel['receiver_name'] ?? 'المستلم'}';
+    final name = '${parcel['receiver_name'] ?? tr('المستلم', 'The receiver')}';
     final picked = parcel['picked_up'] == true;
     return Container(
       key: const ValueKey('parcel-code-card'),
@@ -30,12 +31,12 @@ class ParcelCodeCard extends StatelessWidget {
           const Text('📦', style: TextStyle(fontSize: 18)),
           const SizedBox(width: 6),
           Expanded(
-            child: Text(picked ? 'الطرد مع الكابتن، في الطريق لـ$name' : 'طرد ${parcel['size_label'] ?? ''} لـ$name',
+            child: Text(picked ? tr('الطرد مع الكابتن، في الطريق لـ$name', 'The parcel is with the captain, on its way to $name') : tr('طرد ${parcel['size_label'] ?? ''} لـ$name', 'A parcel for $name'),
                 style: GoogleFonts.cairo(color: const Color(0xff102A56), fontSize: 14, fontWeight: FontWeight.w800)),
           ),
         ]),
         const SizedBox(height: 6),
-        Text('كود التسليم: $name يعطيه للكابتن', style: GoogleFonts.cairo(color: const Color(0xff55678A), fontSize: 12, fontWeight: FontWeight.w700)),
+        Text(tr('كود التسليم: $name يعطيه للكابتن', 'Delivery code: $name gives it to the captain'), style: GoogleFonts.cairo(color: const Color(0xff55678A), fontSize: 12, fontWeight: FontWeight.w700)),
         const SizedBox(height: 4),
         // the digits read left to right, whatever the page direction
         Row(mainAxisAlignment: MainAxisAlignment.center, textDirection: TextDirection.ltr, children: [
@@ -52,10 +53,10 @@ class ParcelCodeCard extends StatelessWidget {
         const SizedBox(height: 8),
         Builder(
           builder: (ctx) => FilledButton.icon(
-            onPressed: () => shareText(ctx, 'كود استلام طردك من تاكسيستا: $code\nاعطيه للكابتن لما يوصلك الطرد.'),
+            onPressed: () => shareText(ctx, tr('كود استلام طردك من تاكسيستا: $code\nاعطيه للكابتن لما يوصلك الطرد.', 'Your Taxista parcel code: $code\nGive it to the captain when the parcel reaches you.')),
             style: FilledButton.styleFrom(backgroundColor: const Color(0xff0873FF), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
             icon: const Icon(Icons.send_rounded, size: 18),
-            label: Text('ابعت الكود لـ$name', style: GoogleFonts.cairo(fontWeight: FontWeight.w900)),
+            label: Text(tr('ابعت الكود لـ$name', 'Send the code to $name'), style: GoogleFonts.cairo(fontWeight: FontWeight.w900)),
           ),
         ),
       ]),

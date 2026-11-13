@@ -141,4 +141,18 @@ void main() {
     await t.pumpAndSettle();
     expect(sent!['fare'], 97, reason: 'from 102 down one step of 5 (a price over 100)');
   });
+
+  testWidgets('in English the freight page is English, left to right', (t) async {
+    await tall(t);
+    languageDirection = 'ltr';
+    addTearDown(() => languageDirection = 'rtl');
+    await t.pumpWidget(MaterialApp(home: FreightPage(home: _freight(), pick: const IcPlace(32.35, 15.1, ''))));
+    expect(find.text('What are you moving? 🚚'), findsOneWidget);
+    expect(find.text('Furniture'), findsOneWidget);
+    expect(find.text('Closed van'), findsOneWidget);
+    expect(find.text('up to 1.5 t'), findsOneWidget);
+    expect(find.text('Loading workers'), findsOneWidget);
+    expect(find.text('Ask for offers'), findsOneWidget);
+    expect(Directionality.of(t.element(find.text('Loading workers'))), TextDirection.ltr);
+  });
 }

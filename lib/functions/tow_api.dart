@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'tr.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -9,10 +10,18 @@ import 'intercity_api.dart' show IntercityResult;
 
 /// One choice the car owner picks (what happened, which car); `flatbed` = it needs a flatbed.
 class TowChoice {
-  const TowChoice(this.key, this.label, this.flatbed);
+  const TowChoice(this.key, this.labelAr, this.flatbed);
   final String key;
-  final String label;
+  final String labelAr;
   final bool flatbed;
+
+  static const _en = {
+    'not_starting': "Won't start", 'flat_tire': 'Flat tyre, no spare', 'locked_wheels': 'Locked wheel or brakes', 'accident': 'Accident', 'other': 'Something else',
+    'sedan': 'Sedan', 'suv': 'SUV', 'van': 'Van / minibus', 'motorcycle': 'Motorcycle',
+  };
+
+  /// the server writes Arabic; English by key
+  String get label => tr(labelAr, _en[key] ?? labelAr);
 }
 
 class TowWorkshop {
@@ -106,9 +115,9 @@ class TowApi {
         final first = (j['errors'] as Map).values.first;
         if (first is List && first.isNotEmpty) msg = '${first.first}';
       }
-      return IntercityResult(ok, msg.isEmpty ? (ok ? 'تم' : 'ما قدرناش، جرّب مرة ثانية.') : msg, j is Map ? j['data'] : null);
+      return IntercityResult(ok, msg.isEmpty ? (ok ? tr('تم', 'Done') : tr('ما قدرناش، جرّب مرة ثانية.', 'We could not do it, try again.')) : msg, j is Map ? j['data'] : null);
     } catch (_) {
-      return IntercityResult(false, 'تعذر الاتصال. تأكد من الإنترنت.');
+      return IntercityResult(false, tr('تعذر الاتصال. تأكد من الإنترنت.', 'No connection. Check the internet.'));
     }
   }
 

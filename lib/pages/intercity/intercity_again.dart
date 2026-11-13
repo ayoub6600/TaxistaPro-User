@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../functions/tr.dart';
 
 import '../../functions/intercity_api.dart';
 import 'intercity_fare_page.dart';
@@ -23,16 +24,16 @@ class IcAgainCard extends StatelessWidget {
 
   String get _details {
     if (last.isSeat) {
-      final seats = last.seats == 1 ? 'كرسي' : (last.seats == 2 ? 'كرسيين' : '${last.seats} كراسي');
+      final seats = last.seats == 1 ? tr('كرسي', 'seat') : (last.seats == 2 ? tr('كرسيين', 'two seats') : tr('${last.seats} كراسي', '${last.seats} seats'));
       return '$seats · LYD ${IcStyle.money(last.paid)}';
     }
-    final riders = last.passengers == 1 ? 'راكب' : (last.passengers == 2 ? 'راكبين' : '${last.passengers} ركاب');
-    return [riders, if (last.roundTrip) 'ذهاب ورجوع', 'LYD ${IcStyle.money(last.price)}'].join(' · ');
+    final riders = last.passengers == 1 ? tr('راكب', 'passenger') : (last.passengers == 2 ? tr('راكبين', 'two passengers') : tr('${last.passengers} ركاب', '${last.passengers} passengers'));
+    return [riders, if (last.roundTrip) tr('ذهاب ورجوع', 'Round trip'), 'LYD ${IcStyle.money(last.price)}'].join(' · ');
   }
 
   String get _seatsLine => last.openTrips == 0
-      ? 'ما فيش رحلات بالكراسي الآن'
-      : '${last.openTrips == 1 ? 'رحلة وحدة متاحة' : '${last.openTrips} رحلات متاحة'}${last.cheapestSeat != null ? ' · من LYD ${IcStyle.money(last.cheapestSeat!)}' : ''}';
+      ? tr('ما فيش رحلات بالكراسي الآن', 'No shared-seat trips now')
+      : '${last.openTrips == 1 ? tr('رحلة وحدة متاحة', 'One trip available') : tr('${last.openTrips} رحلات متاحة', '${last.openTrips} trips available')}${last.cheapestSeat != null ? tr(' · من LYD ${IcStyle.money(last.cheapestSeat!)}', ' · from LYD ${IcStyle.money(last.cheapestSeat!)}') : ''}';
 
   void _open(BuildContext context) {
     final route = _route;
@@ -66,7 +67,7 @@ class IcAgainCard extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('سفرتك الأخيرة · ${last.dateLabel}', style: IcStyle.t(12.5, w: FontWeight.w700, c: IcStyle.muted)),
+              Text(tr('سفرتك الأخيرة · ${last.dateLabel}', 'Your last trip · ${last.dateLabel}'), style: IcStyle.t(12.5, w: FontWeight.w700, c: IcStyle.muted)),
               Text('${home.from} ${last.roundTrip ? '⇄' : '←'} ${last.to}', style: IcStyle.t(18, w: FontWeight.w900)),
               Text(_details, style: IcStyle.t(13.5, w: FontWeight.w800, c: IcStyle.blue)),
             ]),
@@ -81,7 +82,7 @@ class IcAgainCard extends StatelessWidget {
           Text(_seatsLine, style: IcStyle.t(12.5, w: FontWeight.w700, c: IcStyle.muted)),
         ],
         const SizedBox(height: 10),
-        IcButton(text: last.isSeat ? 'شوف الكراسي إلى ${last.to}' : 'اطلبها مرة ثانية', onTap: () => _open(context)),
+        IcButton(text: last.isSeat ? tr('شوف الكراسي إلى ${last.to}', 'See the seats to ${last.to}') : tr('اطلبها مرة ثانية', 'Book it again'), onTap: () => _open(context)),
       ]),
     );
   }
@@ -107,11 +108,11 @@ class IntercityRateSheet extends StatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => Directionality(textDirection: TextDirection.rtl, child: IntercityRateSheet(toRate: r)),
+      builder: (_) => Directionality(textDirection: (appRtl ? TextDirection.rtl : TextDirection.ltr), child: IntercityRateSheet(toRate: r)),
     );
   }
 
-  static const tags = {'on_time': 'في الموعد', 'clean': 'سيارة نظيفة', 'safe': 'سواقة آمنة', 'late': 'تأخر', 'many_stops': 'وقف كثير'};
+  static final tags = {'on_time': tr('في الموعد', 'On time'), 'clean': tr('سيارة نظيفة', 'Clean car'), 'safe': tr('سواقة آمنة', 'Safe driving'), 'late': tr('تأخر', 'Was late'), 'many_stops': tr('وقف كثير', 'Stopped a lot')};
 
   @override
   State<IntercityRateSheet> createState() => _IntercityRateSheetState();
@@ -125,7 +126,7 @@ class _IntercityRateSheetState extends State<IntercityRateSheet> {
 
   Future<void> _send() async {
     if (_stars == 0) {
-      setState(() => _error = 'اختار عدد النجوم.');
+      setState(() => _error = tr('اختار عدد النجوم.', 'Choose the number of stars.'));
       return;
     }
     setState(() {
@@ -145,8 +146,8 @@ class _IntercityRateSheetState extends State<IntercityRateSheet> {
   @override
   Widget build(BuildContext context) {
     final r = widget.toRate;
-    final seats = r.seats == 1 ? 'كرسي' : (r.seats == 2 ? 'كرسيين' : '${r.seats} كراسي');
-    final initial = r.driver.isEmpty ? 'ك' : r.driver.characters.first;
+    final seats = r.seats == 1 ? tr('كرسي', 'seat') : (r.seats == 2 ? tr('كرسيين', 'two seats') : tr('${r.seats} كراسي', '${r.seats} seats'));
+    final initial = r.driver.isEmpty ? tr('ك', 'K') : r.driver.characters.first;
     return IcSheet(children: [
       Center(
         child: Container(
@@ -157,20 +158,20 @@ class _IntercityRateSheetState extends State<IntercityRateSheet> {
         ),
       ),
       const SizedBox(height: 8),
-      Text('وصلت بالسلامة 🌟', textAlign: TextAlign.center, style: IcStyle.t(21, w: FontWeight.w900)),
+      Text(tr('وصلت بالسلامة 🌟', 'Arrived safely 🌟'), textAlign: TextAlign.center, style: IcStyle.t(21, w: FontWeight.w900)),
       Text('← ${r.to} · $seats · LYD ${IcStyle.money(r.price)}', textAlign: TextAlign.center, style: IcStyle.t(13, w: FontWeight.w700, c: IcStyle.muted)),
       const SizedBox(height: 12),
       Row(mainAxisAlignment: MainAxisAlignment.center, children: [
         CircleAvatar(radius: 16, backgroundColor: const Color(0xffDCE8FB), child: Text(initial, style: IcStyle.t(14, w: FontWeight.w900, c: IcStyle.blue))),
         const SizedBox(width: 8),
-        Text('كيف كانت السفرة مع ${r.driver}؟', style: IcStyle.t(15.5, w: FontWeight.w900)),
+        Text(tr('كيف كانت السفرة مع ${r.driver}؟', 'How was the trip with ${r.driver}?'), style: IcStyle.t(15.5, w: FontWeight.w900)),
       ]),
       const SizedBox(height: 8),
       Row(mainAxisAlignment: MainAxisAlignment.center, children: [
         for (var i = 1; i <= 5; i++)
           Semantics(
             button: true,
-            label: '$i نجوم',
+            label: tr('$i نجوم', '$i stars'),
             excludeSemantics: true,
             child: GestureDetector(
               onTap: () => setState(() {
@@ -198,9 +199,9 @@ class _IntercityRateSheetState extends State<IntercityRateSheet> {
         Text(_error!, textAlign: TextAlign.center, style: IcStyle.t(13, c: const Color(0xffD92D20))),
         const SizedBox(height: 6),
       ],
-      IcButton(text: 'أرسل التقييم', busy: _busy, onTap: _send),
+      IcButton(text: tr('أرسل التقييم', 'Send rating'), busy: _busy, onTap: _send),
       const SizedBox(height: 6),
-      IcButton(text: 'بعدين', ghost: true, onTap: () => Navigator.of(context).pop(false)),
+      IcButton(text: tr('بعدين', 'Later'), ghost: true, onTap: () => Navigator.of(context).pop(false)),
     ]);
   }
 }

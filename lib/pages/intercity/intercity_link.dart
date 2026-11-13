@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../functions/tr.dart';
 
 import '../../functions/calls/admin_call_controller.dart' show appNavigatorKey;
 import '../../functions/functions.dart' show bearerToken;
@@ -74,8 +75,8 @@ class IntercityLink {
       step: max - fare >= 100 ? 10 : 5,
       summary: [
         if (when.isNotEmpty) when,
-        '$passengers ${passengers == 1 ? 'راكب' : 'ركاب'}',
-        if (ic['round_trip'] == true) 'ذهاب ورجوع · يستناك ${ic['wait_hours'] ?? ''} س',
+        '$passengers ${passengers == 1 ? tr('راكب', 'passenger') : tr('ركاب', 'passengers')}',
+        if (ic['round_trip'] == true) tr('ذهاب ورجوع · يستناك ${ic['wait_hours'] ?? ''} س', 'Round trip · waits ${ic['wait_hours'] ?? ''} h'),
       ].join(' · '),
       pickAddress: '${ride['pick_address'] ?? ''}',
       dropAddress: '${ride['drop_address'] ?? ''}',
