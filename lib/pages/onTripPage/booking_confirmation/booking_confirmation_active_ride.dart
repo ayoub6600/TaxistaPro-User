@@ -343,7 +343,7 @@ mixin _BookingConfirmationActiveRide
     if (policy is Map) {
       final wait = policy['free_wait_minutes'] ?? 3;
       text = !arrived
-          ? (rtl ? 'الإلغاء مجاني قبل ما يوصل السائق' : 'Cancelling is free until the driver arrives')
+          ? (rtl ? 'لو الكابتن تحرك لك، نوضحلك قبل الإلغاء لو فيه تعويض له' : 'If the driver is already on his way, we show you before cancelling whether he is owed a compensation')
           : (rtl
               ? 'الإلغاء مجاني أول $wait دقائق من وصول السائق، وبعدها قد تُخصم رسوم إلغاء'
               : 'Free for the first $wait minutes after the driver arrives; a cancellation fee may apply after that');
@@ -378,6 +378,17 @@ mixin _BookingConfirmationActiveRide
         ),
         onPressed: () async {
           setState(() => isLoading = true);
+          // «تعويض الكابتن»: the driver already drove toward him — say so, and what cancelling costs, first
+          pendingCancelCompensate = null;
+          final quote = userRequestData['is_driver_arrived'] == 0 ? await CancelQuote.fetch('${userRequestData['id']}') : null;
+          if (quote != null) {
+            setState(() => isLoading = false);
+            if (!mounted) return;
+            final choice = await CancelQuote.ask(context, quote);
+            if (choice == null) return;
+            pendingCancelCompensate = choice == 'pay';
+            setState(() => isLoading = true);
+          }
           var reason = await cancelReason(userRequestData['is_driver_arrived'] == 0 ? 'before' : 'after');
           if (reason == true) {
             setState(() {

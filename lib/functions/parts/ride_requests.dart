@@ -588,11 +588,19 @@ cancelLaterRequest(val) async {
 Future<dynamic> cancelRequestWithReason(reason) =>
     _cancelFlight.run(() => _cancelRequestWithReason(reason));
 
+/// «تعويض الكابتن»: the rider's answer to the cancel quote (null = no quote was shown)
+bool? pendingCancelCompensate;
+
 Future<dynamic> _cancelRequestWithReason(reason) async {
   dynamic result;
   try {
-    final response = await _postCancel(
-        {'request_id': userRequestData['id'], 'reason': reason});
+    final compensate = pendingCancelCompensate;
+    final response = await _postCancel({
+      'request_id': userRequestData['id'],
+      'reason': reason,
+      if (compensate != null) 'compensate': compensate ? 1 : 0,
+    });
+    pendingCancelCompensate = null;
     debugPrint('cancel(reason) ${response.statusCode}');
 
     final answer = rideAnswerOf(response.statusCode, response.body);
