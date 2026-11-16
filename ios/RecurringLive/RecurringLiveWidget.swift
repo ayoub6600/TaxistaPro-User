@@ -251,7 +251,7 @@ struct DayButtons: View {
   var body: some View {
     HStack(spacing: 10) {
       Button(intent: RecurringConfirmIntent(occurrenceId: attributes.occurrenceId, dayToken: attributes.dayToken, seenAt: attributes.seenAt)) {
-        DayButtonLabel(title: "نعم، أبيه", symbol: "checkmark", fill: CardLook.confirm, weight: .bold)
+        DayButtonLabel(title: "نعم", symbol: "checkmark", fill: CardLook.confirm, weight: .bold)
       }
       .buttonStyle(.plain)
       .accessibilityLabel("تأكيد مشوار الغد")

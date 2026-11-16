@@ -15,7 +15,7 @@ void main() {
     expect(widget.contains('Link(destination: attributes.skipURL)'), isTrue);
     expect(widget.contains('RecurringSkip'), isFalse, reason: 'skip is never an in-place intent');
     // short words beside Apple's own symbols (no emoji inside the coloured buttons)
-    expect(widget.contains('title: "نعم، أبيه"') && widget.contains('title: "ألغِ هذا اليوم"'), isTrue);
+    expect(widget.contains('title: "نعم"') && widget.contains('title: "ألغِ هذا اليوم"'), isTrue);
     expect(widget.contains('HStack(spacing: 10)'), isTrue, reason: 'the two buttons side by side, never stacked');
     expect(shared.contains('"platform": "ios_live"'), isTrue);
     expect(shared.contains('api/v1/recurring-day/'), isTrue);
@@ -65,7 +65,7 @@ void main() {
 
   test('the same words as the server on the Android buttons (owner 2026-11-16)', () {
     final dart = File('lib/functions/recurring_push.dart').readAsStringSync();
-    expect(dart.contains("'✅ نعم، أبيه'") && dart.contains("'❌ ألغِ هذا اليوم'"), isTrue);
+    expect(dart.contains("'✅ نعم'") && dart.contains("'❌ ألغِ هذا اليوم'"), isTrue);
     expect(dart.contains('تأكيد مشوار الغد'), isFalse);
   });
 }

@@ -73,7 +73,7 @@ class RecurringPush {
   static AndroidNotificationChannel get channel => const AndroidNotificationChannel(
         channelId,
         'تذكير الرحلات المتكررة',
-        description: 'تذكير الليلة بمشوار الغد، بزرين: نعم أبيه أو ألغِ هذا اليوم',
+        description: 'تذكير الليلة بمشوار الغد، بزرين: نعم أو ألغِ هذا اليوم',
         importance: Importance.high,
       );
 
@@ -92,7 +92,7 @@ class RecurringPush {
         android: AndroidNotificationDetails(
           channelId,
           'تذكير الرحلات المتكررة',
-          channelDescription: 'تذكير الليلة بمشوار الغد، بزرين: نعم أبيه أو ألغِ هذا اليوم',
+          channelDescription: 'تذكير الليلة بمشوار الغد، بزرين: نعم أو ألغِ هذا اليوم',
           importance: Importance.high,
           priority: Priority.high,
           category: AndroidNotificationCategory.reminder,
@@ -101,7 +101,7 @@ class RecurringPush {
           timeoutAfter: left,
           autoCancel: true,
           actions: const [
-            AndroidNotificationAction(confirmAction, '✅ نعم، أبيه', showsUserInterface: false, cancelNotification: false),
+            AndroidNotificationAction(confirmAction, '✅ نعم', showsUserInterface: false, cancelNotification: false),
             AndroidNotificationAction(skipAction, '❌ ألغِ هذا اليوم', showsUserInterface: false, cancelNotification: false),
           ],
         ),
