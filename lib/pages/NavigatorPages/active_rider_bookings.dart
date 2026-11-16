@@ -2,6 +2,7 @@ import '../../widgets/v2_skeleton.dart';
 import 'package:flutter/material.dart';
 
 import '../../functions/functions.dart';
+import '../../functions/schedule_time.dart';
 import '../onTripPage/booking_confirmation.dart';
 import 'upcoming_scheduled_rides.dart';
 import '../../navigation/guarded_navigation.dart';
@@ -170,7 +171,7 @@ class _ActiveRiderBookingsPageState extends State<ActiveRiderBookingsPage> {
               Row(children: [
                 const Icon(Icons.access_time_rounded, size: 17, color: Color(0xff1677FF)),
                 const SizedBox(width: 7),
-                Expanded(child: Text(ride['trip_start_time']?.toString() ?? '',
+                Expanded(child: Text(_when(ride),
                     style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xff102A56)))),
               ]),
               if (confirmed && ride['driverDetail'] is Map &&
@@ -205,7 +206,7 @@ class _ActiveRiderBookingsPageState extends State<ActiveRiderBookingsPage> {
               ),
               const Spacer(),
               if (ride['request_eta_amount'] != null)
-                Text('${ride['request_eta_amount']} ${ride['requested_currency_symbol'] ?? ''}',
+                Text('${priceText(bookingPrice(ride))} ${ride['requested_currency_symbol'] ?? ''}',
                     style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xff102A56))),
             ]),
           ],
@@ -213,4 +214,12 @@ class _ActiveRiderBookingsPageState extends State<ActiveRiderBookingsPage> {
       ),
     );
   }
+}
+
+/// «الاثنين، 16 نوفمبر · 5:37 ص» in the market's time, instead of «16th Nov 05:37 AM» (owner 2026-11-16)
+String _when(Map ride) {
+  final rtl = languageDirection == 'rtl';
+  final t = parseTripStart(ride);
+  if (t == null) return '${ride['trip_start_time'] ?? ''}';
+  return '${scheduleDateLabel(t, isRtl: rtl)} · ${scheduleTimeLabel(t, isRtl: rtl)}';
 }

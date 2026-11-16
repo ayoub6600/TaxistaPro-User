@@ -222,13 +222,13 @@ enum RecurringReminderButtons {
     let yes: UNNotificationAction
     let no: UNNotificationAction
     if #available(iOS 15.0, *) {
-      yes = UNNotificationAction(identifier: confirm, title: "تأكيد", options: [],
+      yes = UNNotificationAction(identifier: confirm, title: "نعم، أبيه", options: [],
                                  icon: UNNotificationActionIcon(systemImageName: "checkmark.circle.fill"))
-      no = UNNotificationAction(identifier: skip, title: "تخطي", options: [.destructive, .authenticationRequired],
+      no = UNNotificationAction(identifier: skip, title: "ألغِ هذا اليوم", options: [.destructive, .authenticationRequired],
                                 icon: UNNotificationActionIcon(systemImageName: "forward.end.fill"))
     } else {
-      yes = UNNotificationAction(identifier: confirm, title: "✅ تأكيد", options: [])
-      no = UNNotificationAction(identifier: skip, title: "⏭ تخطي", options: [.destructive, .authenticationRequired])
+      yes = UNNotificationAction(identifier: confirm, title: "✅ نعم، أبيه", options: [])
+      no = UNNotificationAction(identifier: skip, title: "❌ ألغِ هذا اليوم", options: [.destructive, .authenticationRequired])
     }
     let cat = UNNotificationCategory(identifier: category, actions: [yes, no], intentIdentifiers: [],
                                      hiddenPreviewsBodyPlaceholder: "تذكير بمشوارك", options: [])

@@ -564,9 +564,9 @@ class _UpcomingScheduledRidesPageState
               children: [
                 Icon(Icons.payments_outlined, color: textColor.withValues(alpha: .5), size: 18),
                 const SizedBox(width: 6),
-                Text(isRtl ? 'السعر العادل' : 'Fair fare', style: GoogleFonts.cairo(color: textColor.withValues(alpha: .6), fontSize: 13)),
+                Text(isRtl ? 'سعر الحجز' : 'Booking price', style: GoogleFonts.cairo(color: textColor.withValues(alpha: .6), fontSize: 13)),
                 const Spacer(),
-                Text('${item['request_eta_amount']} ${item['requested_currency_symbol'] ?? ''}',
+                Text('${priceText(bookingPrice(item))} ${item['requested_currency_symbol'] ?? ''}',
                     style: GoogleFonts.notoSans(color: textColor, fontSize: 15, fontWeight: FontWeight.w800)),
               ],
             ),

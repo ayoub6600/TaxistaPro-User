@@ -188,11 +188,11 @@ enum RecurringLiveActivities {
   private static func askSkip(id: String, token: String, seenAt: String) {
     guard let vc = top() else { return }
     let demo = id == "demo"
-    let alert = UIAlertController(title: "تخطي مشوار الغد؟",
+    let alert = UIAlertController(title: "نلغي مشوار الغد؟",
                                   message: demo ? "تجربة: ما يتسجل شي في حسابك." : "ما يجيك سائق في هذا اليوم فقط، وباقي الأيام تكمل عادي. التخطي مجاني.",
                                   preferredStyle: .alert)
     alert.addAction(UIAlertAction(title: "رجوع", style: .cancel))
-    alert.addAction(UIAlertAction(title: "⏭ تخطي", style: .destructive) { _ in
+    alert.addAction(UIAlertAction(title: "❌ ألغِ هذا اليوم", style: .destructive) { _ in
       guard #available(iOS 16.2, *) else { return }
       Task {
         let reply = await RecurringDayAnswer.answer(occurrenceId: id, answer: "skip", token: token, seenAt: seenAt)

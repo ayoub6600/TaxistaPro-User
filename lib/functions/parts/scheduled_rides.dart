@@ -11,6 +11,29 @@ num scheduledQuotedFare(Map eta) =>
         : (eta['scheduled_total'] is num) ? eta['scheduled_total'] as num :
             (eta['total'] is num) ? eta['total'] as num : 0;
 
+/// What the rider pays for a booking, as he agreed it (owner 2026-11-16: a scheduled negotiated ride
+/// showed «16», the instant fare, on a 25.3 booking): the accepted price, else his own offer, else the
+/// scheduled quote of a negotiated booking, else the quote.
+num bookingPrice(Map ride) {
+  num? read(String k) {
+    final v = num.tryParse('${ride[k] ?? ''}');
+    return v != null && v > 0 ? v : null;
+  }
+
+  bool yes(String k) => ride[k] == true || '${ride[k]}' == '1';
+  return read('accepted_ride_fare') ??
+      read('rider_proposed_fare') ??
+      (yes('is_later') && yes('is_bid_ride') ? read('offerred_ride_fare') : null) ??
+      read('request_eta_amount') ??
+      0;
+}
+
+/// «25.3» / «12» — no trailing zeros
+String priceText(num v) {
+  final r = (v * 100).round() / 100;
+  return r == r.roundToDouble() ? r.toStringAsFixed(0) : r.toStringAsFixed(2).replaceFirst(RegExp(r'0$'), '');
+}
+
 num quotedFareForPayment(Map eta, {required bool scheduled, required bool discounted}) {
   if (scheduled) {
     if (discounted && eta['scheduled_discounted_total'] is num) {

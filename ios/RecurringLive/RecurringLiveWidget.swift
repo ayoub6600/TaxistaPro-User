@@ -234,7 +234,7 @@ struct CardFooter: View {
     } else if sending(context) {
       HStack(spacing: 8) {
         ProgressView().tint(.white).controlSize(.small)
-        Text(context.state.note == "skip" ? "جاري تخطي المشوار…" : "جاري تأكيد مشوارك…")
+        Text(context.state.note == "skip" ? "جاري إلغاء هذا اليوم…" : "جاري تأكيد مشوارك…")
           .font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
       }
       .frame(maxWidth: .infinity, minHeight: CardLook.buttonHeight)
@@ -251,15 +251,15 @@ struct DayButtons: View {
   var body: some View {
     HStack(spacing: 10) {
       Button(intent: RecurringConfirmIntent(occurrenceId: attributes.occurrenceId, dayToken: attributes.dayToken, seenAt: attributes.seenAt)) {
-        DayButtonLabel(title: "تأكيد", symbol: "checkmark", fill: CardLook.confirm, weight: .bold)
+        DayButtonLabel(title: "نعم، أبيه", symbol: "checkmark", fill: CardLook.confirm, weight: .bold)
       }
       .buttonStyle(.plain)
       .accessibilityLabel("تأكيد مشوار الغد")
 
       Link(destination: attributes.skipURL) {
-        DayButtonLabel(title: "تخطي", symbol: "forward.end.fill", fill: CardLook.skip, weight: .semibold)
+        DayButtonLabel(title: "ألغِ هذا اليوم", symbol: "xmark", fill: CardLook.skip, weight: .semibold)
       }
-      .accessibilityLabel("تخطي مشوار الغد")
+      .accessibilityLabel("ألغِ مشوار الغد")
     }
   }
 }
@@ -273,7 +273,7 @@ private struct DayButtonLabel: View {
   var body: some View {
     HStack(spacing: 6) {
       Image(systemName: symbol).font(.system(size: 14, weight: .bold))
-      Text(title).font(.system(size: 16, weight: weight))
+      Text(title).font(.system(size: 15, weight: weight)).lineLimit(1).minimumScaleFactor(0.8)
     }
     .foregroundStyle(.white)
     .frame(maxWidth: .infinity, minHeight: CardLook.buttonHeight)
