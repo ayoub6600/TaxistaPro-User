@@ -809,6 +809,8 @@ mixin _BookingConfirmationView
                                               driverData['l'][1]);
                                           _dist = double.parse(
                                               (distCalc / 1000).toString());
+                                          // the captain's in-app navigation (Google, with traffic): a better time than distance × 2
+                                          _navEtaMin = navEtaMinutes(driverData, '${userRequestData['id']}');
                                         } else if (userRequestData[
                                                     'is_rental'] !=
                                                 true &&

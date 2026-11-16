@@ -208,6 +208,9 @@ mixin _BookingConfirmationController
   bool _chooseGoodsType = false;
   dynamic _showInfoInt;
   dynamic _dist;
+
+  /// minutes left as the captain's navigation counts them, or null (no navigation, old, other ride)
+  int? _navEtaMin;
   bool _editUserDetails = false;
   String _cancellingError = '';
   GlobalKey iconKey = GlobalKey();
@@ -1212,6 +1215,7 @@ mixin _BookingConfirmationController
     // default service after the quote has already selected it.
     if (etaDetails.isEmpty) choosenVehicle = null;
     _dist = null;
+    _navEtaMin = null;
 
     if (widget.type == 2 || isOutStation == true) {
       var val = await etaRequest(outstation: isOutStation);

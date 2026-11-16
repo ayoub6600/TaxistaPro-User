@@ -220,6 +220,11 @@ mixin _BookingConfirmationActiveRide
     final d = userRequestData;
     if (d['is_trip_start'] == 1) return rtl ? 'في الطريق إلى وجهتك' : 'On the way to your destination';
     if (d['arrived_at'] != null) return rtl ? 'وصل السائق' : 'Your driver has arrived';
+    final nav = _navEtaMin;
+    if (nav != null) {
+      if (nav <= 1) return rtl ? 'الكابتن وصل تقريبًا' : 'Your driver is almost here';
+      return rtl ? 'يوصلك خلال $nav ${nav <= 10 && nav > 2 ? 'دقائق' : 'دقيقة'}' : 'Arrives in $nav min';
+    }
     if (_dist != null) {
       final m = double.parse((_dist * 2).toString()).round();
       if (m > 0) return rtl ? 'يوصلك خلال $m ${m <= 10 && m > 2 ? 'دقائق' : 'دقيقة'}' : 'Arrives in $m min';
