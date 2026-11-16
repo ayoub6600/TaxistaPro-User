@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
@@ -45,6 +46,8 @@ class _DailyGiftBarState extends State<DailyGiftBar> with SingleTickerProviderSt
   Timer? _tick;
   DateTime _lastLoad = DateTime.fromMillisecondsSinceEpoch(0);
   bool _intoIntro = false;
+  double? _loadedLat;
+  double? _loadedLng;
   bool _sounded = false;
   AudioPlayer? _player;
 
@@ -63,7 +66,21 @@ class _DailyGiftBarState extends State<DailyGiftBar> with SingleTickerProviderSt
   @override
   void didUpdateWidget(covariant DailyGiftBar old) {
     super.didUpdateWidget(old);
-    if (_offer == null && (old.lat != widget.lat || old.lng != widget.lng)) _load();
+    if (_offer == null && (old.lat != widget.lat || old.lng != widget.lng)) {
+      _load();
+    } else if (_movedToAnotherPlace()) {
+      // the map went to another city (market switch, a far pin): that city's gift, not where the phone is
+      _load(force: true);
+    }
+  }
+
+  /// more than 10 km from where the gift was last asked for
+  bool _movedToAnotherPlace() {
+    final lat = widget.lat, lng = widget.lng, oldLat = _loadedLat, oldLng = _loadedLng;
+    if (lat == null || lng == null || oldLat == null || oldLng == null) return false;
+    final dLat = (lat - oldLat) * 111.0;
+    final dLng = (lng - oldLng) * 111.0 * math.cos(lat * math.pi / 180);
+    return math.sqrt(dLat * dLat + dLng * dLng) > 10;
   }
 
   @override
@@ -82,9 +99,11 @@ class _DailyGiftBarState extends State<DailyGiftBar> with SingleTickerProviderSt
     if (widget.offerForTest == null && (over || DateTime.now().difference(_lastLoad) > _refresh)) _load();
   }
 
-  Future<void> _load() async {
-    if (DateTime.now().difference(_lastLoad) < const Duration(seconds: 15)) return;
+  Future<void> _load({bool force = false}) async {
+    if (!force && DateTime.now().difference(_lastLoad) < const Duration(seconds: 15)) return;
     _lastLoad = DateTime.now();
+    _loadedLat = widget.lat;
+    _loadedLng = widget.lng;
     final offer = DailyGiftOffer.fromJson(await GrowthApi.dailyGift(lat: widget.lat, lng: widget.lng));
     if (!mounted) return;
     if (offer == null) {

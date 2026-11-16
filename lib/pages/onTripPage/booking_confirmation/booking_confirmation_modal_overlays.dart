@@ -39,6 +39,13 @@ mixin _BookingConfirmationModalOverlays
       buildLowWalletOverlay(),
       buildPaymentMethodOverlay(),
       buildPendingRequestOverlay(media),
+      // «فيه فلان بعيد عليك»: only while an immediate search has nobody yet (the server decides the rest)
+      if (userRequestData.isNotEmpty &&
+          userRequestData['id'] != null &&
+          userRequestData['accepted_at'] == null &&
+          userRequestData['is_later'].toString() != '1' &&
+          userRequestData['is_cancelled'].toString() != '1')
+        Positioned.fill(child: FarCaptainsPanel(requestId: '${userRequestData['id']}')),
       buildActiveRideSheet(media),
       // accepted, not started yet: the pickup point may still move, by agreement with the driver
       if (userRequestData.isNotEmpty &&

@@ -141,7 +141,21 @@ extension _MapLocationServices on _MapsState {
     await getLocs();
   }
 
+  /// the real cars around [spot] (the moved pin), and the city's numbers for it
+  void carsAround(LatLng spot) {
+    _carsCenter = spot;
+    lowerLat = spot.latitude - (lat * 1.24);
+    lowerLon = spot.longitude - (lon * 1.24);
+    greaterLat = spot.latitude + (lat * 1.24);
+    greaterLon = spot.longitude + (lon * 1.24);
+    lower = geo.encode(lowerLon, lowerLat);
+    higher = geo.encode(greaterLon, greaterLat);
+    unawaited(HomeCaptainsLoader.around(spot.latitude, spot.longitude));
+  }
+
   void fdbfun() {
+    _carsCenter = center;
+    unawaited(HomeCaptainsLoader.around(center.latitude, center.longitude));
     lowerLat = center.latitude - (lat * 1.24);
     lowerLon = center.longitude - (lon * 1.24);
     greaterLat = center.latitude + (lat * 1.24);

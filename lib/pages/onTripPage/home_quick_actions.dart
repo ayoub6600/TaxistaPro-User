@@ -6,6 +6,7 @@ import '../../styles/styles.dart';
 import 'home_services_row.dart';
 import '../../functions/freight_api.dart';
 import '../../functions/parcel_api.dart';
+import '../../supply/home_captains.dart';
 
 class HomeQuickDestination {
   const HomeQuickDestination({
@@ -88,6 +89,7 @@ class HomeQuickActions extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          const HomeNoCaptainsLine(),
           DailyGiftBar(lat: giftLat, lng: giftLng),
           // a Taxista gift with its countdown (nothing when the rider has none)
           const GiftBanner(),

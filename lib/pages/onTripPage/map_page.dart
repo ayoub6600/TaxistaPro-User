@@ -27,6 +27,8 @@ import 'package:uuid/uuid.dart';
 import 'package:vector_math/vector_math.dart' as vector;
 
 import '../../functions/functions.dart';
+import '../../supply/home_captains.dart';
+import '../../supply/map_privacy.dart';
 import '../../functions/api_guard.dart';
 import '../../functions/live_queries.dart';
 import '../../functions/geohash.dart';
@@ -152,6 +154,7 @@ class _MapsState extends State<Maps>
   final ExclusiveRunner _destinationEntry = ExclusiveRunner();
   dynamic _lastCenter;
   LatLng _centerLocation = const LatLng(41.4219057, -102.0840772);
+  LatLng? _carsCenter; // where the home map's car query is centred (follows the pin)
   final _debouncer = Debouncer(milliseconds: 1000);
 
   bool ischanged = false;

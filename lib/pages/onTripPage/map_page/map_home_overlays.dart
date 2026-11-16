@@ -377,6 +377,14 @@ extension _MapHomeOverlays on _MapsState {
                 ),
               ))
           : const SizedBox(),
+      // «12 كابتن متصل في مصراتة توا» (real captains only; nothing while the city has it off)
+      if (_bottom == 0)
+        Positioned(
+          top: MediaQuery.of(context).padding.top + 74,
+          left: 18,
+          right: 18,
+          child: const IgnorePointer(child: HomeCaptainsChip()),
+        ),
     ];
   }
 

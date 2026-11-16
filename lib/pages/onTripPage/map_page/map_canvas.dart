@@ -27,6 +27,10 @@ extension _MapCanvas on _MapsState {
             });
             // ignore: avoid_function_literals_in_foreach_calls
             driverData.forEach((element) {
+              // a captain's car is drawn near his spot, never exactly on it (city setting)
+              if (element is Map && element['l'] is List && (element['l'] as List).length >= 2) {
+                element['l'] = MapPrivacy.blur(element['id'], element['l'] as List, homeCarPrivacyMeters);
+              }
               if (element['is_active'] == 1 &&
                   element['is_available'] == true) {
                 if ((choosenTransportType == 0 &&
@@ -205,6 +209,7 @@ extension _MapCanvas on _MapsState {
                 }
               }
             });
+            HomeMapCars.settle(myMarkers, _centerLocation);
           }
           if (mapType == 'google') {
             unawaited(ServiceZones.load());
@@ -239,6 +244,12 @@ extension _MapCanvas on _MapsState {
                         setState(() {
                           _isPickingLocation = false;
                         });
+                      }
+                      // the pin moved more than a km: show the real captains around the new spot
+                      final carsAt = _carsCenter;
+                      if (carsAt == null ||
+                          calculateDistance(carsAt.latitude, carsAt.longitude, _centerLocation.latitude, _centerLocation.longitude) > 1000) {
+                        setState(() => carsAround(_centerLocation));
                       }
                       if (_lastRequestedLocation != null &&
                           _lastRequestedLocation!.latitude ==
