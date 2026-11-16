@@ -147,7 +147,7 @@ class _ParcelPageState extends State<ParcelPage> {
   Widget build(BuildContext context) {
     final cur = widget.home.currency;
     return IcScaffold(
-      title: tr('توصيل · ${widget.home.city}', 'Delivery · ${widget.home.city}'),
+      title: tr('${ParcelHome.homeNameOf(widget.home, true)} · ${widget.home.city}', '${ParcelHome.homeNameOf(widget.home, false)} · ${widget.home.city}'),
       mapHeight: 150,
       bottom: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         if (_error != null) ...[

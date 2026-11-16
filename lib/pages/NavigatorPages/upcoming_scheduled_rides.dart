@@ -13,6 +13,7 @@ import '../../functions/calls/admin_call_controller.dart';
 import '../chatPage/trip_chat_page.dart';
 import '../../utils/scheduled_offers.dart';
 import '../../functions/schedule_time.dart';
+import '../../functions/recurring_api.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../styles/styles.dart';
 import '../../widgets/widgets.dart';
@@ -31,6 +32,11 @@ class _UpcomingScheduledRidesPageState
   bool showCancelConfirm = false;
   dynamic cancelId;
   String? actionError;
+
+  /// the repeat this booking belongs to (owner 2026-11-16: end the whole repeat from here too)
+  String? cancelRecurringId;
+  String? cancelRecurringLabel;
+  bool cancelWhole = false;
   Timer? _ticker;
   String? _answeringOfferId;
 
@@ -696,6 +702,9 @@ class _UpcomingScheduledRidesPageState
                       setState(() {
                         showCancelConfirm = true;
                         cancelId = item['id'];
+                        cancelRecurringId = item['recurring_id']?.toString();
+                        cancelRecurringLabel = item['recurring_label']?.toString();
+                        cancelWhole = false;
                         actionError = null;
                       });
                     },
@@ -717,10 +726,104 @@ class _UpcomingScheduledRidesPageState
                 ),
               ],
             ),
+            if ('${item['recurring_id'] ?? ''}'.isNotEmpty) ...[
+              SizedBox(height: media.width * 0.02),
+              InkWell(
+                key: ValueKey('end-repeat-${item['id']}'),
+                borderRadius: BorderRadius.circular(14),
+                onTap: () => setState(() {
+                  showCancelConfirm = true;
+                  cancelId = item['id'];
+                  cancelRecurringId = item['recurring_id']?.toString();
+                  cancelRecurringLabel = item['recurring_label']?.toString();
+                  cancelWhole = true;
+                  actionError = null;
+                }),
+                child: Container(
+                  width: double.infinity,
+                  alignment: Alignment.center,
+                  padding: EdgeInsets.symmetric(vertical: media.width * 0.022),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xffE0243A).withValues(alpha: .35)),
+                  ),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    const Icon(Icons.event_busy_rounded, size: 18, color: Color(0xffE0243A)),
+                    const SizedBox(width: 6),
+                    MyText(
+                      text: isRtl ? 'إلغاء التكرار كامل' : 'End the whole repeat',
+                      size: media.width * twelve,
+                      fontweight: FontWeight.w700,
+                      color: const Color(0xffE0243A),
+                    ),
+                  ]),
+                ),
+              ),
+            ],
           ],
         ],
       ),
     );
+  }
+
+  void _closeCancel() => setState(() {
+        showCancelConfirm = false;
+        cancelId = null;
+        cancelRecurringId = null;
+        cancelRecurringLabel = null;
+        cancelWhole = false;
+      });
+
+  Future<void> _cancelOne() async {
+    setState(() => isLoading = true);
+    final val = await cancelLaterRequest(cancelId);
+    if (!mounted) return;
+    setState(() => isLoading = false);
+    if (val == 'success') {
+      _closeCancel();
+      await load();
+    } else if (val == 'logout') {
+      navigateLogout();
+    } else {
+      setState(() => actionError = languages[choosenLanguage]['text_error'] ?? 'Something went wrong');
+    }
+  }
+
+  /// the schedule ends (no more days are booked), then its rides already booked here are cancelled
+  Future<void> _endWholeRepeat() async {
+    final uuid = cancelRecurringId;
+    if (uuid == null) return;
+    final booked = upcomingScheduledRides
+        .where((e) => e is Map && '${e['recurring_id'] ?? ''}' == uuid && canManage(e))
+        .map((e) => (e as Map)['id'])
+        .toList();
+    setState(() => isLoading = true);
+    final r = await RecurringApi.cancel(uuid);
+    if (!mounted) return;
+    if (!r.ok) {
+      setState(() {
+        isLoading = false;
+        actionError = '${r.body['message'] ?? (isRtl ? 'ما قدرناش نلغي التكرار، جرب مرة ثانية.' : 'Could not end the repeat, try again.')}';
+      });
+      return;
+    }
+    var failed = 0;
+    for (final id in booked) {
+      final val = await cancelLaterRequest(id);
+      if (val == 'logout') return navigateLogout();
+      if (val != 'success') failed++;
+    }
+    if (!mounted) return;
+    setState(() => isLoading = false);
+    _closeCancel();
+    unawaited(RecurringApi.refresh(force: true));
+    await load();
+    if (mounted) {
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(
+          content: Text(failed == 0
+              ? (isRtl ? 'تم إلغاء التكرار كامل ✓' : 'The repeat has ended ✓')
+              : (isRtl ? 'تلغى التكرار، لكن $failed من الرحلات المحجوزة ما تلغتش. ألغيها من هنا.' : 'The repeat ended, but $failed booked rides were not cancelled.'))));
+    }
   }
 
   Widget _cancelOverlay(media) {
@@ -744,12 +847,7 @@ class _UpcomingScheduledRidesPageState
                     decoration:
                         BoxDecoration(shape: BoxShape.circle, color: page),
                     child: InkWell(
-                      onTap: () {
-                        setState(() {
-                          showCancelConfirm = false;
-                          cancelId = null;
-                        });
-                      },
+                      onTap: _closeCancel,
                       child: Icon(Icons.cancel_outlined, color: textColor),
                     ),
                   ),
@@ -764,10 +862,23 @@ class _UpcomingScheduledRidesPageState
               child: Column(
                 children: [
                   MyText(
-                    text: languages[choosenLanguage]['text_ridecancel'],
+                    text: cancelWhole
+                        ? (isRtl ? 'هل أنت متأكد من أنك تريد إلغاء التكرار كامل؟' : 'Are you sure you want to end the whole repeat?')
+                        : languages[choosenLanguage]['text_ridecancel'],
                     size: media.width * eighteen,
                     textAlign: TextAlign.center,
                   ),
+                  if (cancelWhole) ...[
+                    SizedBox(height: media.width * 0.02),
+                    MyText(
+                      text: isRtl
+                          ? 'تتلغى كل الأيام الجاية${cancelRecurringLabel == null ? '' : ' من «$cancelRecurringLabel»'}، ومعاها الرحلات المحجوزة منه في هذه الصفحة.'
+                          : 'Every coming day of it ends, with its rides booked on this page.',
+                      size: media.width * twelve,
+                      color: hintColor,
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                   if (actionError != null) ...[
                     SizedBox(height: media.width * 0.02),
                     MyText(
@@ -779,28 +890,24 @@ class _UpcomingScheduledRidesPageState
                   ],
                   SizedBox(height: media.width * 0.05),
                   Button(
-                    onTap: () async {
-                      setState(() => isLoading = true);
-                      var val = await cancelLaterRequest(cancelId);
-                      setState(() => isLoading = false);
-                      if (val == 'success') {
-                        setState(() {
-                          showCancelConfirm = false;
-                          cancelId = null;
-                        });
-                        await load();
-                      } else if (val == 'logout') {
-                        navigateLogout();
-                      } else {
-                        setState(() {
-                          actionError = languages[choosenLanguage]
-                                  ['text_error'] ??
-                              'Something went wrong';
-                        });
-                      }
-                    },
-                    text: languages[choosenLanguage]['text_cancel_ride'],
+                    onTap: () => cancelWhole ? _endWholeRepeat() : _cancelOne(),
+                    text: cancelWhole
+                        ? (isRtl ? 'نعم، ألغِ التكرار كامل' : 'Yes, end the repeat')
+                        : (isRtl ? (cancelRecurringId != null ? 'نعم، ألغِ هذا اليوم فقط' : 'نعم، ألغِ الرحلة') : 'Yes, cancel the ride'),
                   ),
+                  if (!cancelWhole && cancelRecurringId != null) ...[
+                    SizedBox(height: media.width * 0.02),
+                    TextButton(
+                      key: const ValueKey('cancel-switch-whole'),
+                      onPressed: () => setState(() => cancelWhole = true),
+                      child: MyText(
+                        text: isRtl ? 'ألغِ التكرار كامل بدل هذا اليوم' : 'End the whole repeat instead',
+                        size: media.width * twelve,
+                        fontweight: FontWeight.w700,
+                        color: const Color(0xffE0243A),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

@@ -4,6 +4,8 @@ import '../../growth/daily_gift/daily_gift_bar.dart';
 import '../../growth/gift_widgets.dart';
 import '../../styles/styles.dart';
 import 'home_services_row.dart';
+import '../../functions/freight_api.dart';
+import '../../functions/parcel_api.dart';
 
 class HomeQuickDestination {
   const HomeQuickDestination({
@@ -114,9 +116,11 @@ class HomeQuickActions extends StatelessWidget {
 }
 
 extension on HomeQuickActions {
-  /// بدون وجهة · سفر · مشوار الدوام · الشحن · توصيل · ساحبة
+  /// بدون وجهة · سفر · مشوار الدوام · نقل · طرود · ساحبة (the names of نقل and طرود come from the admin)
   List<HomeService> _services() {
     void soon(String what) => onSoon?.call(what);
+    final freightName = FreightHome.homeNameOf(FreightApi.notifier.value, rtl);
+    final parcelsName = ParcelHome.homeNameOf(ParcelApi.notifier.value, rtl);
     return [
       if (showRideWithoutDestination)
         HomeService(
@@ -149,24 +153,24 @@ extension on HomeQuickActions {
           onTap: onRecurring!,
         ),
       HomeService(
-        label: rtl ? 'الشحن' : 'Freight',
+        label: freightName,
         icon: Icons.local_shipping_rounded,
         background: const Color(0xFFFFF1E6),
         foreground: const Color(0xFF9A3412),
         iconBackground: const Color(0xFFEA580C),
         iconColor: Colors.white,
         soon: onFreight == null,
-        onTap: onFreight ?? () => soon(rtl ? 'الشحن' : 'Freight'),
+        onTap: onFreight ?? () => soon(freightName),
       ),
       HomeService(
-        label: rtl ? 'توصيل' : 'Delivery',
+        label: parcelsName,
         icon: Icons.inventory_2_rounded,
         background: const Color(0xFFE7F8EF),
         foreground: const Color(0xFF166534),
         iconBackground: const Color(0xFF16A34A),
         iconColor: Colors.white,
         soon: onDelivery == null,
-        onTap: onDelivery ?? () => soon(rtl ? 'التوصيل' : 'Delivery'),
+        onTap: onDelivery ?? () => soon(parcelsName),
       ),
       HomeService(
         label: rtl ? 'ساحبة' : 'Tow',

@@ -76,7 +76,7 @@ void main() {
     expect(ParcelCodeCard.of({}), isNull);
   });
 
-  testWidgets('the home bar: «توصيل» opens where parcels are open, else «قريبًا»', (t) async {
+  testWidgets('the home bar: «طرود» (the admin can rename it) opens where parcels are open', (t) async {
     var opened = 0;
     Widget bar(VoidCallback? onDelivery) => MaterialApp(
           home: Scaffold(
@@ -93,7 +93,14 @@ void main() {
         );
     await t.pumpWidget(bar(() => opened++));
     await t.pumpAndSettle();
-    await t.tap(find.text('توصيل'));
+    await t.tap(find.text('طرود'));
     expect(opened, 1);
+    // the admin's own name wins over the default
+    ParcelApi.notifier.value = ParcelHome({'enabled': true, 'home_name': 'مشاوير طرود'});
+    await t.pumpWidget(bar(() => opened++));
+    await t.pumpAndSettle();
+    await t.tap(find.text('مشاوير طرود'));
+    expect(opened, 2);
+    ParcelApi.notifier.value = null;
   });
 }

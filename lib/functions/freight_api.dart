@@ -34,6 +34,13 @@ class FreightHome {
   bool get enabled => raw['enabled'] == true;
   String get city => '${raw['city'] ?? ''}';
   String get currency => '${raw['currency'] ?? 'LYD'}';
+
+  /// the button's name on the home bar, set in the admin (owner 2026-11-16)
+  static String homeNameOf(FreightHome? h, bool rtl) {
+    final v = '${h?.raw[rtl ? 'home_name' : 'home_name_en'] ?? ''}'.trim();
+    return v.isNotEmpty ? v : (rtl ? 'نقل' : 'Moving');
+  }
+
   int get maxWorkers => (raw['max_workers'] as num?)?.toInt() ?? 4;
   int get horizonDays => (raw['horizon_days'] as num?)?.toInt() ?? 7;
   int get maxPhotos => (raw['max_photos'] as num?)?.toInt() ?? 3;

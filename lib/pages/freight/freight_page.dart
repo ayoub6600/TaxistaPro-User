@@ -31,7 +31,7 @@ class FreightPage extends StatefulWidget {
 
   static Future<void> open(BuildContext context, {required FreightHome home, required IcPlace pick}) {
     if (!home.enabled) {
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(tr('الشحن مش متاح في مدينتك حاليًا.', 'Freight is not available in your city yet.'), textDirection: (appRtl ? TextDirection.rtl : TextDirection.ltr))));
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(tr('${FreightHome.homeNameOf(FreightApi.notifier.value, true)} مش متاح في مدينتك حاليًا.', '${FreightHome.homeNameOf(FreightApi.notifier.value, false)} is not available in your city yet.'), textDirection: (appRtl ? TextDirection.rtl : TextDirection.ltr))));
       return Future.value();
     }
     return Navigator.of(context).push(MaterialPageRoute(builder: (_) => FreightPage(home: home, pick: pick)));
@@ -254,7 +254,7 @@ class _FreightPageState extends State<FreightPage> {
     final h = widget.home;
     final q = _quote;
     return IcScaffold(
-      title: tr('الشحن · ${h.city}', 'Freight · ${h.city}'),
+      title: tr('${FreightHome.homeNameOf(h, true)} · ${h.city}', '${FreightHome.homeNameOf(h, false)} · ${h.city}'),
       mapHeight: 120,
       bottom: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         if (_error != null) ...[

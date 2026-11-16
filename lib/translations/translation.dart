@@ -195,7 +195,7 @@ Map<String, dynamic> languages = {
         "نحن نبحث عن سائق قريب لقبول رحلتك. بمجرد قبولك، يمكنك الركوب معنا! نحن نقدر صبركم!",
     "text_pickup_instruction": "خبر الكابتن بتعليماتك",
     "text_shareride": "شارك مشوارك",
-    "text_ridecancel": "إنت متأكد إنك بدك تلغي الرحلة",
+    "text_ridecancel": "هل أنت متأكد من أنك تريد إلغاء الرحلة؟",
     "text_ridecancel_desc":
         "رح نلغلي الرحلة ونرجعك للقائمة الرئيسية, هاد الشي رح يترتب عليه غرامة إلغاء",
     "tex_dontcancel": "لا تلغي الرحلة",
@@ -983,7 +983,7 @@ Map<String, dynamic> languages = {
         "We Are Looking For Nearby Driver To Accept Your Ride. Once Accepted You Can Ride With Us! We Appreciate Your Patience!",
     "text_pickup_instruction": "Any Instructions for pick up",
     "text_shareride": "Share Ride",
-    "text_ridecancel": "Are you sure to cancel ride",
+    "text_ridecancel": "Are you sure you want to cancel this ride?",
     "text_ridecancel_desc":
         "Your ride will be cancelled and returned to main menu. This will lead to cancellation fee",
     "tex_dontcancel": "Don't Cancel",

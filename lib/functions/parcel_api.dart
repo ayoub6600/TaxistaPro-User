@@ -14,6 +14,12 @@ class ParcelHome {
 
   bool get enabled => raw['enabled'] == true;
   String get city => '${raw['city'] ?? ''}';
+
+  /// the button's name on the home bar, set in the admin («طرود» by default, owner 2026-11-16)
+  static String homeNameOf(ParcelHome? h, bool rtl) {
+    final v = '${h?.raw[rtl ? 'home_name' : 'home_name_en'] ?? ''}'.trim();
+    return v.isNotEmpty ? v : (rtl ? 'طرود' : 'Parcels');
+  }
   String get currency => '${raw['currency'] ?? 'LYD'}';
   String get banned => '${raw['banned'] ?? ''}';
   /// «طريقة السعر»: fixed, offers or choice (the admin's)
