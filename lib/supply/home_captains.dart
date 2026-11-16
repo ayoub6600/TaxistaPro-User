@@ -64,6 +64,7 @@ class HomeCaptainsChip extends StatelessWidget {
           if (text == null) return const SizedBox.shrink();
           return Center(
             child: Container(
+              margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -117,8 +118,15 @@ class HomeNoCaptainsLine extends StatelessWidget {
 /// Keeps the home map honest and light: at most the city's number of cars (the nearest to the
 /// pin), and tells the chip and the sheet how many real cars are near the pin right now.
 class HomeMapCars {
-  static void settle(List<dynamic> markers, dynamic center) {
+  static void settle(List<dynamic> markers, dynamic center, {Set<String>? present}) {
     final info = homeCaptainsInfo.value;
+    // a captain who left the area (or the list) is no longer drawn: never a car that is not there
+    if (present != null) {
+      markers.removeWhere((m) {
+        final id = m.markerId.value.toString();
+        return id.startsWith('car#') && !present.contains(id.split('#')[1]);
+      });
+    }
     final lat = (center.latitude as num).toDouble();
     final lng = (center.longitude as num).toDouble();
     double dist(dynamic m) => HomeCaptainsLoader._km(lat, lng, (m.position.latitude as num).toDouble(), (m.position.longitude as num).toDouble()) * 1000;

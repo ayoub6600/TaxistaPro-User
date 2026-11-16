@@ -209,7 +209,8 @@ extension _MapCanvas on _MapsState {
                 }
               }
             });
-            HomeMapCars.settle(myMarkers, _centerLocation);
+            HomeMapCars.settle(myMarkers, _centerLocation,
+                present: driverData.map((e) => e is Map ? e['id']?.toString() : null).whereType<String>().toSet());
           }
           if (mapType == 'google') {
             unawaited(ServiceZones.load());

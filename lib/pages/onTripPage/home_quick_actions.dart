@@ -89,6 +89,8 @@ class HomeQuickActions extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // «12 كابتن متصل في مصراتة توا» / the honest line (real captains only; nothing while the city has it off)
+          const HomeCaptainsChip(),
           const HomeNoCaptainsLine(),
           DailyGiftBar(lat: giftLat, lng: giftLng),
           // a Taxista gift with its countdown (nothing when the rider has none)
