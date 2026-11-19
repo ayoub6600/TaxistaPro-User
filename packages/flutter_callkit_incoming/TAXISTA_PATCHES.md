@@ -17,3 +17,8 @@ passes a valid UUID.
    confirms "ringing" only for a call really on screen and replaces a refused one with a stand-in
    (a VoIP push that ends with no reported call gets the app killed: SIGKILL 0xBAADCA11, seen on
    both apps on 2026-11-02 when they shared one iPhone and one UUID).
+6. `configureAudioSession` (2026-11-19) sets only playAndRecord + voiceChat + hands-free Bluetooth.
+   Upstream also called setActive itself (re-routing a live call), ducked other apps and forced a
+   44.1 kHz sample rate with 5 ms buffers; a car's hands-free Bluetooth can't run at that rate, so
+   the call stayed on the iPhone. CallKit activates the session; WebRTC picks the rate.
+

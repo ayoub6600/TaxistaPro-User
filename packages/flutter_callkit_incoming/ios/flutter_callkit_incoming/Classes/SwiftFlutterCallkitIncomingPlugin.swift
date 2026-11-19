@@ -565,20 +565,16 @@ public class SwiftFlutterCallkitIncomingPlugin: NSObject, FlutterPlugin, CXProvi
         NotificationCenter.default.post(name: AVAudioSession.interruptionNotification, object: self, userInfo: userInfo)
     }
     
+    /// Taxista patch 6 (2026-11-19, calls not reaching the car / speaker trouble): only the category
+    /// and the voice-chat mode. Upstream also activated the session itself (CallKit owns activation,
+    /// and doing it again mid-call re-routes the audio), ducked other apps and forced 44.1 kHz / 5 ms
+    /// buffers, which a car's hands-free Bluetooth (8/16 kHz) can't take, so iOS kept the iPhone.
+    /// Hands-free Bluetooth (HFP, cars and headsets) is allowed and preferred by iOS for calls.
     func configureAudioSession(){
         if data?.configureAudioSession != false {
             let session = AVAudioSession.sharedInstance()
             do{
-                try session.setCategory(AVAudioSession.Category.playAndRecord, options: [
-                    .allowBluetoothA2DP,
-                    .duckOthers,
-                    .allowBluetooth,
-                ])
-                
-                try session.setMode(self.getAudioSessionMode(data?.audioSessionMode))
-                try session.setActive(data?.audioSessionActive ?? true)
-                try session.setPreferredSampleRate(data?.audioSessionPreferredSampleRate ?? 44100.0)
-                try session.setPreferredIOBufferDuration(data?.audioSessionPreferredIOBufferDuration ?? 0.005)
+                try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetooth, .allowBluetoothA2DP])
             }catch{
                 print(error)
             }

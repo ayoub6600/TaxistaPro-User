@@ -6,6 +6,7 @@ import '../../functions/calls/admin_call_controller.dart';
 import '../../functions/functions.dart';
 import '../NavigatorPages/adminchatpage.dart';
 import '../chatPage/chat_page.dart';
+import 'call_sound_sheet.dart';
 
 /// Taxista's call screen: who is on the other side (photo, name, what they are), the call's state
 /// and clock, and the controls - answer / decline when it rings, mute / speaker / hang up during
@@ -239,11 +240,11 @@ class _AdminCallPageState extends State<AdminCallPage> {
                         onTap: () => call.setMuted(!call.muted),
                       ),
                       _round(
-                        icon: call.speaker ? Icons.volume_up : Icons.volume_down,
-                        label: 'مكبر الصوت',
-                        color: call.speaker ? Colors.white : Colors.white24,
-                        iconColor: call.speaker ? _blue : Colors.white,
-                        onTap: call.toggleSpeaker,
+                        icon: call.route != null ? Icons.bluetooth_audio_rounded : (call.speaker ? Icons.volume_up : Icons.volume_down),
+                        label: call.route ?? 'مكبر الصوت',
+                        color: call.speaker || call.route != null ? Colors.white : Colors.white24,
+                        iconColor: call.speaker || call.route != null ? _blue : Colors.white,
+                        onTap: () => CallSoundSheet.open(context, toggleSpeaker: call.toggleSpeaker, choose: call.chooseRoute),
                       ),
                       _round(icon: Icons.call_end, label: 'إنهاء', color: _red, onTap: () => call.hangUp()),
                     ])

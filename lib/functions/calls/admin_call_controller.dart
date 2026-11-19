@@ -14,6 +14,7 @@ import 'package:permission_handler/permission_handler.dart' as perm;
 import '../../pages/callPage/admin_call_page.dart';
 import '../functions.dart' show languageDirection;
 import 'admin_call_api.dart';
+import 'call_audio_route.dart';
 import 'call_quality.dart';
 import 'call_tones.dart';
 
@@ -516,9 +517,17 @@ class AdminCallController extends ChangeNotifier {
 
   Future<void> toggleSpeaker() async {
     speaker = !speaker;
-    try {
-      await Helper.setSpeakerphoneOn(speaker);
-    } catch (_) {}
+    route = null;
+    await CallAudioRoute.speaker(speaker);
+    notifyListeners();
+  }
+
+  /// the car, AirPods, the earpiece or the speaker, from the sound sheet
+  String? route;
+  Future<void> chooseRoute(CallRoute r) async {
+    speaker = r.kind == 'speaker';
+    route = r.external ? r.name : null;
+    await CallAudioRoute.select(r);
     notifyListeners();
   }
 
@@ -627,9 +636,7 @@ class AdminCallController extends ChangeNotifier {
         _dropped();
       }
     };
-    try {
-      await Helper.setSpeakerphoneOn(speaker);
-    } catch (_) {}
+    // no speaker switch here: iOS / Android put a connected car or headset first by themselves
     return pc;
   }
 
@@ -742,6 +749,7 @@ class AdminCallController extends ChangeNotifier {
     answeredAt = null;
     muted = false;
     speaker = false;
+    route = null;
     notifyListeners();
   }
 

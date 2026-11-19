@@ -169,6 +169,8 @@ import ActivityKit
   func providerDidReset() {}
 
   func didActivateAudioSession(_ audioSession: AVAudioSession) {
+    // the call's category before WebRTC starts: voice chat, hands-free Bluetooth (the car) allowed
+    try? audioSession.setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetooth, .allowBluetoothA2DP])
     RTCAudioSession.sharedInstance().audioSessionDidActivate(audioSession)
     RTCAudioSession.sharedInstance().isAudioEnabled = true
   }
@@ -356,11 +358,52 @@ enum RecurringReminderButtons {
 
 /// The call's audio when CallKit did not hand over an audio session (its call was refused or ended
 /// by the system): WebRTC runs with manual audio on a device, so without this the call connects
+/// Where the call's sound goes (owner 2026-11-19: speaker, and the car's Bluetooth): the iPhone's
+/// earpiece, its speaker, and every hands-free device iOS offers right now (car, AirPods, headset),
+/// named as iOS names them. Choosing one keeps the call's category; only the route changes.
+extension CallAudio {
+  static func routes() -> [[String: Any]] {
+    let s = AVAudioSession.sharedInstance()
+    let out = s.currentRoute.outputs.first?.portType
+    let inUse = Set(s.currentRoute.inputs.map { $0.uid })
+    var list: [[String: Any]] = [
+      ["id": "receiver", "name": "سماعة التليفون", "kind": "receiver", "selected": out == .builtInReceiver],
+      ["id": "speaker", "name": "مكبر الصوت", "kind": "speaker", "selected": out == .builtInSpeaker],
+    ]
+    for p in s.availableInputs ?? [] where p.portType != .builtInMic {
+      let kind = p.portType == .carAudio ? "car" : (p.portType == .bluetoothHFP ? "bluetooth" : "headset")
+      list.append(["id": p.uid, "name": p.portName, "kind": kind, "selected": inUse.contains(p.uid) && out != .builtInSpeaker])
+    }
+    return list
+  }
+
+  static func select(_ id: String) -> Bool {
+    let s = AVAudioSession.sharedInstance()
+    let rtc = RTCAudioSession.sharedInstance()
+    rtc.lockForConfiguration()
+    defer { rtc.unlockForConfiguration() }
+    do {
+      if id == "speaker" {
+        try s.overrideOutputAudioPort(.speaker)
+      } else {
+        try s.overrideOutputAudioPort(.none)
+        let want = id == "receiver" ? s.availableInputs?.first(where: { $0.portType == .builtInMic }) : s.availableInputs?.first(where: { $0.uid == id })
+        if let port = want { try s.setPreferredInput(port) }
+      }
+      return true
+    } catch {
+      return false
+    }
+  }
+}
+
 /// in silence. Dart asks once the call is connected; a session CallKit already activated is kept.
 final class CallAudio {
   static func register(messenger: FlutterBinaryMessenger) {
     let channel = FlutterMethodChannel(name: "taxista/call_audio", binaryMessenger: messenger)
     channel.setMethodCallHandler { call, result in
+      if call.method == "routes" { result(routes()); return }
+      if call.method == "select" { result(select((call.arguments as? [String: Any])?["id"] as? String ?? "")); return }
       guard call.method == "ensure" else { result(FlutterMethodNotImplemented); return }
       #if targetEnvironment(simulator)
       result(true)
