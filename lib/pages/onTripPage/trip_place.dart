@@ -39,3 +39,18 @@ class TripSelection {
         destination: role == TripPointRole.destination ? place : destination,
       );
 }
+
+/// Words another flow puts on the shared search and map screens (parcels: «من وين ياخذها الكابتن»),
+/// one per role: [pickup, destination]. Null keeps the ride's words.
+class TripCopy {
+  const TripCopy({required this.title, required this.labels, required this.asks, required this.confirm, required this.mapHints, required this.mapConfirm});
+
+  final String title;
+  final List<String> labels;
+  final List<String> asks;
+  final String confirm;
+  final List<String> mapHints;
+  final List<String> mapConfirm;
+
+  static int of(TripPointRole r) => r == TripPointRole.pickup ? 0 : 1;
+}

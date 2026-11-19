@@ -20,6 +20,11 @@ class ParcelHome {
     final v = '${h?.raw[rtl ? 'home_name' : 'home_name_en'] ?? ''}'.trim();
     return v.isNotEmpty ? v : (rtl ? 'طرود' : 'Parcels');
   }
+  /// the words that take turns on the page's title («طرود، أمانات، توصيل», set in the admin)
+  List<String> words(bool rtl) {
+    final w = [for (final v in (raw['home_names'] as List? ?? const [])) if ('$v'.trim().isNotEmpty) '$v'.trim()];
+    return rtl && w.isNotEmpty ? w : [homeNameOf(this, rtl)];
+  }
   String get currency => '${raw['currency'] ?? 'LYD'}';
   String get banned => '${raw['banned'] ?? ''}';
   /// «طريقة السعر»: fixed, offers or choice (the admin's)

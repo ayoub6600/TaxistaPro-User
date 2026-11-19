@@ -237,12 +237,15 @@ class IcRoutePainter extends CustomPainter {
 
 /// the page shape of the trip screens: the drawing on top, a white sheet with the content below
 class IcScaffold extends StatelessWidget {
-  const IcScaffold({super.key, required this.title, required this.children, this.mapHeight = 260, this.bottom});
+  const IcScaffold({super.key, required this.title, required this.children, this.mapHeight = 260, this.bottom, this.map});
 
   final String title;
   final List<Widget> children;
   final double mapHeight;
   final Widget? bottom;
+
+  /// a real map in place of the drawn route (parcels)
+  final Widget? map;
 
   @override
   Widget build(BuildContext context) {
@@ -252,7 +255,7 @@ class IcScaffold extends StatelessWidget {
       child: Scaffold(
         backgroundColor: const Color(0xffEDEAE3),
         body: Stack(children: [
-          Positioned(top: 0, left: 0, right: 0, height: mapHeight + 30, child: CustomPaint(painter: IcRoutePainter())),
+          Positioned(top: 0, left: 0, right: 0, height: mapHeight + 30, child: map ?? CustomPaint(painter: IcRoutePainter())),
           Positioned(
             top: top + 8,
             right: 14,

@@ -20,6 +20,7 @@ class TripLocationSearch extends StatefulWidget {
     required this.onConfirm,
     required this.onClose,
     this.initialRole = TripPointRole.destination,
+    this.copy,
   });
 
   final bool rtl;
@@ -32,6 +33,7 @@ class TripLocationSearch extends StatefulWidget {
   final Future<TripPlace?> Function(TripPointRole, TripPlace?) pickOnMap;
   final ValueChanged<TripSelection> onConfirm;
   final VoidCallback onClose;
+  final TripCopy? copy;
 
   @override
   State<TripLocationSearch> createState() => _TripLocationSearchState();
@@ -53,9 +55,9 @@ class _TripLocationSearchState extends State<TripLocationSearch> {
   static const _green = Color(0xFF16875A);
 
   String _copy(String ar, String en) => widget.rtl ? ar : en;
-  String _label(TripPointRole role) => role == TripPointRole.pickup
+  String _label(TripPointRole role) => widget.copy?.labels[TripCopy.of(role)] ?? (role == TripPointRole.pickup
       ? _copy('نقطة مقابلة السائق', 'Driver meeting point')
-      : _copy('الوجهة', 'Destination');
+      : _copy('الوجهة', 'Destination'));
 
   @override
   void dispose() {
@@ -247,7 +249,7 @@ class _TripLocationSearchState extends State<TripLocationSearch> {
                 IconButton(onPressed: widget.onClose,
                     tooltip: _copy('العودة للخريطة', 'Back to map'),
                     icon: const BackButtonIcon()),
-                Expanded(child: Text(_copy('خطّط لرحلتك', 'Plan your ride'),
+                Expanded(child: Text(widget.copy?.title ?? _copy('خطّط لرحلتك', 'Plan your ride'),
                     style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800))),
               ]),
             ),
@@ -259,9 +261,9 @@ class _TripLocationSearchState extends State<TripLocationSearch> {
                 const SizedBox(height: 10),
                 _pointCard(TripPointRole.destination),
                 const SizedBox(height: 18),
-                Text(_role == TripPointRole.pickup
+                Text(widget.copy?.asks[TripCopy.of(_role)] ?? (_role == TripPointRole.pickup
                     ? _copy('أين تريد أن يقابلك السائق؟', 'Where should your driver meet you?')
-                    : _copy('إلى أين تريد الذهاب؟', 'Where would you like to go?'),
+                    : _copy('إلى أين تريد الذهاب؟', 'Where would you like to go?')),
                     style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
                 const SizedBox(height: 10),
                 TextField(
@@ -335,10 +337,10 @@ class _TripLocationSearchState extends State<TripLocationSearch> {
                       minimumSize: const Size.fromHeight(54),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
                   child: Text(_selection.isComplete
-                      ? _copy('تأكيد نقطة اللقاء والوجهة', 'Confirm pickup and destination')
+                      ? widget.copy?.confirm ?? _copy('تأكيد نقطة اللقاء والوجهة', 'Confirm pickup and destination')
                       : _selection.pickup == null
-                          ? _copy('حدّد نقطة مقابلة السائق', 'Choose a driver meeting point')
-                          : _copy('حدّد وجهتك للمتابعة', 'Choose your destination to continue'),
+                          ? widget.copy?.labels[0] ?? _copy('حدّد نقطة مقابلة السائق', 'Choose a driver meeting point')
+                          : widget.copy?.labels[1] ?? _copy('حدّد وجهتك للمتابعة', 'Choose your destination to continue'),
                       textAlign: TextAlign.center,
                       style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
                 )),

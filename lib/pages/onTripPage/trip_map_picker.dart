@@ -17,6 +17,7 @@ class TripMapPicker extends StatefulWidget {
     this.initialPlace,
     this.useGoogleMap = true,
     this.mapStyle,
+    this.copy,
   });
 
   final bool rtl;
@@ -25,6 +26,7 @@ class TripMapPicker extends StatefulWidget {
   final TripPlace? initialPlace;
   final bool useGoogleMap;
   final String? mapStyle;
+  final TripCopy? copy;
   final Future<String?> Function(LatLng) reverseGeocode;
 
   @override
@@ -114,8 +116,8 @@ class _TripMapPickerState extends State<TripMapPicker> {
           backgroundColor: Colors.white,
           appBar: AppBar(
             backgroundColor: Colors.white,
-            title: Text(_pickup ? _copy('نقطة مقابلة السائق', 'Driver meeting point')
-                : _copy('تحديد الوجهة', 'Choose destination'),
+            title: Text(widget.copy?.labels[TripCopy.of(widget.role)] ?? (_pickup ? _copy('نقطة مقابلة السائق', 'Driver meeting point')
+                : _copy('تحديد الوجهة', 'Choose destination')),
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
           ),
           body: Column(children: [
@@ -167,11 +169,11 @@ class _TripMapPickerState extends State<TripMapPicker> {
                       borderRadius: BorderRadius.circular(14),
                       boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12)]),
                   child: Padding(padding: const EdgeInsets.all(12),
-                    child: Text(_pickup
+                    child: Text(widget.copy?.mapHints[TripCopy.of(widget.role)] ?? (_pickup
                         ? _copy('حرّك الخريطة إلى مكان واضح وآمن لانتظار السائق.',
                             'Move the map to a clear, safe place to meet your driver.')
                         : _copy('حرّك الخريطة حتى تصبح العلامة فوق مكان الوصول.',
-                            'Move the map until the pin marks your destination.'),
+                            'Move the map until the pin marks your destination.')),
                         textAlign: TextAlign.center,
                         style: const TextStyle(fontSize: 13, height: 1.4))),
                 )),
@@ -181,8 +183,8 @@ class _TripMapPickerState extends State<TripMapPicker> {
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisSize: MainAxisSize.min, children: [
-                  Text(_pickup ? _copy('هنا ستقابل السائق', 'Meet your driver here')
-                      : _copy('هنا ستكون وجهتك', 'Your destination'),
+                  Text(widget.copy?.labels[TripCopy.of(widget.role)] ?? (_pickup ? _copy('هنا ستقابل السائق', 'Meet your driver here')
+                      : _copy('هنا ستكون وجهتك', 'Your destination')),
                       style: TextStyle(color: _color, fontWeight: FontWeight.w800, fontSize: 17)),
                   const SizedBox(height: 8),
                   if (_loading || _moving)
@@ -206,8 +208,8 @@ class _TripMapPickerState extends State<TripMapPicker> {
                     style: FilledButton.styleFrom(backgroundColor: _color,
                         minimumSize: const Size.fromHeight(54),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                    child: Text(_pickup ? _copy('تأكيد نقطة اللقاء', 'Confirm meeting point')
-                        : _copy('تأكيد الوجهة', 'Confirm destination'),
+                    child: Text(widget.copy?.mapConfirm[TripCopy.of(widget.role)] ?? (_pickup ? _copy('تأكيد نقطة اللقاء', 'Confirm meeting point')
+                        : _copy('تأكيد الوجهة', 'Confirm destination')),
                         style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
                   ),
                 ]),

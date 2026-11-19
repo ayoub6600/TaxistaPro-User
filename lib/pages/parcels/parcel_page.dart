@@ -7,19 +7,25 @@ import '../../functions/parcel_api.dart';
 import '../intercity/intercity_style.dart';
 import '../common/price_mode_box.dart';
 import '../onTripPage/open_booked_ride.dart';
-import '../onTripPage/place_on_map.dart';
+import '../onTripPage/trip_place.dart' show TripPointRole;
+import 'parcel_map.dart';
+import 'parcel_places.dart';
+import 'parcel_title.dart';
 
-/// «توصيل · شن تبعت؟»: the size, where it goes (on the map), who receives it, who pays, the admin's
-/// price for it, and the rules agreed once. Booking it makes a ride the nearest parcel driver takes.
+/// «نوصلولك طرود»: the real map on top (where the captain takes it → where it goes, owner 2026-11-19),
+/// both places editable, the size with its price for this distance, the receiver, who pays, and the
+/// rules agreed once. Booking it makes a ride the nearest parcel driver takes.
 class ParcelPage extends StatefulWidget {
-  const ParcelPage({super.key, required this.home, required this.pick, this.send, this.pickDrop});
+  const ParcelPage({super.key, required this.home, required this.pick, this.send, this.pickDrop, this.quote, this.map});
 
   final ParcelHome home;
   final IcPlace pick;
 
   /// tests replace the network and the map
   final Future<IntercityResult> Function(Map<String, Object?> parcel)? send;
-  final Future<IcPlace?> Function()? pickDrop;
+  final Future<(IcPlace, IcPlace?)?> Function(TripPointRole role)? pickDrop;
+  final Future<IntercityResult> Function(IcPlace pick, IcPlace drop, String size)? quote;
+  final Widget Function(IcPlace pick, IcPlace? drop)? map;
 
   static Future<void> open(BuildContext context, {required ParcelHome home, required IcPlace pick}) {
     if (!home.enabled) {
@@ -39,6 +45,8 @@ class ParcelPage extends StatefulWidget {
 
 class _ParcelPageState extends State<ParcelPage> {
   String _size = 'medium';
+  late IcPlace _pick = widget.pick;
+  bool _pickIsHere = true;
   IcPlace? _drop;
   final _name = TextEditingController();
   final _phone = TextEditingController();
@@ -46,6 +54,8 @@ class _ParcelPageState extends State<ParcelPage> {
   String _payer = 'sender';
   bool _rules = false;
   num? _price;
+  // every size's price for this distance, so each card shows its own
+  Map<String, num> _prices = {};
   // «طريقة السعر»: offers when the admin says so (or he picks it)
   late bool _offers = widget.home.priceMode == 'offers';
   num? _fare;
@@ -62,35 +72,44 @@ class _ParcelPageState extends State<ParcelPage> {
     super.dispose();
   }
 
-  Future<void> _chooseDrop() async {
-    final place = widget.pickDrop != null
-        ? await widget.pickDrop!()
-        : await placeOnMap(context, center: LatLng(widget.pick.lat, widget.pick.lng));
-    if (place == null || !mounted) return;
-    setState(() => _drop = place);
+  Future<void> _choose(TripPointRole role) async {
+    final r = widget.pickDrop != null ? await widget.pickDrop!(role) : await ParcelPlaces.choose(context, pick: _pick, drop: _drop, role: role);
+    if (r == null || !mounted) return;
+    setState(() {
+      if (r.$1.lat != _pick.lat || r.$1.lng != _pick.lng) _pickIsHere = false;
+      _pick = r.$1;
+      _drop = r.$2;
+    });
     _quote();
   }
 
   Future<void> _quote() async {
     final d = _drop;
     if (d == null) return;
+    final asked = (_pick, d);
     setState(() {
       _quoting = true;
       _error = null;
     });
-    final r = await ParcelApi.quote(widget.pick.lat, widget.pick.lng, d.lat, d.lng, _size);
-    if (!mounted) return;
+    final ask = widget.quote ?? (IcPlace p, IcPlace q, String size) => ParcelApi.quote(p.lat, p.lng, q.lat, q.lng, size);
+    final all = await Future.wait([for (final s in const ['small', 'medium', 'large']) ask(_pick, d, s)]);
+    if (!mounted || asked != (_pick, _drop)) return;
     setState(() {
       _quoting = false;
-      if (r.ok && r.data is Map) {
-        _price = (r.data as Map)['price'] as num?;
-        if (_price != null) _fare = PriceModeBox.start(_price!);
-        _km = (r.data as Map)['km'] as num?;
-      } else {
-        _price = null;
-        _error = r.message;
-      }
+      _prices = {
+        for (var i = 0; i < 3; i++)
+          if (all[i].ok && all[i].data is Map && (all[i].data as Map)['price'] is num) const ['small', 'medium', 'large'][i]: (all[i].data as Map)['price'] as num,
+      };
+      final mine = all[const ['small', 'medium', 'large'].indexOf(_size)];
+      _km = mine.data is Map ? (mine.data as Map)['km'] as num? : _km;
+      _setPrice();
+      if (_price == null) _error = mine.message;
     });
+  }
+
+  void _setPrice() {
+    _price = _prices[_size];
+    if (_price != null) _fare = PriceModeBox.start(_price!);
   }
 
   /// before choosing where: the size's own fixed part, so he sees what it costs from
@@ -115,7 +134,7 @@ class _ParcelPageState extends State<ParcelPage> {
     }
     final d = _drop!;
     final parcel = <String, Object?>{
-      'size': _size, 'drop': d, 'receiver_name': _name.text.trim(), 'receiver_phone': _phone.text.trim(), 'note': _note.text.trim(), 'payer': _payer,
+      'size': _size, 'pick': _pick, 'drop': d, 'receiver_name': _name.text.trim(), 'receiver_phone': _phone.text.trim(), 'note': _note.text.trim(), 'payer': _payer,
       if (_offers) 'fare': _fare,
     };
     setState(() {
@@ -125,7 +144,7 @@ class _ParcelPageState extends State<ParcelPage> {
     final r = widget.send != null
         ? await widget.send!(parcel)
         : await ParcelApi.create(
-            pickLat: widget.pick.lat, pickLng: widget.pick.lng, pickAddress: widget.pick.address,
+            pickLat: _pick.lat, pickLng: _pick.lng, pickAddress: _pick.address,
             dropLat: d.lat, dropLng: d.lng, dropAddress: d.address, size: _size,
             receiverName: _name.text.trim(), receiverPhone: _phone.text.trim(), note: _note.text, payer: _payer, payment: 'cash', offerFare: _offers ? _fare : null);
     if (!mounted) return;
@@ -146,9 +165,25 @@ class _ParcelPageState extends State<ParcelPage> {
   @override
   Widget build(BuildContext context) {
     final cur = widget.home.currency;
+    final top = MediaQuery.of(context).padding.top;
     return IcScaffold(
       title: tr('${ParcelHome.homeNameOf(widget.home, true)} · ${widget.home.city}', '${ParcelHome.homeNameOf(widget.home, false)} · ${widget.home.city}'),
-      mapHeight: 150,
+      mapHeight: 290,
+      map: Stack(children: [
+        Positioned.fill(
+          child: widget.map?.call(_pick, _drop) ??
+              ParcelMap(pick: LatLng(_pick.lat, _pick.lng), drop: _drop == null ? null : LatLng(_drop!.lat, _drop!.lng), topInset: top, bottomInset: 30),
+        ),
+        // how far and how much, on the map itself
+        PositionedDirectional(
+          bottom: 44,
+          end: 14,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 250),
+            child: _chip(cur),
+          ),
+        ),
+      ]),
       bottom: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         if (_error != null) ...[
           Text(_error!, key: const ValueKey('parcel-error'), textAlign: TextAlign.center, style: IcStyle.t(13.5, c: const Color(0xffD92D20))),
@@ -170,8 +205,12 @@ class _ParcelPageState extends State<ParcelPage> {
             onTap: _send),
       ]),
       children: [
-        Text(tr('شن تبعت؟ 📦', 'What are you sending? 📦'), style: IcStyle.t(22, w: FontWeight.w900)),
+        ParcelTitle(words: widget.home.words(appRtl)),
         const SizedBox(height: 10),
+        ParcelPlaces(pick: _pick, drop: _drop, pickIsHere: _pickIsHere, onTap: _choose),
+        const SizedBox(height: 14),
+        Text(tr('شن تبعت؟', 'What are you sending?'), style: IcStyle.t(15, w: FontWeight.w900)),
+        const SizedBox(height: 6),
         Row(children: [
           for (final s in const ['small', 'medium', 'large']) ...[
             if (s != 'small') const SizedBox(width: 8),
@@ -179,9 +218,6 @@ class _ParcelPageState extends State<ParcelPage> {
           ],
         ]),
         const SizedBox(height: 12),
-        _row(Icons.place_rounded, _drop == null ? tr('وين يوصل؟', 'Where does it go?') : _drop!.address.isEmpty ? tr('المكان على الخريطة', 'The place on the map') : _drop!.address, _chooseDrop,
-            muted: _drop == null, key: const ValueKey('parcel-drop')),
-        const SizedBox(height: 8),
         Row(children: [
           Expanded(child: _field(_name, tr('اسم المستلم', 'Receiver\'s name'), const ValueKey('parcel-name'))),
           const SizedBox(width: 8),
@@ -201,7 +237,9 @@ class _ParcelPageState extends State<ParcelPage> {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(color: const Color(0xffEAF2FF), borderRadius: BorderRadius.circular(16)),
             child: Row(children: [
-              Expanded(child: Text('${ParcelPage.labels[_size]}${_km != null ? tr(' · ${IcStyle.money(_km!)} كم', ' · ${IcStyle.money(_km!)} km') : ''}', style: IcStyle.t(13.5, w: FontWeight.w700, c: IcStyle.muted))),
+              Expanded(
+                  child: Text('${ParcelPage.labels[_size]}${_km != null ? tr(' · السعر حسب المسافة (${IcStyle.money(_km!)} كم)', ' · priced by distance (${IcStyle.money(_km!)} km)') : ''}',
+                      style: IcStyle.t(13.5, w: FontWeight.w700, c: IcStyle.muted))),
               _quoting
                   ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
                   : Text(_price == null ? '—' : '$cur ${IcStyle.money(_price!)}', key: const ValueKey('parcel-price'), style: IcStyle.t(22, w: FontWeight.w900)),
@@ -237,10 +275,10 @@ class _ParcelPageState extends State<ParcelPage> {
       label: ParcelPage.labels[s],
       excludeSemantics: true,
       child: GestureDetector(
-        onTap: () {
-          setState(() => _size = s);
-          _quote();
-        },
+        onTap: () => setState(() {
+          _size = s;
+          _setPrice();
+        }),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 160),
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
@@ -253,28 +291,33 @@ class _ParcelPageState extends State<ParcelPage> {
             Text(ParcelPage.icons[s]!, style: const TextStyle(fontSize: 24)),
             Text(ParcelPage.labels[s]!, style: IcStyle.t(14.5, w: FontWeight.w900)),
             Text(ParcelPage.hints[s]!, textAlign: TextAlign.center, style: IcStyle.t(11, w: FontWeight.w600, c: IcStyle.muted)),
-            if (from != null) Text(tr('من $cur ${IcStyle.money(from)}', 'From $cur ${IcStyle.money(from)}'), style: IcStyle.t(11.5, w: FontWeight.w800, c: IcStyle.blue)),
+            if (_prices[s] != null)
+              Text('$cur ${IcStyle.money(_prices[s]!)}', style: IcStyle.t(12.5, w: FontWeight.w900, c: IcStyle.blue))
+            else if (from != null)
+              Text(tr('من $cur ${IcStyle.money(from)}', 'From $cur ${IcStyle.money(from)}'), style: IcStyle.t(11.5, w: FontWeight.w800, c: IcStyle.blue)),
           ]),
         ),
       ),
     );
   }
 
-  Widget _row(IconData icon, String text, VoidCallback onTap, {bool muted = false, Key? key}) => InkWell(
-        key: key,
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: IcStyle.line, width: 1.5)),
-          child: Row(children: [
-            Icon(icon, color: const Color(0xffE11D48)),
-            const SizedBox(width: 8),
-            Expanded(child: Text(text, maxLines: 1, overflow: TextOverflow.ellipsis, style: IcStyle.t(14.5, c: muted ? IcStyle.muted : IcStyle.navy))),
-            const Icon(Icons.chevron_left_rounded, color: IcStyle.muted),
-          ]),
-        ),
-      );
+  /// «4.2 كم · 8.5 د.ل» on the map, or what to do next
+  Widget _chip(String cur) {
+    final text = _drop == null
+        ? tr('اختار لوين توصل 👇', 'Choose where it goes 👇')
+        : _quoting
+            ? tr('نحسبوا السعر…', 'Pricing…')
+            : _price == null
+                ? null
+                : '${_km != null ? tr('${IcStyle.money(_km!)} كم · ', '${IcStyle.money(_km!)} km · ') : ''}$cur ${IcStyle.money(_price!)}';
+    if (text == null) return const SizedBox.shrink();
+    return Container(
+      key: ValueKey(text),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(999), boxShadow: const [BoxShadow(color: Color(0x29102A56), blurRadius: 10)]),
+      child: Text(text, style: IcStyle.t(13.5, w: FontWeight.w900, c: _drop == null ? IcStyle.navy : IcStyle.blue)),
+    );
+  }
 
   Widget _field(TextEditingController c, String hint, Key key, {bool phone = false}) => TextField(
         key: key,
