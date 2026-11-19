@@ -12,6 +12,7 @@ import '../../widgets/widgets.dart';
 import '../loadingPage/loading.dart';
 import '../noInternet/nointernet.dart';
 import 'history.dart';
+import 'history_service.dart';
 import 'adminchatpage.dart';
 import '../../navigation/guarded_navigation.dart';
 part 'historydetails_sections.dart';

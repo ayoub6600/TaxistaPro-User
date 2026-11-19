@@ -11,7 +11,7 @@ import '../../functions/tr.dart';
 import '../onTripPage/map_page.dart' show mapStyle;
 import 'parcel_pins.dart';
 
-/// The real map above «شن تبعت؟» (owner 2026-11-19): the green pin where the captain takes it, the red
+/// The real map above «شن تبعت؟» (owner 2026-11-19): the green pin where the captain takes it, the blue
 /// pin where it goes, the road between them, and 📦 moving along it. Fits both places in view.
 class ParcelMap extends StatefulWidget {
   const ParcelMap({super.key, required this.pick, this.drop, this.topInset = 0, this.bottomInset = 0});

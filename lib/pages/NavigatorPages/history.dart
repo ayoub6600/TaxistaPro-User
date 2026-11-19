@@ -9,6 +9,7 @@ import '../../styles/styles.dart';
 import '../../widgets/widgets.dart';
 import '../noInternet/nointernet.dart';
 import 'historydetails.dart';
+import 'history_service.dart';
 import '../../navigation/guarded_navigation.dart';
 
 class History extends StatefulWidget {
@@ -472,6 +473,9 @@ class _HistoryState extends State<History> {
                                                               SizedBox(
                                                                 height: 10.h,
                                                               ),
+                                                              // «📦 طرد لـأحمد» / «🚕 رحلة» and «🔁 اطلبها مرة ثانية» (owner 2026-11-19)
+                                                              HistoryServiceHeader(ride: myHistory[i]),
+                                                              SizedBox(height: 8.h),
                                                               Row(
                                                                 crossAxisAlignment:
                                                                     CrossAxisAlignment

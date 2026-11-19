@@ -1,68 +1,130 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import '../../functions/tr.dart';
 
+import '../../functions/functions.dart' show bearerToken, getWalletHistory, walletBalance;
 import '../../functions/intercity_api.dart' show IcPlace, IntercityResult;
 import '../../functions/parcel_api.dart';
-import '../intercity/intercity_style.dart';
+import '../../functions/parcel_saved.dart';
+import '../../functions/tr.dart';
 import '../common/price_mode_box.dart';
+import '../intercity/intercity_style.dart';
 import '../onTripPage/open_booked_ride.dart';
 import '../onTripPage/trip_place.dart' show TripPointRole;
+import 'parcel_confirm_sheet.dart';
 import 'parcel_map.dart';
+import 'parcel_options.dart';
 import 'parcel_places.dart';
+import 'parcel_save_sheet.dart';
+import 'parcel_saved_chips.dart';
+import 'parcel_size_card.dart';
 import 'parcel_title.dart';
 
 /// «نوصلولك طرود»: the real map on top (where the captain takes it → where it goes, owner 2026-11-19),
-/// both places editable, the size with its price for this distance, the receiver, who pays, and the
-/// rules agreed once. Booking it makes a ride the nearest parcel driver takes.
+/// both places editable (saved places one tap away), the size with its price for this distance, the
+/// receiver (saved ones one tap away), who pays and how, the delivery code or none, and the rules
+/// agreed once. Nothing is sent before «أكّد الطلب» on the summary. Booking it makes a ride the
+/// nearest parcel driver takes.
 class ParcelPage extends StatefulWidget {
-  const ParcelPage({super.key, required this.home, required this.pick, this.send, this.pickDrop, this.quote, this.map});
+  const ParcelPage({
+    super.key,
+    required this.home,
+    required this.pick,
+    this.pickIsHere = true,
+    this.drop,
+    this.receiverName,
+    this.receiverPhone,
+    this.size,
+    this.send,
+    this.pickDrop,
+    this.quote,
+    this.map,
+    this.balance,
+  });
 
   final ParcelHome home;
   final IcPlace pick;
 
-  /// tests replace the network and the map
+  /// «اطلبها مرة ثانية»: the last parcel's places, receiver and size
+  final bool pickIsHere;
+  final IcPlace? drop;
+  final String? receiverName;
+  final String? receiverPhone;
+  final String? size;
+
+  /// tests replace the network, the map and the wallet
   final Future<IntercityResult> Function(Map<String, Object?> parcel)? send;
   final Future<(IcPlace, IcPlace?)?> Function(TripPointRole role)? pickDrop;
   final Future<IntercityResult> Function(IcPlace pick, IcPlace drop, String size)? quote;
   final Widget Function(IcPlace pick, IcPlace? drop)? map;
+  final num? Function()? balance;
 
-  static Future<void> open(BuildContext context, {required ParcelHome home, required IcPlace pick}) {
+  static Future<void> open(BuildContext context,
+      {required ParcelHome home, required IcPlace pick, bool pickIsHere = true, IcPlace? drop, String? receiverName, String? receiverPhone, String? size}) {
     if (!home.enabled) {
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(tr('التوصيل مش متاح في مدينتك حاليًا.', 'Delivery is not available in your city yet.'), textDirection: (appRtl ? TextDirection.rtl : TextDirection.ltr))));
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(
+          content: Text(tr('التوصيل مش متاح في مدينتك حاليًا.', 'Delivery is not available in your city yet.'), textDirection: (appRtl ? TextDirection.rtl : TextDirection.ltr))));
       return Future.value();
     }
-    return Navigator.of(context).push(MaterialPageRoute(builder: (_) => ParcelPage(home: home, pick: pick)));
+    return Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => ParcelPage(home: home, pick: pick, pickIsHere: pickIsHere, drop: drop, receiverName: receiverName, receiverPhone: receiverPhone, size: size)));
   }
 
-  static final labels = {'small': tr('صغير', 'Small'), 'medium': tr('متوسط', 'Medium'), 'large': tr('كبير', 'Large')};
-  static final hints = {'small': tr('ظرف أو علبة', 'An envelope or a box'), 'medium': tr('شنطة أو كرتونة', 'A bag or a carton'), 'large': tr('الكرسي الخلفي', 'The back seat')};
-  static const icons = {'small': '✉️', 'medium': '👜', 'large': '📦'};
+  static const sizes = ['small', 'medium', 'large'];
 
   @override
   State<ParcelPage> createState() => _ParcelPageState();
 }
 
 class _ParcelPageState extends State<ParcelPage> {
-  String _size = 'medium';
+  late String _size = ParcelPage.sizes.contains(widget.size) ? widget.size! : 'medium';
   late IcPlace _pick = widget.pick;
-  bool _pickIsHere = true;
-  IcPlace? _drop;
-  final _name = TextEditingController();
-  final _phone = TextEditingController();
+  late bool _pickIsHere = widget.pickIsHere;
+  late IcPlace? _drop = widget.drop;
+  late final _name = TextEditingController(text: widget.receiverName ?? '');
+  late final _phone = TextEditingController(text: widget.receiverPhone ?? '');
   final _note = TextEditingController();
   String _payer = 'sender';
+  // «التسليم بكود»: on unless he turns it off
+  bool _needsCode = true;
   bool _rules = false;
   num? _price;
   // every size's price for this distance, so each card shows its own
   Map<String, num> _prices = {};
-  // «طريقة السعر»: offers when the admin says so (or he picks it)
-  late bool _offers = widget.home.priceMode == 'offers';
+  // «طريقة السعر»: offers when the admin says so, or his default when the rider chooses
+  late bool _offers = widget.home.startWithOffers;
   num? _fare;
   num? _km;
   bool _quoting = false;
   bool _busy = false;
   String? _error;
+  List<SavedReceiver> _receivers = [];
+  List<SavedPickPlace> _places = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSaved();
+    // the wallet decides how «أنا» pays: read it once when the app has not yet
+    if (widget.balance == null && walletBalance.isEmpty && bearerToken.isNotEmpty) {
+      getWalletHistory().then((_) {
+        if (mounted) setState(() {});
+      });
+    }
+    if (_drop != null) WidgetsBinding.instance.addPostFrameCallback((_) => _quote());
+  }
+
+  Future<void> _loadSaved() async {
+    final r = await ParcelSaved.receivers();
+    final p = await ParcelSaved.places();
+    if (mounted) {
+      setState(() {
+        _receivers = r;
+        _places = p;
+      });
+    }
+  }
+
+  num? get _balance => widget.balance != null ? widget.balance!() : (walletBalance.isEmpty ? null : num.tryParse('${walletBalance['wallet_balance']}'));
 
   @override
   void dispose() {
@@ -73,7 +135,7 @@ class _ParcelPageState extends State<ParcelPage> {
   }
 
   Future<void> _choose(TripPointRole role) async {
-    final r = widget.pickDrop != null ? await widget.pickDrop!(role) : await ParcelPlaces.choose(context, pick: _pick, drop: _drop, role: role);
+    final r = widget.pickDrop != null ? await widget.pickDrop!(role) : await ParcelPlaces.choose(context, pick: _pick, drop: _drop, role: role, saved: _places);
     if (r == null || !mounted) return;
     setState(() {
       if (r.$1.lat != _pick.lat || r.$1.lng != _pick.lng) _pickIsHere = false;
@@ -81,6 +143,30 @@ class _ParcelPageState extends State<ParcelPage> {
       _drop = r.$2;
     });
     _quote();
+  }
+
+  void _pickSaved(SavedPickPlace s) {
+    setState(() {
+      _pick = s.place;
+      _pickIsHere = false;
+    });
+    _quote();
+  }
+
+  void _said(String text) => ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(text, textDirection: appRtl ? TextDirection.rtl : TextDirection.ltr)));
+
+  Future<void> _removePlace(SavedPickPlace s) async {
+    final left = await ParcelSaved.removePlace(s);
+    if (!mounted) return;
+    setState(() => _places = left);
+    _said(tr('شلنا «${s.label}» من أماكنك المحفوظة.', 'Removed «${s.label}» from your saved places.'));
+  }
+
+  Future<void> _removeReceiver(SavedReceiver r) async {
+    final left = await ParcelSaved.removeReceiver(r);
+    if (!mounted) return;
+    setState(() => _receivers = left);
+    _said(tr('شلنا ${r.name} من المستلمين المحفوظين.', 'Removed ${r.name} from your saved receivers.'));
   }
 
   Future<void> _quote() async {
@@ -92,15 +178,15 @@ class _ParcelPageState extends State<ParcelPage> {
       _error = null;
     });
     final ask = widget.quote ?? (IcPlace p, IcPlace q, String size) => ParcelApi.quote(p.lat, p.lng, q.lat, q.lng, size);
-    final all = await Future.wait([for (final s in const ['small', 'medium', 'large']) ask(_pick, d, s)]);
+    final all = await Future.wait([for (final s in ParcelPage.sizes) ask(_pick, d, s)]);
     if (!mounted || asked != (_pick, _drop)) return;
     setState(() {
       _quoting = false;
       _prices = {
         for (var i = 0; i < 3; i++)
-          if (all[i].ok && all[i].data is Map && (all[i].data as Map)['price'] is num) const ['small', 'medium', 'large'][i]: (all[i].data as Map)['price'] as num,
+          if (all[i].ok && all[i].data is Map && (all[i].data as Map)['price'] is num) ParcelPage.sizes[i]: (all[i].data as Map)['price'] as num,
       };
-      final mine = all[const ['small', 'medium', 'large'].indexOf(_size)];
+      final mine = all[ParcelPage.sizes.indexOf(_size)];
       _km = mine.data is Map ? (mine.data as Map)['km'] as num? : _km;
       _setPrice();
       if (_price == null) _error = mine.message;
@@ -120,40 +206,65 @@ class _ParcelPageState extends State<ParcelPage> {
 
   String? get _missing {
     if (_drop == null) return tr('اختار وين يوصل الطرد.', 'Choose where the parcel goes.');
+    if (_quoting) return tr('استنى شوية، نحسبوا السعر.', 'One moment, pricing.');
     if (_name.text.trim().isEmpty) return tr('اكتب اسم المستلم.', 'Write the receiver\'s name.');
     if (_phone.text.replaceAll(RegExp(r'[^0-9]'), '').length < 8) return tr('اكتب رقم المستلم.', 'Write the receiver\'s number.');
     if (!_rules) return tr('أكّد إن الطرد مش من الممنوعات.', 'Confirm the parcel is not a banned item.');
     return null;
   }
 
+  String _senderLine(String cur) => ParcelPay.senderLine(price: _offers ? (_fare ?? _price) : _price, balance: _balance, offers: _offers, currency: cur);
+
+  ParcelSummary _summary(String cur) => ParcelSummary(
+        from: _pick.address.isEmpty ? tr('المكان على الخريطة', 'The place on the map') : _pick.address,
+        to: _drop!.address.isEmpty ? tr('المكان على الخريطة', 'The place on the map') : _drop!.address,
+        receiver: _name.text.trim(),
+        phone: _phone.text.trim(),
+        size: '${ParcelSizeCard.icons[_size]} ${ParcelSizeCard.labels[_size]}',
+        price: _price == null
+            ? tr('يتحسب عند الطلب', 'Priced when you order')
+            : _offers
+                ? tr('سعرك $cur ${IcStyle.money(_fare ?? _price!)} · الكباتن يقبلوه أو يبعتوا عروضهم', 'Your price $cur ${IcStyle.money(_fare ?? _price!)} · captains accept it or offer theirs')
+                : '$cur ${IcStyle.money(_price!)}',
+        pay: _payer == 'receiver' ? tr('المستلم · ${ParcelPay.receiverLine()}', 'The receiver · ${ParcelPay.receiverLine()}') : tr('أنا · ${_senderLine(cur)}', 'Me · ${_senderLine(cur)}'),
+        needsCode: _needsCode,
+      );
+
+  /// the only way an order leaves the phone: the request button, then «أكّد الطلب» on the summary
   Future<void> _send() async {
+    if (_busy) return;
+    FocusManager.instance.primaryFocus?.unfocus();
     final why = _missing;
     if (why != null) {
       setState(() => _error = why);
       return;
     }
+    setState(() => _error = null);
+    if (!await ParcelConfirmSheet.show(context, _summary(widget.home.currency)) || !mounted) return;
     final d = _drop!;
+    final name = _name.text.trim(), phone = _phone.text.trim(), pick = _pick;
     final parcel = <String, Object?>{
-      'size': _size, 'pick': _pick, 'drop': d, 'receiver_name': _name.text.trim(), 'receiver_phone': _phone.text.trim(), 'note': _note.text.trim(), 'payer': _payer,
+      'size': _size, 'pick': pick, 'drop': d, 'receiver_name': name, 'receiver_phone': phone, 'note': _note.text.trim(), 'payer': _payer,
+      'payment': 'auto', 'needs_code': _needsCode,
       if (_offers) 'fare': _fare,
     };
-    setState(() {
-      _busy = true;
-      _error = null;
-    });
+    setState(() => _busy = true);
     final r = widget.send != null
         ? await widget.send!(parcel)
         : await ParcelApi.create(
-            pickLat: _pick.lat, pickLng: _pick.lng, pickAddress: _pick.address,
+            pickLat: pick.lat, pickLng: pick.lng, pickAddress: pick.address,
             dropLat: d.lat, dropLng: d.lng, dropAddress: d.address, size: _size,
-            receiverName: _name.text.trim(), receiverPhone: _phone.text.trim(), note: _note.text, payer: _payer, payment: 'cash', offerFare: _offers ? _fare : null);
+            receiverName: name, receiverPhone: phone, note: _note.text, payer: _payer, needsCode: _needsCode, offerFare: _offers ? _fare : null);
     if (!mounted) return;
     setState(() => _busy = false);
     if (!r.ok) {
       setState(() => _error = r.message);
       return;
     }
-    ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(r.message, textDirection: (appRtl ? TextDirection.rtl : TextDirection.ltr))));
+    _said(r.message);
+    // «نحفظ المستلم / مكان الاستلام للمرات الجاية؟» — only what is new
+    await ParcelSaveSheet.maybeShow(context, name: name, phone: phone, pick: pick);
+    if (!mounted) return;
     // the parcel is a ride now: the same searching screen as any ride
     if (widget.send == null) {
       await openBookedRide(context);
@@ -178,10 +289,7 @@ class _ParcelPageState extends State<ParcelPage> {
         PositionedDirectional(
           bottom: 44,
           end: 14,
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 250),
-            child: _chip(cur),
-          ),
+          child: AnimatedSwitcher(duration: const Duration(milliseconds: 250), child: _chip(cur)),
         ),
       ]),
       bottom: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -196,6 +304,7 @@ class _ParcelPageState extends State<ParcelPage> {
             minPercent: widget.home.offerMinPercent, maxPercent: widget.home.offerMaxPercent, currency: cur,
           ),
         IcButton(
+            key: const ValueKey('parcel-request'),
             text: _price == null
                 ? tr('اطلب توصيل', 'Request delivery')
                 : _offers
@@ -208,16 +317,37 @@ class _ParcelPageState extends State<ParcelPage> {
         ParcelTitle(words: widget.home.words(appRtl)),
         const SizedBox(height: 10),
         ParcelPlaces(pick: _pick, drop: _drop, pickIsHere: _pickIsHere, onTap: _choose),
+        ParcelPlaceChips(places: _places, current: _pickIsHere ? null : _pick, onPick: _pickSaved, onRemove: _removePlace),
         const SizedBox(height: 14),
         Text(tr('شن تبعت؟', 'What are you sending?'), style: IcStyle.t(15, w: FontWeight.w900)),
         const SizedBox(height: 6),
         Row(children: [
-          for (final s in const ['small', 'medium', 'large']) ...[
+          for (final s in ParcelPage.sizes) ...[
             if (s != 'small') const SizedBox(width: 8),
-            Expanded(child: _sizeCard(s, cur)),
+            Expanded(
+              child: ParcelSizeCard(
+                size: s,
+                selected: s == _size,
+                currency: cur,
+                price: _prices[s],
+                from: _from(s),
+                onTap: () => setState(() {
+                  _size = s;
+                  _setPrice();
+                }),
+              ),
+            ),
           ],
         ]),
         const SizedBox(height: 12),
+        ParcelReceiverChips(
+          receivers: _receivers,
+          onPick: (r) => setState(() {
+            _name.text = r.name;
+            _phone.text = r.phone;
+          }),
+          onRemove: _removeReceiver,
+        ),
         Row(children: [
           Expanded(child: _field(_name, tr('اسم المستلم', 'Receiver\'s name'), const ValueKey('parcel-name'))),
           const SizedBox(width: 8),
@@ -226,11 +356,9 @@ class _ParcelPageState extends State<ParcelPage> {
         const SizedBox(height: 8),
         _field(_note, tr('ملاحظة: الدور، البوابة… (اختياري)', 'Note: floor, gate… (optional)'), const ValueKey('parcel-note')),
         const SizedBox(height: 12),
-        Wrap(spacing: 6, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
-          Padding(padding: const EdgeInsetsDirectional.only(end: 4), child: Text(tr('مين يدفع؟', 'Who pays?'), style: IcStyle.t(15, w: FontWeight.w900))),
-          IcChip(text: tr('أنا', 'Me'), selected: _payer == 'sender', onTap: () => setState(() => _payer = 'sender')),
-          IcChip(text: tr('المستلم (نقدًا)', 'The receiver (cash)'), selected: _payer == 'receiver', onTap: () => setState(() => _payer = 'receiver')),
-        ]),
+        ParcelPayer(payer: _payer, onPayer: (v) => setState(() => _payer = v), senderLine: _senderLine(cur)),
+        const SizedBox(height: 10),
+        ParcelCodeSwitch(value: _needsCode, onChanged: (v) => setState(() => _needsCode = v)),
         const SizedBox(height: 12),
         if (_drop != null)
           Container(
@@ -238,7 +366,7 @@ class _ParcelPageState extends State<ParcelPage> {
             decoration: BoxDecoration(color: const Color(0xffEAF2FF), borderRadius: BorderRadius.circular(16)),
             child: Row(children: [
               Expanded(
-                  child: Text('${ParcelPage.labels[_size]}${_km != null ? tr(' · السعر حسب المسافة (${IcStyle.money(_km!)} كم)', ' · priced by distance (${IcStyle.money(_km!)} km)') : ''}',
+                  child: Text('${ParcelSizeCard.labels[_size]}${_km != null ? tr(' · السعر حسب المسافة (${IcStyle.money(_km!)} كم)', ' · priced by distance (${IcStyle.money(_km!)} km)') : ''}',
                       style: IcStyle.t(13.5, w: FontWeight.w700, c: IcStyle.muted))),
               _quoting
                   ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
@@ -256,48 +384,18 @@ class _ParcelPageState extends State<ParcelPage> {
               Icon(_rules ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded, key: const ValueKey('parcel-rules'), color: const Color(0xff9A6700)),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(tr('الطرد مش من الممنوعات: ${widget.home.banned}. الكابتن يصوّره عند الاستلام، والمستلم يعطيه كود التسليم.', 'The parcel is not one of the banned items: ${widget.home.banned}. The captain photographs it at pick-up, and the receiver gives him the delivery code.'),
+                child: Text(
+                    _needsCode
+                        ? tr('الطرد مش من الممنوعات: ${widget.home.banned}. الكابتن يصوّره عند الاستلام، والمستلم يعطيه كود التسليم.',
+                            'The parcel is not one of the banned items: ${widget.home.banned}. The captain photographs it at pick-up, and the receiver gives him the delivery code.')
+                        : tr('الطرد مش من الممنوعات: ${widget.home.banned}. الكابتن يصوّره عند الاستلام وعند التسليم.',
+                            'The parcel is not one of the banned items: ${widget.home.banned}. The captain photographs it at pick-up and at delivery.'),
                     style: IcStyle.t(12.5, w: FontWeight.w700, c: const Color(0xff9A6700))),
               ),
             ]),
           ),
         ),
       ],
-    );
-  }
-
-  Widget _sizeCard(String s, String cur) {
-    final on = s == _size;
-    final from = _from(s);
-    return Semantics(
-      button: true,
-      selected: on,
-      label: ParcelPage.labels[s],
-      excludeSemantics: true,
-      child: GestureDetector(
-        onTap: () => setState(() {
-          _size = s;
-          _setPrice();
-        }),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
-          decoration: BoxDecoration(
-            color: on ? const Color(0xffF5F9FF) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: on ? IcStyle.blue : IcStyle.line, width: on ? 2 : 1.5),
-          ),
-          child: Column(children: [
-            Text(ParcelPage.icons[s]!, style: const TextStyle(fontSize: 24)),
-            Text(ParcelPage.labels[s]!, style: IcStyle.t(14.5, w: FontWeight.w900)),
-            Text(ParcelPage.hints[s]!, textAlign: TextAlign.center, style: IcStyle.t(11, w: FontWeight.w600, c: IcStyle.muted)),
-            if (_prices[s] != null)
-              Text('$cur ${IcStyle.money(_prices[s]!)}', style: IcStyle.t(12.5, w: FontWeight.w900, c: IcStyle.blue))
-            else if (from != null)
-              Text(tr('من $cur ${IcStyle.money(from)}', 'From $cur ${IcStyle.money(from)}'), style: IcStyle.t(11.5, w: FontWeight.w800, c: IcStyle.blue)),
-          ]),
-        ),
-      ),
     );
   }
 
@@ -319,10 +417,14 @@ class _ParcelPageState extends State<ParcelPage> {
     );
   }
 
+  /// a tap anywhere else closes the keyboard, so the page stops moving under his finger (the request
+  /// button sat right under «مين يدفع؟» while the keyboard was up)
   Widget _field(TextEditingController c, String hint, Key key, {bool phone = false}) => TextField(
         key: key,
         controller: c,
         keyboardType: phone ? TextInputType.phone : TextInputType.text,
+        textInputAction: TextInputAction.done,
+        onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
         textDirection: phone ? TextDirection.ltr : (appRtl ? TextDirection.rtl : TextDirection.ltr),
         style: IcStyle.t(14, w: FontWeight.w700),
         decoration: InputDecoration(

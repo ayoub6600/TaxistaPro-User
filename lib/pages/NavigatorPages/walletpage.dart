@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:taxista/translations/translation.dart';
 
 import '../../functions/functions.dart';
+import '../../functions/service_kind.dart';
 import '../../styles/styles.dart';
 import '../../widgets/widgets.dart';
 import '../loadingPage/loading.dart';
@@ -359,7 +359,6 @@ class _WalletPageState extends State<WalletPage> {
   Widget _entry(Map e) {
     final credit = e['is_credit'] == 1;
     final title = languages[choosenLanguage][e['remarks'].toString()] ?? e['remarks'].toString();
-    final trip = (e['request_number'] ?? '').toString();
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
@@ -383,7 +382,8 @@ class _WalletPageState extends State<WalletPage> {
             Text(
               [
                 '${e['created_at'] ?? ''}',
-                if (trip.isNotEmpty) 'رحلة $trip',
+                // «📦 طرد 1234» / «🚛 ونش 1234»: the line's service (owner 2026-11-19)
+                if (ServiceKind.walletLine(e) case final line?) line,
                 if ((e['transaction_id'] ?? '').toString().startsWith('CR-')) '${e['transaction_id']}',
               ].join(' · '),
               style: GoogleFonts.cairo(color: textColor.withValues(alpha: .5), fontSize: 11.5),

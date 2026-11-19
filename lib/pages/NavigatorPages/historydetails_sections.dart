@@ -98,6 +98,9 @@ extension _HistoryDetailSections on _HistoryDetailsState {
                                     ),
                                   ],
                                 ),
+                                // «📦 طرد لـأحمد» + «🔁 اطلبها مرة ثانية», then what the parcel / tow / freight was
+                                HistoryServiceHeader(ride: myHistory[selectedHistory]),
+                                HistoryServiceDetails(ride: myHistory[selectedHistory], showTitle: false),
                                 Row(
                                   // mainAxisAlignment:
                                   //     MainAxisAlignment.spaceBetween,

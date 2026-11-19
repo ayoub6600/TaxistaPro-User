@@ -29,6 +29,10 @@ class ParcelHome {
   String get banned => '${raw['banned'] ?? ''}';
   /// «طريقة السعر»: fixed, offers or choice (the admin's)
   String get priceMode => const ['offers', 'choice'].contains(raw['price_mode']) ? '${raw['price_mode']}' : 'fixed';
+  /// «لما الزبون يختار»: the way picked first (the admin's)
+  String get priceDefault => raw['price_default'] == 'offers' ? 'offers' : 'fixed';
+  /// offers on when the page opens: the admin's mode, or his default when the rider chooses
+  bool get startWithOffers => priceMode == 'offers' || (priceMode == 'choice' && priceDefault == 'offers');
   int get offerMinPercent => (raw['offer_min_percent'] as num?)?.toInt() ?? 80;
   int get offerMaxPercent => (raw['offer_max_percent'] as num?)?.toInt() ?? 200;
   int get waitMinutes => (raw['receiver_wait_minutes'] as num?)?.toInt() ?? 10;
@@ -101,14 +105,16 @@ class ParcelApi {
     required String receiverPhone,
     required String note,
     required String payer,
-    required String payment,
+    String payment = 'auto',
+    bool needsCode = true,
     num? offerFare,
   }) =>
       _post('api/v1/request/parcels', {
         ..._places(pickLat, pickLng, pickAddress, dropLat, dropLng, dropAddress),
         'size': size, 'receiver_name': receiverName, 'receiver_phone': receiverPhone,
         if (note.trim().isNotEmpty) 'note': note.trim(),
-        'payer': payer, 'payment': payment, 'accept_rules': true,
+        // 'auto': the server takes his wallet when it holds the price, else cash at pickup (the receiver: cash at delivery)
+        'payer': payer, 'payment': payment, 'needs_code': needsCode, 'accept_rules': true,
         if (offerFare != null) ...{'price_mode': 'offers', 'fare': offerFare},
       });
 }

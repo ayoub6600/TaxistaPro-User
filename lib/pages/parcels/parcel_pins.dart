@@ -10,7 +10,8 @@ import '../intercity/intercity_style.dart';
 /// draws the Google marker bitmap and the OpenStreetMap widget, so both maps look alike.
 class ParcelPin {
   static const pickColor = Color(0xff16A34A);
-  static const dropColor = Color(0xffE11D48);
+  /// blue, as the map picker draws where it goes (owner 2026-11-19: the drop pin is blue, not red)
+  static const dropColor = Color(0xff0879FA);
 
   static const _pinW = 40.0, _pinH = 50.0, _gap = 5.0, _labelH = 30.0, _padX = 11.0, _dot = 8.0;
 
