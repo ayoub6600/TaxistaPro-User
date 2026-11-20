@@ -63,6 +63,7 @@ class PriceModeBox extends StatelessWidget {
         const SizedBox(height: 4),
         IcFareBar(
           value: f,
+          currency: currency,
           onPlus: f + step <= hi ? () => onFare(f + step) : null,
           onMinus: f - step >= lo ? () => onFare(f - step) : null,
         ),
