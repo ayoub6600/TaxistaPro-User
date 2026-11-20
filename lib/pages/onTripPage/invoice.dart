@@ -1,3 +1,4 @@
+import '../../functions/meta_ride_events.dart';
 import '../../functions/money_label.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -156,6 +157,8 @@ class _InvoiceState extends State<Invoice> {
     timing = null;
     promoStatus = null;
     super.initState();
+    // Meta learns from finished rides, not installs (owner 2026-11-20)
+    MetaRideEvents.rideFinished(userRequestData);
   }
 
   navigateLogout() {
