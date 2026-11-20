@@ -36,7 +36,10 @@ class AdminCallApi {
 
   /// [to]: 'admin' or 'driver' (the driver of [requestId], or of the current ride).
   static Future<AdminCallResult> start({String to = 'admin', String? requestId}) => _send(http.post(_u('calls'),
-      headers: _headers, body: jsonEncode({'to': to, if (requestId != null) 'request_id': requestId})));
+      headers: _headers, body: jsonEncode({'to': to, 'livekit': true, if (requestId != null) 'request_id': requestId})));
+
+  /// this side's ticket into the call's LiveKit room: url, token, recorded, notice
+  static Future<AdminCallResult> livekit(String id) => _send(http.post(_u('calls/$id/livekit'), headers: _headers, body: '{}'));
 
   static Future<AdminCallResult> log() => _send(http.get(_u('calls/log'), headers: _headers));
 
@@ -49,6 +52,7 @@ class AdminCallApi {
         'platform': platform,
         'version': version,
         'alerts': true,
+        'livekit': true,
         if (fullScreen != null) 'full_screen': fullScreen,
         if (batteryRestricted != null) 'battery_restricted': batteryRestricted,
       })));

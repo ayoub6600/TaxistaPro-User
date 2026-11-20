@@ -17,6 +17,7 @@ import 'admin_call_api.dart';
 import 'call_audio_route.dart';
 import 'call_quality.dart';
 import 'call_tones.dart';
+import 'livekit_call.dart';
 
 /// Where the app's screens live, so a call can open its screen from a notification or CallKit.
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
@@ -54,6 +55,10 @@ class AdminCallController extends ChangeNotifier {
 
   RTCPeerConnection? _pc;
   MediaStream? _local;
+
+  /// a call through Taxista's LiveKit server (recorded) instead of phone to phone
+  final LiveKitCall _lk = LiveKitCall();
+  static const _lkSdp = 'v=0 livekit';
   Timer? _poll;
   Timer? _reconnect;
   bool _listening = false;
@@ -399,12 +404,18 @@ class AdminCallController extends ChangeNotifier {
     try {
       if (!await _micAllowed()) throw Exception('NotAllowed');
       await _ensureSystemCall(callId!);
-      final pc = await _media(started.ice);
-      final offer = await pc.createOffer({'offerToReceiveAudio': true});
-      await pc.setLocalDescription(offer);
-      await _gathered(pc);
-      final desc = await pc.getLocalDescription();
-      final sent = await AdminCallApi.offer(callId!, desc!.sdp!);
+      String sdp;
+      if (started.data['media'] == 'livekit') {
+        await _joinLiveKit(callId!);
+        sdp = _lkSdp;
+      } else {
+        final pc = await _media(started.ice);
+        final offer = await pc.createOffer({'offerToReceiveAudio': true});
+        await pc.setLocalDescription(offer);
+        await _gathered(pc);
+        sdp = (await pc.getLocalDescription())!.sdp!;
+      }
+      final sent = await AdminCallApi.offer(callId!, sdp);
       if (!sent.ok) throw Exception(sent.message);
       // "ringing" only once the other side confirmed it shows the call
       _set('ringing', sent.data['alerted'] == true ? 'يرن…' : 'جارٍ الاتصال…');
@@ -445,6 +456,9 @@ class AdminCallController extends ChangeNotifier {
       text = 'الاتصال ضعيف جدًا، قد ينقطع الصوت';
     } else if (status == 'accepted' && quality == NetQuality.weak) {
       text = 'الاتصال ضعيف، قد يتقطع الصوت';
+    } else if (status == 'accepted' && _lk.recorded && (_lk.notice ?? '').isNotEmpty) {
+      // both sides are told the call is recorded (owner 2026-11-19)
+      text = '🔴 ${_lk.notice}';
     }
     if (text != notice) {
       notice = text;
@@ -483,13 +497,19 @@ class AdminCallController extends ChangeNotifier {
           await FlutterCallkitIncoming.hideCallkitIncoming(CallKitParams(id: callKitId(id)));
         } catch (_) {}
       }
-      final pc = await _media(state.ice);
-      await pc.setRemoteDescription(RTCSessionDescription(state.data['remote_sdp'], 'offer'));
-      final ans = await pc.createAnswer({'offerToReceiveAudio': true});
-      await pc.setLocalDescription(ans);
-      await _gathered(pc);
-      final desc = await pc.getLocalDescription();
-      final sent = await AdminCallApi.answer(id, desc!.sdp!);
+      String sdp;
+      if (state.data['media'] == 'livekit') {
+        await _joinLiveKit(id);
+        sdp = _lkSdp;
+      } else {
+        final pc = await _media(state.ice);
+        await pc.setRemoteDescription(RTCSessionDescription(state.data['remote_sdp'], 'offer'));
+        final ans = await pc.createAnswer({'offerToReceiveAudio': true});
+        await pc.setLocalDescription(ans);
+        await _gathered(pc);
+        sdp = (await pc.getLocalDescription())!.sdp!;
+      }
+      final sent = await AdminCallApi.answer(id, sdp);
       if (!sent.ok) throw Exception(sent.message);
       answeredAt = DateTime.now();
       _set('accepted', 'متصل');
@@ -512,6 +532,7 @@ class AdminCallController extends ChangeNotifier {
   void setMuted(bool value) {
     muted = value;
     _local?.getAudioTracks().forEach((t) => t.enabled = !muted);
+    if (_lk.joined) unawaited(_lk.setMuted(muted));
     notifyListeners();
   }
 
@@ -604,6 +625,35 @@ class AdminCallController extends ChangeNotifier {
     final status = await perm.Permission.microphone.request();
     return status.isGranted || status.isLimited;
   }
+
+  /// the LiveKit room: the other side's voice arriving is "connected", like WebRTC's connected state
+  Future<void> _joinLiveKit(String id) => _lk.join(
+        id,
+        onRemote: () {
+          if (!busy) return;
+          _reconnect?.cancel();
+          answeredAt ??= DateTime.now();
+          unawaited(CallTones.stop());
+          _set('accepted', 'متصل');
+          unawaited(_ensureAudio());
+          _refreshNotice();
+        },
+        onReconnecting: () {
+          if (status != 'accepted') return;
+          _set('reconnecting', 'إعادة الاتصال…');
+          _reconnect?.cancel();
+          _reconnect = Timer(const Duration(seconds: 20), () {
+            if (status == 'reconnecting') _dropped();
+          });
+        },
+        onReconnected: () {
+          _reconnect?.cancel();
+          if (status == 'reconnecting') _set('accepted', 'متصل');
+        },
+        onLost: () {
+          if (busy && status == 'accepted') _dropped();
+        },
+      );
 
   Future<RTCPeerConnection> _media(List<Map<String, dynamic>> ice) async {
     _local = await navigator.mediaDevices.getUserMedia({
@@ -713,6 +763,7 @@ class AdminCallController extends ChangeNotifier {
     } catch (_) {}
     _pc = null;
     _local = null;
+    await _lk.leave();
     if (endSystemCall && callId != null) {
       final id = callKitId(callId!);
       // with a tone, the system call (and its audio) closes once it has been heard
