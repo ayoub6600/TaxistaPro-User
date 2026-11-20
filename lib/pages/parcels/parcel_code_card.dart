@@ -15,7 +15,8 @@ class ParcelCodeCard extends StatelessWidget {
 
   static Widget? of(Map ride) {
     final p = ride['parcel'];
-    if (p is! Map || p['delivered'] == true) return null;
+    // «مشوار بوقفات» has its own card (ErrandRideCard)
+    if (p is! Map || p['delivered'] == true || ride['errand'] is Map) return null;
     // no code asked: the card still says who pays and that he answers for the hand-over
     if (p['needs_code'] == false) return ParcelCodeCard(parcel: p);
     if ('${p['code'] ?? ''}'.length != 4) return null;

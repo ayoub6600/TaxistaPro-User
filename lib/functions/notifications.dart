@@ -1,4 +1,5 @@
 import '../pages/intercity/intercity_link.dart';
+import 'errand_api.dart' show ErrandPush;
 import 'ride_offer_push.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -316,6 +317,8 @@ Future<void> initMessaging() async {
     if (message.data['push_type'].toString() == 'pickup-change' && userRequestData.isNotEmpty) {
       PickupChangeState.reload('${userRequestData['id']}');
     }
+    // «الكابتن دفع عنك»: the ride screen's errand card shows the amount once the ride is read again
+    if (ErrandPush.isCurrent(message.data, userRequestData)) unawaited(Future(() => getUserDetails()));
     if (notification != null) {
       if (message.data['push_type'].toString() == 'general') {
         latestNotification = message.data['message'];
@@ -347,6 +350,11 @@ Future<void> initMessaging() async {
     if (IntercityLink.handles(message.data)) {
       // «ما جاتكش عروض» and friends: straight to that travel request
       IntercityLink.openPush(message.data);
+      return;
+    }
+    if (ErrandPush.isCurrent(message.data, userRequestData)) {
+      // tapped in the background: the app is on the ride already; read it so the amount shows
+      unawaited(Future(() => getUserDetails()));
       return;
     }
     if (message.data['push_type'].toString() == 'admin_call') {

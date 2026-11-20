@@ -38,6 +38,7 @@ import '../../functions/live_queries.dart';
 import '../../functions/next_ride_offer_api.dart';
 import '../../functions/offers_v2_api.dart';
 import '../../functions/cancel_quote_api.dart';
+import '../parcels/errand/errand_ride_card.dart';
 import '../parcels/parcel_code_card.dart';
 import '../tow/tow_ride_card.dart';
 import '../freight/freight_ride_card.dart';

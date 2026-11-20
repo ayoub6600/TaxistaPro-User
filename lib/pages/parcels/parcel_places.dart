@@ -131,7 +131,8 @@ class ParcelPlaces extends StatelessWidget {
 
   /// the booking's search screen (search, or the map) with the parcels' words; null when he goes back
   static Future<(IcPlace, IcPlace?)?> choose(BuildContext context,
-      {required IcPlace pick, IcPlace? drop, required TripPointRole role, List<SavedPickPlace> saved = const []}) {
+      {required IcPlace pick, IcPlace? drop, required TripPointRole role, List<SavedPickPlace> saved = const [], TripCopy? words}) {
+    final copy = words ?? ParcelPlaces.copy;
     final (favs, plain) = favourites(saved, favAddress);
     TripPlace t(IcPlace p) => TripPlace(address: p.address, coordinates: LatLng(p.lat, p.lng));
     IcPlace back(TripPlace p) => IcPlace(p.coordinates!.latitude, p.coordinates!.longitude, plain[p.address] ?? p.address);

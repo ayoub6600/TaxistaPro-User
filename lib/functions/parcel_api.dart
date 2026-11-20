@@ -71,6 +71,9 @@ class ParcelApi {
     }
   }
 
+  /// the same POST for «مشوار بوقفات» (errand_api.dart)
+  static Future<IntercityResult> post(String path, Map body) => _post(path, body);
+
   static Future<IntercityResult> _post(String path, Map body) async {
     try {
       final r = await http.post(Uri.parse('$url$path'), headers: _headers, body: jsonEncode(body)).timeout(const Duration(seconds: 20));

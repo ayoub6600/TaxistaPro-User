@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../functions/functions.dart' show bearerToken, getWalletHistory, walletBalance;
+import '../../functions/errand_api.dart';
 import '../../functions/intercity_api.dart' show IcPlace, IntercityResult;
 import '../../functions/parcel_api.dart';
 import '../../functions/parcel_saved.dart';
@@ -10,6 +11,9 @@ import '../common/price_mode_box.dart';
 import '../intercity/intercity_style.dart';
 import '../onTripPage/open_booked_ride.dart';
 import '../onTripPage/trip_place.dart' show TripPointRole;
+import 'errand/errand_draft.dart';
+import 'errand/errand_mode_switch.dart';
+import 'errand/errand_view.dart';
 import 'parcel_confirm_sheet.dart';
 import 'parcel_map.dart';
 import 'parcel_options.dart';
@@ -39,6 +43,9 @@ class ParcelPage extends StatefulWidget {
     this.quote,
     this.map,
     this.balance,
+    this.errandPlace,
+    this.errandQuote,
+    this.errandSend,
   });
 
   final ParcelHome home;
@@ -57,6 +64,11 @@ class ParcelPage extends StatefulWidget {
   final Future<IntercityResult> Function(IcPlace pick, IcPlace drop, String size)? quote;
   final Widget Function(IcPlace pick, IcPlace? drop)? map;
   final num? Function()? balance;
+
+  /// tests replace «مشوار بوقفات»'s search and network (see ErrandView)
+  final Future<IcPlace?> Function(int? index)? errandPlace;
+  final Future<IntercityResult> Function(List<IcPlace> stops, IcPlace drop)? errandQuote;
+  final Future<IntercityResult> Function(List<ErrandStopData> stops, IcPlace drop)? errandSend;
 
   static Future<void> open(BuildContext context,
       {required ParcelHome home, required IcPlace pick, bool pickIsHere = true, IcPlace? drop, String? receiverName, String? receiverPhone, String? size}) {
@@ -99,6 +111,9 @@ class _ParcelPageState extends State<ParcelPage> {
   String? _error;
   List<SavedReceiver> _receivers = [];
   List<SavedPickPlace> _places = [];
+  // «مشوار بوقفات»: the second way the page works; its stops stay when he switches back and forth
+  bool _errand = false;
+  final _errandDraft = ErrandDraft();
 
   @override
   void initState() {
@@ -131,6 +146,7 @@ class _ParcelPageState extends State<ParcelPage> {
     _name.dispose();
     _phone.dispose();
     _note.dispose();
+    _errandDraft.dispose();
     super.dispose();
   }
 
@@ -273,8 +289,33 @@ class _ParcelPageState extends State<ParcelPage> {
     }
   }
 
+  void _setMode(bool errand) => setState(() {
+        _errand = errand;
+        _error = null;
+        if (errand && _errandDraft.stops.isEmpty) _errandDraft.add();
+      });
+
   @override
   Widget build(BuildContext context) {
+    final errand = ErrandConfig.of(widget.home);
+    final errandOn = errand != null && errand.enabled;
+    if (_errand && errandOn) {
+      final map = widget.map;
+      return ErrandView(
+        home: widget.home,
+        config: errand,
+        pick: _pick,
+        pickIsHere: _pickIsHere,
+        draft: _errandDraft,
+        onMode: _setMode,
+        saved: _places,
+        choosePlace: widget.errandPlace,
+        quote: widget.errandQuote,
+        send: widget.errandSend,
+        map: map == null ? null : (stops, drop) => map(stops.isEmpty ? drop : stops.first, drop),
+        balance: widget.balance,
+      );
+    }
     final cur = widget.home.currency;
     final top = MediaQuery.of(context).padding.top;
     return IcScaffold(
@@ -314,6 +355,10 @@ class _ParcelPageState extends State<ParcelPage> {
             onTap: _send),
       ]),
       children: [
+        if (errandOn) ...[
+          ErrandModeSwitch(errand: false, name: errand.name, onChanged: _setMode),
+          const SizedBox(height: 10),
+        ],
         ParcelTitle(words: widget.home.words(appRtl)),
         const SizedBox(height: 10),
         ParcelPlaces(pick: _pick, drop: _drop, pickIsHere: _pickIsHere, onTap: _choose),
