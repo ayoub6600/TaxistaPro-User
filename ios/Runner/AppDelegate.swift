@@ -526,7 +526,7 @@ final class CardOcr {
     }
   }
 
-  private static func recognizeFrame(data: Data, width: Int, height: Int, bytesPerRow: Int, rotation: Int, roi: CGRect) -> [String: Any] {
+  private static func recognizeFrame(data: Foundation.Data, width: Int, height: Int, bytesPerRow: Int, rotation: Int, roi: CGRect) -> [String: Any] {
     var mutable = data
     return mutable.withUnsafeMutableBytes { raw -> [String: Any] in
       guard let base = raw.baseAddress else { return ["lines": []] }
