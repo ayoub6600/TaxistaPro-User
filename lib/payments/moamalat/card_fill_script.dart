@@ -105,9 +105,10 @@ const String _template = r'''
     var cvv = pick(inputs, 'cvv', []);
     var pan = pick(inputs, 'pan', [cvv]);
     var exp = pick(inputs, 'exp', [cvv, pan]);
-    if (!pan || !exp || !cvv) return { ok: false };
-    if (!(follows(pan, exp) && follows(exp, cvv))) return { ok: false };
-    if (pan.form !== exp.form || exp.form !== cvv.form) return { ok: false };
+    // The CVV is required, except once a number is in and the page removed it (a card without CVV).
+    if (!pan || !exp || (!cvv && digitsOf(pan.value).length < 12)) return { ok: false };
+    if (!follows(pan, exp) || (cvv && !follows(exp, cvv))) return { ok: false };
+    if (pan.form !== exp.form || (cvv && exp.form !== cvv.form)) return { ok: false };
     var name = pick(inputs, 'name', [cvv, pan, exp]);
     if (name && name.form !== pan.form) name = null;
     var extra = inputs.filter(function (i) { return i !== pan && i !== exp && i !== cvv && i !== name && (i.type || 'text') !== 'password'; }).length;
@@ -186,7 +187,14 @@ const String _template = r'''
     }
     var p = digitsOf(pan), e = digitsOf(exp), nm = String(name || '').trim();
     var wantPan = p.length >= 12, wantExp = e.length === 4;
-    if (wantPan) typeInto(f.pan, p);
+    if (wantPan) {
+      typeInto(f.pan, p);
+      // The bank's page decides the card type (and hides the CVV for a Numo card, 63…/8…) only on keyup /
+      // focusout of the number field. One closing keyup, on every platform, so it sees the whole number
+      // exactly as after real typing; without it the CVV stayed and was sent for a card that has none.
+      f.pan.dispatchEvent(keyEvent('keyup', p.charAt(p.length - 1)));
+      f.pan.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+    }
     if (wantExp) typeInto(f.exp, e);
     if (f.name && nm) typeInto(f.name, nm.slice(0, parseInt(f.name.getAttribute('maxlength'), 10) || 60));
     var boxes = acceptTerms ? findTerms(f.form) : [];
