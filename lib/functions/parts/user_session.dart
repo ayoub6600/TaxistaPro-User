@@ -339,7 +339,10 @@ var pickupAddress = '';
 var dropAddress = '';
 
 Future<String?> geoCoding(double lat, double lng) async {
-  final String cacheKey = '$lat,$lng';
+  // one entry per ~30 m cell (the old key was the exact coordinates, so it never hit and every pin
+  // stop was a paid Google call), kept 30 days
+  final String lang = PinAddress.lang(choosenLanguage);
+  final String cacheKey = PinAddress.cacheKey(lat, lng, lang);
   final Box cacheBox = Hive.box('geocoding_cache');
 
   // التحقق من الكاش
@@ -350,10 +353,27 @@ Future<String?> geoCoding(double lat, double lng) async {
         DateTime.fromMillisecondsSinceEpoch(cachedTimestamp);
     final Duration difference = DateTime.now().difference(cachedTime);
 
-    if (difference.inDays < 7) {
+    if (difference < PinAddress.keep) {
       return cachedData['address'];
     } else {
       cacheBox.delete(cacheKey); // حذف الكاش المنتهي
+    }
+  }
+
+  // Taxista's server answers from one shared cache for everybody; Google is only its fallback
+  if (mapType == 'google') {
+    final s = await PinAddress.fromServer(
+      baseUrl: url,
+      token: bearerToken.isNotEmpty ? bearerToken[0].token : null,
+      lat: lat,
+      lng: lng,
+      lang: lang,
+    );
+    if (s.answered) {
+      if (s.cacheable) {
+        cacheBox.put(cacheKey, {'address': s.address, 'timestamp': DateTime.now().millisecondsSinceEpoch});
+      }
+      return s.address;
     }
   }
 

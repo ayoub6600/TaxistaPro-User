@@ -68,7 +68,10 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final appDocumentDir = await getApplicationDocumentsDirectory();
   await Hive.initFlutter(appDocumentDir.path);
-  await Hive.openBox('geocoding_cache');
+  final geoBox = await Hive.openBox('geocoding_cache');
+  // entries from before the ~30 m cells (exact-coordinate keys) are never read again
+  final stale = geoBox.keys.where((k) => !k.toString().startsWith('v2:')).toList();
+  if (stale.isNotEmpty) await geoBox.deleteAll(stale);
   await Hive.openBox('autocomplete_cache');
 
   await SystemChrome.setPreferredOrientations([

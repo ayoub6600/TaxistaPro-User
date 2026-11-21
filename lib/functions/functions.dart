@@ -43,6 +43,7 @@ import '../pages/referralcode/referral_code.dart';
 import '../styles/styles.dart';
 
 import 'pulse_api.dart';
+import '../maps/pin_address.dart';
 
 part 'parts/bootstrap_auth.dart';
 part 'parts/user_session.dart';
