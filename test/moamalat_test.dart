@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:taxista/payments/moamalat/card_helper_panel.dart';
@@ -158,9 +159,33 @@ void main() {
     test('quick successive adds are serialised and none is lost', () async {
       final vault = CardVault(store: MemorySecretStore(), ownerId: '27');
       await Future.wait([
-        for (var i = 0; i < 5; i++) vault.add(holderName: 'Card $i', number: visa, expMonth: 12, expYear: 2028),
+        for (var i = 0; i < 5; i++) vault.add(holderName: 'Card $i', number: '411111111111111$i', expMonth: 12, expYear: 2028),
       ]);
       expect(await vault.load(), hasLength(5));
+    });
+
+    test('the same number is never saved twice, and at most ten cards are kept', () async {
+      final vault = CardVault(store: MemorySecretStore(), ownerId: '27');
+      await vault.add(holderName: 'Ali', number: visa, expMonth: 12, expYear: 2028);
+      await expectLater(vault.add(holderName: 'Ali', number: '4111 1111 1111 1111', expMonth: 1, expYear: 2029), throwsA(isA<DuplicateCard>()));
+      for (var i = 1; i < CardVault.maxCards; i++) {
+        await vault.add(holderName: 'Card $i', number: '62730012345612${i.toString().padLeft(2, '0')}', expMonth: 12, expYear: 2028);
+      }
+      await expectLater(vault.add(holderName: 'One more', number: '6273001234569999', expMonth: 12, expYear: 2028), throwsA(isA<TooManyCards>()));
+      expect(await vault.load(), hasLength(CardVault.maxCards));
+    });
+
+    test('cards saved by the previous version load unchanged (same key, same JSON)', () async {
+      final store = MemorySecretStore();
+      // Exactly what the earlier release wrote.
+      await store.write('taxista.moamalat.cards.v1.27',
+          '[{"id":"a1","holder":"Ali Ben","number":"4111111111111111","expMonth":12,"expYear":2028,"isDefault":true},'
+          '{"id":"b2","holder":"Sara","number":"6273001234561234","expMonth":1,"expYear":2030,"nickname":"Work","isDefault":false}]');
+      final cards = await CardVault(store: store, ownerId: '27').load();
+      expect(cards.map((c) => c.id), ['a1', 'b2']);
+      expect(cards.first.isDefault, isTrue);
+      expect(cards.last.nickname, 'Work');
+      expect(cards.first.redacted().brand.name, 'visa', reason: 'a redacted copy is still drawn with its network');
     });
 
     test('an unreadable blob is treated as no cards, not a crash', () async {
@@ -305,16 +330,22 @@ void main() {
   });
 
   group('saved cards screen', () {
+    setUp(() => SharedPreferences.setMockInitialValues({}));
+
     testWidgets('add a card once: shown masked, stored locally, no security code field', (tester) async {
       final store = MemorySecretStore();
       final env = makeEnv(store: store);
+      tester.view.physicalSize = const Size(800, 2200);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
       await tester.pumpWidget(MaterialApp(home: SavedCardsPage(env: env)));
       await tester.pumpAndSettle();
       expect(find.text('لا توجد بطاقات محفوظة'), findsOneWidget);
 
-      await tester.tap(find.byKey(const Key('add-card')));
+      await tester.tap(find.byKey(const Key('empty-type')));
       await tester.pumpAndSettle();
-      expect(find.textContaining('CVV'), findsWidgets); // only the "we never store it" note
+      expect(find.byType(CardFormPage), findsOneWidget);
+      expect(find.textContaining('CVV'), findsWidgets); // only the "we never store it" notes
       expect(find.byKey(const Key('card-cvv')), findsNothing);
 
       await tester.enterText(find.byKey(const Key('card-holder')), 'Ali Ben Salem');
@@ -323,11 +354,11 @@ void main() {
       await tester.tap(find.byKey(const Key('save-card')));
       await tester.pumpAndSettle();
 
-      expect(find.text('**** **** **** 1111'), findsOneWidget);
+      expect(find.text('•••• •••• •••• 1111'), findsOneWidget, reason: 'the card picture shows the last four digits only');
       expect(find.textContaining('4111 1111'), findsNothing);
       expect(find.textContaining(visa), findsNothing);
       expect(find.text('افتراضية'), findsOneWidget);
-      expect(find.textContaining('Ali Ben Salem'), findsOneWidget);
+      expect(find.textContaining('ALI BEN SALEM'), findsOneWidget);
       expect(find.textContaining('12/28'), findsOneWidget);
 
       final cards = await env.vault.load();
@@ -336,9 +367,12 @@ void main() {
 
     testWidgets('invalid input is refused with inline errors and nothing is saved', (tester) async {
       final env = makeEnv();
+      tester.view.physicalSize = const Size(800, 2200);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
       await tester.pumpWidget(MaterialApp(home: SavedCardsPage(env: env)));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('add-card')));
+      await tester.tap(find.byKey(const Key('empty-type')));
       await tester.pumpAndSettle();
 
       await tester.enterText(find.byKey(const Key('card-holder')), 'A');
@@ -353,10 +387,29 @@ void main() {
       expect(await env.vault.load(), isEmpty);
     });
 
+    testWidgets('the same card cannot be saved twice', (tester) async {
+      final env = makeEnv();
+      await env.vault.add(holderName: 'Ali', number: visa, expMonth: 12, expYear: 2028);
+      tester.view.physicalSize = const Size(800, 2200);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(MaterialApp(home: CardFormPage(env: env)));
+      await tester.enterText(find.byKey(const Key('card-holder')), 'Ali Ben');
+      await tester.enterText(find.byKey(const Key('card-number')), visa);
+      await tester.enterText(find.byKey(const Key('card-expiry')), '1228');
+      await tester.tap(find.byKey(const Key('save-card')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('save-error')), findsOneWidget);
+      expect(await env.vault.load(), hasLength(1));
+    });
+
     testWidgets('an existing card can be made default, edited and deleted', (tester) async {
       final env = makeEnv();
       final a = await env.vault.add(holderName: 'Ali', number: visa, expMonth: 12, expYear: 2028);
       final b = await env.vault.add(holderName: 'Sara', number: localCard, expMonth: 11, expYear: 2029);
+      tester.view.physicalSize = const Size(800, 2200);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
       await tester.pumpWidget(MaterialApp(home: SavedCardsPage(env: env)));
       await tester.pumpAndSettle();
 
@@ -368,9 +421,21 @@ void main() {
 
       await tester.tap(find.byKey(Key('card-menu-${a.id}')));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('حذف').last);
+      await tester.tap(find.byKey(const Key('card-edit')));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('حذف').last);
+      expect(find.text('تعديل البطاقة'), findsOneWidget);
+      await tester.enterText(find.byKey(const Key('card-nickname')), 'Salary');
+      await tester.tap(find.byKey(const Key('save-card')));
+      await tester.pumpAndSettle();
+      final edited = (await env.vault.byId(a.id))!;
+      expect(edited.nickname, 'Salary');
+      expect(edited.number, visa, reason: 'an empty number field keeps the saved number');
+
+      await tester.tap(find.byKey(Key('card-menu-${a.id}')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('card-delete')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('confirm-delete')));
       await tester.pumpAndSettle();
       expect((await env.vault.load()).map((c) => c.id), [b.id]);
     });

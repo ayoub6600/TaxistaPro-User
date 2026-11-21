@@ -63,8 +63,11 @@ class CardVault {
   /// other's cards.
   final String ownerId;
 
+  static const int maxCards = 10;
+
   Future<void> _tail = Future.value();
 
+  /// Unchanged since the first release: cards saved by older versions load as they are.
   String get _key => 'taxista.moamalat.cards.v1.$ownerId';
 
   Future<T> _serial<T>(Future<T> Function() action) {
@@ -105,6 +108,15 @@ class CardVault {
     return null;
   }
 
+  /// The card already saved with this number, if any.
+  Future<SavedCard?> byNumber(String number) async {
+    final digits = CardRules.digitsOnly(number);
+    for (final card in await load()) {
+      if (card.number == digits) return card;
+    }
+    return null;
+  }
+
   Future<SavedCard?> defaultCard() async {
     final cards = await load();
     return cards.isEmpty ? null : cards.first;
@@ -120,6 +132,8 @@ class CardVault {
     return _serial(() async {
       final cards = await _read();
       final digits = CardRules.digitsOnly(number);
+      if (cards.any((c) => c.number == digits)) throw const DuplicateCard();
+      if (cards.length >= maxCards) throw const TooManyCards();
       final card = SavedCard(
         id: _newId(),
         holderName: holderName.trim(),
@@ -149,9 +163,11 @@ class CardVault {
       final cards = await _read();
       final index = cards.indexWhere((c) => c.id == id);
       if (index < 0) return null;
+      final digits = number == null ? null : CardRules.digitsOnly(number);
+      if (digits != null && cards.any((c) => c.id != id && c.number == digits)) throw const DuplicateCard();
       final updated = cards[index].copyWith(
         holderName: holderName?.trim(),
-        number: number == null ? null : CardRules.digitsOnly(number),
+        number: digits,
         expMonth: expMonth,
         expYear: expYear,
         nickname: nickname?.trim(),
@@ -194,4 +210,14 @@ class CardVault {
 
   static String _newId() =>
       List.generate(16, (_) => _random.nextInt(256).toRadixString(16).padLeft(2, '0')).join();
+}
+
+/// The same number is already saved on this phone.
+class DuplicateCard implements Exception {
+  const DuplicateCard();
+}
+
+/// At most [CardVault.maxCards] cards are kept.
+class TooManyCards implements Exception {
+  const TooManyCards();
 }

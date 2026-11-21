@@ -7,6 +7,9 @@ import 'moamalat_api.dart';
 import 'secure_clipboard.dart';
 import 'smart_fill_controller.dart';
 
+// Kept here too, where the payment screens have always found it.
+export 'card_brand.dart' show normalizeDigits;
+
 /// Everything the Moamalat screens need from the host app, so the screens
 /// themselves stay identical in the Rider and Driver apps.
 class MoamalatEnv {
@@ -50,22 +53,12 @@ class MoamalatEnv {
 
   String t(String ar, String en) => isRtl ? ar : en;
 
+  /// Text/icons drawn ON the accent colour (the Driver app's accent is black in
+  /// its light look and white in its dark one).
+  Color get onAccent => accent.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+
   TextDirection get direction => isRtl ? TextDirection.rtl : TextDirection.ltr;
 
   TextStyle style({double size = 14, FontWeight weight = FontWeight.w600, Color? color}) =>
       GoogleFonts.cairo(fontSize: size, fontWeight: weight, color: color ?? text);
-}
-
-/// Arabic-Indic and Persian digits -> Latin, so an Arabic keyboard works.
-String normalizeDigits(String input) {
-  const arabic = '٠١٢٣٤٥٦٧٨٩';
-  const persian = '۰۱۲۳۴۵۶۷۸۹';
-  final out = StringBuffer();
-  for (final rune in input.runes) {
-    final ch = String.fromCharCode(rune);
-    final a = arabic.indexOf(ch);
-    final p = persian.indexOf(ch);
-    out.write(a >= 0 ? '$a' : (p >= 0 ? '$p' : ch));
-  }
-  return out.toString();
 }

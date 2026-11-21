@@ -73,7 +73,7 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>The camera is used to take a profile picture and, only if you choose to scan a bank card when adding money, to read the card number on your device. A card photo is never uploaded or stored.</string>
+	<string>The camera is used to take a profile picture and, only if you choose to scan a bank card when you add it, to read the card number, name and expiry on your device. The card image is never uploaded or stored.</string>
 	<key>NSContactsUsageDescription</key>
 	<string>Taxista reads a contact only when you choose one as an emergency (SOS) contact.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>

@@ -52,6 +52,8 @@ dependencies:
   google_maps_flutter: ^2.5.0
   http: ^1.1.0
   image_picker: ^1.0.4
+  # Live bank-card scanner (camera frames read on the device by Vision / ML Kit, see card_scanner_page.dart)
+  camera: ^0.11.4
   intl: ^0.20.3
   latlong2: ^0.9.1
   hive_flutter: ^1.1.0

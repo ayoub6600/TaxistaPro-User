@@ -4,8 +4,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:taxista/payments/moamalat/add_money_sheet.dart';
+import 'package:taxista/payments/moamalat/card_ocr.dart';
+import 'package:taxista/payments/moamalat/card_scan_session.dart';
 import 'package:taxista/payments/moamalat/card_scanner.dart';
+import 'package:taxista/payments/moamalat/card_scanner_page.dart';
 import 'package:taxista/payments/moamalat/card_text_parser.dart';
 import 'package:taxista/payments/moamalat/card_vault.dart';
 import 'package:taxista/payments/moamalat/moamalat_api.dart';
@@ -67,16 +71,24 @@ class FakeSource implements CardImageSource {
   }
 }
 
-class FakeRecognizer implements CardTextRecognizer {
+/// The on-device recogniser, faked: each line on its own row, top to bottom.
+class FakeRecognizer implements CardOcr {
   FakeRecognizer(this.lines, {this.fail = false});
   final List<String> lines;
   final bool fail;
+  final List<String> files = [];
 
   @override
-  Future<List<String>> recognize(String imagePath) async {
+  Future<OcrFrame> recognizeFile(String path) async {
+    files.add(path);
     if (fail) throw StateError('ocr crashed');
-    return lines;
+    return OcrFrame(lines: [
+      for (var i = 0; i < lines.length; i++) OcrLine(text: lines[i], box: Rect.fromLTWH(0.1, 0.1 + i * 0.08, 0.6, 0.04)),
+    ]);
   }
+
+  @override
+  Future<OcrFrame> recognizeFrame(OcrFrameInput input) async => OcrFrame.empty;
 }
 
 void main() {
@@ -100,8 +112,15 @@ void main() {
       expect(card.review, isEmpty);
     });
 
-    test('digits split across lines are joined; Arabic-Indic digits are read', () {
-      expect(parseCardText(['4111', '1111', '1111', '1111', '12/28', 'ALI BEN OMAR'], now: now).number, testPan);
+    test('digit groups recognised separately on one row are joined; Arabic-Indic digits are read', () {
+      final rows = cardReadingRows([
+        for (var i = 0; i < 4; i++) OcrLine(text: '1111'.replaceRange(0, 1, i == 0 ? '4' : '1'), box: Rect.fromLTWH(0.1 + i * 0.2, 0.40 + (i.isEven ? 0.002 : 0), 0.15, 0.04)),
+        const OcrLine(text: '12/28', box: Rect.fromLTWH(0.4, 0.5, 0.15, 0.03)),
+        const OcrLine(text: 'ALI BEN OMAR', box: Rect.fromLTWH(0.1, 0.58, 0.4, 0.03)),
+      ]);
+      expect(parseCardText(rows.rows, now: now).number, testPan);
+      // ... but text on different rows is never glued into a number.
+      expect(parseCardText(['4111', '1111', '1111', '1111'], now: now).number, isNull);
       final arabic = parseCardText(['٤١١١ ١١١١ ١١١١ ١١١١', '١٢/٢٨', 'ALI BEN OMAR'], now: now);
       expect(arabic.number, testPan);
       expect(arabic.expiryText, '12/28');
@@ -178,18 +197,22 @@ void main() {
     });
   });
 
-  group('the scanner keeps the photo private', () {
-    test('success: the text is read on the device and the photo is deleted', () async {
+  group('the photo fallback keeps the photo private', () {
+    test('success: the text is read on the device, the number is shown for checking, the photo is deleted', () async {
       final deleted = <String>[];
+      final ocr = FakeRecognizer([testPan, '12/28', 'ALI BEN OMAR']);
       final scanner = CardScanner(
         source: FakeSource('/tmp/card.jpg'),
-        recognizer: FakeRecognizer([testPan, '12/28', 'ALI BEN OMAR']),
+        ocr: ocr,
         clock: () => now,
         deleter: (p) async => deleted.add(p),
       );
       final outcome = await scanner.scan();
       expect(outcome.status, CardScanStatus.success);
       expect(outcome.card.number, testPan);
+      expect(outcome.card.holder, 'ALI BEN OMAR');
+      expect(outcome.card.needsReview(CardField.number), isTrue, reason: 'one photo is one reading');
+      expect(ocr.files, ['/tmp/card.jpg']);
       expect(deleted, ['/tmp/card.jpg']);
     });
 
@@ -197,14 +220,14 @@ void main() {
       final deleted = <String>[];
       final crashed = await CardScanner(
         source: FakeSource('/tmp/a.jpg'),
-        recognizer: FakeRecognizer(const [], fail: true),
+        ocr: FakeRecognizer(const [], fail: true),
         deleter: (p) async => deleted.add(p),
       ).scan();
       expect(crashed.status, CardScanStatus.failed);
 
       final blank = await CardScanner(
         source: FakeSource('/tmp/b.jpg'),
-        recognizer: FakeRecognizer(const ['   ']),
+        ocr: FakeRecognizer(const ['   ']),
         deleter: (p) async => deleted.add(p),
       ).scan();
       expect(blank.status, CardScanStatus.unreadable);
@@ -212,7 +235,7 @@ void main() {
 
       final stubborn = await CardScanner(
         source: FakeSource('/tmp/c.jpg'),
-        recognizer: FakeRecognizer([testPan, '12/28']),
+        ocr: FakeRecognizer([testPan, '12/28']),
         clock: () => now,
         deleter: (p) async => throw const FileSystemException('locked'),
       ).scan();
@@ -221,25 +244,32 @@ void main() {
 
     test('cancelling takes no photo and deletes nothing; a refused camera is a clean outcome', () async {
       final deleted = <String>[];
-      final cancelled = await CardScanner(source: FakeSource(null), recognizer: FakeRecognizer(const []), deleter: (p) async => deleted.add(p)).scan();
+      final cancelled = await CardScanner(source: FakeSource(null), ocr: FakeRecognizer(const []), deleter: (p) async => deleted.add(p)).scan();
       expect(cancelled.status, CardScanStatus.cancelled);
-      final denied = await CardScanner(source: FakeSource(null, denied: true), recognizer: FakeRecognizer(const []), deleter: (p) async => deleted.add(p)).scan();
+      final denied = await CardScanner(source: FakeSource(null, denied: true), ocr: FakeRecognizer(const []), deleter: (p) async => deleted.add(p)).scan();
       expect(denied.status, CardScanStatus.denied);
       expect(deleted, isEmpty);
     });
 
-    test('the scanner code has no network, gallery, analytics or logging of card data', () {
-      final source = File('lib/payments/moamalat/card_scanner.dart').readAsStringSync();
-      final parser = File('lib/payments/moamalat/card_text_parser.dart').readAsStringSync();
-      final code = (source + parser).replaceAll(RegExp(r'///.*'), '').replaceAll(RegExp(r'//.*'), '');
-      for (final banned in ['package:http', 'dio', 'HttpClient', 'upload', 'multipart', 'debugPrint', 'print(', 'log(', 'saveImage', 'ImageGallerySaver', 'gallery', 'analytics', 'Firebase', 'cvv', 'CVV']) {
-        expect(code.contains(banned), isFalse, reason: 'scanner must not contain "$banned"');
+    test('the scanner code has no network, photo saving, analytics or logging of card data', () {
+      String read(String name) => File('lib/payments/moamalat/$name').readAsStringSync();
+      final files = {
+        for (final f in ['card_scanner.dart', 'card_scanner_page.dart', 'card_ocr.dart', 'card_scan_session.dart', 'card_text_parser.dart']) f: read(f),
+      };
+      for (final entry in files.entries) {
+        final code = entry.value.replaceAll(RegExp(r'///.*'), '').replaceAll(RegExp(r'//.*'), '');
+        for (final banned in ['package:http', 'package:dio', 'HttpClient', 'upload', 'multipart', 'debugPrint', 'print(', 'log(', 'saveImage', 'ImageGallerySaver', 'gallery_saver', 'writeAsBytes', 'path_provider', 'analytics', 'Firebase', 'cvv', 'CVV']) {
+          expect(code.contains(banned), isFalse, reason: '${entry.key} must not contain "$banned"');
+        }
       }
-      expect(source.contains('requestFullMetadata: false'), isTrue, reason: 'no photo-library permission is requested');
-      expect(source.contains('ImageSource.camera'), isTrue);
-      expect(source.contains("'taxista/card_ocr'"), isTrue, reason: 'recognition runs in the app, through the native channel');
-      expect(source.contains('google_mlkit'), isFalse, reason: 'no cloud-capable plugin, no heavy pods');
-      expect(source.contains('finally'), isTrue, reason: 'deletion is unconditional');
+      final photo = files['card_scanner.dart']!.replaceAll(RegExp(r'//.*'), '');
+      expect('requestFullMetadata: false'.allMatches(photo).length, 2, reason: 'no photo-library permission is requested, for the camera or a picked photo');
+      expect(photo.contains('ImageSource.camera'), isTrue, reason: 'the one-photo path stays as the fallback');
+      expect(photo.contains('finally'), isTrue, reason: 'deletion is unconditional');
+      expect(files['card_ocr.dart']!.contains("'taxista/card_ocr'"), isTrue, reason: 'recognition runs in the app, through the native channel');
+      expect(files.values.any((c) => c.contains('google_mlkit')), isFalse, reason: 'no cloud-capable plugin, no heavy pods');
+      expect(files['card_scanner_page.dart']!.contains('startImageStream'), isTrue, reason: 'live frames are read from memory');
+      expect(files['card_scanner_page.dart']!.contains('takePicture'), isFalse, reason: 'the live scanner never writes a picture');
     });
   });
 
@@ -249,16 +279,47 @@ void main() {
 
     tearDown(() => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, null));
 
-    test('the path goes to the native side and the recognised lines come back as text', () async {
+    test('a photo path goes to the native side and the lines come back with their place on the card', () async {
       MethodCall? seen;
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
         seen = call;
-        return <Object?>['4111 1111 1111 1111', '12/28', 42];
+        return {
+          'lines': [
+            {'text': '4111 1111 1111 1111', 'box': [0.1, 0.4, 0.6, 0.05], 'alts': <String>[], 'conf': 0.9},
+            {'text': 'broken'},
+            42,
+          ],
+        };
       });
-      final lines = await NativeCardTextRecognizer().recognize('/tmp/card.jpg');
-      expect(seen!.method, 'recognize');
+      final frame = await const ChannelCardOcr().recognizeFile('/tmp/card.jpg');
+      expect(seen!.method, 'recognizeFile');
       expect(seen!.arguments, {'path': '/tmp/card.jpg'});
-      expect(lines, ['4111 1111 1111 1111', '12/28', '42']);
+      expect(frame.lines.map((l) => l.text), ['4111 1111 1111 1111'], reason: 'malformed entries are dropped');
+      expect(frame.lines.single.box, const Rect.fromLTWH(0.1, 0.4, 0.6, 0.05));
+    });
+
+    test('a live frame is handed over in memory with its rotation and the card area', () async {
+      MethodCall? seen;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
+        seen = call;
+        return {'lines': <Object>[], 'luma': 120};
+      });
+      final frame = await const ChannelCardOcr().recognizeFrame(OcrFrameInput(
+        bytes: Uint8List(16),
+        width: 4,
+        height: 1,
+        bytesPerRow: 16,
+        format: 'bgra8888',
+        rotation: 90,
+        roi: const Rect.fromLTWH(0.1, 0.2, 0.8, 0.3),
+      ));
+      expect(seen!.method, 'recognizeFrame');
+      final args = seen!.arguments as Map;
+      expect(args['rotation'], 90);
+      expect(args['format'], 'bgra8888');
+      expect(args['roi'], [0.1, 0.2, 0.8, 0.3]);
+      expect(args.containsKey('path'), isFalse, reason: 'a live frame never touches the disk');
+      expect(frame.luma, 120);
     });
 
     test('a native failure becomes a clean failed scan and the photo is still deleted', () async {
@@ -276,10 +337,14 @@ void main() {
       expect(swift.contains('import Vision'), isTrue);
       expect(swift.contains('VNRecognizeTextRequest'), isTrue);
       expect(swift.contains('usesLanguageCorrection = false'), isTrue, reason: 'digits are never "corrected"');
-      // the card is read on the device: no network anywhere in the scanner's code, and the app
-      // delegate's only requests go to the signed link of a VoIP push ("this call is shown", then
-      // "does it still ring" every 2 s)
-      expect(swift.substring(swift.indexOf('taxista/card_ocr')).contains('URLSession'), isFalse);
+      expect(swift.contains('regionOfInterest'), isTrue, reason: 'only the card frame is read');
+      expect(swift.contains('"recognizeFrame"') && swift.contains('"recognizeFile"'), isTrue);
+      expect(swift.contains('"recognize"'), isFalse, reason: 'one recognition path, not two');
+      final ocr = swift.substring(swift.indexOf('final class CardOcr'), swift.indexOf('/// Smart Fill: puts one saved card'));
+      expect(ocr.contains('URLSession'), isFalse, reason: 'the card is read on the device');
+      expect(ocr.contains('write('), isFalse, reason: 'a frame is never written to disk');
+      // the app delegate's only requests go to the signed link of a VoIP push ("this call is shown",
+      // then "does it still ring" every 2 s)
       // the evening reminder's buttons (enum RecurringReminderButtons) post only the day's answer
       final reminder = swift.substring(swift.indexOf('enum RecurringReminderButtons'));
       expect(reminder.contains('api/v1/recurring-day/'), isTrue);
@@ -293,8 +358,14 @@ void main() {
       final gradle = File('android/app/build.gradle').readAsStringSync();
       expect(gradle.contains('com.google.mlkit:text-recognition:'), isTrue, reason: 'the bundled model, not the Play-services download variant');
       expect(gradle.contains('play-services-mlkit'), isFalse);
-      final kotlin = Directory('android/app/src/main/kotlin').listSync(recursive: true).whereType<File>().firstWhere((f) => f.path.endsWith('MainActivity.kt')).readAsStringSync();
-      expect(kotlin.contains('taxista/card_ocr'), isTrue);
+      final kotlinFiles = Directory('android/app/src/main/kotlin').listSync(recursive: true).whereType<File>().toList();
+      final cardOcr = kotlinFiles.firstWhere((f) => f.path.endsWith('CardOcr.kt')).readAsStringSync();
+      expect(cardOcr.contains('taxista/card_ocr'), isTrue);
+      expect(cardOcr.contains('"recognizeFrame"') && cardOcr.contains('"recognizeFile"'), isTrue);
+      expect(cardOcr.contains('FileOutputStream') || cardOcr.contains('writeBytes'), isFalse);
+      final main = kotlinFiles.firstWhere((f) => f.path.endsWith('MainActivity.kt')).readAsStringSync();
+      expect(main.contains('CardOcr.register('), isTrue);
+      expect(main.contains('TextRecognition'), isFalse, reason: 'one recognition path, not two');
     });
   });
 
@@ -374,48 +445,58 @@ void main() {
   });
 
   group('adding a card by scanning', () {
-    Future<(FakeApi, MemorySecretStore)> pumpForm(WidgetTester tester, CardScanner scanner) async {
+    setUp(() => SharedPreferences.setMockInitialValues({}));
+
+    Future<(FakeApi, MemorySecretStore, List<int>)> pumpForm(WidgetTester tester, CardScanResult? result) async {
       final api = FakeApi();
       final store = MemorySecretStore();
       final env = makeEnv(api, store: store);
+      final opened = <int>[];
       tester.view.physicalSize = const Size(800, 2200);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
-      await tester.pumpWidget(MaterialApp(home: Scaffold(body: CardForm(env: env, scanner: scanner))));
-      return (api, store);
+      await tester.pumpWidget(MaterialApp(
+        home: CardFormPage(
+          env: env,
+          openScanner: (_) async {
+            opened.add(1);
+            return result;
+          },
+        ),
+      ));
+      return (api, store, opened);
     }
 
-    Future<void> scan(WidgetTester tester) async {
+    Future<void> scan(WidgetTester tester, {bool explained = false}) async {
       await tester.tap(find.byKey(const Key('scan-card')));
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('scan-explainer')), findsOneWidget, reason: 'the customer is told what the camera is for first');
-      await tester.tap(find.byKey(const Key('scan-continue')));
-      await tester.pumpAndSettle();
+      if (!explained) {
+        expect(find.byKey(const Key('scan-explainer')), findsOneWidget, reason: 'the customer is told what the camera is for first');
+        await tester.tap(find.byKey(const Key('scan-continue')));
+        await tester.pumpAndSettle();
+      }
     }
 
     String field(WidgetTester tester, String key) => (tester.widget<TextField>(find.byKey(Key(key))).controller!).text;
 
-    testWidgets('the scan fills the form, asks for confirmation, and only then can it be saved', (tester) async {
-      final scanner = CardScanner(
-        source: FakeSource('/tmp/x.jpg'),
-        recognizer: FakeRecognizer([testPan, 'VALID THRU 12/28', 'ALI BEN OMAR']),
-        clock: () => now,
-        deleter: (_) async {},
-      );
-      final (api, store) = await pumpForm(tester, scanner);
+    testWidgets('a doubtful scan fills the form and must be confirmed before it is saved', (tester) async {
+      final (api, store, _) = await pumpForm(
+          tester, const CardScanResult.scanned(ScannedCard(number: testPan, expiryMonth: 12, expiryYear: 2028, holder: 'ALI BEN OMAR', review: {CardField.holder})));
       await scan(tester);
 
       expect(field(tester, 'card-number'), '4111 1111 1111 1111');
       expect(field(tester, 'card-expiry'), '12/28');
       expect(field(tester, 'card-holder'), 'ALI BEN OMAR');
+      expect(find.textContaining('تحقق من هذا الحقل'), findsOneWidget, reason: 'only the doubtful field is marked');
 
-      final save = find.byKey(const Key('save-card'));
-      expect(tester.widget<FilledButton>(save).onPressed, isNull, reason: 'a scanned card cannot be saved unchecked');
+      await tester.tap(find.byKey(const Key('save-card')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('save-error')), findsOneWidget, reason: 'a doubtful scan cannot be saved unchecked');
+      expect(await CardVault(store: store, ownerId: '27').load(), isEmpty);
+
       await tester.tap(find.byKey(const Key('confirm-scan')));
       await tester.pump();
-      expect(tester.widget<FilledButton>(save).onPressed, isNotNull);
-
-      await tester.tap(save);
+      await tester.tap(find.byKey(const Key('save-card')));
       await tester.pumpAndSettle();
       final saved = await CardVault(store: store, ownerId: '27').load();
       expect(saved, hasLength(1));
@@ -424,14 +505,20 @@ void main() {
       expect(store.data.values.join().toLowerCase(), isNot(contains('cvv')));
     });
 
+    testWidgets('a scan where number, expiry and name all agreed saves without an extra tick', (tester) async {
+      final (_, store, _) = await pumpForm(
+          tester, const CardScanResult.scanned(ScannedCard(number: testPan, expiryMonth: 12, expiryYear: 2028, holder: 'ALI BEN OMAR')));
+      await scan(tester);
+      expect(find.byKey(const Key('confirm-scan')), findsNothing);
+      expect(find.text('انقرت البطاقة كاملة'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('save-card')));
+      await tester.pumpAndSettle();
+      expect((await CardVault(store: store, ownerId: '27').load()).single.holderName, 'ALI BEN OMAR');
+    });
+
     testWidgets('the user can correct what was read before saving', (tester) async {
-      final scanner = CardScanner(
-        source: FakeSource('/tmp/x.jpg'),
-        recognizer: FakeRecognizer([testPan, '12/28', 'ALY BEN OMAR']),
-        clock: () => now,
-        deleter: (_) async {},
-      );
-      final (_, store) = await pumpForm(tester, scanner);
+      final (_, store, _) = await pumpForm(
+          tester, const CardScanResult.scanned(ScannedCard(number: testPan, expiryMonth: 12, expiryYear: 2028, holder: 'ALY BEN OMAR', review: {CardField.holder})));
       await scan(tester);
       await tester.enterText(find.byKey(const Key('card-holder')), 'ALI BEN OMAR');
       await tester.tap(find.byKey(const Key('confirm-scan')));
@@ -441,24 +528,19 @@ void main() {
       expect((await CardVault(store: store, ownerId: '27').load()).single.holderName, 'ALI BEN OMAR');
     });
 
-    testWidgets('a doubtful field is marked so the user looks at it', (tester) async {
-      final scanner = CardScanner(
-        source: FakeSource('/tmp/x.jpg'),
-        recognizer: FakeRecognizer(['6273 0012 3456 1234', '01/30']), // local card, no name read
-        clock: () => now,
-        deleter: (_) async {},
-      );
-      await pumpForm(tester, scanner);
+    testWidgets('a Numo card: no CVV note, a doubtful number is marked, missing fields are left for the user', (tester) async {
+      await pumpForm(tester, const CardScanResult.scanned(ScannedCard(number: '6390001234561234', expiryMonth: 1, expiryYear: 2030, review: {CardField.number})));
       await scan(tester);
-      expect(find.textContaining('تحقق من هذا الحقل'), findsWidgets);
+      expect(find.textContaining('تحقق من هذا الحقل'), findsNWidgets(2), reason: 'the number (no check digit) and the missing name');
+      expect(find.text('بطاقة نومو ما عندهاش رمز CVV'), findsOneWidget);
+      expect(find.text('NUMO'), findsOneWidget, reason: 'the card picture shows the Numo mark');
     });
 
-    testWidgets('camera denied: a clear message, and typing the card by hand still saves', (tester) async {
-      final scanner = CardScanner(source: FakeSource(null, denied: true), recognizer: FakeRecognizer(const []), deleter: (_) async {});
-      final (_, store) = await pumpForm(tester, scanner);
+    testWidgets('choosing to type: nothing filled, nothing to confirm, typing the card by hand saves', (tester) async {
+      final (_, store, _) = await pumpForm(tester, const CardScanResult.manual());
       await scan(tester);
-      expect(find.byKey(const Key('scan-denied')), findsOneWidget);
       expect(find.byKey(const Key('confirm-scan')), findsNothing, reason: 'nothing was scanned, so nothing needs confirming');
+      expect(field(tester, 'card-number'), '');
 
       await tester.enterText(find.byKey(const Key('card-holder')), 'Ali Omar');
       await tester.enterText(find.byKey(const Key('card-number')), testPan);
@@ -468,23 +550,98 @@ void main() {
       expect(await CardVault(store: store, ownerId: '27').load(), hasLength(1));
     });
 
-    testWidgets('an unreadable photo changes nothing and the form stays usable', (tester) async {
-      final scanner = CardScanner(source: FakeSource('/tmp/x.jpg'), recognizer: FakeRecognizer(const ['blur']), deleter: (_) async {});
-      await pumpForm(tester, scanner);
-      await scan(tester);
-      expect(find.byKey(const Key('scan-failed')), findsOneWidget);
-      expect(field(tester, 'card-number'), '');
-    });
-
-    testWidgets('declining the explanation never opens the camera', (tester) async {
-      final source = FakeSource('/tmp/x.jpg');
-      final scanner = CardScanner(source: source, recognizer: FakeRecognizer(const []), deleter: (_) async {});
-      await pumpForm(tester, scanner);
+    testWidgets('declining the explanation never opens the camera; accepting it is asked once', (tester) async {
+      final (_, _, opened) = await pumpForm(tester, null);
       await tester.tap(find.byKey(const Key('scan-card')));
       await tester.pumpAndSettle();
       await tester.tap(find.text('إلغاء'));
       await tester.pumpAndSettle();
-      expect(source.calls, 0);
+      expect(opened, isEmpty);
+
+      await scan(tester);
+      expect(opened, hasLength(1));
+      await scan(tester, explained: true);
+      expect(opened, hasLength(2), reason: 'the explanation is shown until it is accepted, then not again');
+    });
+  });
+
+  group('live scanner page', () {
+    Future<void> pumpScanner(WidgetTester tester, Widget page, List<Object?> popped) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(MaterialApp(
+        home: Builder(
+          builder: (context) => TextButton(
+            key: const Key('open'),
+            onPressed: () async => popped.add(await Navigator.of(context).push(MaterialPageRoute(builder: (_) => page))),
+            child: const Text('open'),
+          ),
+        ),
+      ));
+      await tester.tap(find.byKey(const Key('open')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+    }
+
+    testWidgets('reading: the fields lock one by one and only a masked number is drawn', (tester) async {
+      const progress = ScanProgress(
+        number: testPan,
+        numberState: FieldState.locked,
+        holder: null,
+        holderState: FieldState.reading,
+        expiryMonth: 12,
+        expiryYear: 2028,
+        expiryState: FieldState.locked,
+        result: null,
+        textSeen: true,
+      );
+      await pumpScanner(tester, const CardScannerPage(isRtl: true, debugPreview: ColoredBox(color: Colors.black), debugProgress: progress), []);
+      expect(find.textContaining('4111 11•• •••• 1111'), findsWidgets);
+      expect(find.textContaining('4111 1111 1111 1111'), findsNothing, reason: 'the full number is never on screen');
+      expect(find.byKey(const Key('scan-use')), findsOneWidget);
+      expect(find.byKey(const Key('scan-torch')), findsOneWidget);
+      expect(find.text('ثبّت البطاقة شوية… جاري القراءة'), findsOneWidget);
+    });
+
+    testWidgets('camera off: settings, a photo or typing - and a photo that reads well comes back for checking', (tester) async {
+      final popped = <Object?>[];
+      final deleted = <String>[];
+      await pumpScanner(
+          tester,
+          CardScannerPage(
+            isRtl: true,
+            debugCameraProblem: false,
+            photoScanner: (source) => CardScanner(
+              source: FakeSource('/tmp/p.jpg'),
+              ocr: FakeRecognizer([testPan, 'VALID THRU 12/28', 'ALI BEN OMAR']),
+              clock: () => now,
+              deleter: (p) async => deleted.add(p),
+            ),
+          ),
+          popped);
+      expect(find.byKey(const Key('scan-camera-problem')), findsOneWidget);
+      expect(find.byKey(const Key('scan-take-photo')), findsOneWidget, reason: 'the one-photo path is the fallback');
+      expect(find.byKey(const Key('scan-manual-fallback')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('scan-take-photo')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pumpAndSettle();
+      expect(deleted, ['/tmp/p.jpg']);
+      final result = popped.single as CardScanResult;
+      expect(result.card!.number, testPan);
+      expect(result.card!.needsReview(CardField.number), isTrue);
+    });
+
+    testWidgets('camera refused: the settings button is offered, and typing closes the scanner', (tester) async {
+      final popped = <Object?>[];
+      await pumpScanner(tester, const CardScannerPage(isRtl: true, debugCameraProblem: true), popped);
+      expect(find.byKey(const Key('scan-settings')), findsOneWidget);
+      expect(find.text('الكاميرا مقفولة على التطبيق'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('scan-manual-fallback')));
+      await tester.pumpAndSettle();
+      expect((popped.single as CardScanResult).manual, isTrue);
     });
   });
 

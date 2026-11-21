@@ -1,3 +1,5 @@
+import 'card_brand.dart';
+
 /// A payment card the user chose to keep on THIS device for Moamalat top-ups.
 ///
 /// There is deliberately no CVV anywhere in this model: the security code is
@@ -13,6 +15,7 @@ class SavedCard {
     required this.expYear,
     this.nickname,
     this.isDefault = false,
+    this.brandHint,
   });
 
   final String id;
@@ -27,10 +30,21 @@ class SavedCard {
   final String? nickname;
   final bool isDefault;
 
+  /// The network of the real number, kept on a [redacted] copy (whose digits
+  /// are stars) so the card is still drawn with the right mark. Never stored.
+  final CardBrand? brandHint;
+
+  CardBrand get brand => brandHint ?? cardBrandOf(number);
+
+  bool isExpired({DateTime? now}) => CardRules.isExpired(expMonth, expYear, now: now);
+
   String get last4 => number.length >= 4 ? number.substring(number.length - 4) : number;
 
   /// `**** **** **** 1234`
   String get masked => '**** **** **** $last4';
+
+  /// `•••• •••• •••• 1234`, as drawn on the card picture.
+  String get maskedDots => '•••• •••• •••• $last4';
 
   /// `12/28`
   String get expiryText =>
@@ -39,7 +53,16 @@ class SavedCard {
   /// The same card with the number blanked out except its last four digits - safe to keep in
   /// screen state. The real number is fetched from the vault again only when the
   /// customer explicitly asks for it (Smart Fill / copy).
-  SavedCard redacted() => copyWith(number: '${'*' * 12}$last4');
+  SavedCard redacted() => SavedCard(
+        id: id,
+        holderName: holderName,
+        number: '${'*' * 12}$last4',
+        expMonth: expMonth,
+        expYear: expYear,
+        nickname: nickname,
+        isDefault: isDefault,
+        brandHint: brand,
+      );
 
   /// Name to show in lists: the nickname if there is one, else the holder.
   String get title => (nickname != null && nickname!.trim().isNotEmpty) ? nickname!.trim() : holderName;
@@ -61,6 +84,8 @@ class SavedCard {
       expYear: expYear ?? this.expYear,
       nickname: clearNickname ? null : (nickname ?? this.nickname),
       isDefault: isDefault ?? this.isDefault,
+      // A new number decides its own brand.
+      brandHint: number == null ? brandHint : null,
     );
   }
 
@@ -101,24 +126,19 @@ class SavedCard {
 class CardRules {
   const CardRules._();
 
-  static String digitsOnly(String input) => input.replaceAll(RegExp(r'\D'), '');
+  /// Digits only; Arabic-Indic digits count as digits.
+  static String digitsOnly(String input) => normalizeDigits(input).replaceAll(RegExp(r'\D'), '');
 
-  /// `4111111111111111` -> `4111 1111 1111 1111`
-  static String groupNumber(String digits) {
-    final clean = digitsOnly(digits);
-    final out = StringBuffer();
-    for (var i = 0; i < clean.length; i++) {
-      if (i > 0 && i % 4 == 0) out.write(' ');
-      out.write(clean[i]);
-    }
-    return out.toString();
-  }
+  /// `4111111111111111` -> `4111 1111 1111 1111` (Amex 4-6-5).
+  static String groupNumber(String digits) => groupCardNumber(digitsOnly(digits));
 
   static bool luhnValid(String digits) {
+    if (digits.isEmpty) return false;
     var sum = 0;
     var alternate = false;
     for (var i = digits.length - 1; i >= 0; i--) {
-      var n = int.parse(digits[i]);
+      var n = digits.codeUnitAt(i) - 48;
+      if (n < 0 || n > 9) return false;
       if (alternate) {
         n *= 2;
         if (n > 9) n -= 9;
@@ -126,17 +146,18 @@ class CardRules {
       sum += n;
       alternate = !alternate;
     }
-    return digits.isNotEmpty && sum % 10 == 0;
+    return sum % 10 == 0;
   }
 
-  /// Visa and Mastercard numbers must pass the Luhn check. Other issuers
-  /// (including local Libyan cards) are only length-checked, so a genuine card
-  /// is never rejected by a rule that does not apply to it.
+  /// Visa, Mastercard and Amex numbers must have one of their lengths and pass
+  /// the Luhn check. Numo, Meeza and other local cards are only length-checked,
+  /// so a genuine card is never rejected by a rule that may not apply to it.
   static bool isNumberValid(String input) {
     final digits = digitsOnly(input);
     if (digits.length < 12 || digits.length > 19) return false;
-    final major = digits.startsWith('4') || RegExp(r'^(5[1-5]|2[2-7])').hasMatch(digits);
-    return major ? luhnValid(digits) : true;
+    final brand = cardBrandOf(digits);
+    if (!brand.usesLuhn) return true;
+    return brand.lengths.contains(digits.length) && luhnValid(digits);
   }
 
   static bool isHolderValid(String input) => input.trim().length >= 2;

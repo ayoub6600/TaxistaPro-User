@@ -1,19 +1,26 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/services.dart' show MethodChannel, PlatformException;
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:image_picker/image_picker.dart';
 
+import 'card_ocr.dart';
 import 'card_text_parser.dart';
 
-/// Optional card scanning for the Add Card form.
+/// Card scanning for the Add Card form: the photo path.
 ///
-/// Privacy rules this file enforces:
-///  * the photo is read ON THE DEVICE (Apple Vision on iOS, ML Kit's bundled
-///    model on Android - no network) - it is never sent to Taxista or to any cloud OCR service;
-///  * it is used once and then deleted from disk, whatever the outcome - it is
-///    never kept in app storage, never saved to the gallery, never attached to
-///    analytics, never logged;
+/// The live camera scanner (`card_scanner_page.dart`) reads camera frames; this
+/// file is its fallback when the live camera cannot run: one photo taken with
+/// the phone's camera app, or one picked from the photos. Both go through the
+/// same on-device recogniser (`card_ocr.dart`).
+///
+/// Privacy rules the scanner enforces (live frames and photos alike):
+///  * the image is read ON THE DEVICE (Apple Vision on iOS, ML Kit's bundled
+///    model on Android - no network) - it is never sent to Taxista or to any
+///    cloud OCR service;
+///  * live frames are read in memory and never written to disk; a photo is used
+///    once and then deleted from disk, whatever the outcome - nothing is kept in
+///    app storage, saved to the phone's photos, attached to analytics or logged;
 ///  * only text is kept, and only long enough to fill the form; the card number
 ///    is never logged and no field for a security code exists.
 
@@ -27,13 +34,9 @@ abstract class CardImageSource {
   Future<String?> capture();
 }
 
-abstract class CardTextRecognizer {
-  /// The text lines found in the image, in reading order.
-  Future<List<String>> recognize(String imagePath);
-}
-
-/// Takes ONE photo with the rear camera. `requestFullMetadata: false` keeps the
-/// app from asking for photo-library access it does not need.
+/// Takes ONE photo with the rear camera (the phone's own camera screen).
+/// `requestFullMetadata: false` keeps the app from asking for photo-library
+/// access it does not need.
 class CameraCardImageSource implements CardImageSource {
   CameraCardImageSource({ImagePicker? picker}) : _picker = picker ?? ImagePicker();
 
@@ -59,20 +62,18 @@ class CameraCardImageSource implements CardImageSource {
   }
 }
 
-/// On-device text recognition through a small native channel: Apple's Vision
-/// framework on iOS, Google's ML Kit (bundled model, no download) on Android.
-/// Nothing leaves the device and neither engine talks to a server.
-class NativeCardTextRecognizer implements CardTextRecognizer {
-  NativeCardTextRecognizer({MethodChannel? channel}) : _channel = channel ?? const MethodChannel(channelName);
+/// One photo the customer already has. The system picker hands the app a copy
+/// of that one picture only (no library permission); the copy is deleted after
+/// reading.
+class PickedPhotoCardImageSource implements CardImageSource {
+  PickedPhotoCardImageSource({ImagePicker? picker}) : _picker = picker ?? ImagePicker();
 
-  static const String channelName = 'taxista/card_ocr';
-
-  final MethodChannel _channel;
+  final ImagePicker _picker;
 
   @override
-  Future<List<String>> recognize(String imagePath) async {
-    final lines = await _channel.invokeMethod<List<dynamic>>('recognize', <String, dynamic>{'path': imagePath});
-    return <String>[for (final line in lines ?? const <dynamic>[]) line.toString()];
+  Future<String?> capture() async {
+    final photo = await _picker.pickImage(source: ImageSource.gallery, maxWidth: 2400, requestFullMetadata: false);
+    return photo?.path;
   }
 }
 
@@ -95,16 +96,16 @@ Future<void> _deleteFile(String path) async {
 class CardScanner {
   CardScanner({
     CardImageSource? source,
-    CardTextRecognizer? recognizer,
+    CardOcr? ocr,
     DateTime Function()? clock,
     ImageDeleter? deleter,
   })  : _source = source ?? CameraCardImageSource(),
-        _recognizer = recognizer ?? NativeCardTextRecognizer(),
+        _ocr = ocr ?? const ChannelCardOcr(),
         _clock = clock ?? DateTime.now,
         _delete = deleter ?? _deleteFile;
 
   final CardImageSource _source;
-  final CardTextRecognizer _recognizer;
+  final CardOcr _ocr;
   final DateTime Function() _clock;
   final ImageDeleter _delete;
 
@@ -113,11 +114,13 @@ class CardScanner {
     try {
       path = await _source.capture();
       if (path == null) return const CardScanOutcome(CardScanStatus.cancelled);
-      final lines = await _recognizer.recognize(path);
-      final card = parseCardText(lines, now: _clock());
-      return card.isEmpty
-          ? const CardScanOutcome(CardScanStatus.unreadable)
-          : CardScanOutcome(CardScanStatus.success, card);
+      final frame = await _ocr.recognizeFile(path);
+      final rows = cardReadingRows(frame.lines);
+      final card = parseCardText(rows.rows, alternativeRows: rows.alternatives, now: _clock());
+      if (card.number == null && card.expiryMonth == null) return const CardScanOutcome(CardScanStatus.unreadable);
+      // One photo is one reading (no agreement between frames): the number is
+      // always shown for checking.
+      return CardScanOutcome(CardScanStatus.success, card.copyWith(review: {...card.review, CardField.number}));
     } on CardCameraDenied {
       return const CardScanOutcome(CardScanStatus.denied);
     } catch (_) {

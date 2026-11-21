@@ -1,31 +1,28 @@
 /// Reads the text an on-device OCR pass found on the FRONT of a bank card and
 /// pulls out the number, the cardholder and the expiry.
 ///
-/// Scanning is only an input convenience: whatever this returns is placed in the
-/// Add Card form for the user to read, correct and confirm. It is deliberately
-/// cautious:
-///  * it never invents a digit - an OCR look-alike ("O" for "0") is only
-///    swapped when the Luhn checksum then validates;
-///  * a field it is not sure about is flagged in [ScannedCard.review] and left
-///    editable, never silently trusted;
-///  * the security code is never read: only the front is scanned and no field
-///    for it exists here.
+/// Scanning is an input convenience only: whatever this returns lands in the
+/// Add Card form for the customer to read, correct and confirm. (Shared with
+/// the Otlop customer app's scanner, which proved it on real camera frames.) It is cautious
+/// by design:
+///  * it never invents a digit - an OCR look-alike ("O" for "0") is swapped
+///    only when the Luhn checksum then validates;
+///  * a field it is not sure about is flagged in [ScannedCard.review];
+///  * the security code is never read: only the front is scanned and there is
+///    no field for it.
 ///
-/// Pure Dart: no camera, no plugin, no storage - easy to test with plain text.
+/// Pure Dart (no camera, no plugin, no storage) so it is tested with plain text.
 library;
+
+import 'card_brand.dart';
+import 'saved_card.dart';
 
 enum CardField { number, holder, expiry }
 
 class ScannedCard {
-  const ScannedCard({
-    this.number,
-    this.holder,
-    this.expiryMonth,
-    this.expiryYear,
-    this.review = const <CardField>{},
-  });
+  const ScannedCard({this.number, this.holder, this.expiryMonth, this.expiryYear, this.review = const <CardField>{}, this.rawNumber});
 
-  /// Digits only, 13-19 of them.
+  /// Digits only, 12-19 of them.
   final String? number;
   final String? holder;
   final int? expiryMonth;
@@ -33,8 +30,13 @@ class ScannedCard {
   /// Four digits.
   final int? expiryYear;
 
-  /// Fields the user must double-check before saving.
+  /// Fields the customer must double-check before saving.
   final Set<CardField> review;
+
+  /// The most plausible digit run of this one frame even when its checksum
+  /// fails (one misread digit). Never shown or saved: the scanner votes over
+  /// many frames' raw runs to repair a digit that flickers.
+  final String? rawNumber;
 
   static const ScannedCard empty = ScannedCard();
 
@@ -46,85 +48,79 @@ class ScannedCard {
       : '${expiryMonth.toString().padLeft(2, '0')}/${(expiryYear! % 100).toString().padLeft(2, '0')}';
 
   bool needsReview(CardField field) => review.contains(field);
+
+  ScannedCard copyWith({Set<CardField>? review}) =>
+      ScannedCard(number: number, holder: holder, expiryMonth: expiryMonth, expiryYear: expiryYear, review: review ?? this.review);
 }
 
-bool luhnValid(String digits) {
-  if (digits.isEmpty) return false;
-  var sum = 0;
-  var alternate = false;
-  for (var i = digits.length - 1; i >= 0; i--) {
-    var n = digits.codeUnitAt(i) - 48;
-    if (n < 0 || n > 9) return false;
-    if (alternate) {
-      n *= 2;
-      if (n > 9) n -= 9;
-    }
-    sum += n;
-    alternate = !alternate;
-  }
-  return sum % 10 == 0;
-}
-
-/// Arabic-Indic and Persian digits -> Latin.
-String _latinDigits(String input) {
-  const arabic = '٠١٢٣٤٥٦٧٨٩';
-  const persian = '۰۱۲۳۴۵۶۷۸۹';
-  final out = StringBuffer();
-  for (final rune in input.runes) {
-    final ch = String.fromCharCode(rune);
-    final a = arabic.indexOf(ch);
-    final p = persian.indexOf(ch);
-    out.write(a >= 0 ? '$a' : (p >= 0 ? '$p' : ch));
-  }
-  return out.toString();
-}
+bool luhnValid(String digits) => CardRules.luhnValid(digits);
 
 /// What an OCR engine commonly reads a digit as.
-const Map<String, String> _lookalikes = {
-  'O': '0', 'o': '0', 'D': '0', 'Q': '0',
-  'I': '1', 'l': '1', '|': '1', 'i': '1',
+const Map<String, String> kDigitLookalikes = {
+  'O': '0', 'o': '0', 'D': '0', 'Q': '0', 'U': '0',
+  'I': '1', 'l': '1', '|': '1', 'i': '1', 'L': '1', '!': '1',
   'Z': '2', 'z': '2',
   'S': '5', 's': '5',
   'B': '8',
-  'G': '6',
+  'G': '6', 'b': '6',
+  'T': '7',
+  'g': '9', 'q': '9',
 };
 
-bool _digitLike(String ch) => (ch.codeUnitAt(0) >= 48 && ch.codeUnitAt(0) <= 57) || _lookalikes.containsKey(ch);
+bool _isDigit(String ch) {
+  final c = ch.codeUnitAt(0);
+  return c >= 48 && c <= 57;
+}
 
-String _fix(String token) => token.split('').map((c) => _lookalikes[c] ?? c).join();
+bool _digitLike(String ch) => _isDigit(ch) || kDigitLookalikes.containsKey(ch);
 
-const Set<String> _noiseWords = {
-  'VISA', 'MASTERCARD', 'MASTER', 'CARD', 'DEBIT', 'CREDIT', 'PREPAID', 'BANK', 'VALID', 'THRU', 'THROUGH',
-  'FROM', 'MEMBER', 'SINCE', 'GOOD', 'EXPIRES', 'EXPIRY', 'END', 'PLATINUM', 'GOLD', 'CLASSIC', 'INTERNATIONAL',
-  'WORLD', 'ELECTRON', 'MAESTRO', 'CIRRUS', 'PLUS', 'CONTACTLESS', 'BUSINESS', 'SIGNATURE', 'INFINITE',
-  'TITANIUM', 'LIBYA', 'LIBYAN', 'COMMERCIAL', 'NATIONAL', 'ISLAMIC', 'ARAB', 'AMERICAN', 'EXPRESS', 'CUSTOMER',
-  'SERVICE', 'WWW', 'AUTHORIZED', 'ONLY', 'NOT', 'TRANSFERABLE', 'PAY', 'TAP', 'ELECTRONIC', 'USE', 'MONTH', 'YEAR',
-  'DATE', 'ACCOUNT', 'NUMBER', 'PAYMENT', 'DEBITCARD', 'CREDITCARD', 'SAVINGS', 'CHECKING',
-  'بنك', 'مصرف', 'بطاقة', 'فيزا', 'ماستر', 'كارد', 'صالحة', 'حتى', 'الى', 'من', 'تاريخ', 'الانتهاء', 'رقم', 'الحساب',
+String _fix(String token) => token.split('').map((c) => kDigitLookalikes[c] ?? c).join();
+
+/// Words printed on cards that are never part of the holder's name.
+const Set<String> kCardNoiseWords = {
+  'VISA', 'MASTERCARD', 'MASTER', 'CARD', 'DEBIT', 'CREDIT', 'PREPAID', 'BANK', 'VALID', 'THRU', 'THROUGH', 'FROM',
+  'MEMBER', 'SINCE', 'GOOD', 'EXPIRES', 'EXPIRY', 'EXP', 'END', 'PLATINUM', 'GOLD', 'CLASSIC', 'STANDARD', 'INTERNATIONAL',
+  'WORLD', 'ELITE', 'ELECTRON', 'MAESTRO', 'CIRRUS', 'PLUS', 'CONTACTLESS', 'BUSINESS', 'CORPORATE', 'SIGNATURE', 'INFINITE',
+  'TITANIUM', 'PREMIUM', 'REWARDS', 'LIBYA', 'LIBYAN', 'COMMERCIAL', 'NATIONAL', 'ISLAMIC', 'ARAB', 'AMERICAN', 'EXPRESS',
+  'CUSTOMER', 'SERVICE', 'WWW', 'COM', 'LY', 'AUTHORIZED', 'ONLY', 'NOT', 'TRANSFERABLE', 'PAY', 'TAP', 'ELECTRONIC', 'USE',
+  'MONTH', 'YEAR', 'DATE', 'ACCOUNT', 'NUMBER', 'PAYMENT', 'DEBITCARD', 'CREDITCARD', 'SAVINGS', 'CHECKING', 'UNIONPAY',
+  'MOAMALAT', 'NUMO', 'LYPAY', 'TADAWUL', 'SADAD', 'EDFALI', 'MOBICASH', 'JUMHOURIA', 'JUMHOURIYA', 'SAHARA', 'WAHDA',
+  'TADAMON', 'AMAN', 'YAQEEN', 'ATIB', 'NORTH', 'AFRICA', 'MEDITERRANEAN', 'ALWAHDA', 'ALJUMHOURIA', 'ALSAHARA', 'NAB', 'LIB',
+  'COMMERCE', 'DEVELOPMENT', 'UNITED', 'FIRST', 'GULF', 'ALAMAN', 'ANDALUS', 'BRANCH', 'CHIP', 'VIRTUAL', 'GIFT', 'TRAVEL',
+  'MEEZA', 'MISR', 'BANQUE', 'EGYPT', 'EGYPTIAN', 'CIB', 'NBE', 'QNB', 'AHLY', 'ALAHLY', 'TAXISTA',
+  'بنك', 'مصرف', 'بطاقة', 'فيزا', 'ماستر', 'كارد', 'صالحة', 'حتى', 'الى', 'إلى', 'من', 'تاريخ', 'الانتهاء', 'رقم', 'الحساب',
+  'مسبقة', 'الدفع', 'الجمهورية', 'الصحاري', 'الوحدة', 'التجارة', 'والتنمية', 'الأمان', 'معاملات', 'تداول', 'سداد',
+  'نومو', 'ميزة', 'مصر', 'الأهلي', 'الاهلي',
 };
 
-/// Parses OCR [lines] (in reading order) from the front of a card.
-ScannedCard parseCardText(List<String> lines, {DateTime? now}) {
+/// Words that mark the expiry date on the card.
+final RegExp _expiryKeyword = RegExp(r'(VALID|THRU|THROUGH|EXP|EXPIRY|EXPIRES|GOOD|END|UNTIL|انتهاء|الانتهاء|صالحة|حتى)', caseSensitive: false);
+
+/// Words that mark a start date ("VALID FROM 01/22", "MEMBER SINCE 19").
+final RegExp _startKeyword = RegExp(r'(FROM|SINCE|ISSUE|إصدار|اصدار|منذ)', caseSensitive: false);
+
+/// Parses OCR [rows] (reading order) from the front of a card. [alternativeRows]
+/// are the engine's second guesses for the same text; they are consulted for
+/// the number only when the main reading has no checksum-valid candidate.
+ScannedCard parseCardText(List<String> rows, {List<String> alternativeRows = const [], DateTime? now}) {
   final today = now ?? DateTime.now();
-  final cleaned = lines.map((l) => _latinDigits(l).trim()).where((l) => l.isNotEmpty).toList();
+  final cleaned = rows.map((l) => normalizeDigits(l).trim()).where((l) => l.isNotEmpty).toList();
   if (cleaned.isEmpty) return ScannedCard.empty;
 
   final review = <CardField>{};
 
-  final numberResult = _findNumber(cleaned);
-  if (numberResult.number == null) {
-    review.add(CardField.number);
-  } else if (numberResult.needsReview) {
-    review.add(CardField.number);
+  var numberResult = _findNumber(cleaned);
+  if ((numberResult.number == null || numberResult.needsReview) && alternativeRows.isNotEmpty) {
+    final alts = alternativeRows.map((l) => normalizeDigits(l).trim()).where((l) => l.isNotEmpty).toList();
+    final fromAlts = _findNumber(alts);
+    if (fromAlts.number != null && !fromAlts.needsReview) numberResult = _NumberHit(fromAlts.number, false, -1);
   }
+  if (numberResult.number == null || numberResult.needsReview) review.add(CardField.number);
 
   final expiry = _findExpiry(cleaned, today);
-  if (expiry == null) {
-    review.add(CardField.expiry);
-  } else if (expiry.needsReview) {
-    review.add(CardField.expiry);
-  }
+  if (expiry == null || expiry.needsReview) review.add(CardField.expiry);
 
+  final raw = _plausibleRun(cleaned);
   final holder = _findHolder(cleaned, numberResult.lineIndex);
   if (holder.name == null || holder.ambiguous) review.add(CardField.holder);
 
@@ -134,7 +130,24 @@ ScannedCard parseCardText(List<String> lines, {DateTime? now}) {
     expiryMonth: expiry?.month,
     expiryYear: expiry?.year,
     review: review,
+    rawNumber: numberResult.number ?? raw,
   );
+}
+
+/// The longest digit run of a card-number length on one row, look-alikes fixed.
+String? _plausibleRun(List<String> lines) {
+  String? best;
+  for (final line in lines) {
+    final compact = line.replaceAll(RegExp(r'[\s\-–—]'), '');
+    for (final m in RegExp(r'[0-9OoDQIl|iZzSsBG]{13,19}').allMatches(compact)) {
+      final fixed = _fix(m.group(0)!);
+      if (!RegExp(r'^\d+$').hasMatch(fixed)) continue;
+      if (fixed.split('').where(_isDigit).length < 12) continue;
+      final fits = cardBrandOf(fixed).lengths.contains(fixed.length);
+      if (best == null || (fits && !cardBrandOf(best).lengths.contains(best.length)) || (fixed.length == 16 && best.length != 16)) best = fixed;
+    }
+  }
+  return best;
 }
 
 // ---- number -------------------------------------------------------------------
@@ -149,7 +162,9 @@ class _NumberHit {
 class _Candidate {
   _Candidate(this.digits, this.score, this.line);
   final String digits;
-  final int score; // 3 exact + Luhn, 2 OCR-corrected + Luhn, 1 plausible length only
+
+  /// 3 exact + Luhn, 2 OCR-corrected + Luhn, 1 plausible local card (no Luhn).
+  final int score;
   final int line;
 }
 
@@ -157,23 +172,28 @@ _NumberHit _findNumber(List<String> lines) {
   // Digit-like tokens with the line they sit on, in reading order.
   final tokens = <MapEntry<int, String>>[];
   for (var i = 0; i < lines.length; i++) {
-    for (final raw in lines[i].split(RegExp(r'[\s\-]+'))) {
+    for (final raw in lines[i].split(RegExp(r'[\s\-–—]+'))) {
       if (raw.isEmpty) continue;
-      if (raw.length <= 6 && raw.split('').every(_digitLike) && raw.split('').any((c) => c.codeUnitAt(0) >= 48 && c.codeUnitAt(0) <= 57)) {
+      final chars = raw.split('');
+      final digitCount = chars.where(_isDigit).length;
+      if (raw.length <= 6 && chars.every(_digitLike) && digitCount > 0) {
         tokens.add(MapEntry(i, raw));
-      } else if (raw.length > 6 && raw.length <= 23 && raw.split('').every(_digitLike)) {
+      } else if (raw.length > 6 && raw.length <= 23 && chars.every(_digitLike) && digitCount >= raw.length - 3) {
         tokens.add(MapEntry(i, raw)); // an unbroken run
       } else {
         tokens.add(MapEntry(i, '')); // a separator: breaks a run
       }
     }
+    // Never assemble a number from text on different OCR rows: groups from one
+    // visual row are already joined by the row builder.
+    tokens.add(MapEntry(i, ''));
   }
 
   final candidates = <_Candidate>[];
   var run = <MapEntry<int, String>>[];
   void flush() {
     if (run.isEmpty) return;
-    // Every window of adjacent tokens is a possible number (a run may hold a
+    // Every window of adjacent tokens is a possible number (a row may hold a
     // date or a bank code beside the number).
     for (var start = 0; start < run.length; start++) {
       final buffer = StringBuffer();
@@ -201,61 +221,89 @@ _NumberHit _findNumber(List<String> lines) {
   candidates.sort((a, b) {
     final byScore = b.score.compareTo(a.score);
     if (byScore != 0) return byScore;
-    // Prefer the usual 16 digits, then the longer one.
+    // Prefer a length the brand really uses, then the usual 16, then the longer.
+    final aFit = cardBrandOf(a.digits).lengths.contains(a.digits.length) ? 1 : 0;
+    final bFit = cardBrandOf(b.digits).lengths.contains(b.digits.length) ? 1 : 0;
+    if (aFit != bFit) return bFit.compareTo(aFit);
     final aSixteen = a.digits.length == 16 ? 1 : 0;
     final bSixteen = b.digits.length == 16 ? 1 : 0;
     if (aSixteen != bSixteen) return bSixteen.compareTo(aSixteen);
     return b.digits.length.compareTo(a.digits.length);
   });
   final best = candidates.first;
-  final rivals = candidates.where((c) => c.score == best.score && c.digits != best.digits && !best.digits.contains(c.digits) && !c.digits.contains(best.digits));
-  final ambiguous = rivals.isNotEmpty;
-  return _NumberHit(best.digits, best.score < 3 || ambiguous, best.line);
+  final rivals = candidates.where((c) =>
+      c.score == best.score && c.digits != best.digits && !best.digits.contains(c.digits) && !c.digits.contains(best.digits));
+  return _NumberHit(best.digits, best.score < 3 || rivals.isNotEmpty, best.line);
 }
 
 void _addCandidate(List<_Candidate> out, String raw, int line) {
-  final exact = raw.split('').every((c) => c.codeUnitAt(0) >= 48 && c.codeUnitAt(0) <= 57);
+  final exact = raw.split('').every(_isDigit);
   final fixed = _fix(raw);
-  if (fixed.length < 13 || fixed.length > 19) return;
-  if (exact && luhnValid(raw)) {
+  if (fixed.length < 12 || fixed.length > 19) return;
+  if (!fixed.split('').every(_isDigit)) return;
+  final brand = cardBrandOf(fixed);
+  if (!brand.usesLuhn) {
+    // A local card need not pass Luhn - and a short window that happens to pass
+    // it proves nothing. Offer full-length runs only, for the customer to verify.
+    if (exact && (fixed.length == 16 || fixed.length == 15 || fixed.length == 19)) out.add(_Candidate(raw, 1, line));
+    return;
+  }
+  if (exact && luhnValid(raw) && brand.lengths.contains(raw.length)) {
     out.add(_Candidate(raw, 3, line));
-  } else if (!exact && luhnValid(fixed)) {
+  } else if (!exact && luhnValid(fixed) && brand.lengths.contains(fixed.length)) {
     out.add(_Candidate(fixed, 2, line)); // the checksum arbitrates the look-alikes
-  } else if (exact && (fixed.length == 15 || fixed.length == 16)) {
-    // Local cards need not pass Luhn: offer it, but the user must verify.
-    out.add(_Candidate(raw, 1, line));
   }
 }
 
 // ---- expiry -------------------------------------------------------------------
 
 class _Expiry {
-  const _Expiry(this.month, this.year, this.needsReview);
+  const _Expiry(this.month, this.year, this.needsReview, this.weight);
   final int month;
   final int year;
   final bool needsReview;
+
+  /// 2 next to an expiry word, 1 plain, 0 next to a start-date word.
+  final int weight;
 }
 
+final RegExp _datePattern = RegExp(r'(?<![0-9A-Za-z])([0-9OoIlSB]{1,2})\s*[/\\\-.]\s*([0-9OoIlSBZ]{4}|[0-9OoIlSBZ]{2})(?![0-9])');
+
 _Expiry? _findExpiry(List<String> lines, DateTime today) {
-  final pattern = RegExp(r'(?<![\d])(0?[1-9]|1[0-2])\s*[/\-.]\s*(\d{4}|\d{2})(?![\d])');
   final found = <_Expiry>[];
-  for (final line in lines) {
+  for (var i = 0; i < lines.length; i++) {
+    final line = lines[i];
     // A card number is not a date: skip any line that is mostly digits.
-    if (RegExp(r'\d').allMatches(line).length >= 13) continue;
-    for (final match in pattern.allMatches(line)) {
-      final month = int.parse(match.group(1)!);
-      var year = int.parse(match.group(2)!);
-      if (match.group(2)!.length == 2) year += 2000;
+    if (RegExp(r'\d').allMatches(line).length >= 12) continue;
+    final previous = i > 0 ? lines[i - 1] : '';
+    for (final match in _datePattern.allMatches(line)) {
+      final m = _fix(match.group(1)!);
+      final y = _fix(match.group(2)!);
+      // A look-alike is accepted only around a real separator, never in a bare run.
+      if (!RegExp(r'^\d+$').hasMatch(m) || !RegExp(r'^\d+$').hasMatch(y)) continue;
+      final month = int.parse(m);
+      if (month < 1 || month > 12) continue;
+      var year = int.parse(y);
+      if (y.length == 2) year += 2000;
       if (year < today.year - 12 || year > today.year + 20) continue;
-      found.add(_Expiry(month, year, false));
+      final before = line.substring(0, match.start);
+      var weight = 1;
+      if (_expiryKeyword.hasMatch(before) || (before.trim().isEmpty && _expiryKeyword.hasMatch(previous))) weight = 2;
+      if (_startKeyword.hasMatch(before) && !_expiryKeyword.hasMatch(before.split(_startKeyword).last)) weight = 0;
+      found.add(_Expiry(month, year, false, weight));
     }
   }
   if (found.isEmpty) return null;
-  // "VALID FROM 01/22  VALID THRU 01/27": the expiry is the latest date.
-  found.sort((a, b) => (a.year * 12 + a.month).compareTo(b.year * 12 + b.month));
-  final latest = found.last;
-  final past = latest.year < today.year || (latest.year == today.year && latest.month < today.month);
-  return _Expiry(latest.month, latest.year, past);
+  // "VALID FROM 01/22  VALID THRU 01/27": prefer the expiry word, then the latest date.
+  found.sort((a, b) {
+    final byWeight = a.weight.compareTo(b.weight);
+    if (byWeight != 0) return byWeight;
+    return (a.year * 12 + a.month).compareTo(b.year * 12 + b.month);
+  });
+  final best = found.last;
+  final past = CardRules.isExpired(best.month, best.year, now: today);
+  final rivals = found.where((e) => e.weight == best.weight && (e.month != best.month || e.year != best.year)).length;
+  return _Expiry(best.month, best.year, past || (best.weight < 2 && rivals > 0), best.weight);
 }
 
 // ---- holder -------------------------------------------------------------------
@@ -267,22 +315,32 @@ class _Holder {
 }
 
 _Holder _findHolder(List<String> lines, int numberLine) {
-  final candidates = <MapEntry<int, String>>[];
+  final candidates = <({int line, String name, int score})>[];
   for (var i = 0; i < lines.length; i++) {
     final line = lines[i].replaceAll(RegExp(r'\s+'), ' ').trim();
-    if (line.length < 4 || line.length > 28) continue;
+    if (line.length < 4 || line.length > 30) continue;
     if (RegExp(r'\d').hasMatch(line)) continue;
-    if (!RegExp(r'^[A-Za-z؀-ۿ .\-]+$').hasMatch(line)) continue;
+    if (!RegExp(r"^[A-Za-z؀-ۿ .'\-]+$").hasMatch(line)) continue;
+    if (_expiryKeyword.hasMatch(line) && line.split(' ').length <= 3) continue;
     final words = line.split(' ').where((w) => w.isNotEmpty).toList();
-    if (words.length < 2) continue;
-    if (words.any((w) => _noiseWords.contains(w.toUpperCase()) || _noiseWords.contains(w))) continue;
-    // A name needs at least two real words; a single-letter initial is fine.
-    if (words.where((w) => w.replaceAll(RegExp(r'[^A-Za-z\u0600-\u06FF]'), '').length >= 2).length < 2) continue;
-    candidates.add(MapEntry(i, line));
+    if (words.length < 2 || words.length > 5) continue;
+    if (words.any((w) => kCardNoiseWords.contains(w.toUpperCase()) || kCardNoiseWords.contains(w))) continue;
+    // A name needs at least two real words; a one-letter initial is fine.
+    if (words.where((w) => w.replaceAll(RegExp(r'[^A-Za-z؀-ۿ]'), '').length >= 2).length < 2) continue;
+    var score = 1;
+    // Embossed names are printed in capitals.
+    if (line == line.toUpperCase() && RegExp(r'[A-Z]').hasMatch(line)) score += 2;
+    if (numberLine >= 0 && i > numberLine) score += 1;
+    candidates.add((line: i, name: line.toUpperCase() == line ? line : line, score: score));
   }
   if (candidates.isEmpty) return const _Holder(null, false);
-  // The name is printed below the number, so prefer the first candidate after it.
-  final after = numberLine >= 0 ? candidates.where((c) => c.key > numberLine).toList() : <MapEntry<int, String>>[];
-  final pool = after.isNotEmpty ? after : candidates;
-  return _Holder(pool.first.value, pool.length > 1);
+  candidates.sort((a, b) {
+    final byScore = b.score.compareTo(a.score);
+    if (byScore != 0) return byScore;
+    // The name is printed below the number: the first candidate after it.
+    return a.line.compareTo(b.line);
+  });
+  final best = candidates.first;
+  final rivals = candidates.where((c) => c.score == best.score && c.name != best.name).length;
+  return _Holder(best.name, rivals > 0);
 }

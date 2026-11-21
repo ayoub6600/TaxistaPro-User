@@ -426,59 +426,166 @@ final class CallAudio {
 }
 
 
-/// Optional "scan card" text recognition. Apple's Vision framework, on the
-/// device: the photo is only read from the path Dart hands over (Dart deletes
-/// it straight afterwards), nothing is sent anywhere, and nothing is logged.
+/// On-device text recognition for the card scanner (Apple Vision). One path
+/// for the live camera ("recognizeFrame") and the photo fallback
+/// ("recognizeFile").
+///
+/// Camera frames arrive as raw BGRA pixels and are read in memory only: no
+/// frame is ever written to disk, uploaded or logged here. A photo is only read
+/// from the path Dart hands over (Dart deletes it straight afterwards). Only the
+/// recognised text lines (with their position) go back to Dart.
 final class CardOcr {
+  private static let queue = DispatchQueue(label: "taxista.card-ocr", qos: .userInitiated)
+
   static func register(messenger: FlutterBinaryMessenger) {
     let channel = FlutterMethodChannel(name: "taxista/card_ocr", binaryMessenger: messenger)
     channel.setMethodCallHandler { call, result in
-      guard call.method == "recognize",
-            let args = call.arguments as? [String: Any],
-            let path = args["path"] as? String else {
+      guard let args = call.arguments as? [String: Any] else {
         result(FlutterMethodNotImplemented)
         return
       }
-      DispatchQueue.global(qos: .userInitiated).async {
-        let outcome = recognize(path: path)
-        DispatchQueue.main.async {
-          switch outcome {
-          case .success(let lines): result(lines)
-          case .failure: result(FlutterError(code: "ocr_failed", message: "Text recognition failed", details: nil))
-          }
+      switch call.method {
+      case "recognizeFrame":
+        guard let data = (args["bytes"] as? FlutterStandardTypedData)?.data,
+              let width = args["width"] as? Int, let height = args["height"] as? Int,
+              let bytesPerRow = args["bytesPerRow"] as? Int,
+              (args["format"] as? String) == "bgra8888",
+              data.count >= bytesPerRow * height else {
+          result(FlutterError(code: "bad_frame", message: "Unsupported frame", details: nil))
+          return
         }
+        let rotation = args["rotation"] as? Int ?? 90
+        let roi = rect(args["roi"]) ?? CGRect(x: 0, y: 0, width: 1, height: 1)
+        queue.async {
+          let outcome = recognizeFrame(data: data, width: width, height: height, bytesPerRow: bytesPerRow, rotation: rotation, roi: roi)
+          DispatchQueue.main.async { result(outcome) }
+        }
+      case "recognizeFile":
+        guard let path = args["path"] as? String else {
+          result(FlutterError(code: "bad_file", message: "No file", details: nil))
+          return
+        }
+        queue.async {
+          let outcome = recognizeFile(path: path)
+          DispatchQueue.main.async { result(outcome) }
+        }
+      default:
+        result(FlutterMethodNotImplemented)
       }
     }
   }
 
-  private static func recognize(path: String) -> Result<[String], Error> {
-    guard let image = UIImage(contentsOfFile: path), let cgImage = image.cgImage else {
-      return .failure(NSError(domain: "CardOcr", code: 1))
+  private static func rect(_ raw: Any?) -> CGRect? {
+    guard let list = raw as? [NSNumber], list.count == 4 else { return nil }
+    let r = CGRect(x: list[0].doubleValue, y: list[1].doubleValue, width: list[2].doubleValue, height: list[3].doubleValue)
+    return r.intersection(CGRect(x: 0, y: 0, width: 1, height: 1))
+  }
+
+  private static func orientation(_ degrees: Int) -> CGImagePropertyOrientation {
+    switch (degrees % 360 + 360) % 360 {
+    case 90: return .right
+    case 180: return .down
+    case 270: return .left
+    default: return .up
     }
+  }
+
+  private static func request(roi: CGRect?) -> VNRecognizeTextRequest {
     let request = VNRecognizeTextRequest()
     request.recognitionLevel = .accurate
     // Digits and names must be read as printed, never "corrected" into words.
     request.usesLanguageCorrection = false
-    if let supported = try? request.supportedRecognitionLanguages() {
-      let wanted = ["en-US", "ar-SA"].filter { supported.contains($0) }
-      if !wanted.isEmpty { request.recognitionLanguages = wanted }
+    request.recognitionLanguages = ["en-US"]
+    request.minimumTextHeight = 0.02
+    if let roi = roi {
+      // Vision's region is normalised to the upright image with a lower-left origin.
+      let widened = roi.insetBy(dx: -roi.width * 0.05, dy: -roi.height * 0.08).intersection(CGRect(x: 0, y: 0, width: 1, height: 1))
+      request.regionOfInterest = CGRect(x: widened.minX, y: 1 - widened.maxY, width: widened.width, height: widened.height)
     }
-    let handler = VNImageRequestHandler(cgImage: cgImage, orientation: orientation(of: image), options: [:])
-    do {
-      try handler.perform([request])
-    } catch {
-      return .failure(error)
-    }
-    let observations = (request.results ?? []).sorted { a, b in
-      // Reading order: top to bottom (Vision's origin is the bottom-left).
-      if abs(a.boundingBox.midY - b.boundingBox.midY) > 0.02 { return a.boundingBox.midY > b.boundingBox.midY }
-      return a.boundingBox.minX < b.boundingBox.minX
-    }
-    return .success(observations.compactMap { $0.topCandidates(1).first?.string })
+    return request
   }
 
-  private static func orientation(of image: UIImage) -> CGImagePropertyOrientation {
-    switch image.imageOrientation {
+  /// Lines in the upright image, top-left origin, normalised to the WHOLE image.
+  private static func lines(_ request: VNRecognizeTextRequest) -> [[String: Any]] {
+    let roi = request.regionOfInterest
+    return (request.results ?? []).compactMap { observation -> [String: Any]? in
+      let candidates = observation.topCandidates(3)
+      guard let best = candidates.first else { return nil }
+      // Results are relative to the region of interest: map them back to the image.
+      let b = observation.boundingBox
+      let x = roi.minX + b.minX * roi.width
+      let y = roi.minY + b.minY * roi.height
+      let w = b.width * roi.width
+      let h = b.height * roi.height
+      return [
+        "text": best.string,
+        "conf": Double(best.confidence),
+        "alts": candidates.dropFirst().map { $0.string },
+        "box": [Double(x), Double(1 - y - h), Double(w), Double(h)],
+      ]
+    }
+  }
+
+  private static func recognizeFrame(data: Data, width: Int, height: Int, bytesPerRow: Int, rotation: Int, roi: CGRect) -> [String: Any] {
+    var mutable = data
+    return mutable.withUnsafeMutableBytes { raw -> [String: Any] in
+      guard let base = raw.baseAddress else { return ["lines": []] }
+      var buffer: CVPixelBuffer?
+      let status = CVPixelBufferCreateWithBytes(nil, width, height, kCVPixelFormatType_32BGRA, base, bytesPerRow, nil, nil, nil, &buffer)
+      guard status == kCVReturnSuccess, let pixels = buffer else { return ["lines": []] }
+      let luma = averageLuma(base: base.assumingMemoryBound(to: UInt8.self), width: width, height: height, bytesPerRow: bytesPerRow, rotation: rotation, roi: roi)
+      let req = request(roi: roi)
+      let handler = VNImageRequestHandler(cvPixelBuffer: pixels, orientation: orientation(rotation), options: [:])
+      do {
+        try handler.perform([req])
+      } catch {
+        return ["lines": [], "luma": luma]
+      }
+      return ["lines": lines(req), "luma": luma]
+    }
+  }
+
+  /// Brightness of the card area (sampled), so the screen can suggest the torch.
+  private static func averageLuma(base: UnsafeMutablePointer<UInt8>, width: Int, height: Int, bytesPerRow: Int, rotation: Int, roi: CGRect) -> Double {
+    var total = 0.0
+    var count = 0.0
+    for i in 0..<16 {
+      for j in 0..<10 {
+        let ux = roi.minX + roi.width * (Double(i) + 0.5) / 16
+        let uy = roi.minY + roi.height * (Double(j) + 0.5) / 10
+        // Upright point -> buffer point.
+        let bx: Double
+        let by: Double
+        switch (rotation % 360 + 360) % 360 {
+        case 90: bx = uy; by = 1 - ux
+        case 180: bx = 1 - ux; by = 1 - uy
+        case 270: bx = 1 - uy; by = ux
+        default: bx = ux; by = uy
+        }
+        let px = min(width - 1, max(0, Int(bx * Double(width))))
+        let py = min(height - 1, max(0, Int(by * Double(height))))
+        let p = base + py * bytesPerRow + px * 4
+        total += 0.114 * Double(p[0]) + 0.587 * Double(p[1]) + 0.299 * Double(p[2])
+        count += 1
+      }
+    }
+    return count > 0 ? total / count : 0
+  }
+
+  private static func recognizeFile(path: String) -> [String: Any] {
+    guard let image = UIImage(contentsOfFile: path), let cg = image.cgImage else { return ["lines": []] }
+    let req = request(roi: nil)
+    let handler = VNImageRequestHandler(cgImage: cg, orientation: fileOrientation(image.imageOrientation), options: [:])
+    do {
+      try handler.perform([req])
+    } catch {
+      return ["lines": []]
+    }
+    return ["lines": lines(req)]
+  }
+
+  private static func fileOrientation(_ o: UIImage.Orientation) -> CGImagePropertyOrientation {
+    switch o {
     case .up: return .up
     case .down: return .down
     case .left: return .left
@@ -491,7 +598,6 @@ final class CardOcr {
     }
   }
 }
-
 
 /// Smart Fill: puts one saved card into the bank's payment form in one tap.
 ///
