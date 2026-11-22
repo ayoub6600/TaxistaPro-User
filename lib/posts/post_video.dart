@@ -213,7 +213,7 @@ class _PostVideoState extends State<PostVideo> {
   Widget _pill(String t) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         decoration: BoxDecoration(color: Colors.black.withValues(alpha: .7), borderRadius: BorderRadius.circular(8)),
-        child: Text(t, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+        child: Text(t, textDirection: TextDirection.ltr, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
       );
 
   Widget _round(IconData i, VoidCallback on, String label) => Semantics(
