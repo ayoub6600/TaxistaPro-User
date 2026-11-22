@@ -82,6 +82,9 @@ import '../../community/rewards_page.dart';
 import '../../functions/schedule_time.dart';
 import '../recurring/recurring_rides_page.dart' show RecurringLink, RecurringRidesPage;
 import '../../contests/contests_api.dart';
+import '../../posts/post_home_card.dart';
+import '../../posts/posts_api.dart';
+import '../../posts/posts_pages.dart' show PostLink;
 import '../../contests/contests_pages.dart';
 // ignore: depend_on_referenced_packages
 
@@ -294,6 +297,10 @@ class _MapsState extends State<Maps>
     ContestsApi.homePost.addListener(_onRecurringRides);
     unawaited(ContestsApi.refreshHome());
     WidgetsBinding.instance.addPostFrameCallback((_) => ContestLink.flush());
+    // «منشورات تاكسيستا»: the newest post's card, and a post push tapped before home was up
+    PostsApi.homePost.addListener(_onRecurringRides);
+    unawaited(PostsApi.refreshHome());
+    WidgetsBinding.instance.addPostFrameCallback((_) => PostLink.flush());
     WidgetsBinding.instance.addPostFrameCallback((_) => IntercityLink.flush());
     unawaited(fetchPendingRecoveryOfferForRider().then((_) {
       if (mounted) setState(() {});
@@ -341,6 +348,7 @@ class _MapsState extends State<Maps>
   /// safer to reset to, so a failed reconcile just releases every lock and
   /// tries again a little later.
   Future<void> _onResumed() async {
+    unawaited(PostsApi.refreshHome());
     unawaited(ContestsApi.refreshHome());
     unawaited(refreshPromotionCampaigns().then((_) {
       if (mounted) {
@@ -505,6 +513,7 @@ class _MapsState extends State<Maps>
     PulseBookingIntent.pending.removeListener(_onPulseIntent);
     RecurringApi.rides.removeListener(_onRecurringRides);
     ContestsApi.homePost.removeListener(_onRecurringRides);
+    PostsApi.homePost.removeListener(_onRecurringRides);
     RecurringPush.lastAnswer.removeListener(_onRecurringAnswer);
     _pickupSearchController.dispose();
     _controller?.dispose();

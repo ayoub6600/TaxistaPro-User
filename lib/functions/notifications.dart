@@ -21,6 +21,7 @@ import 'live_activity.dart';
 import '../pages/recurring/recurring_rides_page.dart' show RecurringLink;
 import 'support_chat_link.dart';
 import '../contests/contests_pages.dart' show ContestLink;
+import '../posts/posts_pages.dart' show PostLink;
 
 // create an instance
 FirebaseMessaging messaging = FirebaseMessaging.instance;
@@ -267,6 +268,11 @@ Future<void> initMessaging() async {
         ContestLink.openPush(message.data);
         return;
       }
+      if (PostLink.handles(message.data)) {
+        // «منشورات تاكسيستا»: the post opens once the home screen is up
+        PostLink.openPush(message.data);
+        return;
+      }
       if (IntercityLink.handles(message.data)) {
         // a travel request: its page opens once the home screen is up
         IntercityLink.openPush(message.data);
@@ -345,6 +351,10 @@ Future<void> initMessaging() async {
     }
     if (ContestLink.handles(message.data)) {
       ContestLink.openPush(message.data);
+      return;
+    }
+    if (PostLink.handles(message.data)) {
+      PostLink.openPush(message.data);
       return;
     }
     if (IntercityLink.handles(message.data)) {

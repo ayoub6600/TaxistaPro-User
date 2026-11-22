@@ -11,6 +11,7 @@ extension _MapHomeOverlays on _MapsState {
           (_bottom == 0 &&
               (RecurringApi.pendingTomorrow(RecurringApi.rides.value) != null ||
                   ContestsApi.homePost.value != null ||
+                  PostsApi.homePost.value != null ||
                   activePromotionCampaigns.isNotEmpty)))
         Positioned(
           top: MediaQuery.of(context).padding.top + 82,
@@ -33,6 +34,7 @@ extension _MapHomeOverlays on _MapsState {
                       ride: RecurringApi.pendingTomorrow(RecurringApi.rides.value)!['ride'] as Map<String, dynamic>,
                       next: RecurringApi.pendingTomorrow(RecurringApi.rides.value)!['next'] as Map<String, dynamic>,
                     )),
+                  if (PostsApi.homePost.value != null) _homeCardGap(PostHomeCard(post: PostsApi.homePost.value!)),
                   if (ContestsApi.homePost.value != null)
                     _homeCardGap(ContestHomeCard(post: ContestsApi.homePost.value!)),
                   if (activePromotionCampaigns.isNotEmpty)
