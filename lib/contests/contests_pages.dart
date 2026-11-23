@@ -804,7 +804,8 @@ class ContestLink {
       return;
     }
     if (!_pendingFeed) {
-      _matchOnce(nav);
+      _watch();
+      _check();
       return;
     }
     _pendingFeed = false;
@@ -813,23 +814,37 @@ class ContestLink {
     nav.push(MaterialPageRoute(builder: (_) => ContestsFeedPage(openPostId: post)));
   }
 
-  /// Once after installing: a phone that came from a shared link (the page without the app) gets
-  /// that post opened, from Google Play's referrer or the visit the page remembered.
-  static Future<void> _matchOnce(NavigatorState nav) async {
-    const key = 'contest_link_matched_v1';
+  static DateTime? _lastCheck;
+  static bool _watching = false;
+
+  /// the app coming back to the screen asks again (someone tapped a shared link a moment ago)
+  static void _watch() {
+    if (_watching) return;
+    _watching = true;
+    AppLifecycleListener(onResume: _check);
+  }
+
+  /// A phone that looked at a shared post's page (no app then, or a link the phone did not hand to
+  /// the app) gets that post opened: Google Play's referrer once after installing, else the visit
+  /// the page remembered (same network and screen, within three hours, only when one post fits).
+  static Future<void> _check() async {
+    final now = DateTime.now();
+    if (bearerToken.isEmpty || (_lastCheck != null && now.difference(_lastCheck!) < const Duration(seconds: 60))) return;
+    _lastCheck = now;
     try {
-      final prefs = await SharedPreferences.getInstance();
-      if (prefs.getBool(key) == true) return;
-      await prefs.setBool(key, true);
       String? referrer;
-      if (Platform.isAndroid) {
+      final prefs = await SharedPreferences.getInstance();
+      const key = 'contest_link_referrer_read_v1';
+      if (Platform.isAndroid && prefs.getBool(key) != true) {
+        await prefs.setBool(key, true);
         referrer = (await AndroidPlayInstallReferrer.installReferrer.timeout(const Duration(seconds: 4))).installReferrer;
       }
       final view = PlatformDispatcher.instance.views.first;
       final size = view.physicalSize / view.devicePixelRatio;
       final post = await ContestsApi.matchLink(
           platform: Platform.isIOS ? 'ios' : 'android', referrer: referrer, w: size.shortestSide.round(), h: size.longestSide.round());
-      if (post != null && nav.mounted) nav.push(MaterialPageRoute(builder: (_) => ContestsFeedPage(openPostId: post)));
+      final nav = appNavigatorKey.currentState;
+      if (post != null && nav != null && nav.mounted) nav.push(MaterialPageRoute(builder: (_) => ContestsFeedPage(openPostId: post)));
     } catch (_) {}
   }
 }
