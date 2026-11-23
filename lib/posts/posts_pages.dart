@@ -8,8 +8,10 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../contests/contests_pages.dart';
+import '../contests/reactions.dart';
 import '../functions/calls/admin_call_controller.dart' show appNavigatorKey;
 import '../functions/functions.dart' show bearerToken, url;
+import 'post_comments.dart';
 import 'post_video.dart';
 import 'posts_api.dart';
 
@@ -186,12 +188,15 @@ class PostCard extends StatelessWidget {
   int get _id => (post['id'] as num).toInt();
   Map get _counts => post['counts'] is Map ? post['counts'] as Map : const {};
 
-  Future<void> _like() async {
-    final on = post['liked'] != true;
-    final likes = ((_counts['likes'] ?? 0) as num).toInt() + (on ? 1 : -1);
-    onChanged({...post, 'liked': on, 'counts': {..._counts, 'likes': likes < 0 ? 0 : likes}});
-    final d = await PostsApi.like(_id, on);
-    if (d != null) onChanged({...post, 'liked': d['liked'] == true, 'counts': {..._counts, 'likes': d['likes']}});
+  /// [kind] null takes the reaction back; another kind replaces it (the count stays)
+  Future<void> _react(String? kind) async {
+    final before = post['liked'] == true ? '${post['reaction'] ?? 'like'}' : null;
+    if (before == kind) return;
+    final likes = ((_counts['likes'] ?? 0) as num).toInt() + (kind != null ? 1 : 0) - (before != null ? 1 : 0);
+    final next = {...post, 'liked': kind != null, 'reaction': kind, 'reactions': Reaction.adjust(post['reactions'], before, kind), 'counts': {..._counts, 'likes': likes < 0 ? 0 : likes}};
+    onChanged(next);
+    final d = await PostsApi.like(_id, kind != null, reaction: kind ?? 'like');
+    if (d != null) onChanged({...next, 'counts': {..._counts, 'likes': d['likes']}, if (d['reactions'] is List) 'reactions': d['reactions']});
   }
 
   void _share() {
@@ -265,7 +270,7 @@ class PostCard extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(14, 8, 14, 6),
           child: Row(children: [
             if (((_counts['likes'] ?? 0) as num) > 0) ...[
-              const Icon(Icons.thumb_up_alt_rounded, size: 16, color: PostLook.brand),
+              ReactionFaces(reactions: post['reactions'], total: ((_counts['likes'] ?? 0) as num).toInt(), size: 18),
               const SizedBox(width: 4),
               Text('${_counts['likes']}', style: PostLook.t(12.5, w: FontWeight.w700, color: PostLook.sub)),
             ],
@@ -275,7 +280,7 @@ class PostCard extends StatelessWidget {
         ),
         const Divider(height: 1, color: Color(0xFFE6EBF2)),
         Row(children: [
-          _action(post['liked'] == true ? Icons.thumb_up_alt_rounded : Icons.thumb_up_alt_outlined, 'أعجبني', _like, on: post['liked'] == true),
+          _likeAction(),
           if (post['comments_enabled'] == true || inPage) _action(Icons.mode_comment_outlined, 'تعليق', inPage ? null : onOpen),
           _action(Icons.share_outlined, 'مشاركة', _share),
         ]),
@@ -311,6 +316,30 @@ class PostCard extends StatelessWidget {
     unawaited(launchUrl(Uri.parse('${y['url']}'), mode: LaunchMode.externalApplication));
   }
 
+  /// «أعجبني»: a tap likes (or takes it back), a long press gives the six reactions
+  Widget _likeAction() {
+    final r = post['liked'] == true ? (Reaction.of(post['reaction']) ?? Reaction.all.first) : null;
+    final color = r?.color ?? const Color(0xFF3D4B66);
+    return Expanded(
+      child: ReactionTrigger(
+        key: ValueKey('media-post-like-${post['id']}'),
+        current: r?.kind,
+        onPick: _react,
+        child: SizedBox(
+          height: 46,
+          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            if (r == null || r.kind == 'like')
+              Icon(r == null ? Icons.thumb_up_alt_outlined : Icons.thumb_up_alt_rounded, size: 20, color: color)
+            else
+              Text(r.emoji, style: const TextStyle(fontSize: 19)),
+            const SizedBox(width: 6),
+            Text(r?.label ?? 'أعجبني', style: PostLook.t(14, w: FontWeight.w800, color: color)),
+          ]),
+        ),
+      ),
+    );
+  }
+
   Widget _action(IconData icon, String label, VoidCallback? tap, {bool on = false}) => Expanded(
         child: InkWell(
           onTap: tap,
@@ -342,6 +371,11 @@ class _PostPageState extends State<PostPage> {
   int? _next;
   bool _gone = false, _sending = false;
   final _box = TextEditingController();
+  final _focus = FocusNode();
+  /// «رد»: the comment the next words answer
+  Map<String, dynamic>? _replyTo;
+  /// top comments whose every reply is on screen
+  final Set<Object?> _shownAll = {};
 
   @override
   void initState() {
@@ -353,6 +387,7 @@ class _PostPageState extends State<PostPage> {
   @override
   void dispose() {
     _box.dispose();
+    _focus.dispose();
     super.dispose();
   }
 
@@ -386,13 +421,22 @@ class _PostPageState extends State<PostPage> {
     final text = _box.text.trim();
     if (text.isEmpty || _sending) return;
     setState(() => _sending = true);
-    final (c, err) = await PostsApi.comment(widget.id, text);
+    final (c, err) = await PostsApi.comment(widget.id, text, replyTo: (_replyTo?['id'] as num?)?.toInt());
     if (!mounted) return;
     setState(() {
       _sending = false;
       if (c != null) {
         _box.clear();
-        _comments.insert(0, c);
+        _replyTo = null;
+        final top = c['thread_id'] == null ? null : _comments.where((x) => x['id'] == c['thread_id']).firstOrNull;
+        if (top == null) {
+          _comments.insert(0, c);
+        } else {
+          // a reply goes under its top comment
+          top['replies'] = [...(top['replies'] as List? ?? const []), c];
+          top['replies_count'] = ((top['replies_count'] ?? 0) as num).toInt() + 1;
+          _shownAll.add(top['id']);
+        }
         final counts = Map<String, dynamic>.from((_post?['counts'] as Map?) ?? {});
         counts['comments'] = ((counts['comments'] ?? 0) as num).toInt() + 1;
         _post = {...?_post, 'counts': counts};
@@ -419,7 +463,7 @@ class _PostPageState extends State<PostPage> {
                     const SizedBox(height: 12),
                     if (_comments.isEmpty)
                       Padding(padding: const EdgeInsets.all(18), child: Center(child: Text(open ? 'ما فيش تعليقات بعد. كن الأول!' : 'التعليقات مقفولة.', style: PostLook.t(14, color: PostLook.sub)))),
-                    for (final c in _comments) _comment(c),
+                    for (final c in _comments) _thread(c),
                     if (_next != null) TextButton(onPressed: _more, child: Text('تعليقات أكثر', style: PostLook.t(13.5, w: FontWeight.w800, color: PostLook.sub))),
                   ]),
                 ),
@@ -429,10 +473,24 @@ class _PostPageState extends State<PostPage> {
                     child: Container(
                       color: Colors.white,
                       padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-                      child: Row(children: [
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                      if (_replyTo != null)
+                        Row(children: [
+                          const Icon(Icons.reply_rounded, size: 18, color: PostLook.brand),
+                          const SizedBox(width: 6),
+                          Expanded(child: Text('ترد على ${_replyTo!['name'] ?? ''} · ردّك يطلع تحت تعليقه', maxLines: 1, overflow: TextOverflow.ellipsis, style: PostLook.t(13, w: FontWeight.w700, color: PostLook.brand))),
+                          IconButton(
+                            visualDensity: VisualDensity.compact,
+                            tooltip: 'إلغاء الرد',
+                            onPressed: () => setState(() => _replyTo = null),
+                            icon: const Icon(Icons.close_rounded, size: 18, color: PostLook.sub),
+                          ),
+                        ]),
+                      Row(children: [
                         Expanded(
                           child: TextField(
                             controller: _box,
+                            focusNode: _focus,
                             maxLength: 400,
                             minLines: 1,
                             maxLines: 4,
@@ -458,6 +516,7 @@ class _PostPageState extends State<PostPage> {
                           tooltip: 'إرسال',
                         ),
                       ]),
+                      ]),
                     ),
                   ),
               ]),
@@ -465,31 +524,46 @@ class _PostPageState extends State<PostPage> {
     );
   }
 
-  Widget _comment(Map c) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          CircleAvatar(radius: 17, backgroundColor: c['is_captain'] == true ? PostLook.navy : PostLook.brand,
-              child: Text('${c['name'] ?? '?'}'.characters.first, style: PostLook.t(14, w: FontWeight.w800, color: Colors.white))),
-          const SizedBox(width: 8),
-          Flexible(
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-              decoration: BoxDecoration(color: c['mine'] == true ? const Color(0xFFFFF8E1) : Colors.white, borderRadius: BorderRadius.circular(16)),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(mainAxisSize: MainAxisSize.min, children: [
-                  Text('${c['name'] ?? ''}', style: PostLook.t(13, w: FontWeight.w800)),
-                  if (c['is_captain'] == true) ...[
-                    const SizedBox(width: 6),
-                    Container(padding: const EdgeInsets.symmetric(horizontal: 6), decoration: BoxDecoration(color: PostLook.navy, borderRadius: BorderRadius.circular(6)),
-                        child: Text('كابتن', style: PostLook.t(10.5, w: FontWeight.w800, color: Colors.white))),
-                  ],
-                ]),
-                Text('${c['body'] ?? ''}', style: PostLook.t(14, h: 1.6)),
-              ]),
-            ),
-          ),
-        ]),
-      );
+  void _reply(Map<String, dynamic> c) {
+    setState(() => _replyTo = c);
+    _focus.requestFocus();
+  }
+
+  Future<void> _moreReplies(Map<String, dynamic> top) async {
+    final d = await PostsApi.replies(widget.id, (top['id'] as num).toInt());
+    if (!mounted || d == null) return;
+    setState(() {
+      top['replies'] = [for (final x in (d['replies'] as List? ?? const [])) Map<String, dynamic>.from(x as Map)];
+      if (d['next'] == null) _shownAll.add(top['id']);
+    });
+  }
+
+  /// A top comment, its replies under it on a thin line, and «عرض N ردود أخرى».
+  Widget _thread(Map<String, dynamic> c) {
+    final open = _post?['comments_enabled'] == true;
+    final replies = [for (final x in (c['replies'] as List? ?? const [])) Map<String, dynamic>.from(x as Map)];
+    final total = ((c['replies_count'] ?? replies.length) as num).toInt();
+    final hidden = _shownAll.contains(c['id']) ? 0 : total - replies.length;
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      PostCommentTile(key: ValueKey('pc-${c['id']}'), postId: widget.id, comment: c, onReply: open ? _reply : null),
+      if (replies.isNotEmpty || hidden > 0)
+        Container(
+          margin: const EdgeInsetsDirectional.only(start: 16, bottom: 6),
+          padding: const EdgeInsetsDirectional.only(start: 14),
+          decoration: const BoxDecoration(border: BorderDirectional(start: BorderSide(color: Color(0xFFD5DCE7), width: 2))),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            for (final r in replies) PostCommentTile(key: ValueKey('pr-${r['id']}'), postId: widget.id, comment: r, inThread: true, onReply: open ? _reply : null),
+            if (hidden > 0)
+              TextButton.icon(
+                key: ValueKey('post-more-replies-${c['id']}'),
+                onPressed: () => _moreReplies(c),
+                icon: const Icon(Icons.subdirectory_arrow_left_rounded, size: 18, color: PostLook.sub),
+                label: Text(hidden == 1 ? 'عرض رد آخر' : 'عرض $hidden ردود أخرى', style: PostLook.t(13, w: FontWeight.w800)),
+              ),
+          ]),
+        ),
+    ]);
+  }
 }
 
 /// A «منشور جديد» push: the feed (and the post) open once the home screen is up.

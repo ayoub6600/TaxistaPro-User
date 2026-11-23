@@ -52,9 +52,17 @@ class PostsApi {
 
   static Future<Map<String, dynamic>?> post(int id) => _get('/$id');
 
-  static Future<Map<String, dynamic>?> comments(int id, {int? before}) => _get('/$id/comments', before == null ? null : {'before': '$before'});
+  /// The top comments, each with its reply count and first reply («زي الفيسبوك»).
+  static Future<Map<String, dynamic>?> comments(int id, {int? before}) => _get('/$id/comments', {'threads': '1', if (before != null) 'before': '$before'});
 
-  static Future<Map<String, dynamic>?> like(int id, bool on) => _post('/$id/like', {'on': on});
+  /// [reaction]: like | love | haha | wow | sad | angry (a long press on «أعجبني»)
+  static Future<Map<String, dynamic>?> like(int id, bool on, {String reaction = 'like'}) => _post('/$id/like', {'on': on, 'reaction': reaction});
+
+  static Future<Map<String, dynamic>?> likeComment(int id, int comment, bool on, {String reaction = 'like'}) =>
+      _post('/$id/comments/$comment/like', {'on': on, 'reaction': reaction});
+
+  /// Every reply under a top comment («عرض المزيد»), oldest first.
+  static Future<Map<String, dynamic>?> replies(int id, int comment) => _get('/$id/comments/$comment/replies');
 
   /// view | play | dismiss | share — the server counts each once per person
   static void event(int id, String kind) => unawaited(_post('/$id/event', {'kind': kind}));
@@ -74,10 +82,10 @@ class PostsApi {
   }
 
   /// Returns (comment, null) or (null, message).
-  static Future<(Map<String, dynamic>?, String?)> comment(int id, String body) async {
+  static Future<(Map<String, dynamic>?, String?)> comment(int id, String body, {int? replyTo}) async {
     if (bearerToken.isEmpty) return (null, 'سجّل الدخول أول.');
     try {
-      final r = await http.post(_u('/$id/comments'), headers: _headers, body: jsonEncode({'body': body})).timeout(const Duration(seconds: 15));
+      final r = await http.post(_u('/$id/comments'), headers: _headers, body: jsonEncode({'body': body, if (replyTo != null) 'reply_to': replyTo})).timeout(const Duration(seconds: 15));
       final d = _data(r);
       if (d != null) return (d, null);
       final j = jsonDecode(utf8.decode(r.bodyBytes));
