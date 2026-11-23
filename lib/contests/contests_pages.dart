@@ -1,5 +1,10 @@
+import 'dart:io';
+import 'dart:ui';
+
+import 'package:android_play_install_referrer/android_play_install_referrer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../functions/calls/admin_call_controller.dart' show appNavigatorKey;
 import '../functions/functions.dart' show bearerToken;
@@ -225,8 +230,63 @@ class _ContestPostPageState extends State<ContestPostPage> {
   void _applyComment(Map<String, dynamic> data) {
     setState(() {
       if (data['post'] is Map) _post = Map<String, dynamic>.from(data['post']);
-      if (data['comment'] is Map) _comments.insert(0, Map<String, dynamic>.from(data['comment']));
+      if (data['comment'] is! Map) return;
+      final c = Map<String, dynamic>.from(data['comment']);
+      final top = c['thread_id'] == null ? null : _comments.where((x) => x['id'] == c['thread_id']).firstOrNull;
+      if (top == null) {
+        _comments.insert(0, c);
+        return;
+      }
+      // a reply goes under its top comment, at the end of what is shown
+      top['replies'] = [...(top['replies'] as List? ?? const []), c];
+      top['replies_count'] = ((top['replies_count'] ?? 0) as num).toInt() + 1;
+      _shownAll.add(top['id']);
     });
+  }
+
+  /// top comment ids whose every reply is on screen (the rest came with «عرض المزيد» or were just written)
+  final Set<Object?> _shownAll = {};
+
+  Future<void> _moreReplies(Map<String, dynamic> top) async {
+    final d = await ContestsApi.replies(widget.postId, (top['id'] as num).toInt());
+    if (!mounted || d == null) return;
+    setState(() {
+      top['replies'] = [for (final x in (d['replies'] as List? ?? const [])) Map<String, dynamic>.from(x as Map)];
+      if (d['next'] == null) _shownAll.add(top['id']);
+    });
+  }
+
+  void _replyTo_(Map<String, dynamic> x) {
+    setState(() => _replyTo = x);
+    _focus.requestFocus();
+  }
+
+  /// A top comment, its replies under it on a thin line, and «عرض N ردود أخرى».
+  Widget _thread(Map<String, dynamic> c) {
+    final p = ContestLook.p;
+    final replies = [for (final x in (c['replies'] as List? ?? const [])) Map<String, dynamic>.from(x as Map)];
+    final total = ((c['replies_count'] ?? replies.length) as num).toInt();
+    final hidden = _shownAll.contains(c['id']) ? 0 : total - replies.length;
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      ContestCommentTile(key: ValueKey('c-${c['id']}'), comment: c, postId: widget.postId, onReply: _replyTo_),
+      if (replies.isNotEmpty || hidden > 0)
+        Container(
+          margin: const EdgeInsetsDirectional.only(start: 16, bottom: 6),
+          padding: const EdgeInsetsDirectional.only(start: 14),
+          decoration: BoxDecoration(border: BorderDirectional(start: BorderSide(color: p.line, width: 2))),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            for (final r in replies)
+              ContestCommentTile(key: ValueKey('r-${r['id']}'), comment: r, postId: widget.postId, inThread: true, compact: true, onReply: _replyTo_),
+            if (hidden > 0)
+              TextButton.icon(
+                key: ValueKey('more-replies-${c['id']}'),
+                onPressed: () => _moreReplies(c),
+                icon: Icon(Icons.subdirectory_arrow_left_rounded, size: 18, color: p.sub),
+                label: Text(hidden == 1 ? 'عرض رد آخر' : 'عرض $hidden ردود أخرى', style: p.text(13, weight: FontWeight.w800, color: p.ink)),
+              ),
+          ]),
+        ),
+    ]);
   }
 
   Future<void> _compose() async {
@@ -327,11 +387,7 @@ class _ContestPostPageState extends State<ContestPostPage> {
                         padding: const EdgeInsets.fromLTRB(12, 6, 12, 10),
                         child: Column(children: [
                           if (_pinned.isNotEmpty) ContestCommentTile(comment: const {}, postId: widget.postId, pinnedText: _pinned),
-                          for (final c in _comments)
-                            ContestCommentTile(key: ValueKey('c-${c['id']}'), comment: c, postId: widget.postId, onReply: (x) {
-                              setState(() => _replyTo = x);
-                              _focus.requestFocus();
-                            }),
+                          for (final c in _comments) _thread(c),
                           if (_comments.isEmpty) Padding(padding: const EdgeInsets.all(20), child: Text('ما فيش تعليقات بعد. كن الأول!', style: p.text(14, color: p.sub))),
                           if (_next != null) TextButton(onPressed: _moreComments, child: Text('عرض توقعات أكثر', style: p.text(13.5, weight: FontWeight.w800, color: p.sub))),
                         ]),
@@ -446,7 +502,7 @@ class _ContestPostPageState extends State<ContestPostPage> {
           child: Row(children: [
             const Icon(Icons.reply_rounded, size: 18, color: ContestLook.brand),
             const SizedBox(width: 6),
-            Expanded(child: Text('ترد على ${replying['name'] ?? ''}', maxLines: 1, overflow: TextOverflow.ellipsis, style: p.text(13, weight: FontWeight.w700, color: ContestLook.brand))),
+            Expanded(child: Text('ترد على ${replying['name'] ?? ''} · ردّك يطلع تحت تعليقه', maxLines: 1, overflow: TextOverflow.ellipsis, style: p.text(13, weight: FontWeight.w700, color: ContestLook.brand))),
             IconButton(
               key: const ValueKey('reply-cancel'),
               visualDensity: VisualDensity.compact,
@@ -714,6 +770,7 @@ class _PredictionSheetState extends State<PredictionSheet> {
 class ContestLink {
   static int? _pendingPost;
   static bool _pendingFeed = false;
+  static String? _pendingCode;
 
   static bool handles(Map data) => data['push_type']?.toString() == 'contest_result';
 
@@ -723,21 +780,110 @@ class ContestLink {
     flush();
   }
 
-  /// /c/<code> opened the app.
-  static bool isLink(String? route) => RegExp(r'^/c/[A-Za-z0-9]{4,12}/?$').hasMatch(Uri.tryParse(route ?? '')?.path ?? route ?? '');
+  static final _link = RegExp(r'^/c/([A-Za-z0-9]{4,12})/?$');
 
-  static void openLink() {
-    _pendingFeed = true;
+  /// /c/<code> opened the app.
+  static bool isLink(String? route) => _link.hasMatch(Uri.tryParse(route ?? '')?.path ?? route ?? '');
+
+  static String? codeOf(String? route) => _link.firstMatch(Uri.tryParse(route ?? '')?.path ?? route ?? '')?.group(1);
+
+  /// kept until signed in and the home screen is up
+  static void openLink([String? route]) {
+    _pendingCode = codeOf(route);
+    _pendingFeed = _pendingCode == null;
     flush();
   }
 
   static void flush() {
     final nav = appNavigatorKey.currentState;
-    if (!_pendingFeed || nav == null || bearerToken.isEmpty) return;
+    if (nav == null || bearerToken.isEmpty) return;
+    final code = _pendingCode;
+    if (code != null) {
+      _pendingCode = null;
+      nav.push(MaterialPageRoute(builder: (_) => ContestLinkPage(code: code)));
+      return;
+    }
+    if (!_pendingFeed) {
+      _matchOnce(nav);
+      return;
+    }
     _pendingFeed = false;
     final post = _pendingPost;
     _pendingPost = null;
     nav.push(MaterialPageRoute(builder: (_) => ContestsFeedPage(openPostId: post)));
+  }
+
+  /// Once after installing: a phone that came from a shared link (the page without the app) gets
+  /// that post opened, from Google Play's referrer or the visit the page remembered.
+  static Future<void> _matchOnce(NavigatorState nav) async {
+    const key = 'contest_link_matched_v1';
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getBool(key) == true) return;
+      await prefs.setBool(key, true);
+      String? referrer;
+      if (Platform.isAndroid) {
+        referrer = (await AndroidPlayInstallReferrer.installReferrer.timeout(const Duration(seconds: 4))).installReferrer;
+      }
+      final view = PlatformDispatcher.instance.views.first;
+      final size = view.physicalSize / view.devicePixelRatio;
+      final post = await ContestsApi.matchLink(
+          platform: Platform.isIOS ? 'ios' : 'android', referrer: referrer, w: size.shortestSide.round(), h: size.longestSide.round());
+      if (post != null && nav.mounted) nav.push(MaterialPageRoute(builder: (_) => ContestsFeedPage(openPostId: post)));
+    } catch (_) {}
+  }
+}
+
+/// A shared link opened in the app: finds the post, then shows it (the feed sits under it, so back
+/// goes to «منشورات تاكسيستا»).
+class ContestLinkPage extends StatefulWidget {
+  const ContestLinkPage({super.key, required this.code});
+  final String code;
+  @override
+  State<ContestLinkPage> createState() => _ContestLinkPageState();
+}
+
+class _ContestLinkPageState extends State<ContestLinkPage> {
+  bool _failed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _go();
+  }
+
+  Future<void> _go() async {
+    final id = await ContestsApi.postOfCode(widget.code);
+    if (!mounted) return;
+    if (id == null) return setState(() => _failed = true);
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => ContestsFeedPage(openPostId: id)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = ContestLook.p;
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: p.surface,
+        appBar: _bar(context, 'منشور تاكسيستا'),
+        body: Center(
+          child: _failed
+              ? Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Text('المنشور هذا مش متاح ليك (يمكن انمسح أو لمدينة ثانية).', textAlign: TextAlign.center, style: p.text(15, color: p.sub, height: 1.7)),
+                    const SizedBox(height: 12),
+                    FilledButton(
+                      onPressed: () => Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const ContestsFeedPage())),
+                      child: Text('شوف منشورات تاكسيستا', style: p.text(14.5, weight: FontWeight.w800, color: Colors.white)),
+                    ),
+                  ]),
+                )
+              : const CircularProgressIndicator(),
+        ),
+      ),
+    );
   }
 }
 

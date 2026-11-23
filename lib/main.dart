@@ -164,11 +164,13 @@ class MyApp extends StatelessWidget {
               onGenerateRoute: (settings) {
                 // https://taxista.aljidartech.com/c/<code>: a shared contest opens «مسابقات تاكسيستا»
                 if (ContestLink.isLink(settings.name)) {
-                  if (bearerToken.isEmpty) {
-                    ContestLink.openLink(); // kept until the home screen is up
+                  final code = ContestLink.codeOf(settings.name);
+                  if (bearerToken.isEmpty || code == null) {
+                    ContestLink.openLink(settings.name); // kept until the home screen is up
                     return null;
                   }
-                  return MaterialPageRoute(builder: (_) => const ContestsFeedPage());
+                  // the post itself, ready for a comment (owner 2026-11-23)
+                  return MaterialPageRoute(builder: (_) => ContestLinkPage(code: code));
                 }
                 final ref = GrowthLinks.refFrom(settings.name);
                 if (ref == null) return null;

@@ -53,16 +53,34 @@ class ContestsApi {
 
   static Future<Map<String, dynamic>?> post(int id) => _get('/posts/$id');
 
+  /// The top comments, each with its reply count and first reply («زي الفيسبوك»).
   static Future<Map<String, dynamic>?> comments(int id, {String side = 'all', String sort = 'new', int? before, int? offset}) => _get('/posts/$id/comments', {
         'side': side,
         'sort': sort,
+        'threads': '1',
         if (before != null) 'before': '$before',
         if (offset != null) 'offset': '$offset',
       });
 
-  static Future<Map<String, dynamic>?> like(int id, bool on) => _post('/posts/$id/like', {'on': on});
+  /// [reaction]: like | love | haha | wow | sad | angry (a long press on «أعجبني»)
+  static Future<Map<String, dynamic>?> like(int id, bool on, {String reaction = 'like'}) => _post('/posts/$id/like', {'on': on, 'reaction': reaction});
 
-  static Future<Map<String, dynamic>?> likeComment(int post, int comment, bool on) => _post('/posts/$post/comments/$comment/like', {'on': on});
+  static Future<Map<String, dynamic>?> likeComment(int post, int comment, bool on, {String reaction = 'like'}) =>
+      _post('/posts/$post/comments/$comment/like', {'on': on, 'reaction': reaction});
+
+  /// Every reply under a top comment («عرض المزيد»), oldest first.
+  static Future<Map<String, dynamic>?> replies(int post, int comment, {int? after}) =>
+      _get('/posts/$post/comments/$comment/replies', after == null ? null : {'after': '$after'});
+
+  /// A shared link /c/<code>: the post id, or null (gone, another city, offline).
+  static Future<int?> postOfCode(String code) async => ((await _get('/link/$code'))?['post_id'] as num?)?.toInt();
+
+  /// Right after installing from a shared link: the post this phone came for (null when unsure).
+  static Future<int?> matchLink({required String platform, String? referrer, required int w, required int h}) async {
+    final d = await _post('/link/match', {'platform': platform, 'app': 'rider', if (referrer != null) 'referrer': referrer, 'w': w, 'h': h});
+    final link = d?['link'];
+    return link is Map ? (link['post_id'] as num?)?.toInt() : null;
+  }
 
   static Future<Map<String, dynamic>?> share(int id, String channel) => _post('/posts/$id/share', {'channel': channel});
 
