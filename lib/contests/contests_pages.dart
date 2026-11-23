@@ -14,8 +14,10 @@ import 'contests_kit.dart';
 /// «مسابقات تاكسيستا»: every contest post for this person, newest first. Old contests stay with
 /// their winners post above them, and keep their likes, comments and shares.
 class ContestsFeedPage extends StatefulWidget {
-  const ContestsFeedPage({super.key, this.openPostId});
+  const ContestsFeedPage({super.key, this.openPostId, this.focusCommentId});
   final int? openPostId;
+  /// a shared comment (likes contest): the post opens on it
+  final int? focusCommentId;
   @override
   State<ContestsFeedPage> createState() => _ContestsFeedPageState();
 }
@@ -31,7 +33,7 @@ class _ContestsFeedPageState extends State<ContestsFeedPage> {
     super.initState();
     _load();
     if (widget.openPostId != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _open(widget.openPostId!));
+      WidgetsBinding.instance.addPostFrameCallback((_) => _open(widget.openPostId!, focus: widget.focusCommentId));
     }
   }
 
@@ -60,8 +62,8 @@ class _ContestsFeedPageState extends State<ContestsFeedPage> {
     });
   }
 
-  Future<void> _open(int id, {bool compose = false}) async {
-    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ContestPostPage(postId: id, composeNow: compose)));
+  Future<void> _open(int id, {bool compose = false, int? focus}) async {
+    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ContestPostPage(postId: id, composeNow: compose, focusCommentId: focus)));
     _load();
   }
 
@@ -142,9 +144,10 @@ PreferredSizeWidget _bar(BuildContext context, String title) {
 /// One post with all its comments. The box at the bottom writes the prediction while the contest
 /// is open and the person has none; otherwise a plain comment (also after the contest ends).
 class ContestPostPage extends StatefulWidget {
-  const ContestPostPage({super.key, required this.postId, this.composeNow = false});
+  const ContestPostPage({super.key, required this.postId, this.composeNow = false, this.focusCommentId});
   final int postId;
   final bool composeNow;
+  final int? focusCommentId;
   @override
   State<ContestPostPage> createState() => _ContestPostPageState();
 }
@@ -177,9 +180,17 @@ class _ContestPostPageState extends State<ContestPostPage> {
   }
 
   Future<void> _load({bool first = false}) async {
-    final results = await Future.wait([ContestsApi.post(widget.postId), ContestsApi.comments(widget.postId, side: _side, sort: _sort)]);
+    final focus = first ? widget.focusCommentId : null;
+    final results = await Future.wait([ContestsApi.post(widget.postId), ContestsApi.comments(widget.postId, side: _side, sort: _sort, focus: focus)]);
     if (!mounted) return;
-    final post = results[0], com = results[1];
+    final post = results[0];
+    var com = results[1];
+    // a likes contest reads best by likes
+    if (first && post?['likes_contest'] == true && _sort == 'new') {
+      _sort = 'top';
+      com = await ContestsApi.comments(widget.postId, side: _side, sort: _sort, focus: focus) ?? com;
+      if (!mounted) return;
+    }
     if (post == null) {
       setState(() => _gone = _post == null);
       return;
@@ -193,6 +204,10 @@ class _ContestPostPageState extends State<ContestPostPage> {
       }
     });
     if (first && widget.composeNow && post['can_predict'] == true) _compose();
+    if (first && focus != null && _comments.isNotEmpty && _comments.first['focused'] == true && _comments.first['is_mine'] != true) {
+      final name = _comments.first['name'] ?? '';
+      WidgetsBinding.instance.addPostFrameCallback((_) => _say(post['likes_contest'] == true ? 'دير لايك لتعليق $name باش يربح 👍' : 'هذا تعليق $name'));
+    }
     if (first && post['my_result']?['won'] == true && post['my_result']?['show_name'] == false) {
       // the winner hears it and chooses about the winners post, once per opening
       WidgetsBinding.instance.addPostFrameCallback((_) => _wonSheet());
@@ -256,6 +271,48 @@ class _ContestPostPageState extends State<ContestPostPage> {
     });
   }
 
+  void _shareComment(Map<String, dynamic> c) {
+    final post = _post;
+    if (post != null) shareContestPost(context, post, comment: c, onShared: (n) => setState(() => post['counts'] = {...?post['counts'] as Map?, 'shares': n}));
+  }
+
+  /// A likes contest: my comment's likes and place, and the button that brings more.
+  Widget _likesBanner(Map<String, dynamic> post) {
+    final p = ContestLook.p;
+    final my = post['my_entry'] is Map ? Map<String, dynamic>.from(post['my_entry']) : null;
+    final open = post['contest']?['status'] == 'open';
+    if (my == null) {
+      if (!open) return const SizedBox.shrink();
+      return Container(
+        margin: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(color: ContestLook.brand.withValues(alpha: .08), borderRadius: BorderRadius.circular(14)),
+        child: Text('🏆 اكتب تعليقك تحت، وشاركه لصحابك باش يديروله لايك. أكثر تعليق ياخذ لايكات لين يقفل الوقت يربح.', style: p.text(13.5, height: 1.6)),
+      );
+    }
+    final rank = (my['rank'] as num?)?.toInt();
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: const Color(0xFFFFF8E1), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFB7791F))),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text('تعليقك في المسابقة', style: p.text(12.5, weight: FontWeight.w800, color: const Color(0xFF8A5A0B))),
+        const SizedBox(height: 2),
+        Text('👍 ${my['likes'] ?? 0} لايك${rank != null ? ' · المركز $rank' : ''}', style: p.text(18, weight: FontWeight.w900, color: const Color(0xFF3D2A05))),
+        if (open) ...[
+          const SizedBox(height: 8),
+          FilledButton.icon(
+            key: const ValueKey('share-my-comment'),
+            onPressed: () => _shareComment({'id': my['comment_id'], 'is_mine': true, 'body': my['text']}),
+            icon: const Icon(Icons.reply_rounded, textDirection: TextDirection.ltr),
+            label: Text('شارك تعليقك باش يجيك لايكات', style: p.text(14.5, weight: FontWeight.w800, color: Colors.white)),
+            style: FilledButton.styleFrom(backgroundColor: const Color(0xFF1FAF5A), minimumSize: const Size.fromHeight(46)),
+          ),
+        ],
+      ]),
+    );
+  }
+
   void _replyTo_(Map<String, dynamic> x) {
     setState(() => _replyTo = x);
     _focus.requestFocus();
@@ -268,7 +325,7 @@ class _ContestPostPageState extends State<ContestPostPage> {
     final total = ((c['replies_count'] ?? replies.length) as num).toInt();
     final hidden = _shownAll.contains(c['id']) ? 0 : total - replies.length;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      ContestCommentTile(key: ValueKey('c-${c['id']}'), comment: c, postId: widget.postId, onReply: _replyTo_),
+      ContestCommentTile(key: ValueKey('c-${c['id']}'), comment: c, postId: widget.postId, onReply: _replyTo_, onShare: _shareComment),
       if (replies.isNotEmpty || hidden > 0)
         Container(
           margin: const EdgeInsetsDirectional.only(start: 16, bottom: 6),
@@ -382,6 +439,7 @@ class _ContestPostPageState extends State<ContestPostPage> {
                           child: Text('المرة هذي ما طلعش اسمك في السحب. المسابقة الجاية قريب 💙', style: p.text(13.5)),
                         ),
                       ContestPostCard(post: post, full: true, onOpen: () {}, onComment: post['can_predict'] == true ? _compose : null, onChanged: (x) => setState(() => _post = x)),
+                      if (post['likes_contest'] == true) _likesBanner(post),
                       _filters(),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(12, 6, 12, 10),
@@ -389,7 +447,7 @@ class _ContestPostPageState extends State<ContestPostPage> {
                           if (_pinned.isNotEmpty) ContestCommentTile(comment: const {}, postId: widget.postId, pinnedText: _pinned),
                           for (final c in _comments) _thread(c),
                           if (_comments.isEmpty) Padding(padding: const EdgeInsets.all(20), child: Text('ما فيش تعليقات بعد. كن الأول!', style: p.text(14, color: p.sub))),
-                          if (_next != null) TextButton(onPressed: _moreComments, child: Text('عرض توقعات أكثر', style: p.text(13.5, weight: FontWeight.w800, color: p.sub))),
+                          if (_next != null) TextButton(onPressed: _moreComments, child: Text(post['likes_contest'] == true ? 'عرض تعليقات أكثر' : 'عرض توقعات أكثر', style: p.text(13.5, weight: FontWeight.w800, color: p.sub))),
                         ]),
                       ),
                     ]),
@@ -530,7 +588,7 @@ class _ContestPostPageState extends State<ContestPostPage> {
           decoration: InputDecoration(
             counterText: '',
             isDense: true,
-            hintText: 'اكتب تعليق…',
+            hintText: '${post['comment_hint'] ?? 'اكتب تعليق…'}',
             hintStyle: p.text(14.5, color: p.sub),
             filled: true,
             fillColor: p.field,
@@ -787,9 +845,15 @@ class ContestLink {
 
   static String? codeOf(String? route) => _link.firstMatch(Uri.tryParse(route ?? '')?.path ?? route ?? '')?.group(1);
 
+  /// ?m=<comment>: the shared comment
+  static int? commentOf(String? route) => int.tryParse(Uri.tryParse(route ?? '')?.queryParameters['m'] ?? '');
+
   /// kept until signed in and the home screen is up
+  static int? _pendingComment;
+
   static void openLink([String? route]) {
     _pendingCode = codeOf(route);
+    _pendingComment = commentOf(route);
     _pendingFeed = _pendingCode == null;
     flush();
   }
@@ -800,7 +864,9 @@ class ContestLink {
     final code = _pendingCode;
     if (code != null) {
       _pendingCode = null;
-      nav.push(MaterialPageRoute(builder: (_) => ContestLinkPage(code: code)));
+      final comment = _pendingComment;
+      _pendingComment = null;
+      nav.push(MaterialPageRoute(builder: (_) => ContestLinkPage(code: code, comment: comment)));
       return;
     }
     if (!_pendingFeed) {
@@ -844,7 +910,10 @@ class ContestLink {
       final post = await ContestsApi.matchLink(
           platform: Platform.isIOS ? 'ios' : 'android', referrer: referrer, w: size.shortestSide.round(), h: size.longestSide.round());
       final nav = appNavigatorKey.currentState;
-      if (post != null && nav != null && nav.mounted) nav.push(MaterialPageRoute(builder: (_) => ContestsFeedPage(openPostId: post)));
+      final id = (post?['post_id'] as num?)?.toInt();
+      if (id != null && nav != null && nav.mounted) {
+        nav.push(MaterialPageRoute(builder: (_) => ContestsFeedPage(openPostId: id, focusCommentId: (post?['comment_id'] as num?)?.toInt())));
+      }
     } catch (_) {}
   }
 }
@@ -852,8 +921,9 @@ class ContestLink {
 /// A shared link opened in the app: finds the post, then shows it (the feed sits under it, so back
 /// goes to «منشورات تاكسيستا»).
 class ContestLinkPage extends StatefulWidget {
-  const ContestLinkPage({super.key, required this.code});
+  const ContestLinkPage({super.key, required this.code, this.comment});
   final String code;
+  final int? comment;
   @override
   State<ContestLinkPage> createState() => _ContestLinkPageState();
 }
@@ -868,10 +938,11 @@ class _ContestLinkPageState extends State<ContestLinkPage> {
   }
 
   Future<void> _go() async {
-    final id = await ContestsApi.postOfCode(widget.code);
+    final d = await ContestsApi.postOfCode(widget.code, comment: widget.comment);
     if (!mounted) return;
+    final id = (d?['post_id'] as num?)?.toInt();
     if (id == null) return setState(() => _failed = true);
-    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => ContestsFeedPage(openPostId: id)));
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => ContestsFeedPage(openPostId: id, focusCommentId: (d?['comment_id'] as num?)?.toInt())));
   }
 
   @override

@@ -110,11 +110,13 @@ class _ContestStatusStripState extends State<ContestStatusStrip> {
     String two(int n) => n.toString().padLeft(2, '0');
     final text = widget.kind == 'winners'
         ? 'النتيجة: ${widget.contest['correct_text'] ?? ''}'
-        : open
-            ? 'التوقعات تقفل بعد'
-            : resolved
-                ? 'النتيجة طلعت · الفائزين في منشور «أصحاب التوقع الصحيح»'
-                : 'قفلت التوقعات · النتيجة تنزل قريب';
+        : widget.contest['kind'] == 'likes'
+            ? (open ? 'الوقت يقفل بعد' : (resolved ? 'انتهت · الفايزين أكثر التعليقات لايكات 🏆' : 'قفل الوقت · الفايزين يطلعوا قريب'))
+            : open
+                ? 'التوقعات تقفل بعد'
+                : resolved
+                    ? 'النتيجة طلعت · الفائزين في منشور «أصحاب التوقع الصحيح»'
+                    : 'قفلت التوقعات · النتيجة تنزل قريب';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
@@ -183,40 +185,10 @@ class _ContestPostCardState extends State<ContestPostCard> {
     widget.onChanged?.call(post);
   }
 
-  /// «مشاركة»: WhatsApp first, then copy, then the phone's own sheet. The link opens the post in
-  /// the app (or the page that installs it and then opens it).
-  Future<void> _share() async {
-    final id = (post['id'] as num).toInt();
-    final question = '${post['contest']?['question'] ?? 'منشورات تاكسيستا'}';
-    final picked = await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) => SharePostSheet(question: question, imageUrl: '${post['image_url'] ?? ''}', link: '${post['share_url'] ?? ''}'),
-    );
-    if (picked == null || !mounted) return;
-    final r = await ContestsApi.share(id, picked);
-    final link = '${r?['url'] ?? post['share_url'] ?? ''}';
-    if (r != null && mounted) setState(() => post['counts'] = {...counts, 'shares': r['shares']});
-    widget.onChanged?.call(post);
-    if (!mounted) return;
-    final text = post['kind'] == 'contest' && post['contest']?['status'] == 'open'
-        ? '$question 🤔\nتوقّع معاي في تاكسيستا 👇\n$link'
-        : '$question\nشوف المنشور في تاكسيستا 👇\n$link';
-    final say = ScaffoldMessenger.of(context);
-    void done(String m) => say.showSnackBar(SnackBar(content: Text(m, style: ContestLook.p.text(14, color: Colors.white)), behavior: SnackBarBehavior.floating));
-    if (picked == 'whatsapp') {
-      final ok = await launchUrl(Uri.parse('https://wa.me/?text=${Uri.encodeComponent(text)}'), mode: LaunchMode.externalApplication).catchError((_) => false);
-      if (!ok) {
-        await Clipboard.setData(ClipboardData(text: text));
-        done('ما انفتحش واتساب. نسخنا الرابط ✓ الصقه في أي محادثة.');
-      }
-    } else if (picked == 'copy') {
-      await Clipboard.setData(ClipboardData(text: link));
-      done('تم نسخ الرابط ✓');
-    } else if (!await shareText(context, text)) {
-      done('تم نسخ الرابط ✓');
-    }
-  }
+  Future<void> _share() => shareContestPost(context, post, onShared: (n) {
+        if (mounted) setState(() => post['counts'] = {...counts, 'shares': n});
+        widget.onChanged?.call(post);
+      });
 
   @override
   Widget build(BuildContext context) {
@@ -224,6 +196,7 @@ class _ContestPostCardState extends State<ContestPostCard> {
     final c = Map<String, dynamic>.from(post['contest'] ?? {});
     final caption = '${post['caption'] ?? ''}';
     final isContest = post['kind'] == 'contest';
+    final likesContest = post['likes_contest'] == true;
     final mine = post['my_entry'] != null;
     final likes = ((counts['likes'] ?? 0) as num).toInt();
     final preview = [for (final x in (post['preview_comments'] as List? ?? const [])) Map<String, dynamic>.from(x as Map)];
@@ -282,7 +255,7 @@ class _ContestPostCardState extends State<ContestPostCard> {
             const Spacer(),
             InkWell(
               onTap: widget.onOpen,
-              child: Text('${ContestLook.count(((counts['comments'] ?? 0) as num).toInt())} ${isContest ? 'توقّع' : 'تعليق'} · ${ContestLook.count(((counts['shares'] ?? 0) as num).toInt())} مشاركة',
+              child: Text('${ContestLook.count(((counts['comments'] ?? 0) as num).toInt())} ${isContest && !likesContest ? 'توقّع' : 'تعليق'} · ${ContestLook.count(((counts['shares'] ?? 0) as num).toInt())} مشاركة',
                   style: p.text(13, color: p.sub)),
             ),
           ]),
@@ -292,7 +265,7 @@ class _ContestPostCardState extends State<ContestPostCard> {
           decoration: BoxDecoration(border: Border(top: BorderSide(color: p.line))),
           child: Row(children: [
             _likeAction(p),
-            _action(Icons.mode_comment_outlined, isContest && post['can_predict'] == true ? 'توقّع' : (mine && isContest ? 'توقّعك' : 'تعليق'),
+            _action(Icons.mode_comment_outlined, likesContest ? (mine ? 'تعليقك' : 'علّق') : (isContest && post['can_predict'] == true ? 'توقّع' : (mine && isContest ? 'توقّعك' : 'تعليق')),
                 isContest && (post['can_predict'] == true || mine) ? ContestLook.brand : p.sub, widget.onComment ?? widget.onOpen),
             _action(Icons.reply_rounded, 'مشاركة', p.sub, _share, flip: true),
           ]),
@@ -304,7 +277,7 @@ class _ContestPostCardState extends State<ContestPostCard> {
           ),
           Align(
             alignment: AlignmentDirectional.centerStart,
-            child: TextButton(onPressed: widget.onOpen, child: Text('عرض كل ${isContest ? 'التوقعات' : 'التعليقات'}', style: p.text(13, weight: FontWeight.w800, color: p.sub))),
+            child: TextButton(onPressed: widget.onOpen, child: Text('عرض كل ${isContest && !likesContest ? 'التوقعات' : 'التعليقات'}', style: p.text(13, weight: FontWeight.w800, color: p.sub))),
           ),
         ] else
           const SizedBox(height: 4),
@@ -354,7 +327,9 @@ class _ContestPostCardState extends State<ContestPostCard> {
 /// One comment. A prediction shows as a chip under the words (green with ✓ when right after the
 /// result; a lock when answers stay hidden until the contest closes).
 class ContestCommentTile extends StatefulWidget {
-  const ContestCommentTile({super.key, required this.comment, required this.postId, this.compact = false, this.pinnedText, this.onReply, this.inThread = false});
+  const ContestCommentTile({super.key, required this.comment, required this.postId, this.compact = false, this.pinnedText, this.onReply, this.inThread = false, this.onShare});
+  /// a likes contest: share this comment («دير لايك لتعليقه»)
+  final ValueChanged<Map<String, dynamic>>? onShare;
   final Map<String, dynamic> comment;
   /// a reply shown under its top comment: smaller, and it names who it answers instead of quoting
   final bool inThread;
@@ -417,7 +392,9 @@ class _ContestCommentTileState extends State<ContestCommentTile> {
                 decoration: BoxDecoration(
                   color: pinned ? ContestLook.brand.withValues(alpha: p.dark ? .18 : .09) : (mine ? ContestLook.mineBubble(p) : ContestLook.bubble(p)),
                   borderRadius: BorderRadius.circular(18),
-                  border: mine ? Border.all(color: const Color(0xFFB7791F), width: 1.3) : null,
+                  border: c['focused'] == true
+                      ? Border.all(color: ContestLook.brand, width: 2)
+                      : (mine ? Border.all(color: const Color(0xFFB7791F), width: 1.3) : null),
                 ),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
                   if (c['reply_to'] is Map && !widget.inThread) _quote(Map<String, dynamic>.from(c['reply_to'])),
@@ -427,6 +404,7 @@ class _ContestCommentTileState extends State<ContestCommentTile> {
                     if (pinned) _tag('مثبّت', ContestLook.brand),
                     if (c['is_captain'] == true) _tag('كابتن', const Color(0xFF1965BF), solid: true),
                     if (mine && pred != null) _tag('توقّعك · نهائي', const Color(0xFFB7791F)),
+                    if (c['entry'] == true && c['rank'] is num) _rank((c['rank'] as num).toInt()),
                   ]),
                   if (body != null && body.isNotEmpty)
                     Padding(
@@ -477,6 +455,14 @@ class _ContestCommentTileState extends State<ContestCommentTile> {
                       ),
                     );
                   }),
+                  if (widget.onShare != null && c['entry'] == true) ...[
+                    const SizedBox(width: 14),
+                    GestureDetector(
+                      key: ValueKey('share-comment-${c['id']}'),
+                      onTap: () => widget.onShare!(c),
+                      child: Text(mine ? 'شارك تعليقك' : 'شارك', style: p.text(11.5, weight: FontWeight.w800, color: ContestLook.brand)),
+                    ),
+                  ],
                   if (widget.onReply != null) ...[
                     const SizedBox(width: 14),
                     GestureDetector(
@@ -510,6 +496,9 @@ class _ContestCommentTileState extends State<ContestCommentTile> {
       ]),
     );
   }
+
+  /// a likes contest: the comment's place now (medals for the first three)
+  Widget _rank(int r) => _tag(r <= 3 ? '${['🥇', '🥈', '🥉'][r - 1]} المركز $r' : 'المركز $r', r <= 3 ? const Color(0xFFB7791F) : ContestLook.brand, solid: r == 1);
 
   Widget _tag(String t, Color color, {bool solid = false}) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
@@ -551,20 +540,32 @@ class _ContestCommentTileState extends State<ContestCommentTile> {
 }
 
 /// «شارك المنشور»: WhatsApp first (most people here), then copy the link, then the phone's sheet.
-/// Pops 'whatsapp' | 'copy' | 'other'.
-class SharePostSheet extends StatelessWidget {
-  const SharePostSheet({super.key, required this.question, required this.imageUrl, required this.link});
+/// Pops (channel: 'whatsapp' | 'copy' | 'other', forComment).
+class SharePostSheet extends StatefulWidget {
+  const SharePostSheet({super.key, required this.question, required this.imageUrl, required this.link, this.comment});
   final String question;
   final String imageUrl;
   final String link;
+  /// a likes contest: the comment this share can point at (mine or someone's)
+  final Map<String, dynamic>? comment;
+  @override
+  State<SharePostSheet> createState() => _SharePostSheetState();
+}
+
+class _SharePostSheetState extends State<SharePostSheet> {
+  late bool _forComment = widget.comment != null;
+  String get question => widget.question;
+  String get imageUrl => widget.imageUrl;
+  String get link => widget.link;
 
   @override
   Widget build(BuildContext context) {
     final p = ContestLook.p;
+    final cm = widget.comment;
     Widget option(String key, IconData icon, String label) => Expanded(
           child: OutlinedButton.icon(
             key: ValueKey('share-$key'),
-            onPressed: () => Navigator.pop(context, key),
+            onPressed: () => Navigator.pop(context, (key, _forComment)),
             icon: Icon(icon, size: 19, color: p.ink),
             label: Text(label, style: p.text(14, weight: FontWeight.w700)),
             style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(50), side: BorderSide(color: p.line), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
@@ -578,8 +579,25 @@ class SharePostSheet extends StatelessWidget {
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Center(child: Container(width: 40, height: 5, decoration: BoxDecoration(color: p.line, borderRadius: BorderRadius.circular(3)))),
           const SizedBox(height: 12),
-          Text('شارك المنشور', style: p.text(17, weight: FontWeight.w800)),
+          Text(cm != null && _forComment ? (cm['is_mine'] == true ? 'شارك تعليقك 🏆' : 'شارك تعليق ${cm['name'] ?? ''}') : 'شارك المنشور', style: p.text(17, weight: FontWeight.w800)),
           const SizedBox(height: 12),
+          if (cm != null) ...[
+            SegmentedButton<bool>(
+              key: const ValueKey('share-what'),
+              segments: [
+                ButtonSegment(value: true, label: Text(cm['is_mine'] == true ? 'تعليقي' : 'التعليق', style: p.text(13.5, weight: FontWeight.w800))),
+                ButtonSegment(value: false, label: Text('المنشور', style: p.text(13.5, weight: FontWeight.w800))),
+              ],
+              selected: {_forComment},
+              showSelectedIcon: false,
+              onSelectionChanged: (v) => setState(() => _forComment = v.first),
+            ),
+            const SizedBox(height: 8),
+            if (_forComment)
+              Text(cm['is_mine'] == true ? 'صحابك يفتحوا الرابط على تعليقك ويديروله لايك. كل ما يجوك لايكات أكثر، تقرب من الجائزة 🏆' : 'اللي يفتح الرابط يلقى التعليق قدامه ويديرله لايك.',
+                  style: p.text(12.5, color: p.sub, height: 1.6)),
+            const SizedBox(height: 10),
+          ],
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(color: p.field, borderRadius: BorderRadius.circular(14), border: Border.all(color: p.line)),
@@ -599,7 +617,7 @@ class SharePostSheet extends StatelessWidget {
           const SizedBox(height: 14),
           FilledButton.icon(
             key: const ValueKey('share-whatsapp'),
-            onPressed: () => Navigator.pop(context, 'whatsapp'),
+            onPressed: () => Navigator.pop(context, ('whatsapp', _forComment)),
             icon: const Icon(Icons.chat_rounded, size: 20),
             label: Text('ابعته في واتساب', style: p.text(16, weight: FontWeight.w800, color: Colors.white)),
             style: FilledButton.styleFrom(backgroundColor: const Color(0xFF1FAF5A), minimumSize: const Size.fromHeight(54), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
@@ -611,5 +629,53 @@ class SharePostSheet extends StatelessWidget {
         ]),
       ),
     );
+  }
+}
+
+/// «مشاركة» for a post, or for one comment of a likes contest (own: «دير لايك لتعليقي»; someone
+/// else's: «ساعد فلان»). WhatsApp first, then copy, then the phone's sheet. The link opens the post
+/// in the app on that comment, or the page that installs the app and then opens it.
+Future<void> shareContestPost(BuildContext context, Map<String, dynamic> post, {Map<String, dynamic>? comment, ValueChanged<int>? onShared}) async {
+  final id = (post['id'] as num).toInt();
+  final question = '${post['contest']?['question'] ?? 'منشورات تاكسيستا'}';
+  final likesOpen = post['likes_contest'] == true && post['contest']?['status'] == 'open';
+  // a likes contest: sharing from the post offers my own comment first
+  final my = post['my_entry'] is Map ? Map<String, dynamic>.from(post['my_entry']) : null;
+  comment ??= likesOpen && my?['comment_id'] != null ? {'id': my!['comment_id'], 'is_mine': true, 'body': my['text']} : null;
+  final picked = await showModalBottomSheet<(String, bool)>(
+    context: context,
+    backgroundColor: Colors.transparent,
+    builder: (_) => SharePostSheet(question: question, imageUrl: '${post['image_url'] ?? ''}', link: '${post['share_url'] ?? ''}', comment: comment),
+  );
+  if (picked == null || !context.mounted) return;
+  final (channel, forComment) = picked;
+  final cid = forComment ? (comment?['id'] as num?)?.toInt() : null;
+  final r = await ContestsApi.share(id, channel, commentId: cid);
+  final link = '${r?['url'] ?? post['share_url'] ?? ''}';
+  if (r != null && r['shares'] is num) onShared?.call((r['shares'] as num).toInt());
+  if (!context.mounted) return;
+  final String text;
+  if (cid != null && comment?['is_mine'] == true) {
+    text = 'ساعدني نربح 🏆 دير لايك لتعليقي في مسابقة تاكسيستا 👍\n$link';
+  } else if (cid != null) {
+    text = 'ساعد ${comment?['name'] ?? 'صاحبنا'} يربح 🏆 دير لايك لتعليقه في مسابقة تاكسيستا 👍\n$link';
+  } else {
+    text = post['kind'] == 'contest' && post['contest']?['status'] == 'open'
+        ? '$question 🤔\n${post['likes_contest'] == true ? 'شارك معاي في مسابقة تاكسيستا' : 'توقّع معاي في تاكسيستا'} 👇\n$link'
+        : '$question\nشوف المنشور في تاكسيستا 👇\n$link';
+  }
+  final say = ScaffoldMessenger.of(context);
+  void done(String m) => say.showSnackBar(SnackBar(content: Text(m, style: ContestLook.p.text(14, color: Colors.white)), behavior: SnackBarBehavior.floating));
+  if (channel == 'whatsapp') {
+    final ok = await launchUrl(Uri.parse('https://wa.me/?text=${Uri.encodeComponent(text)}'), mode: LaunchMode.externalApplication).catchError((_) => false);
+    if (!ok) {
+      await Clipboard.setData(ClipboardData(text: text));
+      done('ما انفتحش واتساب. نسخنا الرابط ✓ الصقه في أي محادثة.');
+    }
+  } else if (channel == 'copy') {
+    await Clipboard.setData(ClipboardData(text: text));
+    done('تم نسخ الرابط ✓');
+  } else if (context.mounted && !await shareText(context, text)) {
+    done('تم نسخ الرابط ✓');
   }
 }

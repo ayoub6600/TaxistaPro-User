@@ -170,7 +170,7 @@ class MyApp extends StatelessWidget {
                     return null;
                   }
                   // the post itself, ready for a comment (owner 2026-11-23)
-                  return MaterialPageRoute(builder: (_) => ContestLinkPage(code: code));
+                  return MaterialPageRoute(builder: (_) => ContestLinkPage(code: code, comment: ContestLink.commentOf(settings.name)));
                 }
                 final ref = GrowthLinks.refFrom(settings.name);
                 if (ref == null) return null;
