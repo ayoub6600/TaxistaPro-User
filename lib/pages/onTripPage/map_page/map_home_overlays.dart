@@ -1,12 +1,49 @@
+// ignore_for_file: invalid_use_of_protected_member
 part of '../map_page.dart';
 
 extension _MapHomeOverlays on _MapsState {
-  Widget _homeCardGap(Widget card) => Padding(padding: const EdgeInsets.only(bottom: 8), child: card);
+  /// every home card keeps 10 px around it: the gap between cards, and the room for a × on a corner
+  Widget _homeCardGap(Widget card) => Padding(padding: const EdgeInsets.fromLTRB(10, 10, 10, 0), child: card);
+
+  /// a small × on the card's top-left corner (inside the card's room, so all of it can be tapped)
+  Widget _closable(Widget card, VoidCallback onClose) => Stack(children: [
+        _homeCardGap(card),
+        Positioned(
+          top: 0,
+          left: 0,
+          child: Semantics(
+            button: true,
+            label: languageDirection == 'rtl' ? 'إغلاق' : 'Close',
+            excludeSemantics: true,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onClose,
+              child: SizedBox.square(
+                dimension: 32,
+                child: Center(
+                  child: Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: const Color(0xffDCE3EE)),
+                      boxShadow: const [BoxShadow(color: Color(0x2610213F), blurRadius: 4, offset: Offset(0, 1))],
+                    ),
+                    child: const Icon(Icons.close_rounded, size: 14, color: Color(0xff55678A)),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ]);
 
   List<Widget> buildMapHomeOverlays(Size media) {
     return <Widget>[
       buildRecoveryOfferCard(media),
-      // one column: a new card moves the others down and never covers them
+      // one column: a new card moves the others down and never covers them. They step aside while
+      // the home sheet is pulled up over the map.
       if (scheduledOfferSummary.hasOffers ||
           (_bottom == 0 &&
               (RecurringApi.pendingTomorrow(RecurringApi.rides.value) != null ||
@@ -14,123 +51,70 @@ extension _MapHomeOverlays on _MapsState {
                   PostsApi.homePost.value != null ||
                   activePromotionCampaigns.isNotEmpty)))
         Positioned(
-          top: MediaQuery.of(context).padding.top + 82,
-          left: 16,
-          right: 16,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: media.height * 0.4),
-            child: SingleChildScrollView(
-              child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                if (scheduledOfferSummary.hasOffers)
-                  _homeCardGap(ScheduledOfferBanner(
-                    summary: scheduledOfferSummary,
-                    rtl: languageDirection == 'rtl',
-                    onTap: _openScheduledOffers,
-                  )),
-                if (_bottom == 0) ...[
-                  // tomorrow's recurring day comes first (it has a deadline), then the contest, then the campaigns
-                  if (RecurringApi.pendingTomorrow(RecurringApi.rides.value) != null)
-                    _homeCardGap(RecurringTomorrowBanner(
-                      ride: RecurringApi.pendingTomorrow(RecurringApi.rides.value)!['ride'] as Map<String, dynamic>,
-                      next: RecurringApi.pendingTomorrow(RecurringApi.rides.value)!['next'] as Map<String, dynamic>,
+          top: MediaQuery.of(context).padding.top + 72,
+          left: 6,
+          right: 6,
+          child: ValueListenableBuilder<bool>(
+            valueListenable: _homeSheetExpanded,
+            builder: (context, up, child) => IgnorePointer(
+              ignoring: up && _bottom == 0,
+              child: AnimatedOpacity(opacity: up && _bottom == 0 ? 0 : 1, duration: const Duration(milliseconds: 180), child: child),
+            ),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: media.height * 0.4),
+              child: SingleChildScrollView(
+                child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  if (scheduledOfferSummary.hasOffers)
+                    _homeCardGap(ScheduledOfferBanner(
+                      summary: scheduledOfferSummary,
+                      rtl: languageDirection == 'rtl',
+                      onTap: _openScheduledOffers,
                     )),
-                  if (PostsApi.homePost.value != null) _homeCardGap(PostHomeCard(post: PostsApi.homePost.value!)),
-                  if (ContestsApi.homePost.value != null)
-                    _homeCardGap(ContestHomeCard(post: ContestsApi.homePost.value!)),
-                  if (activePromotionCampaigns.isNotEmpty)
-                    _homeCardGap(_PromotionStrip(campaigns: activePromotionCampaigns, rtl: languageDirection == 'rtl')),
-                ],
-              ]),
+                  if (_bottom == 0) ...[
+                    // tomorrow's recurring day comes first (it has a deadline), then the contest, then the campaigns
+                    if (RecurringApi.pendingTomorrow(RecurringApi.rides.value) != null)
+                      _homeCardGap(RecurringTomorrowBanner(
+                        ride: RecurringApi.pendingTomorrow(RecurringApi.rides.value)!['ride'] as Map<String, dynamic>,
+                        next: RecurringApi.pendingTomorrow(RecurringApi.rides.value)!['next'] as Map<String, dynamic>,
+                      )),
+                    // the × closes this announcement only; «شوف» opens the post
+                    if (PostsApi.homePost.value != null)
+                      _closable(PostHomeCard(post: PostsApi.homePost.value!), PostsApi.dismissHome),
+                    if (ContestsApi.homePost.value != null)
+                      _closable(ContestHomeCard(post: ContestsApi.homePost.value!), () => unawaited(ContestsApi.dismissHome())),
+                    if (activePromotionCampaigns.isNotEmpty)
+                      _homeCardGap(_PromotionStrip(campaigns: activePromotionCampaigns, rtl: languageDirection == 'rtl')),
+                  ],
+                ]),
+              ),
             ),
           ),
         ),
-      Positioned(
+      // «من أين»: the mascot waits in the middle and the map moves the pickup under it. Elsewhere it
+      // stands on the pickup as a map marker (see map_pickup_adjust.dart).
+      if (_pickupAdjust)
+        Positioned(
           top: 0,
-          child: Container(
-              height: media.height * 1,
-              width: media.width * 1,
-              alignment: Alignment.center,
-              // The recovery card takes visual priority and sits in the
-              // same vertical band as the idle mascot - showing both at
-              // once reads as broken, not busy.
-              child: (_dropLocationMap == false &&
-                      pendingRecoveryOfferForRider == null)
-                  ? Column(
-                      children: [
-                        SizedBox(
-                          height: (media.height / 2) -
-                              riderMascotHeight -
-                              riderMascotBubbleAllowance,
-                        ),
-                        RiderMascotBubble(
-                          text: _isPickingLocation
-                              ? (languageDirection == 'rtl'
-                                  ? 'يحدد نقطة اللقاء'
-                                  : 'Choosing the meeting point')
-                              : _riderFirstName(),
-                        ),
-                        const SizedBox(height: 4),
-                        Image.asset(
-                          riderMascotAsset,
-                          width: riderMascotWidth,
-                          height: riderMascotHeight,
-                          cacheWidth: (riderMascotWidth *
-                                  MediaQuery.of(context).devicePixelRatio)
-                              .round(),
-                          fit: BoxFit.contain,
-                        ),
-                        if (userDetails[
-                                'enable_map_location_icon_drag_and_drop_feature'] ==
-                            '0')
-                          Button(
-                              width: media.width * 0.5,
-                              onTap: () async {
-                                if (_lastRequestedLocation != null &&
-                                    _lastRequestedLocation!.latitude ==
-                                        _centerLocation.latitude &&
-                                    _lastRequestedLocation!.longitude ==
-                                        _centerLocation.longitude) {
-                                  return;
-                                }
-
-                                _lastRequestedLocation = _centerLocation;
-
-                                String? val = await geoCoding(
-                                    _centerLocation.latitude,
-                                    _centerLocation.longitude);
-
-                                if (val != null && val.isNotEmpty) {
-                                  setState(() {
-                                    if (addressList
-                                        .where((e) => e.type == 'pickup')
-                                        .isNotEmpty) {
-                                      var add = addressList.firstWhere(
-                                          (e) => e.type == 'pickup');
-                                      add.address = val;
-                                      add.latlng = _centerLocation;
-                                    } else {
-                                      addressList.add(AddressList(
-                                        id: '1',
-                                        type: 'pickup',
-                                        address: val,
-                                        pickup: true,
-                                        latlng: _centerLocation,
-                                        name: userDetails['name'],
-                                        number: userDetails['mobile'],
-                                      ));
-                                    }
-
-                                    _lastCenter = _centerLocation;
-                                    ischanged = false;
-                                  });
-                                }
-                              },
-                              text: languages[choosenLanguage]['text_confirm'])
-                      ],
-                    )
-                  : (_dropLocationMap
-                      ? Image.asset('assets/images/dropmarker.png')
-                      : const SizedBox()))),
+          left: 0,
+          right: 0,
+          height: media.height,
+          child: IgnorePointer(
+            child: Column(children: [
+              SizedBox(height: (media.height / 2) - riderMascotHeight - riderMascotBubbleAllowance),
+              RiderMascotBubble(
+                text: _isPickingLocation ? (languageDirection == 'rtl' ? 'يحدد نقطة اللقاء' : 'Choosing the meeting point') : _riderFirstName(),
+              ),
+              const SizedBox(height: 4),
+              Image.asset(
+                riderMascotAsset,
+                width: riderMascotWidth,
+                height: riderMascotHeight,
+                cacheWidth: (riderMascotWidth * MediaQuery.of(context).devicePixelRatio).round(),
+                fit: BoxFit.contain,
+              ),
+            ]),
+          ),
+        ),
       (contactus == true)
           ? Positioned(
               right: 10,
@@ -145,7 +129,7 @@ extension _MapHomeOverlays on _MapsState {
                         boxShadow: [
                           BoxShadow(
                               blurRadius: 2,
-                              color: Colors.black.withOpacity(0.2),
+                              color: Colors.black.withValues(alpha: 0.2),
                               spreadRadius: 2)
                         ],
                         color: page,
@@ -226,116 +210,6 @@ extension _MapHomeOverlays on _MapsState {
               ),
             )
           : const SizedBox(),
-      // steps up while «هدية كل يوم» takes its line above the shortcuts
-      ValueListenableBuilder<bool>(
-        valueListenable: dailyGiftBarShown,
-        builder: (context, gift, child) => AnimatedPositioned(
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeOut,
-          right: 18,
-          bottom: (gift ? 322 : 246) + MediaQuery.paddingOf(context).bottom,
-          child: child!,
-        ),
-        child: MapRecenterButton(onTap: recenterMap),
-      ),
-      // A booking belongs to the rider, not to the current map camera. Route
-      // preview/back changes _centerLocation and used to hide this card until
-      // a cold restart, even though the scheduled ride was still active.
-      (_bottom == 0 &&
-              (activeRiderBookings.isNotEmpty ||
-                  userDetails['has_ongoing_ride'] == true))
-          ? Positioned(
-              bottom: ((userDetails['show_rental_ride'] == true ||
-                      userDetails['enable_modules_for_applications'] == 'both'))
-                  ? media.width * 0.85
-                  : media.width * 0.67,
-              child: InkWell(
-                onTap: () async {
-                  await guardedPush(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => activeRiderBookings.isNotEmpty
-                              ? const ActiveRiderBookingsPage()
-                              : const OnGoingRides()));
-                  await getActiveRiderBookings();
-                },
-                child: Container(
-                  width: media.width - 24,
-                  margin: const EdgeInsets.symmetric(horizontal: 12),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                        colors: [Color(0xff102A56), Color(0xff1965BF)]),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: const [
-                      BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 16,
-                          offset: Offset(0, 6))
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 46,
-                        height: 46,
-                        decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.16),
-                            borderRadius: BorderRadius.circular(14)),
-                        child: const Icon(Icons.calendar_month_rounded,
-                            color: Colors.white, size: 26),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              activeRiderBookings.isNotEmpty &&
-                                      activeRiderBookings.every((item) =>
-                                          item is Map &&
-                                          (item['is_later'] == true ||
-                                              item['is_later'] == 1))
-                                  ? (languageDirection == 'rtl'
-                                      ? 'رحلتك المجدولة'
-                                      : 'Your scheduled ride')
-                                  : (languageDirection == 'rtl'
-                                      ? 'حجوزاتك القائمة'
-                                      : 'Your bookings'),
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w800),
-                            ),
-                            const SizedBox(height: 5),
-                            Text(
-                              activeRiderBookings.length == 1 &&
-                                      activeRiderBookings.first is Map &&
-                                      (activeRiderBookings.first['is_later'] ==
-                                              true ||
-                                          activeRiderBookings
-                                                  .first['is_later'] ==
-                                              1)
-                                  ? '${_bookingWhen(activeRiderBookings.first as Map)} · ${activeRiderBookings.first['driver_id'] == null ? (languageDirection == 'rtl' ? 'متاحة للسائقين' : 'Available to drivers') : (languageDirection == 'rtl' ? 'أكدها السائق' : 'Driver confirmed')}'
-                                  : (languageDirection == 'rtl'
-                                      ? '${activeRiderBookings.length} حجوزات · عرض التفاصيل'
-                                      : '${activeRiderBookings.length} bookings · View details'),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                  color: Color(0xffDCEBFF), fontSize: 12),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Icon(Icons.arrow_forward_ios_rounded,
-                          color: Colors.white, size: 17),
-                    ],
-                  ),
-                ),
-              ),
-            )
-          : const SizedBox(),
       (_bottom == 0)
           ? Positioned(
               top: MediaQuery.of(context).padding.top + 20,
@@ -380,112 +254,6 @@ extension _MapHomeOverlays on _MapsState {
               ))
           : const SizedBox(),
     ];
-  }
-
-  Widget buildPickupConfirmationOverlay(Size media) {
-    if (_lastCenter != 0) return const SizedBox();
-
-    return Positioned(
-      bottom: 0,
-      child: Container(
-        color: page,
-        padding: EdgeInsets.all(media.width * 0.05),
-        height: media.width * 0.35,
-        width: media.width,
-        child: Column(
-          children: [
-            InkWell(
-              onTap: () {
-                if (addressList
-                    .where((element) => element.type == 'pickup')
-                    .isNotEmpty) {
-                  setState(() {
-                    _pickaddress = true;
-                    _dropaddress = false;
-                    addAutoFill.clear();
-                  });
-
-                  Future.delayed(const Duration(milliseconds: 200), () {
-                    if (!mounted) return;
-                    setState(() => _bottom = 1);
-                  });
-                }
-              },
-              child: Container(
-                padding: EdgeInsets.all(media.width * 0.01),
-                decoration: BoxDecoration(
-                  color: page,
-                  borderRadius: BorderRadius.circular(media.width * 0.01),
-                  border: Border.all(color: hintColor),
-                ),
-                height: media.width * 0.1,
-                width: media.width * 0.9,
-                child: Row(
-                  children: [
-                    Container(
-                      height: media.width * 0.05,
-                      width: media.width * 0.05,
-                      alignment: Alignment.center,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.green,
-                      ),
-                      child: Container(
-                        height: media.width * 0.02,
-                        width: media.width * 0.02,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white.withOpacity(0.6),
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: media.width * 0.02),
-                    Expanded(
-                      child: MyText(
-                        text: addressList
-                                .where((element) => element.type == 'pickup')
-                                .isNotEmpty
-                            ? addressList
-                                .firstWhere(
-                                  (element) => element.type == 'pickup',
-                                  orElse: () => AddressList(
-                                    id: '',
-                                    address: '',
-                                    pickup: true,
-                                    latlng: const LatLng(0.0, 0.0),
-                                  ),
-                                )
-                                .address
-                            : languages[choosenLanguage]['text_4letterpickup'],
-                        size: media.width * fourteen,
-                        color: textColor,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            SizedBox(height: media.width * 0.02),
-            ShowUpWidget(
-              delay: 100,
-              child: Button(
-                borderRadius: 0.0,
-                height: media.width * 0.1,
-                onTap: () async {
-                  setState(() {
-                    _lastCenter = _centerLocation;
-                    ischanged = false;
-                  });
-                },
-                text: languages[choosenLanguage]['text_confirm'],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 
@@ -611,7 +379,7 @@ class _RiderPromotionHomeCard extends StatelessWidget {
             else
               CircleAvatar(
                 radius: compact ? 16 : 19,
-                backgroundColor: Color(0xffE8F5EE),
+                backgroundColor: const Color(0xffE8F5EE),
                 child: const Icon(Icons.card_giftcard_rounded,
                     color: Color(0xff159668), size: 19),
               ),

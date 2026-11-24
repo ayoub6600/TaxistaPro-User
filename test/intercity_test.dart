@@ -8,7 +8,8 @@ import 'package:taxista/pages/intercity/intercity_fare_page.dart';
 import 'package:taxista/pages/intercity/intercity_flow.dart';
 import 'package:taxista/pages/intercity/intercity_seats.dart';
 import 'package:taxista/pages/intercity/intercity_wait_page.dart';
-import 'package:taxista/pages/onTripPage/home_services_row.dart';
+import 'package:taxista/pages/onTripPage/home_sheet/home_services.dart';
+import 'package:taxista/pages/onTripPage/home_sheet/rider_home_sheet.dart';
 
 IntercityHome _home({List shared = const [], bool enabled = true}) => IntercityHome({
       'enabled': enabled,
@@ -32,27 +33,25 @@ Widget _app(Widget w) => MaterialApp(home: w);
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
 
-  HomeService svc(String l, {bool soon = false, VoidCallback? tap}) => HomeService(
-      label: l, icon: Icons.circle, background: Colors.white, foreground: Colors.black, iconBackground: Colors.blue, iconColor: Colors.white, soon: soon, onTap: tap ?? () {});
-
-  testWidgets('the home bar shows every service with its label and «قريبًا» only near the focus', (t) async {
-    HomeServicesRow.introPlayed = true;
+  testWidgets('the home services: «سفر» shows only where it is open, and opens the trip', (t) async {
     var travel = 0;
-    await t.pumpWidget(_app(Scaffold(
-      body: Directionality(
-        textDirection: TextDirection.rtl,
-        child: Center(child: HomeServicesRow(services: [svc('بدون وجهة'), svc('سفر', tap: () => travel++), svc('الشحن', soon: true), svc('توصيل', soon: true), svc('ساحبة', soon: true)])),
-      ),
-    )));
+    Widget strip({VoidCallback? onTravel}) => _app(Scaffold(
+          body: Directionality(
+            textDirection: TextDirection.rtl,
+            child: HomeServicesStrip(
+              services: HomeServices.build(rtl: true, onRideWithoutDestination: () {}, onSoon: (_) {}, onTravel: onTravel),
+            ),
+          ),
+        ));
+    await t.pumpWidget(strip());
+    expect(find.text('سفر'), findsNothing, reason: 'closed in this city: not shown, as before');
+    await t.pumpWidget(strip(onTravel: () => travel++));
     await t.pumpAndSettle();
-    for (final l in ['بدون وجهة', 'سفر', 'الشحن', 'توصيل', 'ساحبة']) {
+    for (final l in ['بدون وجهة', 'سفر', 'نقل بضائع', 'طرود', 'ونش']) {
       expect(find.text(l), findsOneWidget, reason: l);
     }
     await t.tap(find.text('سفر'));
     expect(travel, 1);
-    expect(HomeServicesRow.scaleFor(0), 1);
-    expect(HomeServicesRow.scaleFor(200), closeTo(.55, .01));
-    expect(HomeServicesRow.scaleFor(-120), lessThan(1));
   });
 
   testWidgets('كيف تحب تسافر: a city and a whole car or a seat', (t) async {

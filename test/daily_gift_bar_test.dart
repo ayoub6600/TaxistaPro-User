@@ -29,13 +29,31 @@ void main() {
     expect(DailyGiftOffer.fromJson({'state': 'live', 'seconds_left': 9, 'amount': '5 دينار'})!.isLive, isTrue);
   });
 
-  testWidgets('a later open goes straight to the line, with the small expiry label', (tester) async {
+  testWidgets('a later open goes straight to the line: «هديتك اليوم 5 دينار» and a stopwatch with the time left', (tester) async {
     await tester.pumpWidget(host(DailyGiftBar(offerForTest: offer())));
     await tester.pump();
-    expect(find.textContaining('هديتك اليوم', findRichText: true), findsOneWidget);
-    expect(find.text('تنتهي صلاحية الهدية بعد'), findsOneWidget);
+    expect(find.textContaining('هديتك اليوم 5 دينار', findRichText: true), findsOneWidget);
+    expect(find.byIcon(Icons.timer_outlined), findsOneWidget);
     expect(find.text('04:12:36'), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('تنتهي صلاحية الهدية بعد 04:12:36')), findsOneWidget);
     expect(dailyGiftBarShown.value, isTrue);
+  });
+
+  testWidgets('before the gift starts, the small line says what the countdown is for', (tester) async {
+    await tester.pumpWidget(host(DailyGiftBar(offerForTest: offer('upcoming'))));
+    await tester.pump();
+    expect(find.text('تبدأ الهدية بعد'), findsOneWidget);
+  });
+
+  testWidgets('with the home sheet up it is a small gift that still opens the terms', (tester) async {
+    await tester.pumpWidget(host(DailyGiftBar(offerForTest: offer(), iconOnly: true)));
+    await tester.pump();
+    expect(find.byKey(const ValueKey('daily-gift-icon')), findsOneWidget);
+    expect(find.textContaining('هديتك اليوم', findRichText: true), findsNothing);
+    expect(tester.getSize(find.byKey(const ValueKey('daily-gift-icon'))).width, lessThan(60));
+    await tester.tap(find.byKey(const ValueKey('daily-gift-icon')));
+    await tester.pumpAndSettle(const Duration(milliseconds: 300), EnginePhase.sendSemanticsUpdate, const Duration(seconds: 2));
+    expect(find.text('اطلب مشوارك'), findsOneWidget);
   });
 
   testWidgets('the first open shows the box alone, then the burst, then the line', (tester) async {

@@ -57,7 +57,10 @@ import '../navDrawer/nav_drawer.dart';
 import '../noInternet/noInternet.dart';
 import 'booking_confirmation.dart';
 import 'drop_loc_select.dart';
-import 'home_quick_actions.dart';
+import 'home_sheet/home_places_sheet.dart';
+import 'home_sheet/home_services.dart';
+import 'home_sheet/rider_home_sheet.dart';
+import '../../growth/gift_widgets.dart';
 import 'widgets/rider_mascot_marker.dart';
 import 'map_page/widgets/map_advertisement_banner.dart';
 import 'map_page/widgets/map_floating_menu_button.dart';
@@ -84,7 +87,10 @@ import '../recurring/recurring_rides_page.dart' show RecurringLink, RecurringRid
 import '../../contests/contests_api.dart';
 import '../../posts/post_home_card.dart';
 import '../../posts/posts_api.dart';
-import '../../posts/posts_pages.dart' show PostLink;
+import '../../posts/posts_pages.dart' show PostLink, PostsFeedPage;
+import '../NavigatorPages/walletpage.dart';
+import '../NavigatorPages/referral.dart';
+import '../NavigatorPages/support.dart';
 import '../../contests/contests_pages.dart';
 // ignore: depend_on_referenced_packages
 
@@ -102,6 +108,7 @@ part 'map_page/map_location_services.dart';
 part 'map_page/map_main_content.dart';
 part 'map_page/map_mode_sheet.dart';
 part 'map_page/map_permission_states.dart';
+part 'map_page/map_pickup_adjust.dart';
 part 'map_page/map_recovery_offer.dart';
 part 'map_page/map_search_results.dart';
 part 'map_page/map_system_overlays.dart';
@@ -145,7 +152,6 @@ bool isRentalRide = false;
 String infoMessage = '';
 bool rideWithoutDestination = false;
 bool rentalRide = false;
-LatLng? _lastRequestedLocation;
 
 TextEditingController pickupAddressController = TextEditingController();
 TextEditingController dropAddressController = TextEditingController();
@@ -155,7 +161,6 @@ class _MapsState extends State<Maps>
 // dynamic _currentCenter;
   // One destination-entry tap (where to / home / work / recent) at a time.
   final ExclusiveRunner _destinationEntry = ExclusiveRunner();
-  dynamic _lastCenter;
   LatLng _centerLocation = const LatLng(41.4219057, -102.0840772);
   LatLng? _carsCenter; // where the home map's car query is centred (follows the pin)
   final _debouncer = Debouncer(milliseconds: 1000);
@@ -165,18 +170,32 @@ class _MapsState extends State<Maps>
   dynamic animationController;
   dynamic _sessionToken;
   final TextEditingController _pickupSearchController = TextEditingController();
-  DateTime? _lastPickupFieldTapAt;
   DateTime? _lastDestinationFieldTapAt;
   bool _loading = false;
   bool _pickaddress = false;
   bool _dropaddress = false;
-  final bool _dropLocationMap = false;
   bool _locationDenied = false;
 
-  /// True while the home map's camera is moving under the fixed pickup pin
-  /// - drives the mascot's speech bubble between "يحدد نقطة اللقاء" and the
-  /// rider's name, same as the dedicated pickup-location picker screen.
+  /// True while the map moves under the pickup pin in «من أين» (pickup-adjust mode) - drives the
+  /// mascot's speech bubble between "يحدد نقطة اللقاء" and the rider's name.
   bool _isPickingLocation = false;
+
+  /// «من أين»: the only time moving the map moves the pickup. Everywhere else on this page the
+  /// pickup is the phone's own place and panning or zooming asks nobody for an address
+  /// (owner 2026-11-24, Google Maps cost).
+  bool _pickupAdjust = false;
+
+  /// the pickup was chosen by the rider (pin, search, a saved place) rather than the phone's place
+  bool _pickupByHand = false;
+  String? _adjustAddress;
+  LatLng? _adjustAskedAt;
+
+  /// the home sheet is pulled up: the cards at the top step aside
+  final ValueNotifier<bool> _homeSheetExpanded = ValueNotifier(false);
+
+  /// the mascot + the rider's name as one map marker, made once per name
+  BitmapDescriptor? _mascotIcon;
+  String? _mascotIconName;
   int gettingPerm = 0;
   Animation<double>? _animation;
 
@@ -516,6 +535,7 @@ class _MapsState extends State<Maps>
     PostsApi.homePost.removeListener(_onRecurringRides);
     RecurringPush.lastAnswer.removeListener(_onRecurringAnswer);
     _pickupSearchController.dispose();
+    _homeSheetExpanded.dispose();
     _controller?.dispose();
     _controller = null;
     animationController?.dispose();

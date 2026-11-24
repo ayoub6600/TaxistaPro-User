@@ -1,3 +1,4 @@
+// ignore_for_file: invalid_use_of_protected_member
 part of '../map_page.dart';
 
 extension _MapCanvas on _MapsState {
@@ -209,10 +210,11 @@ extension _MapCanvas on _MapsState {
                 }
               }
             });
-            HomeMapCars.settle(myMarkers, _centerLocation,
+            HomeMapCars.settle(myMarkers, _carsCenter ?? _homePickupPoint,
                 present: driverData.map((e) => e is Map ? e['id']?.toString() : null).whereType<String>().toSet());
           }
           if (mapType == 'google') {
+            _ensureMascotIcon();
             unawaited(ServiceZones.load());
             return ValueListenableBuilder<Set<Polygon>>(
                 valueListenable: ServiceZones.polygons,
@@ -228,129 +230,21 @@ extension _MapCanvas on _MapsState {
                           ? MapLaunchCoordinator.regionalZoom
                           : 15.0,
                     ),
-                    onCameraMove: (CameraPosition position) async {
-                      if (addressList.isEmpty) {
-                        _centerLocation = position.target;
-                      } else {
-                        _centerLocation = position.target;
-                      }
-                      if (!_isPickingLocation) {
-                        setState(() {
-                          _isPickingLocation = true;
-                        });
+                    // panning or zooming the home map changes nothing and asks nobody for an
+                    // address; only «من أين» (pickup-adjust mode) moves the pickup with the map
+                    onCameraMove: (CameraPosition position) {
+                      _centerLocation = position.target;
+                      if (_pickupAdjust && !_isPickingLocation) {
+                        setState(() => _isPickingLocation = true);
                       }
                     },
-                    onCameraIdle: () async {
-                      if (_isPickingLocation) {
-                        setState(() {
-                          _isPickingLocation = false;
-                        });
-                      }
-                      // the pin moved more than a km: show the real captains around the new spot
-                      final carsAt = _carsCenter;
-                      if (carsAt == null ||
-                          calculateDistance(carsAt.latitude, carsAt.longitude, _centerLocation.latitude, _centerLocation.longitude) > 1000) {
-                        setState(() => carsAround(_centerLocation));
-                      }
-                      if (_lastRequestedLocation != null &&
-                          _lastRequestedLocation!.latitude ==
-                              _centerLocation.latitude &&
-                          _lastRequestedLocation!.longitude ==
-                              _centerLocation.longitude) {
-                        return;
-                      }
-
-                      _lastRequestedLocation = _centerLocation;
-
-                      if (userDetails[
-                              'enable_map_location_icon_drag_and_drop_feature'] ==
-                          '0') {
-                        if ((_bottom == 0 &&
-                            !_pickaddress &&
-                            addressList
-                                .where((e) => e.type == 'pickup')
-                                .isNotEmpty)) {
-                          setState(() {});
-                        }
-
-                        if (addressList
-                            .where((e) => e.type == 'pickup')
-                            .isEmpty) {
-                          if (_bottom == 0 && !_pickaddress) {
-                            String? val = await geoCoding(
-                                _centerLocation.latitude,
-                                _centerLocation.longitude);
-
-                            setState(() {
-                              if (addressList
-                                  .where((e) => e.type == 'pickup')
-                                  .isNotEmpty) {
-                                var add = addressList
-                                    .firstWhere((e) => e.type == 'pickup');
-                                add.address = val ?? '';
-                                add.latlng = LatLng(_centerLocation.latitude,
-                                    _centerLocation.longitude);
-                              } else {
-                                addressList.add(AddressList(
-                                  id: '1',
-                                  type: 'pickup',
-                                  address: val ?? '',
-                                  latlng: LatLng(_centerLocation.latitude,
-                                      _centerLocation.longitude),
-                                  name: userDetails['name'],
-                                  number: userDetails['mobile'],
-                                  pickup: true,
-                                ));
-                              }
-
-                              _lastCenter = _centerLocation;
-                            });
-                          } else if (_pickaddress) {
-                            setState(() {
-                              _pickaddress = false;
-                            });
-                          }
-                        } else if (_pickaddress) {
-                          setState(() {
-                            _pickaddress = false;
-                          });
-                        }
-                      } else if (userDetails[
-                              'enable_map_location_icon_drag_and_drop_feature'] ==
-                          '1') {
-                        String? val = await geoCoding(_centerLocation.latitude,
-                            _centerLocation.longitude);
-
-                        setState(() {
-                          if (addressList
-                              .where((e) => e.type == 'pickup')
-                              .isNotEmpty) {
-                            var add = addressList
-                                .firstWhere((e) => e.type == 'pickup');
-                            add.address = val ?? '';
-                            add.latlng = LatLng(_centerLocation.latitude,
-                                _centerLocation.longitude);
-                          } else {
-                            addressList.add(AddressList(
-                              id: '1',
-                              type: 'pickup',
-                              address: val ?? '',
-                              pickup: true,
-                              latlng: LatLng(_centerLocation.latitude,
-                                  _centerLocation.longitude),
-                              name: userDetails['name'],
-                              number: userDetails['mobile'],
-                            ));
-                          }
-
-                          _lastCenter = _centerLocation;
-                          ischanged = false;
-                        });
-                      }
+                    onCameraIdle: () {
+                      if (_pickupAdjust) unawaited(_settlePickupAdjust());
                     },
                     minMaxZoomPreference: const MinMaxZoomPreference(8.0, 20.0),
                     myLocationButtonEnabled: false,
-                    markers: Set<Marker>.from(myMarkers),
+                    // the cars, and the mascot on the pickup (the phone's place on the home screen)
+                    markers: _withPickupMarker(myMarkers.whereType<Marker>()),
                     // where Taxista works (the market's zones), drawn softly under everything else
                     polygons: ServiceZones.polygons.value,
                     buildingsEnabled: false,
@@ -365,161 +259,21 @@ extension _MapCanvas on _MapsState {
                 return fm.FlutterMap(
                   mapController: _fmController,
                   options: fm.MapOptions(
-                      onMapEvent: (v) async {
-                        _centerLocation = LatLng(v.camera.center.latitude,
-                            v.camera.center.longitude);
-
-                        if (_lastRequestedLocation != null &&
-                            _lastRequestedLocation!.latitude ==
-                                _centerLocation.latitude &&
-                            _lastRequestedLocation!.longitude ==
-                                _centerLocation.longitude) {
-                          return;
-                        }
-
-                        _lastRequestedLocation = _centerLocation;
-
-                        if (v.source ==
-                                fm.MapEventSource.nonRotatedSizeChange &&
-                            addressList.isEmpty) {
-                          setState(() {});
-                          String? val = await geoCoding(
-                              _centerLocation.latitude,
-                              _centerLocation.longitude);
-
-                          if (val != null && val.isNotEmpty) {
-                            setState(() {
-                              if (addressList
-                                  .where((element) => element.type == 'pickup')
-                                  .isNotEmpty) {
-                                var add = addressList.firstWhere(
-                                    (element) => element.type == 'pickup');
-                                add.address = val;
-                                add.latlng = _centerLocation;
-                              } else {
-                                addressList.add(AddressList(
-                                  id: '1',
-                                  type: 'pickup',
-                                  address: val,
-                                  pickup: true,
-                                  latlng: _centerLocation,
-                                  name: userDetails['name'],
-                                  number: userDetails['mobile'],
-                                ));
-                              }
-                            });
-
-                            _lastCenter = _centerLocation;
-                            ischanged = false;
-                          }
-                        }
-
-                        if (v.source == fm.MapEventSource.dragEnd) {
-                          setState(() {});
-                          if (userDetails[
-                                  'enable_map_location_icon_drag_and_drop_feature'] ==
-                              '0') {
-                            String? val = await geoCoding(
-                                _centerLocation.latitude,
-                                _centerLocation.longitude);
-
-                            if (val != null && val.isNotEmpty) {
-                              lowerLat =
-                                  _centerLocation.latitude - (lat * 1.24);
-                              lowerLon =
-                                  _centerLocation.longitude - (lon * 1.24);
-                              greaterLat =
-                                  _centerLocation.latitude + (lat * 1.24);
-                              greaterLon =
-                                  _centerLocation.longitude + (lon * 1.24);
-
-                              lower = geo.encode(lowerLon, lowerLat);
-                              higher = geo.encode(greaterLon, greaterLat);
-
-                              fdb = FirebaseDatabase.instance
-                                  .ref('drivers')
-                                  .orderByChild('g')
-                                  .startAt(lower)
-                                  .endAt(higher);
-
-                              setState(() {
-                                if (addressList
-                                    .where(
-                                        (element) => element.type == 'pickup')
-                                    .isNotEmpty) {
-                                  var add = addressList.firstWhere(
-                                      (element) => element.type == 'pickup');
-                                  add.address = val;
-                                  add.latlng = _centerLocation;
-                                } else {
-                                  addressList.add(AddressList(
-                                    id: '1',
-                                    type: 'pickup',
-                                    address: val,
-                                    pickup: true,
-                                    latlng: _centerLocation,
-                                    name: userDetails['name'],
-                                    number: userDetails['mobile'],
-                                  ));
-                                }
-
-                                _lastCenter = _centerLocation;
-                                ischanged = false;
-                              });
-                            }
-                          }
-                        }
-                      },
-                      onPositionChanged: (p, l) async {
-                        if (l == false) {
-                          if (addressList.isEmpty) {
-                            _centerLocation =
-                                LatLng(p.center.latitude, p.center.longitude);
-
-                            if (_lastRequestedLocation != null &&
-                                _lastRequestedLocation!.latitude ==
-                                    _centerLocation.latitude &&
-                                _lastRequestedLocation!.longitude ==
-                                    _centerLocation.longitude) {
-                              return;
-                            }
-
-                            _lastRequestedLocation = _centerLocation;
-
-                            setState(() {});
-
-                            String? val = await geoCoding(
-                                _centerLocation.latitude,
-                                _centerLocation.longitude);
-
-                            lowerLat = _centerLocation.latitude - (lat * 1.24);
-
-                            if (val != null && val.isNotEmpty) {
-                              setState(() {
-                                if (addressList
-                                    .where((e) => e.type == 'pickup')
-                                    .isNotEmpty) {
-                                  var add = addressList
-                                      .firstWhere((e) => e.type == 'pickup');
-                                  add.address = val;
-                                  add.latlng = _centerLocation;
-                                } else {
-                                  addressList.add(AddressList(
-                                    id: '1',
-                                    type: 'pickup',
-                                    address: val,
-                                    pickup: true,
-                                    latlng: _centerLocation,
-                                    name: userDetails['name'],
-                                    number: userDetails['mobile'],
-                                  ));
-                                }
-
-                                _lastCenter = _centerLocation;
-                                ischanged = false;
-                              });
-                            }
-                          }
+                      // the same rule as the Google map: only «من أين» moves the pickup, and the
+                      // address is asked once when the map stops
+                      onMapEvent: (v) {
+                        _centerLocation = LatLng(v.camera.center.latitude, v.camera.center.longitude);
+                        if (!_pickupAdjust) return;
+                        // a move made by the app (to the pickup, «موقعي») lands at once: no end event follows
+                        if (v.source == fm.MapEventSource.mapController ||
+                            v is fm.MapEventMoveEnd ||
+                            v is fm.MapEventFlingAnimationEnd ||
+                            v is fm.MapEventFlingAnimationNotStarted ||
+                            v is fm.MapEventDoubleTapZoomEnd ||
+                            v is fm.MapEventRotateEnd) {
+                          unawaited(_settlePickupAdjust());
+                        } else if (v is fm.MapEventWithMove && !_isPickingLocation) {
+                          setState(() => _isPickingLocation = true);
                         }
                       },
                       initialCenter:
@@ -577,6 +331,20 @@ extension _MapCanvas on _MapsState {
                           .values
                           .toList(),
                     ),
+                    if (_pickupMarkerPoint != null)
+                      fm.MarkerLayer(markers: [
+                        fm.Marker(
+                          point: fmlt.LatLng(_pickupMarkerPoint!.latitude, _pickupMarkerPoint!.longitude),
+                          width: 160,
+                          height: riderMascotHeight + 40,
+                          alignment: Alignment.topCenter,
+                          // the feet on the point
+                          child: Column(mainAxisAlignment: MainAxisAlignment.end, children: [
+                            RiderMascotBubble(text: _riderFirstName()),
+                            Image.asset(riderMascotAsset, width: riderMascotWidth, height: riderMascotHeight, fit: BoxFit.contain),
+                          ]),
+                        ),
+                      ]),
                     const fm.RichAttributionWidget(
                       attributions: [],
                     ),

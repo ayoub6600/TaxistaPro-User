@@ -9,7 +9,6 @@ extension _MapHomeState on _MapsState {
           buildLiveMapCanvas(media),
           ...buildMapHomeOverlays(media),
           buildMapHomeBottomSheet(media),
-          buildPickupConfirmationOverlay(media),
         ],
       ),
     );

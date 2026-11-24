@@ -1,3 +1,4 @@
+// ignore_for_file: invalid_use_of_protected_member, deprecated_member_use
 part of '../map_page.dart';
 
 extension _MapLocationServices on _MapsState {
@@ -75,6 +76,7 @@ extension _MapLocationServices on _MapsState {
 
     myBearings.clear();
     addressList.clear();
+    _pickupByHand = false;
     serviceEnabled = await location.serviceEnabled();
     polyline.clear();
     pinLocationIcon = BitmapDescriptor.fromBytes(
@@ -113,7 +115,6 @@ extension _MapLocationServices on _MapsState {
     center = locatedCenter;
     currentLocation = locatedCenter;
     _centerLocation = locatedCenter;
-    _lastCenter = locatedCenter;
     locationAllowed = true;
     state = '3';
     _loading = false;
@@ -124,6 +125,10 @@ extension _MapLocationServices on _MapsState {
       positionStreamData();
     }
     fdbfun();
+    // the home pickup is the phone's place: its address once now (the map's moves never ask)
+    unawaited(ensurePickupForDestination().then((_) {
+      if (mounted) setState(() {});
+    }));
   }
 
   Future<void> getLocationPermission() async {

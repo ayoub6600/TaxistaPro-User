@@ -1,3 +1,4 @@
+// ignore_for_file: invalid_use_of_protected_member
 part of '../map_page.dart';
 
 extension _MapDestinationSheet on _MapsState {
@@ -41,7 +42,7 @@ extension _MapDestinationSheet on _MapsState {
           subtitle: '',
           icon: Icons.map_outlined,
           accent: const Color(0xff14A47B),
-          onTap: _pickaddress ? openPickupLocationPicker : openDropLocationPicker,
+          onTap: _pickaddress ? startPickupAdjust : openDropLocationPicker,
         ),
       ],
       canContinue: hasPickupAndDrop,
@@ -68,8 +69,7 @@ extension _MapDestinationSheet on _MapsState {
           _dropaddress = true;
         });
       },
-      onChooseFromMap:
-          _pickaddress ? openPickupLocationPicker : openDropLocationPicker,
+      onChooseFromMap: _pickaddress ? startPickupAdjust : openDropLocationPicker,
       onContinue: () {
         FocusScope.of(context).unfocus();
         navigateWhenRouteReady();
@@ -88,7 +88,7 @@ extension _MapDestinationSheet on _MapsState {
       _sessionToken = null;
       _pickaddress = false;
       _dropaddress = false;
-      _lastPickupFieldTapAt = null;
+      _pickupAdjust = false;
       _lastDestinationFieldTapAt = null;
 
       final modules = userDetails['enable_modules_for_applications'];
@@ -100,31 +100,14 @@ extension _MapDestinationSheet on _MapsState {
         transportType = 'taxi';
       }
     });
+    _restoreHomePickup();
   }
 
+  /// «من أين»: the pickup moves with the map from here on (pickup-adjust mode); while the field is
+  /// a search box (from «ابحث عن عنوان») a tap only types.
   void _handlePickupFieldTap() {
-    final now = DateTime.now();
-    final previousTap = _lastPickupFieldTapAt;
-    final isDoubleTap = previousTap != null &&
-        now.difference(previousTap) <= const Duration(milliseconds: 360);
-    _lastPickupFieldTapAt = isDoubleTap ? null : now;
-
-    if (isDoubleTap) {
-      FocusScope.of(context).unfocus();
-      runDestinationEntryOnce(openPickupLocationPicker);
-      return;
-    }
-
     if (_pickaddress) return;
-    FocusScope.of(context).unfocus();
-    setState(() {
-      _pickupSearchController.clear();
-      _pickaddress = true;
-      _dropaddress = false;
-      addAutoFill.clear();
-      infoMessage = '';
-      _sessionToken = null;
-    });
+    startPickupAdjust();
   }
 
   void _handleDestinationFieldTap() {
@@ -238,8 +221,9 @@ extension _MapDestinationSheet on _MapsState {
     for (final favorite in favAddress.reversed) {
       if (favorite is! Map) continue;
       final address = favorite['pick_address']?.toString().trim() ?? '';
-      if (address.isEmpty || !seenAddresses.add(address.toLowerCase()))
+      if (address.isEmpty || !seenAddresses.add(address.toLowerCase())) {
         continue;
+      }
       final name = favorite['address_name']?.toString().trim() ?? '';
       places.add(
         TripSelectionPlaceData(
@@ -259,8 +243,9 @@ extension _MapDestinationSheet on _MapsState {
     for (final recent in recentSearchesList.reversed) {
       if (recent is! Map) continue;
       final address = recent['address']?.toString().trim() ?? '';
-      if (address.isEmpty || !seenAddresses.add(address.toLowerCase()))
+      if (address.isEmpty || !seenAddresses.add(address.toLowerCase())) {
         continue;
+      }
       final parts = address.split(',');
       places.add(
         TripSelectionPlaceData(

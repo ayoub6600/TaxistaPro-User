@@ -16,12 +16,14 @@ final ValueNotifier<bool> dailyGiftBarShown = ValueNotifier(false);
 
 /// «هدية كل يوم» on the home: nothing when the campaign is off here. The first open of the day
 /// shows the box alone, then a burst with a soft sound, then the line; later opens show the line.
+/// With [iconOnly] (the home sheet pulled up) it is a small floating gift that still opens the terms.
 class DailyGiftBar extends StatefulWidget {
-  const DailyGiftBar({super.key, this.lat, this.lng, this.offerForTest, this.playIntro});
+  const DailyGiftBar({super.key, this.lat, this.lng, this.offerForTest, this.playIntro, this.iconOnly = false});
 
   final double? lat;
   final double? lng;
   final DailyGiftOffer? offerForTest;
+  final bool iconOnly;
 
   /// tests decide; in the app the first open of the day does
   final bool? playIntro;
@@ -154,6 +156,30 @@ class _DailyGiftBarState extends State<DailyGiftBar> with SingleTickerProviderSt
     }
   }
 
+  Widget _icon(DailyGiftOffer offer) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: Semantics(
+            button: true,
+            label: '${offer.headline} ${offer.amount}، ${offer.timerLabel} ${DailyGiftOffer.clock(_seconds)}',
+            excludeSemantics: true,
+            child: Material(
+              key: const ValueKey('daily-gift-icon'),
+              color: giftPale,
+              elevation: 4,
+              shadowColor: const Color(0x3310213F),
+              shape: const CircleBorder(side: BorderSide(color: Color(0xFFBAE6FD))),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: () => showDailyGiftSheet(context, offer),
+                child: const SizedBox.square(dimension: 52, child: Center(child: GiftBox(size: 34))),
+              ),
+            ),
+          ),
+        ),
+      );
+
   static double _phase(double v, double from, double to) => ((v - from) / (to - from)).clamp(0.0, 1.0);
 
   /// box size over the intro: pops in, shakes, swells, shrinks back
@@ -175,6 +201,7 @@ class _DailyGiftBarState extends State<DailyGiftBar> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     final offer = _offer;
     if (offer == null) return const SizedBox.shrink();
+    if (widget.iconOnly) return _icon(offer);
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Padding(
@@ -260,12 +287,18 @@ class _Line extends StatelessWidget {
                       child: FittedBox(
                         fit: BoxFit.scaleDown,
                         alignment: AlignmentDirectional.centerEnd,
-                        child: Column(mainAxisSize: MainAxisSize.min, children: [
-                          Text(offer.timerLabel, style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: Color(0xFF5B7A90), height: 1.15)),
-                          Text(clock,
-                              textDirection: TextDirection.ltr,
-                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: giftBlue, height: 1.15, fontFeatures: [FontFeature.tabularFigures()])),
-                        ]),
+                        // today's live gift: a stopwatch and the time left (owner's board); before and
+                        // after it, the small line says what the countdown is for
+                        child: offer.isLive
+                            ? Row(mainAxisSize: MainAxisSize.min, textDirection: TextDirection.ltr, children: [
+                                const Icon(Icons.timer_outlined, size: 17, color: giftInk),
+                                const SizedBox(width: 5),
+                                _clock(15),
+                              ])
+                            : Column(mainAxisSize: MainAxisSize.min, children: [
+                                Text(offer.timerLabel, style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: Color(0xFF5B7A90), height: 1.15)),
+                                _clock(13),
+                              ]),
                       ),
                     ),
                   ]),
@@ -278,6 +311,10 @@ class _Line extends StatelessWidget {
     );
   }
 
+  Widget _clock(double size) => Text(clock,
+      textDirection: TextDirection.ltr,
+      style: TextStyle(fontSize: size, fontWeight: FontWeight.w800, color: offer.isLive ? giftInk : giftBlue, height: 1.15, fontFeatures: const [FontFeature.tabularFigures()]));
+
   Widget _headline() {
     const base = TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: giftInk);
     if (offer.state == 'used' || offer.state == 'sold_out') return Text(offer.headline, style: base);
@@ -285,7 +322,7 @@ class _Line extends StatelessWidget {
       TextSpan(style: base, children: [
         TextSpan(text: '${offer.headline} '),
         TextSpan(text: offer.amount, style: const TextStyle(color: giftBlue, fontWeight: FontWeight.w900)),
-        const TextSpan(text: ' · كل يوم'),
+        if (!offer.isLive) const TextSpan(text: ' · كل يوم'),
       ]),
     );
   }

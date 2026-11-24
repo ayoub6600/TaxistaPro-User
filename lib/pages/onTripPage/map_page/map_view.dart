@@ -1,26 +1,18 @@
+// ignore_for_file: invalid_use_of_protected_member
 part of '../map_page.dart';
 
 extension _MapPageView on _MapsState {
   Widget buildMapPage(BuildContext context) {
     var media = MediaQuery.of(context).size;
-    popFunction() {
-      if (_bottom == 1) {
-        return false;
-      } else {
-        return true;
-      }
-    }
-
     return PopScope(
-      canPop: popFunction(),
-      onPopInvoked: (did) {
-        if (_bottom == 1) {
-          setState(() {
-            _bottom = 0;
-            choosenTransportType = 0;
-
-            isOutStation = false;
-          });
+      canPop: _bottom != 1 && !_pickupAdjust,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        // back from «من أين» returns to the trip editor; back from the editor returns home
+        if (_pickupAdjust) {
+          cancelPickupAdjust();
+        } else if (_bottom == 1) {
+          _closeDestinationEditor();
         }
       },
       child: Material(

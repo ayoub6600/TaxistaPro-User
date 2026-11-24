@@ -3,7 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:taxista/functions/intercity_api.dart';
 import 'package:taxista/functions/tow_api.dart';
-import 'package:taxista/pages/onTripPage/home_quick_actions.dart';
+import 'package:taxista/pages/onTripPage/home_sheet/home_services.dart';
+import 'package:taxista/pages/onTripPage/home_sheet/rider_home_sheet.dart';
 import 'package:taxista/pages/tow/tow_page.dart';
 import 'package:taxista/pages/tow/tow_ride_card.dart';
 
@@ -130,14 +131,14 @@ void main() {
     var opened = 0;
     await t.pumpWidget(MaterialApp(
       home: Scaffold(
-        body: HomeQuickActions(
-          rtl: true, onChooseDestination: () {}, onRideWithoutDestination: () {}, showRideWithoutDestination: true, destinations: const [],
-          onTow: () => opened++, onSoon: (_) {},
+        body: Directionality(
+          textDirection: TextDirection.rtl,
+          child: HomeServicesStrip(services: HomeServices.build(rtl: true, onRideWithoutDestination: () {}, onSoon: (_) {}, onTow: () => opened++)),
         ),
       ),
     ));
     await t.pumpAndSettle();
-    await t.tap(find.text('ساحبة'));
+    await t.tap(find.text('ونش'));
     expect(opened, 1);
   });
 }

@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../functions/functions.dart';
 
@@ -94,7 +95,41 @@ class ContestsApi {
     final d = await _get('/highlight');
     if (d == null) return; // offline: keep what was shown
     final p = d['post'];
-    homePost.value = p is Map ? Map<String, dynamic>.from(p) : null;
+    final post = p is Map ? Map<String, dynamic>.from(p) : null;
+    if (post != null && (await _closed()).contains(homeKey(post))) {
+      homePost.value = null;
+      return;
+    }
+    homePost.value = post;
+  }
+
+  static const _closedKey = 'contests_home_closed';
+
+  /// One announcement on the home card: the post and its state. A closed «النتيجة طلعت» stays closed;
+  /// the same contest's next announcement (another post, or a result after the predictions) shows again.
+  static String homeKey(Map<String, dynamic> post) {
+    final c = post['contest'] is Map ? post['contest'] as Map : const {};
+    return '${post['id']}:${post['kind'] ?? ''}:${c['status'] ?? ''}:${post['my_result']?['won'] == true ? 'won' : ''}';
+  }
+
+  static Future<List<String>> _closed() async {
+    try {
+      return (await SharedPreferences.getInstance()).getStringList(_closedKey) ?? const [];
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  /// The small × on the home card: this announcement only, on this phone (the server is not told).
+  static Future<void> dismissHome() async {
+    final post = homePost.value;
+    homePost.value = null;
+    if (post == null) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = [...(prefs.getStringList(_closedKey) ?? const <String>[]), homeKey(post)];
+      await prefs.setStringList(_closedKey, list.length > 30 ? list.sublist(list.length - 30) : list);
+    } catch (_) {}
   }
 
   /// A comment; with [answer] it is the person's prediction. Returns (data, null) or (null, message).

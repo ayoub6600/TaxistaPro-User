@@ -6,7 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:taxista/functions/intercity_api.dart';
 import 'package:taxista/functions/parcel_api.dart';
 import 'package:taxista/functions/parcel_saved.dart';
-import 'package:taxista/pages/onTripPage/home_quick_actions.dart';
+import 'package:taxista/pages/onTripPage/home_sheet/home_services.dart';
+import 'package:taxista/pages/onTripPage/home_sheet/rider_home_sheet.dart';
 import 'package:taxista/pages/parcels/parcel_code_card.dart';
 import 'package:taxista/pages/parcels/parcel_confirm_sheet.dart';
 import 'package:taxista/pages/parcels/parcel_options.dart';
@@ -378,14 +379,17 @@ void main() {
     var opened = 0;
     Widget bar(VoidCallback? onDelivery) => MaterialApp(
           home: Scaffold(
-            body: HomeQuickActions(
-              rtl: true,
-              onChooseDestination: () {},
-              onRideWithoutDestination: () {},
-              showRideWithoutDestination: true,
-              destinations: const [],
-              onDelivery: onDelivery,
-              onSoon: (_) {},
+            body: Directionality(
+              textDirection: TextDirection.rtl,
+              child: HomeServicesStrip(
+                services: HomeServices.build(
+                  rtl: true,
+                  onRideWithoutDestination: () {},
+                  onSoon: (_) {},
+                  onDelivery: onDelivery,
+                  parcels: ParcelApi.notifier.value,
+                ),
+              ),
             ),
           ),
         );

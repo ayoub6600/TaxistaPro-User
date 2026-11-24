@@ -162,13 +162,11 @@ extension _PickLocSections0 on _PickupLocationState {
                           }
                         }
                       },
-                      onPositionChanged: (p, l) async {
+                      // the pin's address is asked when the map stops (onMapEvent), never on every frame
+                      onPositionChanged: (p, l) {
                         if (l == false) {
                           _centerLocation = LatLng(p.center.latitude, p.center.longitude);
                           setState(() {});
-
-                          var val = await geoCoding(_centerLocation.latitude, _centerLocation.longitude);
-                          if (val != '') {}
                         }
                       },
                       // interactiveFlags:
@@ -204,7 +202,7 @@ extension _PickLocSections0 on _PickupLocationState {
                     height: media.width * 0.3,
                     decoration: BoxDecoration(
                         color: page,
-                        boxShadow: [BoxShadow(blurRadius: 5, color: Colors.black.withOpacity(0.1), spreadRadius: 2)],
+                        boxShadow: [BoxShadow(blurRadius: 5, color: Colors.black.withValues(alpha: 0.1), spreadRadius: 2)],
                         borderRadius: BorderRadius.circular(10)),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,

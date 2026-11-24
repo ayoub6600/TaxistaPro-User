@@ -1,3 +1,4 @@
+// ignore_for_file: invalid_use_of_protected_member
 part of '../map_page.dart';
 
 extension _MapDestinationState on _MapsState {
@@ -32,39 +33,62 @@ extension _MapDestinationState on _MapsState {
     if (mounted) setState(() {});
   }
 
+  /// The pickup for a trip: the phone's own place (its address asked once, through the server's
+  /// shared cache), or the one the rider chose by hand in «من أين» / the search, which stays.
+  /// Never the map's centre: panning the home map changes nothing.
   Future<bool> ensurePickupForDestination() async {
-    if (addressList.any((element) => element.type == 'pickup')) return true;
+    final existing = addressList.where((element) => element.type == 'pickup');
+    final device = currentLocation is LatLng ? currentLocation as LatLng : null;
+    if (existing.isNotEmpty) {
+      if (_pickupByHand || device == null) return true;
+      final at = existing.first.latlng;
+      // still where the phone is (one ~30 m address cell): nothing to ask
+      if (calculateDistance(at.latitude, at.longitude, device.latitude, device.longitude) < 40) return true;
+    }
 
-    final pickupLatLng =
-        currentLocation is LatLng ? currentLocation as LatLng : center;
+    final pickupLatLng = device ?? center;
     if (pickupLatLng.latitude == 0 && pickupLatLng.longitude == 0) {
-      return false;
+      return existing.isNotEmpty;
     }
 
-    var pickupAddress = pickupAddressConfirmation.trim();
-    if (pickupAddress.isEmpty) {
-      pickupAddress =
-          (await geoCoding(pickupLatLng.latitude, pickupLatLng.longitude))
-                  ?.trim() ??
-              '';
-    }
-    if (pickupAddress.isEmpty) return false;
-    // Another tap may have created the pickup while we were geocoding.
-    if (addressList.any((element) => element.type == 'pickup')) return true;
+    final pickupAddress = (await geoCoding(pickupLatLng.latitude, pickupLatLng.longitude))?.trim() ?? '';
+    // no address here: an older pickup still serves; none at all cannot
+    if (pickupAddress.isEmpty) return addressList.any((element) => element.type == 'pickup');
+    // the rider chose one by hand while the address was on its way
+    if (_pickupByHand) return true;
 
-    addressList.add(
-      AddressList(
-        id: '1',
-        type: 'pickup',
-        address: pickupAddress,
-        pickup: true,
-        latlng: pickupLatLng,
-        name: userDetails['name'],
-        number: userDetails['mobile'],
-      ),
-    );
+    final now = addressList.where((element) => element.type == 'pickup');
+    if (now.isNotEmpty) {
+      now.first
+        ..address = pickupAddress
+        ..latlng = pickupLatLng;
+    } else {
+      addressList.add(
+        AddressList(
+          id: '1',
+          type: 'pickup',
+          address: pickupAddress,
+          pickup: true,
+          latlng: pickupLatLng,
+          name: userDetails['name'],
+          number: userDetails['mobile'],
+        ),
+      );
+    }
     pickupAddressConfirmation = pickupAddress;
     return true;
+  }
+
+  /// Back on the home screen: the pickup is the phone's place again (a hand-picked one was for the
+  /// trip being planned).
+  void _restoreHomePickup() {
+    if (!_pickupByHand) return;
+    _pickupByHand = false;
+    addressList.removeWhere((element) => element.type == 'pickup');
+    if (currentLocation is LatLng) center = currentLocation as LatLng;
+    unawaited(ensurePickupForDestination().then((_) {
+      if (mounted) setState(() {});
+    }));
   }
 
   Future<void> openDropLocationPicker() async {
@@ -96,45 +120,6 @@ extension _MapDestinationState on _MapsState {
     _dropaddress = false;
     addAutoFill.clear();
     infoMessage = '';
-    setState(() {});
-  }
-
-  Future<void> openPickupLocationPicker() async {
-    final pickupReady = await ensurePickupForDestination();
-    if (!mounted) return;
-    if (!pickupReady) {
-      setState(() {
-        infoMessage = languageDirection == 'rtl'
-            ? 'تعذر تحديد نقطة الانطلاق. فعّل الموقع وحاول مرة أخرى.'
-            : 'Could not determine your pickup point. Enable location and try again.';
-      });
-      return;
-    }
-
-    final pickupIndex =
-        addressList.indexWhere((element) => element.type == 'pickup');
-    if (pickupIndex < 0) return;
-    final selected = await guardedPush<bool>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => DropLocation(
-          from: pickupIndex,
-          returnSelectionOnly: true,
-          selectingPickup: true,
-        ),
-      ),
-    );
-    if (!mounted || selected != true) return;
-    final pickup = addressList.where((element) => element.type == 'pickup');
-    if (pickup.isNotEmpty) {
-      pickupAddressConfirmation = pickup.first.address;
-      center = pickup.first.latlng;
-    }
-    _pickupSearchController.clear();
-    addAutoFill.clear();
-    infoMessage = '';
-    _pickaddress = false;
-    _dropaddress = !addressList.any((element) => element.type == 'drop');
     setState(() {});
   }
 
@@ -289,6 +274,7 @@ extension _MapDestinationState on _MapsState {
     }
     pickupAddressConfirmation = address;
     center = point;
+    _pickupByHand = true;
     polyList.clear();
     _pickupSearchController.clear();
     pickupAddressController.clear();
