@@ -27,7 +27,7 @@ void main() {
       ),
     ))));
     expect(find.text('السعر العادل'), findsOneWidget);
-    expect(find.text('30 LYD'), findsOneWidget);
+    expect(find.text('30 LYD'), findsNWidgets(2)); // the card's price and the fair fare
     await tester.tap(find.byIcon(Icons.remove_rounded));
     await tester.pump();
     expect(offered, 29);
@@ -107,7 +107,7 @@ void main() {
       arrivalText: 'الأقرب 2 د',
       offerFareLabel: 'عرض الأجرة الخاصة بك',
     ))));
-    expect(find.text('LYD 11'), findsOneWidget);
+    expect(find.text('11 LYD'), findsOneWidget);
     expect(find.text('الأقرب 2 د'), findsOneWidget);
     expect(find.textContaining('هدية'), findsNothing);
   });
