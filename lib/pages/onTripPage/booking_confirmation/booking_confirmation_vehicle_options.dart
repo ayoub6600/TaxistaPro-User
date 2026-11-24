@@ -210,9 +210,11 @@ mixin _BookingConfirmationVehicleOptions
         Expanded(
           child: VehicleServicesSection(
             title: languages[choosenLanguage]['text_availablerides'],
-            subtitle: choosenLanguage == 'ar'
-                ? 'اختر السيارة والسعر الأنسب لرحلتك'
-                : 'Choose the best car and fare for your trip',
+            // the ride's length, from the same quote as the price (owner 2026-11-24)
+            subtitle: tripLengthWords(etaDetails.first, choosenLanguage == 'ar') ??
+                (choosenLanguage == 'ar'
+                    ? 'اختر السيارة والسعر الأنسب لرحلتك'
+                    : 'Choose the best car and fare for your trip'),
             children: [
               ...uniqueServices(etaDetails)
                   .map((i, value) => MapEntry(
@@ -828,4 +830,15 @@ mixin _BookingConfirmationVehicleOptions
             : Container(),
     ];
   }
+}
+
+/// «مسافة رحلتك 7.4 كم · حوالي 13 دقيقة» from a quote; null when the quote has no distance.
+String? tripLengthWords(Map<dynamic, dynamic> quote, bool ar) {
+  final km = double.tryParse('${quote['distance'] ?? ''}');
+  if (km == null || km <= 0) return null;
+  final mins = double.tryParse('${quote['time'] ?? ''}')?.round();
+  final k = km < 10 ? km.toStringAsFixed(1) : km.round().toString();
+  final word = mins != null && mins >= 3 && mins <= 10 ? 'دقائق' : 'دقيقة';
+  if (ar) return 'مسافة رحلتك $k كم${mins != null && mins > 0 ? ' · حوالي $mins $word' : ''}';
+  return 'Your trip: $k km${mins != null && mins > 0 ? ' · about $mins min' : ''}';
 }
