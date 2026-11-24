@@ -719,6 +719,15 @@ mixin _BookingConfirmationView
                                           driverLocation.length >= 2 &&
                                           driverLocation[0] != null &&
                                           driverLocation[1] != null) {
+                                        if (mapType == 'google' &&
+                                            driverLocation[0] is num &&
+                                            driverLocation[1] is num) {
+                                          trimActiveRouteToCar(
+                                              (driverLocation[0] as num)
+                                                  .toDouble(),
+                                              (driverLocation[1] as num)
+                                                  .toDouble());
+                                        }
                                         if (userRequestData['arrived_at'] ==
                                             null) {
                                           if (polyline.isEmpty &&

@@ -1062,6 +1062,20 @@ mixin _BookingConfirmationController
   //   fmPolyGot = false;
   // }
 
+/// The blue line starts at the car (owner 2026-11-25: it stayed drawn behind
+  /// the moving car). Called on every captain location update of the ride.
+  void trimActiveRouteToCar(double latitude, double longitude) {
+    if (polyline.isEmpty || polyList.length < 2) return;
+    final trimmed = trimRouteToCar(polyList, LatLng(latitude, longitude));
+    if (identical(trimmed, polyList)) return;
+    polyList = trimmed;
+    polyline = polyline
+        .map((line) => line.polylineId == const PolylineId('active_route')
+            ? line.copyWith(pointsParam: trimmed)
+            : line)
+        .toSet();
+  }
+
 //add distance marker
   addDistanceMarker(length) async {
     var testIcon = await _capturePng(iconDistanceKey);

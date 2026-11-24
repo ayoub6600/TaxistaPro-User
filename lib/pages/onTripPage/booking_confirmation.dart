@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use, no_leading_underscores_for_local_identifiers
 
 import '../../functions/money_label.dart';
+import '../../functions/route_trim.dart';
 import '../../functions/nav_eta.dart';
 import 'dart:async';
 import 'dart:convert';
