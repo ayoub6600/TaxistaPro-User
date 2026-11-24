@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:taxista/community/ride_wrap_up.dart';
@@ -97,9 +98,13 @@ void main() {
     expect(find.text('التالي'), findsOneWidget);
     await next(tester);
 
-    expect(find.text('أضف محمد إلى «سواقيني»؟'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('wrapup-heart')));
+    expect(find.text('أضف محمد إلى سواقيني المفضلين؟'), findsOneWidget);
+    expect(find.text('سواقيني المفضلين'), findsOneWidget);
+    expect(find.byIcon(Icons.favorite_border_rounded), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('wrapup-favorite')));
     await tester.pumpAndSettle();
+    expect(tester.widget<CupertinoSwitch>(find.byKey(const ValueKey('wrapup-favorite'))).value, isTrue);
+    expect(find.byIcon(Icons.favorite_rounded), findsOneWidget);
     await next(tester);
 
     expect(find.text('ما الذي أعجبك؟'), findsOneWidget);
@@ -124,7 +129,7 @@ void main() {
       'gift': true,
       'gift_reason': 'kind',
     });
-    expect(find.text('محمد في «سواقيني» الآن.'), findsOneWidget);
+    expect(find.text('محمد في سواقيني المفضلين الآن.'), findsOneWidget);
     expect(find.text('وصلت هديتك الذهبية إلى محمد.'), findsOneWidget);
     await tester.pump(const Duration(milliseconds: 1600));
     expect(finished, 1);
@@ -146,7 +151,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('wrapup-star-4')));
     await tester.pumpAndSettle();
     await next(tester);
-    await tester.tap(find.byKey(const ValueKey('wrapup-heart')));
+    await tester.tap(find.byKey(const ValueKey('wrapup-favorite')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('wrapup-back')));
     await tester.pumpAndSettle();

@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../functions/functions.dart' show languageDirection;
@@ -190,7 +191,7 @@ class _RideWrapUpState extends State<RideWrapUp> {
         final r = saved?['results'] is Map ? saved!['results'] as Map : const {};
         if (r['favorite'] == 'ok' && _favorite) {
           thanks.add(_isRider
-              ? _t('$name في «سواقيني» الآن.', '$name is in your favourite drivers.')
+              ? _t('$name في سواقيني المفضلين الآن.', '$name is in your favourite drivers.')
               : _t('$name في ركابك المفضلين الآن.', '$name is in your favourite riders.'));
         }
         if (r['appreciation'] == 'ok') thanks.add(_t('وصل تقديرك إلى $name.', '$name got your appreciation.'));
@@ -466,33 +467,9 @@ class _RideWrapUpState extends State<RideWrapUp> {
   Widget _favoriteCard(ChatPalette p) {
     final name = _first;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Center(
-        child: Semantics(
-          button: true,
-          toggled: _favorite,
-          child: GestureDetector(
-            key: const ValueKey('wrapup-heart'),
-            onTap: () => setState(() => _favorite = !_favorite),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 260),
-              curve: Curves.easeOutBack,
-              width: 86,
-              height: 86,
-              decoration: BoxDecoration(color: CommunityLook.heart.withValues(alpha: _favorite ? 0.16 : 0.07), shape: BoxShape.circle),
-              child: AnimatedScale(
-                scale: _favorite ? 1.15 : 1,
-                duration: const Duration(milliseconds: 420),
-                curve: Curves.elasticOut,
-                child: Icon(_favorite ? Icons.favorite_rounded : Icons.favorite_border_rounded, color: CommunityLook.heart, size: 42),
-              ),
-            ),
-          ),
-        ),
-      ),
-      const SizedBox(height: 12),
       Text(
           _isRider
-              ? _t('أضف $name إلى «سواقيني»؟', 'Add $name to your drivers?')
+              ? _t('أضف $name إلى سواقيني المفضلين؟', 'Add $name to your favourite drivers?')
               : _t('أضف $name إلى ركابك المفضلين؟', 'Add $name to your favourite riders?'),
           textAlign: TextAlign.center,
           style: p.text(17, weight: FontWeight.w800)),
@@ -513,6 +490,26 @@ class _RideWrapUpState extends State<RideWrapUp> {
               textAlign: TextAlign.center,
               style: p.text(13, weight: FontWeight.w700, color: CommunityLook.heart)),
         ),
+      const SizedBox(height: 16),
+      // owner 2026-11-25: a plain iOS switch row instead of the big heart
+      Container(
+        padding: const EdgeInsetsDirectional.fromSTEB(14, 8, 10, 8),
+        decoration: BoxDecoration(color: p.field, borderRadius: BorderRadius.circular(16)),
+        child: Row(children: [
+          Icon(_favorite ? Icons.favorite_rounded : Icons.favorite_border_rounded, color: CommunityLook.heart, size: 22),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(_isRider ? _t('سواقيني المفضلين', 'My favourite drivers') : _t('ركابي المفضلين', 'My favourite riders'),
+                style: p.text(15, weight: FontWeight.w700)),
+          ),
+          CupertinoSwitch(
+            key: const ValueKey('wrapup-favorite'),
+            value: _favorite,
+            activeTrackColor: p.mine,
+            onChanged: (v) => setState(() => _favorite = v),
+          ),
+        ]),
+      ),
       const SizedBox(height: 18),
       _primary(p, enabled: true),
     ]);
