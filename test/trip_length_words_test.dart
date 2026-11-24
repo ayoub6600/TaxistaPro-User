@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:taxista/functions/money_label.dart';
 import 'package:taxista/pages/onTripPage/booking_confirmation.dart';
 
 void main() {
@@ -7,5 +8,12 @@ void main() {
     expect(tripLengthWords({'distance': '23.6', 'time': 31}, true), 'مسافة رحلتك 24 كم · حوالي 31 دقيقة');
     expect(tripLengthWords({'distance': 7.4}, false), 'Your trip: 7.4 km');
     expect(tripLengthWords({'distance': 0}, true), isNull);
+  });
+
+  test('prices read «12 د.ل», never «LYD», in Arabic', () {
+    expect(moneyShort('LYD', arabic: true), 'د.ل');
+    expect(moneyShort(null, arabic: true), 'د.ل');
+    expect(moneyShort('EGP', arabic: true), 'ج.م');
+    expect(moneyShort('LYD', arabic: false), 'LYD');
   });
 }

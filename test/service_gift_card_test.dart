@@ -15,14 +15,14 @@ void main() {
 
   testWidgets('a fixed fare shows the old price and the price after the gift', (tester) async {
     await tester.pumpWidget(host(card('fixed', g: gift)));
-    expect(find.text('LYD 18'), findsOneWidget);
-    expect(find.text('LYD 13'), findsOneWidget);
+    expect(find.text('18 د.ل'), findsOneWidget);
+    expect(find.text('13 د.ل'), findsOneWidget);
     expect(find.textContaining('هدية اليوم'), findsOneWidget);
   });
 
   testWidgets('no gift, no change', (tester) async {
     await tester.pumpWidget(host(card('fixed')));
-    expect(find.text('LYD 18'), findsOneWidget);
+    expect(find.text('18 د.ل'), findsOneWidget);
     expect(find.textContaining('هدية'), findsNothing);
   });
 

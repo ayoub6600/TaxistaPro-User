@@ -5,9 +5,8 @@ mixin _BookingConfirmationRequestAction
         State<BookingConfirmation>,
         _BookingConfirmationController,
         _BookingConfirmationRequestHandler {
-  // Visual-only redesign: same handleRideRequest() call and same label
-  // logic as before, restyled to the reference's blue -> cyan gradient CTA
-  // with a leading circular arrow badge (mirrored for RTL/LTR).
+  // Same handleRideRequest() call and label logic as before: the blue -> cyan
+  // gradient CTA with its words centred (no arrow badge since 2026-11-24).
   Widget buildRideRequestButton(Size media, GeoHasher geo) {
     final isArabic = choosenLanguage == 'ar';
     // design v2: the button says what is asked and for how much («اطلب اقتصادي · 12 LYD», «أرسل عرضك
@@ -20,7 +19,7 @@ mixin _BookingConfirmationRequestAction
         final service = etaDetails[choosenVehicle];
         final fare = chosenFareForService(choosenVehicle);
         final amount = fare == fare.roundToDouble() ? fare.toStringAsFixed(0) : fare.toStringAsFixed(2);
-        final money = '$amount ${service['currency'] ?? ''}'.trim();
+        final money = '$amount ${moneyShort(service['currency'], arabic: isArabic)}'.trim();
         if (fare > 0) {
           label = canAdjustSelectedFare(choosenVehicle)
               ? (isArabic ? 'أرسل عرضك · $money' : 'Send your offer · $money')
@@ -54,40 +53,19 @@ mixin _BookingConfirmationRequestAction
               ),
             ],
           ),
-          child: Row(
-            children: [
-              if (isArabic) const Spacer(),
-              Flexible(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    label,
-                    style: GoogleFonts.cairo(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ),
-              if (!isArabic) const Spacer(),
-              Container(
-                width: 38,
-                height: 38,
-                alignment: Alignment.center,
-                decoration: const BoxDecoration(
+          // owner 2026-11-24: no arrow badge, the words alone in the middle
+          child: Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                style: GoogleFonts.cairo(
                   color: Colors.white,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  isArabic
-                      ? Icons.arrow_back_rounded
-                      : Icons.arrow_forward_rounded,
-                  color: theme,
-                  size: 20,
+                  fontSize: 16.5,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),

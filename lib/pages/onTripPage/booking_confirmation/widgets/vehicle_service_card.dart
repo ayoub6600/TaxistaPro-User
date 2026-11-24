@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../../growth/daily_gift/gift_box.dart';
 import '../../../../growth/daily_gift/service_gift.dart';
 import '../models/ride_pricing_mode.dart';
+import '../../../../functions/money_label.dart';
 
 class VehicleServiceCard extends StatelessWidget {
   const VehicleServiceCard({
@@ -203,7 +204,7 @@ class VehicleServiceCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  '${service['currency'] ?? ''} ${_formatFare(chosenFare ?? (double.tryParse(service['total']?.toString() ?? '') ?? 0))}',
+                  '${_formatFare(chosenFare ?? (double.tryParse(service['total']?.toString() ?? '') ?? 0))} ${moneyShort(service['currency'], arabic: Directionality.of(context) == TextDirection.rtl)}',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
@@ -232,7 +233,7 @@ class VehicleServiceCard extends StatelessWidget {
             )
           else
             _Fare(
-              currency: service['currency']?.toString() ?? '',
+              currency: moneyShort(service['currency'], arabic: Directionality.of(context) == TextDirection.rtl),
               total: service['automatic_gift_discount'] is num
                   ? (service['automatic_gift_fare_before']?.toString() ??
                       (service['has_discount'] == true
@@ -280,7 +281,7 @@ class VehicleServiceCard extends StatelessWidget {
                             color: colors.onSurfaceVariant)),
                     const SizedBox(height: 1),
                     Text(
-                        '${_formatFare(fairFare!)} ${service['currency'] ?? ''}',
+                        '${_formatFare(fairFare!)} ${moneyShort(service['currency'], arabic: Directionality.of(context) == TextDirection.rtl)}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -506,7 +507,7 @@ class _Fare extends StatelessWidget {
       children: [
         if (discountedTotal != null)
           Text(
-            '$currency $total'.trim(),
+            '$total $currency'.trim(),
             style: TextStyle(
               fontSize: 12,
               color: color.withValues(alpha: 0.55),
@@ -514,7 +515,7 @@ class _Fare extends StatelessWidget {
             ),
           ),
         Text(
-          '$currency ${discountedTotal ?? total}'.trim(),
+          '${discountedTotal ?? total} $currency'.trim(),
           maxLines: 1,
           style: TextStyle(
             color: color,
@@ -525,7 +526,7 @@ class _Fare extends StatelessWidget {
         if (giftDiscount != null) ...[
           const SizedBox(height: 2),
           Text(
-            '${giftLabel ?? ''} −$currency $giftDiscount'.trim(),
+            '${giftLabel ?? ''} −$giftDiscount $currency'.trim(),
             maxLines: 1,
             style: TextStyle(
               color: Theme.of(context).colorScheme.primary,
