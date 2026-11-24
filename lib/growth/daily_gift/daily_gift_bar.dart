@@ -167,11 +167,11 @@ class _DailyGiftBarState extends State<DailyGiftBar> with SingleTickerProviderSt
             child: Material(
               key: const ValueKey('daily-gift-icon'),
               color: giftPale,
-              elevation: 4,
-              shadowColor: const Color(0x3310213F),
-              shape: const CircleBorder(side: BorderSide(color: Color(0xFFBAE6FD))),
+              elevation: 2,
+              shadowColor: const Color(0x2210213F),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Color(0xFFBAE6FD), width: .5)),
               child: InkWell(
-                customBorder: const CircleBorder(),
+                customBorder: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 onTap: () => showDailyGiftSheet(context, offer),
                 child: const SizedBox.square(dimension: 52, child: Center(child: GiftBox(size: 34))),
               ),

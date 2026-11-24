@@ -11,10 +11,11 @@ const _ink = Color(0xFF10213F);
 const _muted = Color(0xFF64748B);
 const _blue = Color(0xFF0873FF);
 const _track = Color(0x330873FF);
+const _field = Color(0xFFF1F3F6);
 
-/// The frosted-glass panel pinned at the bottom of the home map.
+/// The calm frosted-glass panel pinned at the bottom of the home map.
 ///
-/// Compact: «إلى أين؟» with «أماكني» beside it, then the services as small 3D circles that scroll
+/// Compact: «إلى أين؟» with «أماكني» beside it, then the services as tinted rounded squares that scroll
 /// sideways (a blue line under them follows the real scroll). Dragged up, the same panel grows
 /// over the map and shows «خدمات أخرى» ([more]: other pages the app has, never the services of the
 /// row again); dragged down it goes back. [above] floats over the map just above the panel (the
@@ -54,7 +55,7 @@ class RiderHomeSheet extends StatefulWidget {
   static const double trackHeight = 4;
   static const double sectionGap = 12;
   static const double otherHeaderHeight = 40;
-  static const double otherRowHeight = 58;
+  static const double otherRowHeight = 52;
 
   /// handle, search row, services and the line under them (no bottom inset)
   static double compactBody() => handleHeight + searchHeight + 12 + serviceHeight + 6 + trackHeight;
@@ -199,25 +200,18 @@ class _Panel extends StatelessWidget {
       // soft layered shadows: a wide faint one and a close one
       decoration: const BoxDecoration(
         borderRadius: _radius,
-        boxShadow: [
-          BoxShadow(color: Color(0x1A0B2350), blurRadius: 40, offset: Offset(0, -12)),
-          BoxShadow(color: Color(0x140B2350), blurRadius: 10, offset: Offset(0, -2)),
-        ],
+        boxShadow: [BoxShadow(color: Color(0x120B2350), blurRadius: 20, offset: Offset(0, -4))],
       ),
       child: ClipRRect(
         borderRadius: _radius,
         child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+          filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
           child: DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: _radius,
-              // frosted white, a little brighter at the top edge where the light falls
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.white.withValues(alpha: .86), Colors.white.withValues(alpha: .93)],
-              ),
-              border: Border(top: BorderSide(color: Colors.white.withValues(alpha: .95), width: 1.2)),
+              // frosted white with a hairline edge
+              color: Colors.white.withValues(alpha: .9),
+              border: Border(top: BorderSide(color: Colors.black.withValues(alpha: .06), width: .5)),
             ),
             child: Material(
               type: MaterialType.transparency,
@@ -273,18 +267,18 @@ class _Panel extends StatelessWidget {
                               child: Align(
                                 alignment: AlignmentDirectional.centerStart,
                                 child: Text(rtl ? 'خدمات أخرى' : 'More',
-                                    style: GoogleFonts.cairo(fontSize: 15, fontWeight: FontWeight.w800, color: _ink, height: 1.2)),
+                                    style: GoogleFonts.cairo(fontSize: 13, fontWeight: FontWeight.w600, color: _muted, height: 1.2)),
                               ),
                             ),
                           ),
-                          // one raised card of lines on the glass
+                          // one grouped list, iOS Settings style
                           Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 14),
+                            margin: const EdgeInsets.symmetric(horizontal: 16),
+                            clipBehavior: Clip.antiAlias,
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: .78),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: Colors.white),
-                              boxShadow: const [BoxShadow(color: Color(0x120B2350), blurRadius: 16, offset: Offset(0, 6))],
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: Colors.black.withValues(alpha: .05), width: .5),
                             ),
                             child: Column(children: [
                               for (var i = 0; i < more.length; i++) _MoreLine(item: more[i], rtl: rtl, last: i == more.length - 1),
@@ -322,8 +316,8 @@ class _Reveal extends StatelessWidget {
       );
 }
 
-/// A small circle with a slight 3D feel: a gradient of the service's colour, a light highlight on
-/// its top and a soft coloured shadow under it. Painted, no image.
+/// An iOS-style service icon: a soft rounded square tinted with the service's colour and the
+/// glyph in that colour. Flat: no gradient, no shine, no shadow.
 class HomeServiceIcon extends StatelessWidget {
   const HomeServiceIcon({super.key, required this.icon, required this.color, this.size = 48});
 
@@ -332,42 +326,12 @@ class HomeServiceIcon extends StatelessWidget {
   final double size;
 
   @override
-  Widget build(BuildContext context) {
-    final light = Color.lerp(color, Colors.white, .32)!;
-    final deep = Color.lerp(color, Colors.black, .12)!;
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [light, deep]),
-        boxShadow: [
-          BoxShadow(color: color.withValues(alpha: .34), blurRadius: size * .24, offset: Offset(0, size * .12)),
-          BoxShadow(color: Colors.white.withValues(alpha: .9), blurRadius: 0, spreadRadius: 1.2),
-        ],
-      ),
-      child: Stack(alignment: Alignment.center, children: [
-        // the shine on the top half
-        Positioned(
-          top: size * .06,
-          left: size * .16,
-          right: size * .16,
-          height: size * .42,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(size),
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.white.withValues(alpha: .55), Colors.white.withValues(alpha: 0)],
-              ),
-            ),
-          ),
-        ),
-        Icon(icon, color: Colors.white, size: size * .48, shadows: [Shadow(color: deep.withValues(alpha: .5), blurRadius: 3, offset: const Offset(0, 1))]),
-      ]),
-    );
-  }
+  Widget build(BuildContext context) => Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(color: color.withValues(alpha: .12), borderRadius: BorderRadius.circular(size * .3)),
+        child: Icon(icon, color: color, size: size * .5),
+      );
 }
 
 class _WhereTo extends StatelessWidget {
@@ -383,36 +347,25 @@ class _WhereTo extends StatelessWidget {
       button: true,
       label: label,
       excludeSemantics: true,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: const [BoxShadow(color: Color(0x140B2350), blurRadius: 12, offset: Offset(0, 4))],
-        ),
-        child: Material(
-          color: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: const BorderSide(color: Color(0xFFE6ECF4))),
-          child: InkWell(
-            key: const ValueKey('home-where-to'),
-            onTap: onTap,
-            customBorder: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-            child: Padding(
-              padding: const EdgeInsetsDirectional.only(start: 8, end: 12),
-              child: Row(children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(color: _blue.withValues(alpha: .1), shape: BoxShape.circle),
-                  child: const Icon(Icons.search_rounded, size: 22, color: _blue),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.cairo(fontSize: 17, fontWeight: FontWeight.w800, color: _ink, height: 1.2)),
-                ),
-              ]),
-            ),
+      child: Material(
+        color: _field,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          key: const ValueKey('home-where-to'),
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: Padding(
+            padding: const EdgeInsetsDirectional.only(start: 14, end: 12),
+            child: Row(children: [
+              const Icon(Icons.search_rounded, size: 22, color: _muted),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.cairo(fontSize: 17, fontWeight: FontWeight.w600, color: _ink, height: 1.2)),
+              ),
+            ]),
           ),
         ),
       ),
@@ -431,22 +384,16 @@ class _PlacesButton extends StatelessWidget {
         button: true,
         label: rtl ? 'أماكني' : 'My places',
         excludeSemantics: true,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: const [BoxShadow(color: Color(0x140B2350), blurRadius: 12, offset: Offset(0, 4))],
-          ),
-          child: Material(
-            color: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: const BorderSide(color: Color(0xFFE6ECF4))),
-            child: InkWell(
-              key: const ValueKey('home-places'),
-              onTap: onTap,
-              customBorder: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-              child: const SizedBox.square(
-                dimension: RiderHomeSheet.searchHeight,
-                child: Icon(Icons.bookmark_border_rounded, color: _blue, size: 26),
-              ),
+        child: Material(
+          color: _field,
+          borderRadius: BorderRadius.circular(14),
+          child: InkWell(
+            key: const ValueKey('home-places'),
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(14),
+            child: const SizedBox.square(
+              dimension: RiderHomeSheet.searchHeight,
+              child: Icon(Icons.bookmark_border_rounded, color: _blue, size: 24),
             ),
           ),
         ),
@@ -589,17 +536,17 @@ class _ServiceCircle extends StatelessWidget {
         onTap: s.onTap,
         borderRadius: BorderRadius.circular(16),
         child: Column(children: [
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           // a closed service keeps its place, a little quieter
-          Opacity(opacity: s.soon ? .55 : 1, child: HomeServiceIcon(icon: s.icon, color: s.color)),
-          const SizedBox(height: 7),
+          Opacity(opacity: s.soon ? .5 : 1, child: HomeServiceIcon(icon: s.icon, color: s.color, size: 50)),
+          const SizedBox(height: 6),
           SizedBox(
             height: 18,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 3),
               child: FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text(s.label, maxLines: 1, style: GoogleFonts.cairo(fontSize: 12.5, fontWeight: FontWeight.w800, color: _ink, height: 1.2)),
+                child: Text(s.label, maxLines: 1, style: GoogleFonts.cairo(fontSize: 12.5, fontWeight: FontWeight.w600, color: _ink, height: 1.2)),
               ),
             ),
           ),
@@ -640,20 +587,30 @@ class _MoreLine extends StatelessWidget {
       child: InkWell(
         key: ValueKey('home-more-${s.id}'),
         onTap: s.onTap,
-        child: Container(
+        child: SizedBox(
           height: RiderHomeSheet.otherRowHeight,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          decoration: BoxDecoration(border: last ? null : const Border(bottom: BorderSide(color: Color(0xFFEEF2F7)))),
-          child: Row(children: [
-            HomeServiceIcon(icon: s.icon, color: s.color, size: 38),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            const SizedBox(width: 14),
+            Center(child: HomeServiceIcon(icon: s.icon, color: s.color, size: 32)),
             const SizedBox(width: 12),
+            // the hairline starts under the label, as in iOS Settings
             Expanded(
-              child: Text(s.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.cairo(fontSize: 15, fontWeight: FontWeight.w700, color: _ink, height: 1.2)),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  border: last ? null : Border(bottom: BorderSide(color: Colors.black.withValues(alpha: .08), width: .5)),
+                ),
+                child: Row(children: [
+                  Expanded(
+                    child: Text(s.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.cairo(fontSize: 15, fontWeight: FontWeight.w600, color: _ink, height: 1.2)),
+                  ),
+                  Icon(rtl ? Icons.chevron_left_rounded : Icons.chevron_right_rounded, color: const Color(0xFFC4CAD3), size: 22),
+                  const SizedBox(width: 10),
+                ]),
+              ),
             ),
-            Icon(rtl ? Icons.chevron_left_rounded : Icons.chevron_right_rounded, color: const Color(0xFF9AA7B8), size: 24),
           ]),
         ),
       ),
