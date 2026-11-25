@@ -217,10 +217,6 @@ class VehicleServiceCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 _PricingBadge(label: offerFareLabel),
-                if (priorBalanceLine != null) ...[
-                  const SizedBox(height: 4),
-                  _PriorBalanceLine(priorBalanceLine!),
-                ],
                 if (service['signup_bonus_available'] == true &&
                     service['signup_bonus_amount'] is num &&
                     (service['signup_bonus_amount'] as num) > 0) ...[
@@ -263,12 +259,13 @@ class VehicleServiceCard extends StatelessWidget {
               giftDiscount: giftOnFare ? _formatFare(gift!.amount) : service['automatic_gift_discount']?.toString(),
               giftLabel: giftOnFare ? (isArabic ? '🎁 هدية اليوم' : 'Today\'s gift') : (isArabic ? 'هدية أول رحلة' : 'First ride gift'),
             ),
-              if (priorBalanceLine != null) ...[
-                const SizedBox(height: 4),
-                _PriorBalanceLine(priorBalanceLine!),
-              ],
             ]),
         ]),
+        // its own full-width line: inside the price column it widened the column and cut the service name
+        if (priorBalanceLine != null) ...[
+          const SizedBox(height: 6),
+          Align(alignment: AlignmentDirectional.centerEnd, child: _PriorBalanceLine(priorBalanceLine!)),
+        ],
         if (selected &&
             onFareStep != null &&
             fairFare != null &&
