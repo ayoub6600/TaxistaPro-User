@@ -19,7 +19,9 @@ mixin _BookingConfirmationRequestAction
         final service = etaDetails[choosenVehicle];
         final fare = chosenFareForService(choosenVehicle);
         final amount = fare == fare.roundToDouble() ? fare.toStringAsFixed(0) : fare.toStringAsFixed(2);
-        final money = '$amount ${moneyShort(service['currency'], arabic: isArabic)}'.trim();
+        // with an old balance the label shows what he will hand the captain; the offer itself stays the fare
+        final prior = bookingPriorBalance(choosenVehicle);
+        final money = prior?.total ?? '$amount ${moneyShort(service['currency'], arabic: isArabic)}'.trim();
         if (fare > 0) {
           label = canAdjustSelectedFare(choosenVehicle)
               ? (isArabic ? 'أرسل عرضك · $money' : 'Send your offer · $money')

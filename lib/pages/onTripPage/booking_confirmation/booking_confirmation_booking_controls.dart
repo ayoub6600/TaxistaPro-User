@@ -442,6 +442,11 @@ mixin _BookingConfirmationBookingControls
                       SizedBox(
                         height: 12.h,
                       ),
+                      // «عليك 4 د.ل من رحلة سابقة…»: said once, calmly, before he books
+                      if (bookingPriorBalance(choosenVehicle) case final prior?) ...[
+                        SizedBox(width: media.width * 0.9, child: PriorBalanceBookingNote(words: prior)),
+                        SizedBox(height: 8.h),
+                      ],
                       buildRideRequestButton(media, geo),
                     ],
                   ),

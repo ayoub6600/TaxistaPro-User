@@ -20,3 +20,16 @@ String moneyShort(dynamic currency, {required bool arabic}) {
   if (const {'EGP', '£', 'E£', 'ج.م', 'جنيه'}.contains(key)) return arabic ? 'ج.م' : 'EGP';
   return value;
 }
+
+/// An amount as the rider reads it: «11» when whole, «11.50» otherwise (owner 2026-11-25: no «.00»).
+String moneyAmount(dynamic value) {
+  final number = value is num ? value.toDouble() : double.tryParse('${value ?? ''}'.trim());
+  if (number == null) return '${value ?? ''}'.trim();
+  final cents = (number * 100).round();
+  return cents % 100 == 0 ? (cents ~/ 100).toString() : (cents / 100).toStringAsFixed(2);
+}
+
+/// «11 د.ل»: the amount first, then the short sign («11 LYD» in English). Shown in the
+/// surrounding direction, so an Arabic reader meets the number first.
+String moneyText(dynamic amount, dynamic currency, {required bool arabic}) =>
+    '${moneyAmount(amount)} ${moneyShort(currency, arabic: arabic)}';

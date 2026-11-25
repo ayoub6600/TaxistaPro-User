@@ -4,6 +4,39 @@ part of 'historydetails.dart';
 
 /// The large blocks of this screen, each on its own.
 extension _HistoryDetailSections on _HistoryDetailsState {
+  /// «11 د.ل»: amount first, no «.00», never «LYD» (owner 2026-11-25)
+  String _historyMoney(dynamic amount) {
+    final ride = myHistory[selectedHistory];
+    final bill = ride['requestBill'] is Map ? ride['requestBill']['data'] : null;
+    final currency = (bill is Map ? bill['requested_currency_symbol'] : null) ?? ride['requested_currency_symbol'];
+    return moneyText(amount ?? 0, currency, arabic: languageDirection == 'rtl');
+  }
+
+  /// the old negative balance the captain collected with this cash ride: the big number is the
+  /// total he paid, with the fare and the old balance under it; null when there was none
+  PriorBalanceWords? get _historyPriorBalance {
+    final ride = Map<dynamic, dynamic>.from(myHistory[selectedHistory] as Map);
+    final bill = ride['requestBill'] is Map ? ride['requestBill']['data'] : null;
+    if (bill is! Map) return null;
+    final fare = '${ride['payment_opt']}' == '3'
+        ? double.tryParse('${bill['cash_due_amount'] ?? ''}')
+        : double.tryParse('${bill['total_amount'] ?? ''}');
+    final split = invoicePriorBalance(ride, fare: fare ?? 0);
+    if (split == null) return null;
+    return PriorBalanceWords(split, bill['requested_currency_symbol'] ?? ride['requested_currency_symbol'],
+        arabic: languageDirection == 'rtl');
+  }
+
+  Widget _historyPriorBalanceSummary(Size media) {
+    final prior = _historyPriorBalance;
+    if (prior == null) return const SizedBox.shrink();
+    return Padding(
+      padding: EdgeInsets.only(bottom: media.width * 0.04),
+      child: PriorBalancePaidSummary(
+          title: languageDirection == 'rtl' ? 'دفعت للكابتن نقدًا' : 'Paid the captain in cash', words: prior),
+    );
+  }
+
   Widget _historyBody(Size media) {
     return Container(
       height: media.height * 1,
@@ -154,10 +187,10 @@ extension _HistoryDetailSections on _HistoryDetailsState {
                                                   SizedBox(width: media.width * 0.02),
                                                   MyText(
                                                     text: myHistory[selectedHistory]['is_bid_ride'] == 1
-                                                        ? "${myHistory[selectedHistory]['requested_currency_symbol']} ${myHistory[selectedHistory]['accepted_ride_fare']}"
+                                                        ? _historyMoney(myHistory[selectedHistory]['accepted_ride_fare'])
                                                         : myHistory[selectedHistory]['is_completed'] == 1
-                                                            ? "${myHistory[selectedHistory]['requestBill']['data']['requested_currency_symbol']} ${myHistory[selectedHistory]['requestBill']['data']['total_amount']}"
-                                                            : "${myHistory[selectedHistory]['requested_currency_symbol']} ${myHistory[selectedHistory]['request_eta_amount']}",
+                                                            ? _historyMoney(myHistory[selectedHistory]['requestBill']['data']['total_amount'])
+                                                            : _historyMoney(myHistory[selectedHistory]['request_eta_amount']),
                                                     size: 14.sp,
                                                     color: Colors.black,
                                                   ),
@@ -549,6 +582,7 @@ extension _HistoryDetailSections on _HistoryDetailsState {
                             SizedBox(
                               height: media.height * 0.02,
                             ),
+                            _historyPriorBalanceSummary(media),
                             (myHistory[selectedHistory]['is_bid_ride'] == 1 &&
                                     myHistory[selectedHistory]['is_cancelled'] == 0)
                                 ? Column(
@@ -575,30 +609,21 @@ extension _HistoryDetailSections on _HistoryDetailsState {
                                       (myHistory[selectedHistory]['requestBill'] == null)
                                           ? MyText(
                                               text: (myHistory[selectedHistory]['is_bid_ride'] == 1)
-                                                  ? myHistory[selectedHistory]['requested_currency_symbol'] +
-                                                      ' ' +
-                                                      myHistory[selectedHistory]['accepted_ride_fare'].toString()
+                                                  ? _historyMoney(myHistory[selectedHistory]['accepted_ride_fare'])
                                                   : (myHistory[selectedHistory]['is_completed'] == 1)
-                                                      ? myHistory[selectedHistory]['requestBill']['data']
-                                                              ['requested_currency_symbol'] +
-                                                          ' ' +
-                                                          myHistory[selectedHistory]['requestBill']['data']
-                                                                  ['total_amount']
-                                                              .toString()
-                                                      : myHistory[selectedHistory]['requested_currency_symbol'] +
-                                                          ' ' +
-                                                          myHistory[selectedHistory]['request_eta_amount'].toString(),
+                                                      ? _historyMoney(myHistory[selectedHistory]['requestBill']['data']['total_amount'])
+                                                      : _historyMoney(myHistory[selectedHistory]['request_eta_amount']),
                                               size: media.width * twentysix,
                                               fontweight: FontWeight.w600,
                                             )
-                                          : MyText(
-                                              text: myHistory[selectedHistory]['requestBill']['data']
-                                                      ['requested_currency_symbol'] +
-                                                  ' ' +
-                                                  '${myHistory[selectedHistory]['requestBill']['data']['total_amount']}',
-                                              size: media.width * twentysix,
-                                              fontweight: FontWeight.w600,
-                                            ),
+                                          : _historyPriorBalance != null
+                                              ? const SizedBox.shrink() // the total paid is shown above
+                                              : MyText(
+                                                  text: _historyMoney(
+                                                      myHistory[selectedHistory]['requestBill']['data']['total_amount']),
+                                                  size: media.width * twentysix,
+                                                  fontweight: FontWeight.w600,
+                                                ),
                                     ],
                                   )
                                 : (myHistory[selectedHistory]['requestBill'] != null)
@@ -665,12 +690,7 @@ extension _HistoryDetailSections on _HistoryDetailsState {
                                                             ),
                                                             MyText(
                                                               // ignore: prefer_interpolation_to_compose_strings
-                                                              text: myHistory[selectedHistory]['requestBill']['data']
-                                                                      ['requested_currency_symbol'] +
-                                                                  ' ' +
-                                                                  myHistory[selectedHistory]['requestBill']['data']
-                                                                          ['base_price']
-                                                                      .toString(),
+                                                              text: _historyMoney(myHistory[selectedHistory]['requestBill']['data']['base_price']),
                                                               size: media.width * twelve,
                                                             ),
                                                           ],
@@ -694,12 +714,7 @@ extension _HistoryDetailSections on _HistoryDetailsState {
                                                             ),
                                                             MyText(
                                                               // ignore: prefer_interpolation_to_compose_strings
-                                                              text: myHistory[selectedHistory]['requestBill']['data']
-                                                                      ['requested_currency_symbol'] +
-                                                                  ' ' +
-                                                                  myHistory[selectedHistory]['requestBill']['data']
-                                                                          ['distance_price']
-                                                                      .toString(),
+                                                              text: _historyMoney(myHistory[selectedHistory]['requestBill']['data']['distance_price']),
                                                               size: media.width * twelve,
                                                             ),
                                                           ],
@@ -726,12 +741,7 @@ extension _HistoryDetailSections on _HistoryDetailsState {
                                                                 size: media.width * fourteen,
                                                               ),
                                                               MyText(
-                                                                text: myHistory[selectedHistory]['requestBill']['data']
-                                                                        ['requested_currency_symbol'] +
-                                                                    ' ' +
-                                                                    myHistory[selectedHistory]['requestBill']['data']
-                                                                            ['time_price']
-                                                                        .toString(),
+                                                                text: _historyMoney(myHistory[selectedHistory]['requestBill']['data']['time_price']),
                                                                 size: media.width * twelve,
                                                               ),
                                                             ],
@@ -758,12 +768,7 @@ extension _HistoryDetailSections on _HistoryDetailsState {
                                                                   ),
                                                                   MyText(
                                                                     // ignore: prefer_interpolation_to_compose_strings
-                                                                    text: myHistory[selectedHistory]['requestBill']
-                                                                            ['data']['requested_currency_symbol'] +
-                                                                        ' ' +
-                                                                        myHistory[selectedHistory]['requestBill']
-                                                                                ['data']['cancellation_fee']
-                                                                            .toString(),
+                                                                    text: _historyMoney(myHistory[selectedHistory]['requestBill']['data']['cancellation_fee']),
                                                                     size: media.width * twelve,
                                                                   ),
                                                                 ],
@@ -792,12 +797,7 @@ extension _HistoryDetailSections on _HistoryDetailsState {
                                                                   ),
                                                                   MyText(
                                                                     // ignore: prefer_interpolation_to_compose_strings
-                                                                    text: myHistory[selectedHistory]['requestBill']
-                                                                            ['data']['requested_currency_symbol'] +
-                                                                        ' ' +
-                                                                        myHistory[selectedHistory]['requestBill']
-                                                                                ['data']['airport_surge_fee']
-                                                                            .toString(),
+                                                                    text: _historyMoney(myHistory[selectedHistory]['requestBill']['data']['airport_surge_fee']),
                                                                     size: media.width * twelve,
                                                                   ),
                                                                 ],
@@ -823,12 +823,7 @@ extension _HistoryDetailSections on _HistoryDetailsState {
                                                               MyText(
                                                                 text: languages[choosenLanguage]['text_waiting_price'] +
                                                                     ' (' +
-                                                                    myHistory[selectedHistory]['requestBill']['data']
-                                                                        ['requested_currency_symbol'] +
-                                                                    ' ' +
-                                                                    myHistory[selectedHistory]['requestBill']['data']
-                                                                            ['waiting_charge_per_min']
-                                                                        .toString() +
+                                                                    _historyMoney(myHistory[selectedHistory]['requestBill']['data']['waiting_charge_per_min']) +
                                                                     ' x ' +
                                                                     myHistory[selectedHistory]['requestBill']['data']
                                                                             ['calculated_waiting_time']
@@ -839,12 +834,7 @@ extension _HistoryDetailSections on _HistoryDetailsState {
                                                                 size: media.width * fourteen,
                                                               ),
                                                               MyText(
-                                                                text: myHistory[selectedHistory]['requestBill']['data']
-                                                                        ['requested_currency_symbol'] +
-                                                                    ' ' +
-                                                                    myHistory[selectedHistory]['requestBill']['data']
-                                                                            ['waiting_charge']
-                                                                        .toString(),
+                                                                text: _historyMoney(myHistory[selectedHistory]['requestBill']['data']['waiting_charge']),
                                                                 size: media.width * twelve,
                                                               ),
                                                             ],
@@ -871,12 +861,7 @@ extension _HistoryDetailSections on _HistoryDetailsState {
                                                               ),
                                                               MyText(
                                                                 // ignore: prefer_interpolation_to_compose_strings
-                                                                text: myHistory[selectedHistory]['requestBill']['data']
-                                                                        ['requested_currency_symbol'] +
-                                                                    ' ' +
-                                                                    myHistory[selectedHistory]['requestBill']['data']
-                                                                            ['admin_commision']
-                                                                        .toString(),
+                                                                text: _historyMoney(myHistory[selectedHistory]['requestBill']['data']['admin_commision']),
                                                                 size: media.width * twelve,
                                                               ),
                                                             ],
@@ -904,12 +889,7 @@ extension _HistoryDetailSections on _HistoryDetailsState {
                                                                   ),
                                                                   MyText(
                                                                     // ignore: prefer_interpolation_to_compose_strings
-                                                                    text: myHistory[selectedHistory]['requestBill']
-                                                                            ['data']['requested_currency_symbol'] +
-                                                                        ' ' +
-                                                                        myHistory[selectedHistory]['requestBill']
-                                                                                ['data']['promo_discount']
-                                                                            .toString(),
+                                                                    text: _historyMoney(myHistory[selectedHistory]['requestBill']['data']['promo_discount']),
                                                                     size: media.width * twelve,
                                                                     color: Colors.red,
                                                                   ),
@@ -943,10 +923,7 @@ extension _HistoryDetailSections on _HistoryDetailsState {
                                                             MyText(
                                                               text:
                                                                   // ignore: prefer_interpolation_to_compose_strings
-                                                                  myHistory[selectedHistory]['requestBill']['data']
-                                                                          ['requested_currency_symbol'] +
-                                                                      ' ' +
-                                                                      '${myHistory[selectedHistory]['requestBill']['data']['service_tax']} ',
+                                                                  _historyMoney(myHistory[selectedHistory]['requestBill']['data']['service_tax']),
                                                               size: media.width * twelve,
                                                             ),
                                                           ],
@@ -974,10 +951,7 @@ extension _HistoryDetailSections on _HistoryDetailsState {
                                                               MyText(
                                                                 text:
                                                                     // ignore: prefer_interpolation_to_compose_strings
-                                                                    myHistory[selectedHistory]['requestBill']['data']
-                                                                            ['requested_currency_symbol'] +
-                                                                        ' ' +
-                                                                        '${'${myHistory[selectedHistory]['requestBill']['data']['total_amount']} '} ',
+                                                                    _historyMoney(myHistory[selectedHistory]['requestBill']['data']['total_amount']),
                                                                 size: media.width * twelve,
                                                               ),
                                                             ],

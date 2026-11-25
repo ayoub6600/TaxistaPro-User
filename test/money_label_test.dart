@@ -18,4 +18,17 @@ void main() {
     expect(moneyLabel('TND', arabic: true), 'TND');
     expect(moneyLabel(null, arabic: true), 'دينار');
   });
+
+  test('the rider reads «11 د.ل»: amount first, no «.00», never «LYD» (owner 2026-11-25)', () {
+    expect(moneyAmount(11.0), '11');
+    expect(moneyAmount('11.00'), '11');
+    expect(moneyAmount(11.5), '11.50');
+    expect(moneyAmount('7.25'), '7.25');
+    expect(moneyAmount(0), '0');
+    expect(moneyAmount(-4), '-4');
+    expect(moneyText(11, 'LYD', arabic: true), '11 د.ل');
+    expect(moneyText('15.00', 'LYD', arabic: true), '15 د.ل');
+    expect(moneyText(40, 'EGP', arabic: true), '40 ج.م');
+    expect(moneyText(11, 'LYD', arabic: false), '11 LYD');
+  });
 }

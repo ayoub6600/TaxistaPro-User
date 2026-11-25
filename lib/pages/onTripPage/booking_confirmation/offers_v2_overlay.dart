@@ -46,7 +46,8 @@ class _OffersV2OverlayState extends State<_OffersV2Overlay> with SingleTickerPro
   String get _requestId => '${userRequestData['id'] ?? ''}';
   double get _myFare => OffersV2.currentFare(userRequestData);
   double get _step => OffersV2.step(userDetails);
-  String get _currency => '${userRequestData['requested_currency_symbol'] ?? userRequestData['requested_currency_code'] ?? ''}';
+  // «د.ل» after the amount (owner 2026-11-25), never «LYD»
+  String get _currency => moneyShort(userRequestData['requested_currency_symbol'] ?? userRequestData['requested_currency_code'], arabic: true);
 
   @override
   void initState() {
@@ -140,7 +141,7 @@ class _OffersV2OverlayState extends State<_OffersV2Overlay> with SingleTickerPro
     userRequestData['offerred_ride_fare'] = fare;
     _raise = null;
     _restartSearch();
-    _say('سعرك صار $_currency ${OffersV2.money(fare)}، وبعتناه من جديد للكباتن القريبين.');
+    _say('سعرك صار ${OffersV2.money(fare)} $_currency، وبعتناه من جديد للكباتن القريبين.');
   }
 
   void _restartSearch() {
@@ -171,7 +172,7 @@ class _OffersV2OverlayState extends State<_OffersV2Overlay> with SingleTickerPro
       setState(() => _auto = !on);
       _say(r.message.isEmpty ? 'ما قدرناش نشغّل القبول التلقائي.' : r.message);
     } else if (on) {
-      _say('أول عرض لين $_currency ${OffersV2.money(max)} نقبله لك تلقائيًا.');
+      _say('أول عرض لين ${OffersV2.money(max)} $_currency نقبله لك تلقائيًا.');
     }
   }
 
@@ -401,9 +402,8 @@ class _OffersV2OverlayState extends State<_OffersV2Overlay> with SingleTickerPro
       child: Row(children: [
         sq('−', 'نقّص', changed ? () => setState(() => _raise = max(now, value - _step)) : null),
         Expanded(
-          child: Text('$_currency ${OffersV2.money(value)}',
+          child: Text('${OffersV2.money(value)} $_currency',
               textAlign: TextAlign.center,
-              textDirection: ui.TextDirection.ltr,
               style: GoogleFonts.cairo(color: _searchNavy, fontSize: 19, fontWeight: FontWeight.w900)),
         ),
         sq('+', 'زيد', () => setState(() => _raise = value + _step)),
@@ -434,7 +434,7 @@ class _OffersV2OverlayState extends State<_OffersV2Overlay> with SingleTickerPro
             child: Text.rich(
               TextSpan(children: [
                 const TextSpan(text: 'اقبل تلقائيًا أول عرض لين '),
-                TextSpan(text: '$_currency ${OffersV2.money(_myFare + _step * 2)}', style: const TextStyle(fontWeight: FontWeight.w900)),
+                TextSpan(text: '${OffersV2.money(_myFare + _step * 2)} $_currency', style: const TextStyle(fontWeight: FontWeight.w900)),
               ]),
               style: GoogleFonts.cairo(color: _searchNavy, fontSize: 13, fontWeight: FontWeight.w700),
             ),
@@ -492,7 +492,7 @@ class _OffersV2OverlayState extends State<_OffersV2Overlay> with SingleTickerPro
           child: TextButton(
             onPressed: _sending ? null : () => _sendRaise(more),
             style: TextButton.styleFrom(backgroundColor: const Color(0xffF3F7FE), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18))),
-            child: Text('زيد ${OffersV2.money(_step * 2)} وكمّل · $_currency ${OffersV2.money(more)}',
+            child: Text('زيد ${OffersV2.money(_step * 2)} وكمّل · ${OffersV2.money(more)} $_currency',
                 style: GoogleFonts.cairo(color: _searchNavy, fontSize: 15.5, fontWeight: FontWeight.w800)),
           ),
         ),

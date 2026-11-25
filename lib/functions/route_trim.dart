@@ -10,8 +10,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart' show LatLng;
 /// The route is left as it is when the car is farther than [maxOffRouteMeters]
 /// from every part of it (a wrong turn or a stale route): cutting then would eat
 /// a piece the car has not driven yet.
-List<LatLng> trimRouteToCar(List<LatLng> route, LatLng car,
-    {double maxOffRouteMeters = 250}) {
+List<LatLng> trimRouteToCar(List<LatLng> route, LatLng car, {double maxOffRouteMeters = 250}) {
   if (route.length < 2) return route;
 
   // Flat metres around the car: plenty precise for a city route.

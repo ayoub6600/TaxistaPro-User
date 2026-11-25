@@ -37,7 +37,7 @@ class _OfferCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final offer = driver.counterOffer ?? 0;
-    final currency = driver.counterOfferCurrency;
+    final currency = moneyShort(driver.counterOfferCurrency, arabic: isRtl);
     final giftApplied = signupBonusAmount.clamp(0.0, offer).toDouble();
     final remainingCash = cashDueAfterSignupGift(offer, giftApplied);
     final reportedBase = driver.counterOfferBase;

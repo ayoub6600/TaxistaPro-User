@@ -6,6 +6,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:taxista/translations/translation.dart';
 
 import '../../functions/functions.dart';
+import '../../functions/money_label.dart';
+import '../../functions/prior_balance.dart';
+import '../../widgets/prior_balance_widgets.dart';
 import '../../growth/gift_widgets.dart';
 import '../../styles/styles.dart';
 import '../../widgets/widgets.dart';

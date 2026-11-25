@@ -104,6 +104,25 @@ mixin _BookingConfirmationController
     return minimumRiderOffer(fair, limit);
   }
 
+  /// «رصيد سابق» before booking (owner 2026-11-25, like Uber): the old negative balance the
+  /// captain will collect with this ride (quote field prior_balance_due) when it is paid in cash or
+  /// wallet + cash; null otherwise (the wallet alone never collects it)
+  PriorBalanceWords? bookingPriorBalance(int? index) {
+    if (index == null || index < 0 || index >= etaDetails.length) return null;
+    try {
+      final service = etaDetails[index];
+      final split = priorBalanceSplit(
+        paymentOpt: paymentOptForSelection(service['payment_type'], payingVia),
+        prior: service['prior_balance_due'],
+        fare: chosenFareForService(index),
+      );
+      if (split == null) return null;
+      return PriorBalanceWords(split, service['currency'], arabic: choosenLanguage == 'ar');
+    } catch (_) {
+      return null;
+    }
+  }
+
   double? maximumFareForService(int index) {
     if (!confirmRideLater) return null;
     final fair = fairFareForService(index);

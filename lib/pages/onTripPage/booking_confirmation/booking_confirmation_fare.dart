@@ -1,10 +1,13 @@
 part of '../booking_confirmation.dart';
 
 class _RideFareData {
-  const _RideFareData({required this.amount, required this.currency});
+  const _RideFareData({required this.value, required this.currency});
 
-  final String amount;
+  final double value;
   final String currency;
+
+  /// «11», or «11.50» when not whole (no «.00»)
+  String get amount => moneyAmount(value);
 }
 
 bool isLegacyBiddingSearchRequest(Map<dynamic, dynamic> request,
@@ -79,7 +82,7 @@ _RideFareData? _resolveRideFare(Map<dynamic, dynamic> request) {
       userDetails['currency_symbol'] ??
       '';
   return _RideFareData(
-    amount: amount.toStringAsFixed(2),
+    value: amount,
     currency: rawCurrency.toString().trim(),
   );
 }
@@ -87,9 +90,8 @@ _RideFareData? _resolveRideFare(Map<dynamic, dynamic> request) {
 String _resolvedRideFareText(Map<dynamic, dynamic> request) {
   final fare = _resolveRideFare(request);
   if (fare == null) return '';
-  return fare.currency.isEmpty
-      ? fare.amount
-      : '${fare.currency} ${fare.amount}';
+  // owner 2026-11-25: «11 د.ل», never «LYD 11.00»
+  return moneyText(fare.value, fare.currency, arabic: languageDirection == 'rtl');
 }
 
 class _RideFareBadge extends StatelessWidget {
@@ -106,11 +108,7 @@ class _RideFareBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = isRtl ? 'سعر الرحلة' : 'Trip fare';
-    final amount = fare.currency.isEmpty
-        ? fare.amount
-        : isRtl
-            ? '${fare.amount} ${fare.currency}'
-            : '${fare.currency} ${fare.amount}';
+    final amount = moneyText(fare.value, fare.currency, arabic: isRtl);
     final content = Row(
       mainAxisSize: expanded ? MainAxisSize.max : MainAxisSize.min,
       mainAxisAlignment:
@@ -141,7 +139,6 @@ class _RideFareBadge extends StatelessWidget {
         if (expanded) const Spacer() else const SizedBox(width: 14),
         Text(
           amount,
-          textDirection: ui.TextDirection.ltr,
           style: GoogleFonts.cairo(
             color: _searchNavy,
             fontSize: 16,

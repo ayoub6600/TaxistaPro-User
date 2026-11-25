@@ -175,6 +175,7 @@ mixin _BookingConfirmationVehicleServices
                     ? (direction) => changeFareOffer(index, direction)
                     : null,
                 isArabic: choosenLanguage == 'ar',
+                priorBalanceLine: choosenVehicle == index ? bookingPriorBalance(index)?.priceAddOn : null,
               )),
             ));
       },

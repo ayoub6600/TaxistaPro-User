@@ -2,6 +2,8 @@
 
 import '../../functions/money_label.dart';
 import '../../functions/route_trim.dart';
+import '../../functions/prior_balance.dart';
+import '../../widgets/prior_balance_widgets.dart';
 import '../../functions/nav_eta.dart';
 import 'dart:async';
 import 'dart:convert';

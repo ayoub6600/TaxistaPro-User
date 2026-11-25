@@ -49,8 +49,8 @@ class _OfferCardV2 extends StatelessWidget {
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
           Row(children: [
-            Text('$currency ${OffersV2.money(price)}',
-                textDirection: ui.TextDirection.ltr, style: GoogleFonts.cairo(color: _searchNavy, fontSize: 25, fontWeight: FontWeight.w900, height: 1.1)),
+            Text('${OffersV2.money(price)} $currency',
+                style: GoogleFonts.cairo(color: _searchNavy, fontSize: 25, fontWeight: FontWeight.w900, height: 1.1)),
             const SizedBox(width: 8),
             if (driver.etaMinutes != null)
               Text('${driver.etaMinutes} د', style: GoogleFonts.cairo(color: const Color(0xff8492A8), fontSize: 17, fontWeight: FontWeight.w800)),
@@ -194,7 +194,7 @@ class _OfferStripV2 extends StatelessWidget {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
             Text(
                 // the favourite comes first even when another price is lower: never call it «أفضلها»
-                '${top.isFavorite ? '❤' : '🚕'} ${count == 1 ? 'عرض من $name' : (top.isFavorite ? '$count عروض · سائقك المفضل $name' : '$count عروض · أفضلها من $name')} · $currency $price',
+                '${top.isFavorite ? '❤' : '🚕'} ${count == 1 ? 'عرض من $name' : (top.isFavorite ? '$count عروض · سائقك المفضل $name' : '$count عروض · أفضلها من $name')} · $price $currency',
                 maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.cairo(color: _searchNavy, fontSize: 13, fontWeight: FontWeight.w800)),
             if (top.carLine.isNotEmpty)
               Text([top.carLine, if (top.etaMinutes != null) '${top.etaMinutes} د'].join(' · '),

@@ -1,5 +1,7 @@
 import '../../functions/meta_ride_events.dart';
 import '../../functions/money_label.dart';
+import '../../functions/prior_balance.dart';
+import '../../widgets/prior_balance_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:taxista/pages/NavigatorPages/paymentgateways.dart';
@@ -33,26 +35,40 @@ class _InvoiceState extends State<Invoice> {
   String _error = '';
   String myPaymentMethod = '';
 
-  /// «دفعت كمان X رصيد سابق»: the rider's earlier negative balance settled in cash on this ride
-  /// (the server's bill line prior_balance_collected); nothing when there was none
-  Widget _priorBalanceNote(Size media) {
+  /// money on this screen: «11 د.ل», amount first, no «.00» (owner 2026-11-25), never «LYD 11.00»
+  dynamic get _currency =>
+      userRequestData['requestBill']?['data']?['requested_currency_symbol'] ??
+      userRequestData['requested_currency_symbol'];
+  String _money(dynamic amount) => moneyText(amount ?? 0, _currency, arabic: languageDirection == 'rtl');
+  String _billMoney(String field) => _money(userRequestData['requestBill']?['data']?[field]);
+
+  /// the cash this ride itself cost: the cash part on wallet + cash, the fare otherwise
+  double _invoiceCashFare() {
     final bill = userRequestData['requestBill']?['data'];
-    final prior = double.tryParse('${bill?['prior_balance_collected'] ?? 0}') ?? 0;
-    if (prior <= 0) return const SizedBox.shrink();
-    final rtl = languageDirection == 'rtl';
-    final cur = moneyLabel(userRequestData['requested_currency_symbol'], arabic: rtl);
-    return Container(
-      width: media.width * 0.9,
-      margin: EdgeInsets.only(bottom: media.width * 0.04),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: const Color(0xffFFF4DB), borderRadius: BorderRadius.circular(14)),
-      child: Text(
-        rtl
-            ? 'مع الأجرة دفعت ${prior.toStringAsFixed(2)} $cur رصيد سابق كان عليك، ومحفظتك رجعت بنفس المبلغ.'
-            : 'With the fare you paid ${prior.toStringAsFixed(2)} $cur of your earlier balance; your wallet went up by the same.',
-        textAlign: TextAlign.center,
-        style: GoogleFonts.notoSans(
-            fontSize: media.width * fourteen, color: const Color(0xff8A5A00), fontWeight: FontWeight.w600, height: 1.5),
+    double? read(dynamic v) => double.tryParse('${v ?? ''}');
+    if ('${userRequestData['payment_opt']}' == '3') {
+      return read(bill?['cash_due_amount']) ?? read(userRequestData['cash_due_amount']) ?? 0;
+    }
+    return read(bill?['total_amount']) ?? read(userRequestData['accepted_ride_fare']) ?? 0;
+  }
+
+  /// the rider's earlier negative balance the captain collected with this cash ride (bill line
+  /// prior_balance_collected); null when there was none
+  PriorBalanceWords? get _priorBalance {
+    final split = invoicePriorBalance(userRequestData, fare: _invoiceCashFare());
+    return split == null ? null : PriorBalanceWords(split, _currency, arabic: languageDirection == 'rtl');
+  }
+
+  /// owner 2026-11-25: with an old balance the big number is what he hands the captain (fare +
+  /// old balance), with both parts under it; the fare alone is no longer shown big
+  Widget _priorBalanceSummary(Size media) {
+    final prior = _priorBalance;
+    if (prior == null) return const SizedBox.shrink();
+    return Padding(
+      padding: EdgeInsets.only(bottom: media.width * 0.04),
+      child: PriorBalancePaidSummary(
+        title: languageDirection == 'rtl' ? 'تدفع للكابتن نقدًا' : 'Pay the captain in cash',
+        words: prior,
       ),
     );
   }
@@ -60,7 +76,6 @@ class _InvoiceState extends State<Invoice> {
   Widget _bidRidePaymentSummary(Size media) {
     final bill = userRequestData['requestBill']?['data'];
     final estimated = userRequestData['wallet_split_is_estimate'] == true;
-    final currency = moneyLabel(userRequestData['requested_currency_symbol'], arabic: choosenLanguage == 'ar');
     final gross = double.tryParse(((estimated ? null : bill?['total_amount']) ??
                     userRequestData['accepted_ride_fare'] ??
                     bill?['total_amount'])
@@ -80,8 +95,10 @@ class _InvoiceState extends State<Invoice> {
             '') ??
         0;
     final split = userRequestData['payment_opt'].toString() == '3';
+    final hasPrior = _priorBalance != null;
 
     if (!split) {
+      if (hasPrior) return const SizedBox.shrink(); // the total is shown above
       final payment = userRequestData['payment_opt'].toString() == '1'
           ? languages[choosenLanguage]['text_cash']
           : userRequestData['payment_opt'].toString() == '2'
@@ -92,7 +109,7 @@ class _InvoiceState extends State<Invoice> {
             style: GoogleFonts.notoSans(
                 fontSize: media.width * twentyeight, color: buttonColor, fontWeight: FontWeight.bold)),
         SizedBox(height: media.width * 0.05),
-        Text('${gross.toStringAsFixed(2)} $currency',
+        Text(_money(gross),
             style:
                 GoogleFonts.notoSans(fontSize: media.width * twentysix, color: textColor, fontWeight: FontWeight.bold)),
       ]);
@@ -102,25 +119,24 @@ class _InvoiceState extends State<Invoice> {
         ? (choosenLanguage == 'ar' ? 'سيُخصم من محفظتك' : 'From your wallet at trip completion')
         : (choosenLanguage == 'ar' ? 'دُفع من محفظتك' : 'Paid from your wallet');
     return Column(children: [
-      Text(
-        choosenLanguage == 'ar' ? 'ادفع للسائق نقدًا' : 'Pay the driver cash',
-        style:
-            GoogleFonts.notoSans(fontSize: media.width * twentyeight, color: buttonColor, fontWeight: FontWeight.bold),
-      ),
-      SizedBox(height: media.width * 0.025),
-      Text('$currency ${cash.toStringAsFixed(2)}',
-          style:
-              GoogleFonts.notoSans(fontSize: media.width * twentysix, color: textColor, fontWeight: FontWeight.bold)),
-      SizedBox(height: media.width * 0.025),
-      Text('$walletLabel: $currency ${wallet.toStringAsFixed(2)}',
+      if (!hasPrior) ...[
+        Text(
+          choosenLanguage == 'ar' ? 'ادفع للسائق نقدًا' : 'Pay the driver cash',
+          style: GoogleFonts.notoSans(
+              fontSize: media.width * twentyeight, color: buttonColor, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(height: media.width * 0.025),
+        Text(_money(cash),
+            style:
+                GoogleFonts.notoSans(fontSize: media.width * twentysix, color: textColor, fontWeight: FontWeight.bold)),
+        SizedBox(height: media.width * 0.025),
+      ],
+      Text('$walletLabel: ${_money(wallet)}',
           textAlign: TextAlign.center,
           style:
               GoogleFonts.notoSans(fontSize: media.width * fourteen, color: buttonColor, fontWeight: FontWeight.w600)),
       SizedBox(height: media.width * 0.015),
-      Text(
-          choosenLanguage == 'ar'
-              ? 'إجمالي الأجرة: $currency ${gross.toStringAsFixed(2)}'
-              : 'Total fare: $currency ${gross.toStringAsFixed(2)}',
+      Text(choosenLanguage == 'ar' ? 'إجمالي الأجرة: ${_money(gross)}' : 'Total fare: ${_money(gross)}',
           style: GoogleFonts.notoSans(fontSize: media.width * twelve, color: textColor)),
     ]);
   }
@@ -138,10 +154,7 @@ class _InvoiceState extends State<Invoice> {
     return Column(children: [
       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
         MyText(text: label, size: media.width * twelve, color: value < 0 ? Colors.red : null),
-        MyText(
-            text: '${bill['requested_currency_symbol']} ${value.toStringAsFixed(2)}',
-            size: media.width * twelve,
-            color: value < 0 ? Colors.red : null),
+        MyText(text: _money(value), size: media.width * twelve, color: value < 0 ? Colors.red : null),
       ]),
       Container(
           margin: EdgeInsets.symmetric(vertical: media.width * 0.03), height: 1.5, color: const Color(0xffE0E0E0)),
@@ -454,7 +467,7 @@ class _InvoiceState extends State<Invoice> {
                                   SizedBox(
                                     height: media.height * 0.03,
                                   ),
-                                  _priorBalanceNote(media),
+                                  _priorBalanceSummary(media),
                                   userRequestData['is_bid_ride'] == 1
                                       ? _bidRidePaymentSummary(media)
                                       : (userRequestData['requestBill'] != null)
@@ -521,12 +534,7 @@ class _InvoiceState extends State<Invoice> {
                                                                   MyText(
                                                                     text: (userRequestData.isNotEmpty &&
                                                                             userRequestData['requestBill'] != null)
-                                                                        ? userRequestData['requestBill']['data']
-                                                                                ['requested_currency_symbol'] +
-                                                                            ' ' +
-                                                                            userRequestData['requestBill']['data']
-                                                                                    ['base_price']
-                                                                                .toString()
+                                                                        ? _billMoney('base_price')
                                                                         : '',
                                                                     size: media.width * twelve,
                                                                   ),
@@ -553,12 +561,7 @@ class _InvoiceState extends State<Invoice> {
                                                                   MyText(
                                                                     text: (userRequestData.isNotEmpty &&
                                                                             userRequestData['requestBill'] != null)
-                                                                        ? userRequestData['requestBill']['data']
-                                                                                ['requested_currency_symbol'] +
-                                                                            ' ' +
-                                                                            userRequestData['requestBill']['data']
-                                                                                    ['distance_price']
-                                                                                .toString()
+                                                                        ? _billMoney('distance_price')
                                                                         : '',
                                                                     size: media.width * twelve,
                                                                   ),
@@ -585,12 +588,7 @@ class _InvoiceState extends State<Invoice> {
                                                                   MyText(
                                                                     text: (userRequestData.isNotEmpty &&
                                                                             userRequestData['requestBill'] != null)
-                                                                        ? userRequestData['requestBill']['data']
-                                                                                ['requested_currency_symbol'] +
-                                                                            ' ' +
-                                                                            userRequestData['requestBill']['data']
-                                                                                    ['time_price']
-                                                                                .toString()
+                                                                        ? _billMoney('time_price')
                                                                         : '',
                                                                     size: media.width * twelve,
                                                                   ),
@@ -625,12 +623,7 @@ class _InvoiceState extends State<Invoice> {
                                                                           text: (userRequestData.isNotEmpty &&
                                                                                   userRequestData['requestBill'] !=
                                                                                       null)
-                                                                              ? userRequestData['requestBill']['data']
-                                                                                      ['requested_currency_symbol'] +
-                                                                                  ' ' +
-                                                                                  userRequestData['requestBill']['data']
-                                                                                          ['cancellation_fee']
-                                                                                      .toString()
+                                                                              ? _billMoney('cancellation_fee')
                                                                               : '',
                                                                           size: media.width * twelve,
                                                                         ),
@@ -664,12 +657,7 @@ class _InvoiceState extends State<Invoice> {
                                                                           text: (userRequestData.isNotEmpty &&
                                                                                   userRequestData['requestBill'] !=
                                                                                       null)
-                                                                              ? userRequestData['requestBill']['data']
-                                                                                      ['requested_currency_symbol'] +
-                                                                                  ' ' +
-                                                                                  userRequestData['requestBill']['data']
-                                                                                          ['airport_surge_fee']
-                                                                                      .toString()
+                                                                              ? _billMoney('airport_surge_fee')
                                                                               : '',
                                                                           size: media.width * twelve,
                                                                         ),
@@ -694,12 +682,7 @@ class _InvoiceState extends State<Invoice> {
                                                                     text: languages[choosenLanguage]
                                                                             ['text_waiting_price'] +
                                                                         ' (' +
-                                                                        userRequestData['requestBill']['data']
-                                                                            ['requested_currency_symbol'] +
-                                                                        ' ' +
-                                                                        userRequestData['requestBill']['data']
-                                                                                ['waiting_charge_per_min']
-                                                                            .toString() +
+                                                                        _billMoney('waiting_charge_per_min') +
                                                                         ' x ' +
                                                                         userRequestData['requestBill']['data']
                                                                                 ['calculated_waiting_time']
@@ -710,12 +693,7 @@ class _InvoiceState extends State<Invoice> {
                                                                     size: media.width * twelve,
                                                                   ),
                                                                   MyText(
-                                                                    text: userRequestData['requestBill']['data']
-                                                                            ['requested_currency_symbol'] +
-                                                                        ' ' +
-                                                                        userRequestData['requestBill']['data']
-                                                                                ['waiting_charge']
-                                                                            .toString(),
+                                                                    text: _billMoney('waiting_charge'),
                                                                     size: media.width * twelve,
                                                                   ),
                                                                 ],
@@ -744,12 +722,7 @@ class _InvoiceState extends State<Invoice> {
                                                                           size: media.width * twelve,
                                                                         ),
                                                                         MyText(
-                                                                          text: userRequestData['requestBill']['data']
-                                                                                  ['requested_currency_symbol'] +
-                                                                              ' ' +
-                                                                              userRequestData['requestBill']['data']
-                                                                                      ['admin_commision']
-                                                                                  .toString(),
+                                                                          text: _billMoney('admin_commision'),
                                                                           size: media.width * twelve,
                                                                         ),
                                                                       ],
@@ -780,12 +753,7 @@ class _InvoiceState extends State<Invoice> {
                                                                           color: Colors.red,
                                                                         ),
                                                                         MyText(
-                                                                          text: userRequestData['requestBill']['data']
-                                                                                  ['requested_currency_symbol'] +
-                                                                              ' ' +
-                                                                              userRequestData['requestBill']['data']
-                                                                                      ['promo_discount']
-                                                                                  .toString(),
+                                                                          text: _billMoney('promo_discount'),
                                                                           size: media.width * twelve,
                                                                           color: Colors.red,
                                                                         ),
@@ -817,12 +785,7 @@ class _InvoiceState extends State<Invoice> {
                                                                     size: media.width * twelve,
                                                                   ),
                                                                   MyText(
-                                                                    text: userRequestData['requestBill']['data']
-                                                                            ['requested_currency_symbol'] +
-                                                                        ' ' +
-                                                                        userRequestData['requestBill']['data']
-                                                                                ['service_tax']
-                                                                            .toString(),
+                                                                    text: _billMoney('service_tax'),
                                                                     size: media.width * twelve,
                                                                   ),
                                                                 ],
@@ -849,12 +812,7 @@ class _InvoiceState extends State<Invoice> {
                                                                     width: 10.w,
                                                                   ),
                                                                   MyText(
-                                                                    text: userRequestData['requestBill']['data']
-                                                                            ['requested_currency_symbol'] +
-                                                                        ' ' +
-                                                                        userRequestData['requestBill']['data']
-                                                                                ['total_amount']
-                                                                            .toString(),
+                                                                    text: _billMoney('total_amount'),
                                                                     size: 16.sp,
                                                                     fontweight: FontWeight.w700,
                                                                     color: Colors.blue,
@@ -868,64 +826,60 @@ class _InvoiceState extends State<Invoice> {
                                                           ),
                                                         ],
                                                       )
-                                                    : Padding(
-                                                        padding: EdgeInsets.symmetric(
-                                                          vertical: 20.h,
-                                                        ),
-                                                        child: Row(
-                                                          children: [
-                                                            //تم الدفع عبر
+                                                    : _priorBalance != null
+                                                        ? const SizedBox.shrink() // the total is shown above
+                                                        : Padding(
+                                                            padding: EdgeInsets.symmetric(
+                                                              vertical: 20.h,
+                                                            ),
+                                                            child: Row(
+                                                              children: [
+                                                                //تم الدفع عبر
 
-                                                            Text(
-                                                              (userRequestData['payment_opt'] == '2' ||
-                                                                      userRequestData['payment_opt'] == '3')
-                                                                  ? languages[choosenLanguage]['text_paid_via']
-                                                                  : "ادفع للسائق",
-                                                              style: GoogleFonts.cairo(
-                                                                  fontSize: media.width * sixteen,
-                                                                  color: textColor,
-                                                                  fontWeight: FontWeight.w600),
-                                                            ),
-                                                            SizedBox(
-                                                              width: 5.w,
-                                                            ),
-                                                            Text(
-                                                              (userRequestData['payment_opt'] == '1' ||
-                                                                      userRequestData['payment_opt'] == '3')
-                                                                  ? languages[choosenLanguage]['text_cash']
-                                                                  : (userRequestData['payment_opt'] == '2')
-                                                                      ? languages[choosenLanguage]['text_wallet']
-                                                                      : languages[choosenLanguage]['text_card'],
-                                                              style: GoogleFonts.cairo(
-                                                                  fontSize: media.width * sixteen,
+                                                                Text(
+                                                                  (userRequestData['payment_opt'] == '2' ||
+                                                                          userRequestData['payment_opt'] == '3')
+                                                                      ? languages[choosenLanguage]['text_paid_via']
+                                                                      : "ادفع للسائق",
+                                                                  style: GoogleFonts.cairo(
+                                                                      fontSize: media.width * sixteen,
+                                                                      color: textColor,
+                                                                      fontWeight: FontWeight.w600),
+                                                                ),
+                                                                SizedBox(
+                                                                  width: 5.w,
+                                                                ),
+                                                                Text(
+                                                                  (userRequestData['payment_opt'] == '1' ||
+                                                                          userRequestData['payment_opt'] == '3')
+                                                                      ? languages[choosenLanguage]['text_cash']
+                                                                      : (userRequestData['payment_opt'] == '2')
+                                                                          ? languages[choosenLanguage]['text_wallet']
+                                                                          : languages[choosenLanguage]['text_card'],
+                                                                  style: GoogleFonts.cairo(
+                                                                      fontSize: media.width * sixteen,
+                                                                      color: Colors.blue,
+                                                                      fontWeight: FontWeight.bold),
+                                                                ),
+                                                                SizedBox(
+                                                                  width: 5.w,
+                                                                ),
+                                                                MyText(
+                                                                  text: userRequestData['payment_opt'] == '3'
+                                                                      ? ' ${_billMoney('cash_due_amount')}'
+                                                                      : ' ${_billMoney('total_amount')}',
+                                                                  size: media.width * twenty,
+                                                                  fontweight: FontWeight.bold,
                                                                   color: Colors.blue,
-                                                                  fontWeight: FontWeight.bold),
+                                                                ),
+                                                              ],
                                                             ),
-                                                            SizedBox(
-                                                              width: 5.w,
-                                                            ),
-                                                            MyText(
-                                                              text:
-                                                                  ' ${userRequestData['requestBill']['data']['requested_currency_symbol']}',
-                                                              size: media.width * fourteen,
-                                                              color: Colors.blue,
-                                                            ),
-                                                            MyText(
-                                                              text: userRequestData['payment_opt'] == '3'
-                                                                  ? ' ${userRequestData['requestBill']['data']['cash_due_amount'] ?? 0}'
-                                                                  : ' ${userRequestData['requestBill']['data']['total_amount']}',
-                                                              size: media.width * twenty,
-                                                              fontweight: FontWeight.bold,
-                                                              color: Colors.blue,
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
+                                                          ),
                                                 if (userRequestData['payment_opt'] == '3')
                                                   Padding(
                                                     padding: EdgeInsets.only(bottom: 14.h),
                                                     child: Text(
-                                                      '${languages[choosenLanguage]['text_wallet_paid']}: ${userRequestData['requestBill']['data']['requested_currency_symbol']} ${userRequestData['requestBill']['data']['wallet_paid_amount'] ?? 0}',
+                                                      '${languages[choosenLanguage]['text_wallet_paid']}: ${_billMoney('wallet_paid_amount')}',
                                                       style: GoogleFonts.cairo(
                                                         fontSize: media.width * twelve,
                                                         color: textColor,

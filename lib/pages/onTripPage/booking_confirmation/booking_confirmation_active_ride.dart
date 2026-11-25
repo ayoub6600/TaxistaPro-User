@@ -2,8 +2,26 @@ part of '../booking_confirmation.dart';
 
 mixin _BookingConfirmationActiveRide
     on State<BookingConfirmation>, _BookingConfirmationController {
+  /// the cash this ride itself costs: the cash part on wallet + cash, the fare otherwise
+  double _activeCashFare(_RideFareData fare) {
+    if ('${userRequestData['payment_opt']}' == '3') {
+      return double.tryParse('${userRequestData['cash_due_amount'] ?? ''}') ?? fare.value;
+    }
+    return fare.value;
+  }
+
+  /// «تدفع للكابتن 15 د.ل»: the old negative balance the captain collects with this cash ride
+  /// (ride field prior_balance_due); null when there is none or the ride is not paid in cash
+  PriorBalanceWords? _activePriorBalance(_RideFareData? fare) {
+    if (fare == null) return null;
+    final split = activeRidePriorBalance(userRequestData, fare: _activeCashFare(fare));
+    if (split == null) return null;
+    return PriorBalanceWords(split, fare.currency, arabic: languageDirection == 'rtl');
+  }
+
   Widget buildActiveRideSheet(Size media) {
     final fare = _resolveRideFare(userRequestData);
+    final prior = _activePriorBalance(fare);
     // a ride resumed after the app restarted: fetch the admin's games once here too
     if (!RideGamesHost.configured && userRequestData.isNotEmpty) {
       RideGamesHost.configure().then((_) {
@@ -129,11 +147,13 @@ mixin _BookingConfirmationActiveRide
                       if (fare != null) ...[
                         SizedBox(
                           width: media.width * 0.9,
-                          child: _RideFareBadge(
-                            fare: fare,
-                            isRtl: languageDirection == 'rtl',
-                            expanded: true,
-                          ),
+                          child: prior != null
+                              ? PriorBalanceDueBadge(words: prior)
+                              : _RideFareBadge(
+                                  fare: fare,
+                                  isRtl: languageDirection == 'rtl',
+                                  expanded: true,
+                                ),
                         ),
                         SizedBox(height: media.width * 0.03),
                       ],
@@ -242,7 +262,7 @@ mixin _BookingConfirmationActiveRide
     if (d['accepted_at'] != null && d['arrived_at'] == null && d['is_trip_start'] == 0) return '${l['text_captain_arrive']}';
     if (d['accepted_at'] != null && d['arrived_at'] != null && d['is_trip_start'] == 0) {
       if (d['is_bid_ride'] == 1 || d['waiting_charge'].toString() == '0') return '${l['text_captain_arrived']}';
-      return '${l['text_captain_arrived']}, ${l['text_waiting_time_text'].toString().replaceAll('5', d['free_waiting_time_in_mins_before_trip_start'].toString()).replaceAll('**', (d['requested_currency_symbol'].toString() + d['waiting_charge'].toString()))}';
+      return '${l['text_captain_arrived']}, ${l['text_waiting_time_text'].toString().replaceAll('5', d['free_waiting_time_in_mins_before_trip_start'].toString()).replaceAll('**', moneyText(d['waiting_charge'], d['requested_currency_symbol'], arabic: languageDirection == 'rtl'))}';
     }
     return '${l['text_onride']}';
   }
@@ -304,14 +324,20 @@ mixin _BookingConfirmationActiveRide
     final d = userRequestData;
     final l = languages[choosenLanguage];
     final opt = '${d['payment_opt']}';
-    final cur = d['requested_currency_symbol'] ?? 'LYD';
+    final cur = d['requested_currency_symbol'];
     final (IconData icon, String label) = switch (opt) {
       '1' => (Icons.payments_outlined, '${l['text_cash']}'),
       '2' => (Icons.account_balance_wallet_outlined, '${l['text_wallet']}'),
       '3' => (Icons.account_balance_wallet_outlined, '${l[d['wallet_split_is_estimate'] == true ? 'text_cash_expected' : 'text_cash_due']}'),
       _ => (Icons.credit_card_rounded, '${l['text_card']}'),
     };
-    final amount = opt == '3' ? '$cur ${d['cash_due_amount'] ?? 0}' : _resolvedRideFareText(d);
+    // with an old balance he hands over the total (owner 2026-11-25), «15 د.ل» not «LYD 11.00»
+    final prior = _activePriorBalance(_resolveRideFare(d));
+    final amount = prior != null
+        ? prior.total
+        : opt == '3'
+            ? moneyText(d['cash_due_amount'] ?? 0, cur, arabic: rtl)
+            : _resolvedRideFareText(d);
     return _v2Card(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
@@ -327,13 +353,13 @@ mixin _BookingConfirmationActiveRide
               Text(label, style: GoogleFonts.cairo(color: textColor, fontSize: 14.5, fontWeight: FontWeight.w800)),
             ]),
           ),
-          Text(amount, textDirection: ui.TextDirection.ltr, style: GoogleFonts.notoSans(color: textColor, fontSize: 15, fontWeight: FontWeight.w800)),
+          Text(amount, style: GoogleFonts.cairo(color: textColor, fontSize: 15, fontWeight: FontWeight.w800)),
         ]),
         if (opt == '3')
           Padding(
             padding: const EdgeInsetsDirectional.only(start: 52, top: 4),
             child: Text(
-              '${l[d['wallet_split_is_estimate'] == true ? 'text_wallet_expected' : 'text_wallet_paid']}: $cur ${d['wallet_paid_amount'] ?? 0}',
+              '${l[d['wallet_split_is_estimate'] == true ? 'text_wallet_expected' : 'text_wallet_paid']}: ${moneyText(d['wallet_paid_amount'] ?? 0, cur, arabic: rtl)}',
               style: GoogleFonts.cairo(color: textColor.withValues(alpha: .55), fontSize: 12),
             ),
           ),

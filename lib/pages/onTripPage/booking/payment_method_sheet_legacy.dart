@@ -89,8 +89,8 @@ class _ChoosePaymentMethodContainerState
         final due = double.tryParse('${etaDetails.isNotEmpty && choosenVehicle != null ? etaDetails[choosenVehicle]['prior_balance_due'] ?? 0 : 0}') ?? 0;
         if (due > 0) {
           return rtl
-              ? 'تدفع للسائق آخر الرحلة، ومعاها ${due.toStringAsFixed(2)} رصيد سابق عليك'
-              : 'Pay the driver at the end, plus ${due.toStringAsFixed(2)} of your earlier balance';
+              ? 'تدفع للكابتن آخر الرحلة، ومعاها ${moneyText(due, etaDetails[choosenVehicle]['currency'], arabic: true)} رصيد سابق عليك'
+              : 'Pay the captain at the end, plus ${moneyText(due, etaDetails[choosenVehicle]['currency'], arabic: false)} of your earlier balance';
         }
         return rtl ? 'تدفع للسائق آخر الرحلة' : 'Pay the driver at the end';
       case 'wallet':

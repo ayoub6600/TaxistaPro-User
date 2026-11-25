@@ -21,7 +21,11 @@ class VehicleServiceCard extends StatelessWidget {
     this.onFareStep,
     this.isArabic = true,
     this.gift,
+    this.priorBalanceLine,
   });
+
+  /// «+ 4 د.ل رصيد سابق عليك» under the price: the old balance the captain collects with a cash ride
+  final String? priorBalanceLine;
 
   /// today's gift on this service, when there is one
   final ServiceGiftQuote? gift;
@@ -213,6 +217,10 @@ class VehicleServiceCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 _PricingBadge(label: offerFareLabel),
+                if (priorBalanceLine != null) ...[
+                  const SizedBox(height: 4),
+                  _PriorBalanceLine(priorBalanceLine!),
+                ],
                 if (service['signup_bonus_available'] == true &&
                     service['signup_bonus_amount'] is num &&
                     (service['signup_bonus_amount'] as num) > 0) ...[
@@ -232,6 +240,7 @@ class VehicleServiceCard extends StatelessWidget {
               ],
             )
           else
+            Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
             _Fare(
               currency: moneyShort(service['currency'], arabic: Directionality.of(context) == TextDirection.rtl),
               total: service['automatic_gift_discount'] is num
@@ -254,6 +263,11 @@ class VehicleServiceCard extends StatelessWidget {
               giftDiscount: giftOnFare ? _formatFare(gift!.amount) : service['automatic_gift_discount']?.toString(),
               giftLabel: giftOnFare ? (isArabic ? '🎁 هدية اليوم' : 'Today\'s gift') : (isArabic ? 'هدية أول رحلة' : 'First ride gift'),
             ),
+              if (priorBalanceLine != null) ...[
+                const SizedBox(height: 4),
+                _PriorBalanceLine(priorBalanceLine!),
+              ],
+            ]),
         ]),
         if (selected &&
             onFareStep != null &&
@@ -568,4 +582,19 @@ class _PricingBadge extends StatelessWidget {
       ),
     );
   }
+}
+
+/// the small amber line under the price; never wraps the card
+class _PriorBalanceLine extends StatelessWidget {
+  const _PriorBalanceLine(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Text(
+        text,
+        key: const ValueKey('service-prior-balance'),
+        maxLines: 1,
+        style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xffB7791F)),
+      );
 }

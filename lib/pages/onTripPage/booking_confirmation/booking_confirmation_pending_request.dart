@@ -280,7 +280,7 @@ mixin _BookingConfirmationPendingRequest
                                                                                   crossAxisAlignment: CrossAxisAlignment.end,
                                                                                   children: [
                                                                                     Text(
-                                                                                      rideList['currency'] + driverList[key]['price'],
+                                                                                      moneyText(driverList[key]['price'], rideList['currency'], arabic: languageDirection == 'rtl'),
                                                                                       style: GoogleFonts.notoSans(fontSize: media.width * twelve, color: textColor, fontWeight: FontWeight.w600),
                                                                                       textAlign: TextAlign.center,
                                                                                       maxLines: 1,
@@ -374,7 +374,7 @@ mixin _BookingConfirmationPendingRequest
                                     SizedBox(
                                       width: media.width * 0.9,
                                       child: Text(
-                                        '${languages[choosenLanguage]['text_offered_fare']} : ${rideList['currency']} ${rideList['price']}',
+                                        '${languages[choosenLanguage]['text_offered_fare']} : ${moneyText(rideList['price'], rideList['currency'], arabic: languageDirection == 'rtl')}',
                                         style: GoogleFonts.notoSans(
                                             fontSize: media.width * sixteen,
                                             color: textColor,
@@ -801,10 +801,7 @@ mixin _BookingConfirmationPendingRequest
     return _SearchingDriverOverlay(
       drivers: candidates,
       fare: _resolveRideFare(userRequestData),
-      originalFare: double.tryParse(
-            _resolveRideFare(userRequestData)?.amount ?? '',
-          ) ??
-          0,
+      originalFare: _resolveRideFare(userRequestData)?.value ?? 0,
       signupBonusAmount: _signupBonusAmountForCounterOffers(userRequestData),
       remainingSeconds: max(remaining, 0),
       totalSeconds: max(configuredDuration, 1),
@@ -840,9 +837,7 @@ mixin _BookingConfirmationPendingRequest
     final originalFare = double.tryParse(
           userRequestData['request_eta_amount']?.toString() ?? '',
         ) ??
-        double.tryParse(
-          _resolveRideFare(userRequestData)?.amount ?? '',
-        ) ??
+        _resolveRideFare(userRequestData)?.value ??
         offeredFare;
     final result = await acceptRequest(jsonEncode({
       'driver_id': driver.driverId,
