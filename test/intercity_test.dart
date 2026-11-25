@@ -30,6 +30,9 @@ const _trip = {
 
 Widget _app(Widget w) => MaterialApp(home: w);
 
+/// the real map needs the phone: the tests draw nothing in its place
+Widget _noMap(IcPlace _, IntercityRoute __) => const SizedBox.expand();
+
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
 
@@ -55,13 +58,13 @@ void main() {
   });
 
   testWidgets('كيف تحب تسافر: a city and a whole car or a seat', (t) async {
-    await t.pumpWidget(_app(IntercityTypePage(home: _home(shared: [_trip]), pick: const IcPlace(32.35, 15.1, ''), routeId: 3)));
+    await t.pumpWidget(_app(IntercityTypePage(home: _home(shared: [_trip]), pick: const IcPlace(32.35, 15.1, ''), routeId: 3, map: _noMap)));
     expect(find.text('كيف تحب تسافر؟'), findsOneWidget);
-    expect(find.text('أنت ومن معاك بس · من LYD 180'), findsOneWidget);
-    expect(find.text('تدفع كرسيك بس · 1 رحلة متاحة'), findsOneWidget);
+    expect(find.text('180'), findsOneWidget, reason: '«من 180 د.ل» on the whole car');
+    expect(find.text('1 رحلة متاحة'), findsOneWidget);
     await t.tap(find.text('زليتن'));
     await t.pump();
-    expect(find.text('أنت ومن معاك بس · من LYD 60'), findsOneWidget);
+    expect(find.text('60'), findsOneWidget);
   });
 
   testWidgets('the price stays in the admin range and the booking carries riders, bag and price', (t) async {
@@ -225,11 +228,11 @@ void main() {
         'kind': 'car', 'route_id': 3, 'to': 'طرابلس', 'date': '2026-11-03', 'passengers': 2, 'big_bag': true, 'round_trip': true, 'wait_hours': 4,
         'drop': {'lat': 32.88, 'lng': 13.19, 'address': 'طرابلس · سوق الجمعة'}, 'paid': 300, 'price': 330, 'price_changed': true,
       });
-      await t.pumpWidget(_app(IntercityTypePage(home: h, pick: const IcPlace(32.35, 15.1, 'السكت'))));
+      await t.pumpWidget(_app(IntercityTypePage(home: h, pick: const IcPlace(32.35, 15.1, 'السكت'), map: _noMap)));
       await t.pump();
       expect(find.text('سفرتك الأخيرة · 3 نوفمبر'), findsOneWidget);
       expect(find.text('مصراتة ⇄ طرابلس'), findsOneWidget);
-      expect(find.text('راكبين · ذهاب ورجوع · LYD 330'), findsOneWidget);
+      expect(find.text('راكبين · ذهاب ورجوع · 330 د.ل'), findsOneWidget);
       expect(find.byKey(const ValueKey('ic-price-changed')), findsOneWidget);
       await t.tap(find.text('اطلبها مرة ثانية'));
       await t.pumpAndSettle();
@@ -243,10 +246,10 @@ void main() {
       int? stars;
       List<String>? tags;
       final h = home(last: {'kind': 'seat', 'route_id': 3, 'to': 'طرابلس', 'date': '2026-11-03', 'seats': 2, 'paid': 80, 'open_trips': 2, 'cheapest_seat': 35});
-      await t.pumpWidget(_app(IntercityTypePage(home: h, pick: const IcPlace(32.35, 15.1, 'السكت'))));
+      await t.pumpWidget(_app(IntercityTypePage(home: h, pick: const IcPlace(32.35, 15.1, 'السكت'), map: _noMap)));
       await t.pump();
-      expect(find.text('كرسيين · LYD 80'), findsOneWidget);
-      expect(find.text('2 رحلات متاحة · من LYD 35'), findsOneWidget);
+      expect(find.text('كرسيين · 80 د.ل'), findsOneWidget);
+      expect(find.text('2 رحلات متاحة · من 35 د.ل'), findsOneWidget);
       expect(find.text('شوف الكراسي إلى طرابلس'), findsOneWidget);
 
       await t.pumpWidget(_app(Scaffold(

@@ -25,15 +25,15 @@ class IcAgainCard extends StatelessWidget {
   String get _details {
     if (last.isSeat) {
       final seats = last.seats == 1 ? tr('كرسي', 'seat') : (last.seats == 2 ? tr('كرسيين', 'two seats') : tr('${last.seats} كراسي', '${last.seats} seats'));
-      return '$seats · LYD ${IcStyle.money(last.paid)}';
+      return '$seats · ${IcStyle.lyd(last.paid)}';
     }
     final riders = last.passengers == 1 ? tr('راكب', 'passenger') : (last.passengers == 2 ? tr('راكبين', 'two passengers') : tr('${last.passengers} ركاب', '${last.passengers} passengers'));
-    return [riders, if (last.roundTrip) tr('ذهاب ورجوع', 'Round trip'), 'LYD ${IcStyle.money(last.price)}'].join(' · ');
+    return [riders, if (last.roundTrip) tr('ذهاب ورجوع', 'Round trip'), IcStyle.lyd(last.price)].join(' · ');
   }
 
   String get _seatsLine => last.openTrips == 0
       ? tr('ما فيش رحلات بالكراسي الآن', 'No shared-seat trips now')
-      : '${last.openTrips == 1 ? tr('رحلة وحدة متاحة', 'One trip available') : tr('${last.openTrips} رحلات متاحة', '${last.openTrips} trips available')}${last.cheapestSeat != null ? tr(' · من LYD ${IcStyle.money(last.cheapestSeat!)}', ' · from LYD ${IcStyle.money(last.cheapestSeat!)}') : ''}';
+      : '${last.openTrips == 1 ? tr('رحلة وحدة متاحة', 'One trip available') : tr('${last.openTrips} رحلات متاحة', '${last.openTrips} trips available')}${last.cheapestSeat != null ? '${tr(' · من', ' · from')} ${IcStyle.lyd(last.cheapestSeat!)}' : ''}';
 
   void _open(BuildContext context) {
     final route = _route;
@@ -159,7 +159,7 @@ class _IntercityRateSheetState extends State<IntercityRateSheet> {
       ),
       const SizedBox(height: 8),
       Text(tr('وصلت بالسلامة 🌟', 'Arrived safely 🌟'), textAlign: TextAlign.center, style: IcStyle.t(21, w: FontWeight.w900)),
-      Text('← ${r.to} · $seats · LYD ${IcStyle.money(r.price)}', textAlign: TextAlign.center, style: IcStyle.t(13, w: FontWeight.w700, c: IcStyle.muted)),
+      Text('← ${r.to} · $seats · ${IcStyle.lyd(r.price)}', textAlign: TextAlign.center, style: IcStyle.t(13, w: FontWeight.w700, c: IcStyle.muted)),
       const SizedBox(height: 12),
       Row(mainAxisAlignment: MainAxisAlignment.center, children: [
         CircleAvatar(radius: 16, backgroundColor: const Color(0xffDCE8FB), child: Text(initial, style: IcStyle.t(14, w: FontWeight.w900, c: IcStyle.blue))),

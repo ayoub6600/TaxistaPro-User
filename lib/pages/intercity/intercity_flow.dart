@@ -6,6 +6,8 @@ import 'intercity_again.dart';
 import 'intercity_fare_page.dart';
 import 'intercity_seats.dart';
 import 'intercity_style.dart';
+import 'intercity_trip_map.dart';
+import 'intercity_type_widgets.dart';
 
 /// «سفر لمدينة ثانية»: كيف تحب تسافر؟ → (سيارة كاملة → الركاب والأجرة → العروض) أو (كرسي في رحلة).
 class IntercityFlow {
@@ -61,14 +63,18 @@ class IntercityFlow {
   }
 }
 
-/// ب · كيف تحب تسافر؟ — the city, then a whole car or a seat in a trip
+/// ب · كيف تحب تسافر؟ — the city (with the drive to it), then a whole car or a seat in a trip, each
+/// with its price from. The map on top shows where he stands and the city he chose.
 class IntercityTypePage extends StatefulWidget {
-  const IntercityTypePage({super.key, required this.home, required this.pick, this.drop, this.routeId});
+  const IntercityTypePage({super.key, required this.home, required this.pick, this.drop, this.routeId, this.map});
 
   final IntercityHome home;
   final IcPlace pick;
   final IcPlace? drop;
   final int? routeId;
+
+  /// tests replace the real map
+  final Widget Function(IcPlace pick, IntercityRoute route)? map;
 
   @override
   State<IntercityTypePage> createState() => _IntercityTypePageState();
@@ -79,8 +85,6 @@ class _IntercityTypePageState extends State<IntercityTypePage> {
   late IntercityRoute _route = widget.home.routes
       .firstWhere((r) => r.id == (widget.routeId ?? widget.home.lastTrip?.routeId), orElse: () => widget.home.routes.first);
   bool _seats = false;
-
-  int get _sharedHere => widget.home.shared.where((t) => t.to == _route.to).length;
 
   @override
   void initState() {
@@ -108,44 +112,99 @@ class _IntercityTypePageState extends State<IntercityTypePage> {
 
   @override
   Widget build(BuildContext context) {
-    return IcScaffold(
-      title: '${widget.home.from} ← ${_route.to}',
-      mapHeight: 330,
+    final home = widget.home, city = _route.to;
+    final trips = home.shared.where((t) => t.to == city).toList();
+    // «كرسي» with no trip to this city: say so in the card, and the button offers the whole car
+    final noTrip = _seats && trips.isEmpty;
+    // «من»: the cheapest seat a captain posted to this city, else the admin's seat price
+    final seatFrom = trips.isEmpty ? _route.seatPrice : trips.map((t) => t.seatPrice).reduce((a, b) => a < b ? a : b);
+    // «ذهاب ورجوع» only where the next page offers it
+    final round = home.roundTripOn ? _route.roundTrip : null;
+    final back = round == null ? null : round['suggested'];
+    return IcTypeScaffold(
+      title: '${home.from} ← $city',
+      note: IcStyle.travelTime(_route.travelMinutes),
+      map: widget.map?.call(widget.pick, _route) ??
+          IcTripMap(pick: widget.pick, route: _route, topInset: MediaQuery.of(context).padding.top + IcTypeScaffold.barHeight, bottomInset: IcTypeScaffold.overlap),
+      bottom: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        if (noTrip)
+          Text(tr('مستعجل؟ السيارة الكاملة تطلع توّا، والكباتن يبعثولك عروضهم', 'In a hurry? A whole car leaves now, and captains send you their offers'), textAlign: TextAlign.center, style: IcStyle.t(12, c: IcStyle.muted))
+        else
+          IcSteps(_seats
+              ? [tr('تختار الرحلة', 'Pick a trip'), tr('تحجز كرسيك', 'Book your seat'), tr('الكابتن يكلمك قبل الموعد', 'The captain calls you before')]
+              : [tr('تحدد سعرك', 'Set your price'), tr('الكباتن يبعثوا عروضهم', 'Captains send offers'), tr('تختار الكابتن', 'Pick your captain')]),
+        const SizedBox(height: 11),
+        DecoratedBox(
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(18), boxShadow: const [BoxShadow(color: Color(0x470873FF), blurRadius: 22, offset: Offset(0, 10))]),
+          child: noTrip
+              ? IcButton(text: tr('اطلب سيارة كاملة بدلها', 'Book a whole car instead'), onTap: () => setState(() => _seats = false))
+              : IcButton(text: _seats ? tr('التالي: كرسي ${icToCity(city)}', 'Next: a seat to $city') : tr('التالي: سيارة كاملة ${icToCity(city)}', 'Next: whole car to $city'), onTap: _next),
+        ),
+      ]),
       children: [
-        if (widget.home.lastTrip != null) ...[
-          IcAgainCard(home: widget.home, last: widget.home.lastTrip!, pick: widget.pick),
+        if (home.lastTrip != null) ...[
+          IcAgainCard(home: home, last: home.lastTrip!, pick: widget.pick),
           const SizedBox(height: 14),
         ],
-        Text(tr('كيف تحب تسافر؟', 'How would you like to travel?'), style: IcStyle.t(22, w: FontWeight.w900)),
-        const SizedBox(height: 10),
-        Wrap(spacing: 6, runSpacing: 6, children: [
-          for (final r in widget.home.routes) IcChip(text: r.to, selected: r.id == _route.id, onTap: () => setState(() => _route = r)),
-        ]),
-        const SizedBox(height: 12),
-        IcOption(
+        Text(tr('وين مسافر؟', 'Where to?'), style: IcStyle.t(21, w: FontWeight.w900, h: 1.3)),
+        const SizedBox(height: 11),
+        _cities(),
+        const SizedBox(height: 13),
+        Text(tr('كيف تحب تسافر؟', 'How would you like to travel?'), style: IcStyle.t(17, w: FontWeight.w900, h: 1.3)),
+        const SizedBox(height: 11),
+        IcTravelOption(
           selected: !_seats,
-          icon: Icons.directions_car_filled_rounded,
-          iconBackground: IcStyle.blue,
-          iconColor: Colors.white,
+          compact: noTrip,
+          icon: Icons.directions_car_outlined,
           title: tr('سيارة كاملة', 'Whole car'),
-          subtitle: tr('أنت ومن معاك بس · من LYD ${IcStyle.money(_route.suggested)}', 'Just you and your company · from LYD ${IcStyle.money(_route.suggested)}'),
+          subtitle: tr('أنت ومن معاك بس، من الباب للباب', 'Just you and your company, door to door'),
+          price: _route.suggested,
+          tags: [
+            tr('لين ${home.maxPassengers} ركاب', 'Up to ${home.maxPassengers} riders'),
+            tr('تحدد سعرك', 'You set the price'),
+            if (back is num) '${tr('ذهاب ورجوع', 'Round trip')} ${IcStyle.lyd(back)}',
+          ],
           onTap: () => setState(() => _seats = false),
         ),
-        const SizedBox(height: 10),
-        IcOption(
+        const SizedBox(height: 11),
+        IcTravelOption(
           selected: _seats,
-          icon: Icons.event_seat_rounded,
-          iconBackground: const Color(0xffFFF4D6),
-          iconColor: const Color(0xffB45309),
+          warm: true,
+          icon: Icons.event_seat_outlined,
           title: tr('كرسي في رحلة', 'A seat on a trip'),
-          subtitle: _sharedHere == 0
-              ? tr('تدفع كرسيك بس${_route.seatPrice != null ? ' · من LYD ${IcStyle.money(_route.seatPrice!)}' : ''}', 'You pay only your seat${_route.seatPrice != null ? ' · from LYD ${IcStyle.money(_route.seatPrice!)}' : ''}')
-              : tr('تدفع كرسيك بس · $_sharedHere ${_sharedHere == 1 ? 'رحلة متاحة' : 'رحلات متاحة'}', 'You pay only your seat · $_sharedHere ${_sharedHere == 1 ? 'trip available' : 'trips available'}'),
+          subtitle: tr('تدفع كرسيك بس، مع ركاب آخرين', 'You pay only your seat, with other riders'),
+          price: seatFrom,
+          tags: [
+            tr('أرخص', 'Cheaper'),
+            tr('رحلات بمواعيد محددة', 'Trips at set times'),
+            if (trips.isNotEmpty) tr('${trips.length} ${trips.length == 1 || trips.length > 10 ? 'رحلة متاحة' : 'رحلات متاحة'}', '${trips.length} ${trips.length == 1 ? 'trip available' : 'trips available'}'),
+          ],
           onTap: () => setState(() => _seats = true),
+          child: noTrip ? IcNoTripNotice(city: city) : null,
         ),
-        const SizedBox(height: 14),
-        IcButton(text: tr('التالي', 'Next'), onTap: _next),
       ],
     );
+  }
+
+  /// the cities side by side, each as wide as the others; many of them scroll sideways
+  Widget _cities() {
+    final cards = [
+      for (final r in widget.home.routes)
+        IcDestCard(city: r.to, time: IcStyle.travelTime(r.travelMinutes, short: true), selected: r.id == _route.id, onTap: () => setState(() => _route = r)),
+    ];
+    if (cards.length > 4) {
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(children: [
+          for (final (i, c) in cards.indexed) Padding(padding: EdgeInsetsDirectional.only(start: i == 0 ? 0 : 8), child: SizedBox(width: 104, child: c)),
+        ]),
+      );
+    }
+    return Row(children: [
+      for (final (i, c) in cards.indexed) ...[
+        if (i > 0) const SizedBox(width: 8),
+        Expanded(child: c),
+      ],
+    ]);
   }
 }

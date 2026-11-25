@@ -442,8 +442,8 @@ class IcPriceChanged extends StatelessWidget {
           Expanded(
             child: Text.rich(TextSpan(children: [
               TextSpan(text: tr('السعر تغيّر · كان ', 'The price changed · it was ')),
-              TextSpan(text: 'LYD ${IcStyle.money(was)}', style: const TextStyle(decoration: TextDecoration.lineThrough)),
-              TextSpan(text: tr('، توا LYD ${IcStyle.money(now)}', ', now LYD ${IcStyle.money(now)}')),
+              TextSpan(text: IcStyle.lyd(was), style: const TextStyle(decoration: TextDecoration.lineThrough)),
+              TextSpan(text: '${tr('، توا', ', now')} ${IcStyle.lyd(now)}'),
             ]), style: IcStyle.t(13, w: FontWeight.w800, c: const Color(0xffB45309))),
           ),
         ]),

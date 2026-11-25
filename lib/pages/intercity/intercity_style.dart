@@ -12,10 +12,26 @@ class IcStyle {
   static const chip = Color(0xffDCE8FB);
   static const gold = Color(0xffFFD34E);
 
-  static TextStyle t(double size, {FontWeight w = FontWeight.w700, Color c = navy}) =>
-      GoogleFonts.cairo(fontSize: size, fontWeight: w, color: c, height: 1.45);
+  static TextStyle t(double size, {FontWeight w = FontWeight.w700, Color c = navy, double h = 1.45}) =>
+      GoogleFonts.cairo(fontSize: size, fontWeight: w, color: c, height: h);
 
   static String money(num v) => v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(1);
+
+  /// «80 د.ل»: the number first, then the sign (the code in English)
+  static String lyd(num v) => tr('${money(v)} د.ل', 'LYD ${money(v)}');
+
+  /// the drive to a city, to the nearest five minutes: «≈ 50 دقيقة» · «≈ ساعة و20 دقيقة»;
+  /// [short] for a small card: «≈ 50 د» · «≈ 1 س 20 د». Null when the server did not say.
+  static String? travelTime(int? minutes, {bool short = false}) {
+    if (minutes == null || minutes <= 0) return null;
+    final m = minutes < 5 ? 5 : (minutes / 5).round() * 5;
+    final h = m ~/ 60, r = m % 60;
+    final en = '≈ ${[if (h > 0) '$h h', if (r > 0) '$r min'].join(' ')}';
+    if (short) return tr('≈ ${[if (h > 0) '$h س', if (r > 0) '$r د'].join(' ')}', en);
+    final hours = h == 1 ? 'ساعة' : (h == 2 ? 'ساعتين' : (h <= 10 ? '$h ساعات' : '$h ساعة'));
+    final mins = r <= 10 ? '$r دقائق' : '$r دقيقة';
+    return tr('≈ ${[if (h > 0) hours, if (r > 0) mins].join(' و')}', en);
+  }
 }
 
 /// − value + in the booking sheet's look
@@ -152,62 +168,6 @@ class IcButton extends StatelessWidget {
           : Text(text, style: IcStyle.t(height < 50 ? 15 : 17, w: FontWeight.w900, c: ghost && danger ? const Color(0xffD92D20) : fg)),
     );
   }
-}
-
-/// a big choice card: «سيارة كاملة» / «كرسي في رحلة»
-class IcOption extends StatelessWidget {
-  const IcOption({
-    super.key,
-    required this.selected,
-    required this.icon,
-    required this.iconBackground,
-    required this.iconColor,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final bool selected;
-  final IconData icon;
-  final Color iconBackground;
-  final Color iconColor;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => Semantics(
-        selected: selected,
-        button: true,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 160),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: selected ? const Color(0xffF5F9FF) : Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: selected ? IcStyle.blue : IcStyle.line, width: selected ? 2 : 1.5),
-            ),
-            child: Row(children: [
-              IcIconTile(icon: icon, background: iconBackground, color: iconColor),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(title, style: IcStyle.t(17, w: FontWeight.w900)),
-                  Text(subtitle, style: IcStyle.t(13, w: FontWeight.w600, c: IcStyle.muted)),
-                ]),
-              ),
-              Container(
-                width: 22,
-                height: 22,
-                decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: selected ? IcStyle.blue : const Color(0xffD5DEEB), width: selected ? 7 : 2)),
-              ),
-            ]),
-          ),
-        ),
-      );
 }
 
 /// a light drawing of the trip (from green to blue) above the sheet
