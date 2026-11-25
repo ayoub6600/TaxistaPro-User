@@ -51,6 +51,8 @@ struct TaxistaRideLiveActivity: Widget {
           IslandBottom(ride: ride)
             .environment(\.layoutDirection, .rightToLeft)
             .padding(.top, 4)
+            // clear of the island's rounded corners: the first letter of the line was cut (rig check 25 Nov)
+            .padding(.horizontal, 10)
         }
       } compactLeading: {
         StageIcon(ride: ride, size: 15)
@@ -153,7 +155,8 @@ struct RideView {
   var islandLine: String? {
     switch stage {
     case "on_trip":
-      if let a = amount { return payLine.map { "تدفع للكابتن \(a) نقدًا · \($0)" } ?? "تدفع للكابتن \(a) نقدًا" }
+      // short: the island is narrow (the full words cut «تدفع» on the 25 Nov rig check)
+      if let a = amount { return payLine.map { "تدفع \(a) · \($0)" } ?? "تدفع للكابتن \(a) نقدًا" }
       return payLine ?? nonEmpty(subtitle)
     case "arrived": return note ?? nonEmpty(subtitle)
     default: return nonEmpty(subtitle)
@@ -499,6 +502,7 @@ private struct IslandBottom: View {
         }
       } else if let line = ride.islandLine {
         Text(line).font(.system(size: 12.5, weight: .medium)).foregroundStyle(RideLook.secondary).lineLimit(1)
+          .minimumScaleFactor(0.8)
           .frame(maxWidth: .infinity, alignment: .leading)
       }
     }
