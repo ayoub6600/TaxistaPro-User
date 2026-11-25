@@ -29,6 +29,7 @@ import 'api_guard.dart';
 import 'booking_send.dart';
 import '../community/community_api.dart';
 import 'live_queries.dart';
+import 'live_activity.dart';
 import '../utils/scheduled_offers.dart';
 
 import '../pages/NavigatorPages/editprofile.dart';

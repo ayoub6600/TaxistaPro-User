@@ -6,6 +6,7 @@ import WidgetKit
 struct RecurringLiveBundle: WidgetBundle {
   var body: some Widget {
     RecurringDayLiveActivity()
+    TaxistaRideLiveActivity()
   }
 }
 

@@ -18,6 +18,10 @@
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
 		7CABA8799AD3FC651FAA233D /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = CCCC5C48BB2F70C5B4C80DAE /* GoogleService-Info.plist */; };
 		890A2311849FB382AFAEF666 /* RecurringDayShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2E65C2B48F23D7D43233982 /* RecurringDayShared.swift */; };
+		205834D08EA7B7D82C494984 /* TaxistaRideShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC1E35F0564DC5B19437B55 /* TaxistaRideShared.swift */; };
+		FD081DF3E88D8980CF35BE68 /* TaxistaRideShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC1E35F0564DC5B19437B55 /* TaxistaRideShared.swift */; };
+		9BAD21425E865D2E7B3D6089 /* TaxistaRideWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC3CC2A27EF26392CA9FF3F /* TaxistaRideWidget.swift */; };
+		4305DF3BD31E9134EA49307B /* RideLiveActivities.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F9B198DDABE8E484142267 /* RideLiveActivities.swift */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
@@ -101,6 +105,9 @@
 		9F0467ECA2A31039A7982A04 /* RecurringLiveWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RecurringLiveWidget.swift; sourceTree = "<group>"; };
 		A1D5A2CDCCE96CF10C1776B6 /* RecurringLiveActivities.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RecurringLiveActivities.swift; sourceTree = "<group>"; };
 		B2E65C2B48F23D7D43233982 /* RecurringDayShared.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RecurringDayShared.swift; sourceTree = "<group>"; };
+		BBC1E35F0564DC5B19437B55 /* TaxistaRideShared.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TaxistaRideShared.swift; sourceTree = "<group>"; };
+		CCC3CC2A27EF26392CA9FF3F /* TaxistaRideWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TaxistaRideWidget.swift; sourceTree = "<group>"; };
+		E8F9B198DDABE8E484142267 /* RideLiveActivities.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RideLiveActivities.swift; sourceTree = "<group>"; };
 		B9E272A12857BF06E351D2A4 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		C93FFC994D44BDCB07A98E1E /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		CCCC5C48BB2F70C5B4C80DAE /* GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Runner/GoogleService-Info.plist"; sourceTree = "<group>"; };
@@ -157,6 +164,8 @@
 			children = (
 				B2E65C2B48F23D7D43233982 /* RecurringDayShared.swift */,
 				9F0467ECA2A31039A7982A04 /* RecurringLiveWidget.swift */,
+				BBC1E35F0564DC5B19437B55 /* TaxistaRideShared.swift */,
+				CCC3CC2A27EF26392CA9FF3F /* TaxistaRideWidget.swift */,
 				1D0C8ADEDC8AE1E00EF4E666 /* Info.plist */,
 				5A1C0E7F2B9D4E61A3C80D11 /* LiveAssets.xcassets */,
 			);
@@ -220,6 +229,7 @@
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 				A1D5A2CDCCE96CF10C1776B6 /* RecurringLiveActivities.swift */,
+				E8F9B198DDABE8E484142267 /* RideLiveActivities.swift */,
 				2F35D9C2395FCC1888FD7A87 /* RideOfferButtons.swift */,
 			);
 			path = Runner;
@@ -531,6 +541,8 @@
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				DD25E303F5F62C94A24582CC /* RecurringDayShared.swift in Sources */,
 				F664E22E2BDAA6A315BD97FD /* RecurringLiveActivities.swift in Sources */,
+				4305DF3BD31E9134EA49307B /* RideLiveActivities.swift in Sources */,
+				205834D08EA7B7D82C494984 /* TaxistaRideShared.swift in Sources */,
 				C9BB9421E38883A9CC535A73 /* RideOfferButtons.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -541,6 +553,8 @@
 			files = (
 				890A2311849FB382AFAEF666 /* RecurringDayShared.swift in Sources */,
 				E3016914858C8155C34F9D68 /* RecurringLiveWidget.swift in Sources */,
+				FD081DF3E88D8980CF35BE68 /* TaxistaRideShared.swift in Sources */,
+				9BAD21425E865D2E7B3D6089 /* TaxistaRideWidget.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

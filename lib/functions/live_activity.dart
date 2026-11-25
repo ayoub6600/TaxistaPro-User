@@ -8,6 +8,9 @@ import 'package:flutter/services.dart';
 /// phone can do (with the device token) and lets the TestFlight build try the card and the notification.
 class LiveActivity {
   static const _channel = MethodChannel('taxista/live_activity');
+  /// the ride card (lock screen + Dynamic Island): the server starts and moves it, the native side sends
+  /// its tokens; this only takes it off once the ride is rated inside the app
+  static const _rideChannel = MethodChannel('taxista/ride_live_activity');
   static const feature = 'live_activity';
 
   /// called when Apple gives a new push-to-start token (resync the device token), a day was answered,
@@ -84,6 +87,14 @@ class LiveActivity {
     if (!Platform.isIOS) return;
     try {
       await _channel.invokeMethod('endDay', {'id': occurrenceId});
+    } catch (_) {}
+  }
+
+  /// rated inside the app: the ride's card leaves the lock screen
+  static Future<void> endRide(String requestId) async {
+    if (!Platform.isIOS || requestId.isEmpty) return;
+    try {
+      await _rideChannel.invokeMethod('endRide', {'request_id': requestId});
     } catch (_) {}
   }
 }

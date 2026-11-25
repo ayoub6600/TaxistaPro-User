@@ -731,6 +731,7 @@ class CancelReasonJson {
 
 userRating() async {
   dynamic result;
+  final ratedId = '${userRequestData['id'] ?? ''}';
   try {
     var response = await http.post(Uri.parse('${url}api/v1/request/rating'),
         headers: {
@@ -743,6 +744,7 @@ userRating() async {
           'comment': feedback
         }));
     if (response.statusCode == 200) {
+      unawaited(LiveActivity.endRide(ratedId)); // its lock-screen card leaves too
       ismulitipleride = false;
       await getUserDetails();
       result = true;

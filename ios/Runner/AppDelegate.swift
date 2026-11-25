@@ -47,6 +47,11 @@ import ActivityKit
       RecurringLiveActivities.register(messenger: registrar.messenger())
     }
     RecurringLiveActivities.start()
+    // the ride on the lock screen / Dynamic Island: its tokens go to the server natively (background launch)
+    if let registrar = self.registrar(forPlugin: "TaxistaRideLiveActivity") {
+      RideLiveActivities.register(messenger: registrar.messenger())
+    }
+    RideLiveActivities.start()
  UIApplication.shared.beginReceivingRemoteControlEvents()
 
     // Calls (with the driver of the ride, or the administration): PushKit rings the phone through
@@ -195,6 +200,7 @@ import ActivityKit
   /// ⏭ تخطي on the lock-screen card opens the app here (iOS asked Face ID / the code first when locked)
   override func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
     if RecurringLiveActivities.open(url) { return true }
+    if RideLiveActivities.open(url) { return true }
     return super.application(app, open: url, options: options)
   }
 
