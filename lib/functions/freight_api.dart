@@ -15,13 +15,17 @@ class FreightClass {
 
   String get key => '${raw['key']}';
   String get zoneTypeId => '${raw['zone_type_id'] ?? ''}';
-  static const _en = {'pickup': 'Pickup', 'van': 'Closed van', 'truck': 'Truck'};
+  static const _en = {'pickup': 'Pickup', 'van': 'Small truck', 'truck': 'Truck'};
 
   /// the admin writes Arabic; English by key
   String get label => tr('${raw['label'] ?? ''}', _en[key] ?? '${raw['label'] ?? ''}');
   String get load => tr('${raw['load'] ?? ''}', '${raw['load'] ?? ''}'.replaceAll('حتى', 'up to').replaceAll('طن', 't'));
   String get box => '${raw['box'] ?? ''}';
   num get base => (raw['base'] as num?) ?? 0;
+
+  /// the vehicle's photo the admin uploaded for this city, or null
+  String? get image => '${raw['image'] ?? ''}'.startsWith('http') ? '${raw['image']}' : null;
+  num get priceFrom => (raw['price_from'] as num?) ?? base;
 }
 
 /// «الشحن» where he stands: open or not, what he can move, the classes, worker and floor prices.
@@ -52,6 +56,13 @@ class FreightHome {
           if (c is Map) ('${c['key']}', tr('${c['label']}', _categoriesEn['${c['key']}'] ?? '${c['label']}')),
       ];
   List<FreightClass> get classes => [for (final c in (raw['classes'] as List? ?? const [])) if (c is Map) FreightClass(c)];
+
+  /// the vehicle chosen first (the city's default, set in the admin); else the first one
+  String? get defaultClass {
+    final d = '${raw['default_class'] ?? ''}';
+    final keys = classes.map((c) => c.key).toList();
+    return keys.contains(d) ? d : (keys.isEmpty ? null : keys.first);
+  }
 }
 
 /// The suggested price line by line, and the range he may ask in.
@@ -120,6 +131,16 @@ class FreightApi {
     final r = await _post('api/v1/request/freight/quote',
         {'pick_lat': pLat, 'pick_lng': pLng, 'drop_lat': dLat, 'drop_lng': dLng, 'freight_class': cls, 'workers': workers, 'floors': floors});
     return r.ok && r.data is Map ? FreightQuote(r.data as Map) : null;
+  }
+
+  /// every vehicle's suggested price for this move at once: class → quote
+  static Future<Map<String, FreightQuote>?> quotes(double pLat, double pLng, double dLat, double dLng, int workers, int floors) async {
+    final r = await _post('api/v1/request/freight/quotes', {'pick_lat': pLat, 'pick_lng': pLng, 'drop_lat': dLat, 'drop_lng': dLng, 'workers': workers, 'floors': floors});
+    if (!r.ok || r.data is! Map) return null;
+    return {
+      for (final q in ((r.data as Map)['quotes'] as List? ?? const []))
+        if (q is Map) '${q['class']}': FreightQuote(q),
+    };
   }
 
   /// a negotiated ride on the class's service; the owners answer with their price

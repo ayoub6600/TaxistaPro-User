@@ -78,7 +78,7 @@ void main() {
     await t.tap(find.text('إلى أين؟'));
     await t.tap(find.bySemanticsLabel('أماكني'));
     expect((where, places), (1, 1));
-    final xs = [for (final l in ['بدون وجهة', 'سفر', 'نقل بضائع', 'طرود', 'ونش']) t.getCenter(find.text(l)).dx];
+    final xs = [for (final l in ['بدون وجهة', 'سفر', 'نقل بضائع', 'طرود', 'ساحبة']) t.getCenter(find.text(l)).dx];
     for (var i = 1; i < xs.length; i++) {
       expect(xs[i], lessThan(xs[i - 1]), reason: 'from the right');
     }
@@ -90,10 +90,10 @@ void main() {
     final opened = <String>[];
     await _pump(t, _services(opened: opened));
     expect(find.text('قريبًا'), findsNWidgets(2), reason: 'نقل بضائع and ونش are closed here');
-    await t.tap(find.text('ونش'));
+    await t.tap(find.text('ساحبة'));
     await t.tap(find.text('طرود'));
     await t.tap(find.text('بدون وجهة'));
-    expect(opened, ['soon:ونش', 'parcels', 'open_ride']);
+    expect(opened, ['soon:ساحبة', 'parcels', 'open_ride']);
   });
 
   testWidgets('the blue line hides when every service fits, and follows the scroll from the right when they do not', (t) async {
@@ -181,7 +181,7 @@ void main() {
 
   test('the owner\'s names, and the admin\'s own name when he set one', () {
     final list = HomeServices.build(rtl: true, onRideWithoutDestination: () {}, onSoon: (_) {});
-    expect([for (final s in list) s.label], ['بدون وجهة', 'نقل بضائع', 'طرود', 'ونش']);
+    expect([for (final s in list) s.label], ['بدون وجهة', 'نقل بضائع', 'طرود', 'ساحبة']);
     final named = HomeServices.build(rtl: true, onRideWithoutDestination: () {}, onSoon: (_) {}, freight: FreightHome({'home_name': 'نقل أثاث'}));
     expect(named[1].label, 'نقل أثاث');
   });

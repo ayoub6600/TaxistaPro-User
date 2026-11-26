@@ -32,8 +32,8 @@ void main() {
 
   test('each service its own icon and title; an older answer is told by its blocks', () {
     expect(ServiceKind.of(_parcelRide()).title(_parcelRide()), '📦 طرد لـأحمد');
-    expect(ServiceKind.of({'service_kind': 'tow'}).title(const {}), '🚛 ونش');
-    expect(ServiceKind.of({'service_kind': 'freight'}).title(const {}), '🚚 شحن');
+    expect(ServiceKind.of({'service_kind': 'tow'}).title(const {}), '🚛 ساحبة');
+    expect(ServiceKind.of({'service_kind': 'freight'}).title(const {}), '🚚 نقل');
     expect(ServiceKind.of({'service_kind': 'intercity'}).title(const {}), '🛣 سفر بين المدن');
     expect(ServiceKind.of(const {}).title(const {}), '🚕 رحلة');
     expect(ServiceKind.of({'tow': {}}).kind, 'tow');
@@ -66,7 +66,7 @@ void main() {
     await t.tap(find.text('اطلبها مرة ثانية'));
     expect(again, 1);
     await t.pumpWidget(_app(HistoryServiceHeader(ride: {..._parcelRide(), 'service_kind': 'tow', 'parcel': null}, onAgain: () => again++)));
-    expect(find.text('🚛 ونش'), findsOneWidget);
+    expect(find.text('🚛 ساحبة'), findsOneWidget);
     expect(find.text('اطلبها مرة ثانية'), findsNothing);
   });
 

@@ -6,6 +6,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../functions/freight_api.dart';
+import '../../functions/money_label.dart';
 import '../../functions/intercity_api.dart' show IcPlace, IntercityApi, IntercityResult;
 import '../NavigatorPages/upcoming_scheduled_rides.dart';
 import '../intercity/intercity_fare_page.dart' show IcFareBar;
@@ -13,21 +14,23 @@ import '../intercity/intercity_style.dart';
 import '../onTripPage/open_booked_ride.dart';
 import '../onTripPage/place_on_map.dart';
 import '../onTripPage/trip_place.dart';
+import '../parcels/parcel_map.dart';
 
-/// «الشحن · شن تنقل؟»: what he moves (and photos of it), the vehicle class, workers, the floors at
-/// each end and whether there is a lift, where from and to, now or at a time, and his price — the
-/// admin's suggested price line by line, which he may raise or lower in the range. The owners of
-/// that class answer with their price, exactly as on any negotiated ride.
+/// «النقل» (owner 2026-11-26, like Porter): where from and where to first, on the real map; then every
+/// vehicle of the city with its photo and its suggested price for this move (the city's default chosen),
+/// workers, when (now, in an hour…), what moves with optional photos, the floors, and his price — the
+/// owners of that vehicle accept it or send their offer.
 class FreightPage extends StatefulWidget {
-  const FreightPage({super.key, required this.home, required this.pick, this.send, this.quote, this.pickPlace});
+  const FreightPage({super.key, required this.home, required this.pick, this.send, this.quotes, this.pickPlace, this.map});
 
   final FreightHome home;
   final IcPlace pick;
 
   /// tests replace the network and the map
   final Future<IntercityResult> Function(Map<String, Object?> body)? send;
-  final Future<FreightQuote?> Function(String cls, int workers, int floors)? quote;
+  final Future<Map<String, FreightQuote>?> Function(int workers, int floors)? quotes;
   final Future<IcPlace?> Function(TripPointRole role)? pickPlace;
+  final Widget Function(IcPlace pick, IcPlace? drop)? map;
 
   static Future<void> open(BuildContext context, {required FreightHome home, required IcPlace pick}) {
     if (!home.enabled) {
@@ -37,7 +40,7 @@ class FreightPage extends StatefulWidget {
     return Navigator.of(context).push(MaterialPageRoute(builder: (_) => FreightPage(home: home, pick: pick)));
   }
 
-  static const icons = {'pickup': '🛻', 'van': '🚐', 'truck': '🚚'};
+  static const icons = {'pickup': '🛻', 'van': '🚚', 'truck': '🚛'};
 
   @override
   State<FreightPage> createState() => _FreightPageState();
@@ -53,7 +56,7 @@ class _FreightPageState extends State<FreightPage> {
   String? _category;
   final _items = TextEditingController();
   final List<File> _photos = [];
-  late String? _class = widget.home.classes.length == 1 ? widget.home.classes.first.key : null;
+  late String? _class = widget.home.defaultClass;
   int _workers = 0;
   int _pickFloor = 0;
   bool _pickLift = false;
@@ -63,7 +66,7 @@ class _FreightPageState extends State<FreightPage> {
   IcPlace? _drop;
   int _when = 0;
   DateTime? _custom;
-  FreightQuote? _quote;
+  Map<String, FreightQuote> _quotes = const {};
   num? _fare;
   bool _quoting = false;
   bool _busy = false;
@@ -76,6 +79,7 @@ class _FreightPageState extends State<FreightPage> {
 
   final List<_When> _times = [
     _When(tr('الآن', 'Now'), () => null),
+    _When(tr('بعد ساعة', 'In an hour'), () => DateTime.now().add(const Duration(hours: 1))),
     _When(tr('بعد ساعتين', 'In two hours'), () => DateTime.now().add(const Duration(hours: 2))),
     _When(tr('بكرة 9 الصبح', 'Tomorrow 9 am'), () => _day(1, 9)),
   ];
@@ -86,33 +90,44 @@ class _FreightPageState extends State<FreightPage> {
     super.dispose();
   }
 
+  String get _cur => widget.home.currency;
+  String _money(num v) => moneyText(v, _cur, arabic: appRtl);
+  FreightQuote? get _quote => _class == null ? null : _quotes[_class];
   int get _floorsClimbed => (_pickLift ? 0 : _pickFloor) + (_dropLift ? 0 : _dropFloor);
   num get _step => (_quote?.suggested ?? 0) >= 200 ? 10 : 5;
   DateTime? get _start => _when < _times.length ? _times[_when].at() : _custom;
   String get _whenLabel => _when < _times.length ? _times[_when].label : IntercityApi.dayLabel(FreightApi.wallClock(_custom!));
 
+  /// every vehicle's price for this move; his price follows the chosen vehicle's suggested price
   Future<void> _requote({bool keepFare = false}) async {
     final d = _drop;
-    if (_class == null || d == null) return;
+    if (d == null) return;
     setState(() {
       _quoting = true;
       _error = null;
     });
-    final q = widget.quote != null
-        ? await widget.quote!(_class!, _workers, _floorsClimbed)
-        : await FreightApi.quote(_pick.lat, _pick.lng, d.lat, d.lng, _class!, _workers, _floorsClimbed);
+    final q = widget.quotes != null
+        ? await widget.quotes!(_workers, _floorsClimbed)
+        : await FreightApi.quotes(_pick.lat, _pick.lng, d.lat, d.lng, _workers, _floorsClimbed);
     if (!mounted) return;
     setState(() {
       _quoting = false;
-      _quote = q;
-      if (q == null) {
+      if (q == null || q.isEmpty) {
+        _quotes = const {};
         _error = tr('ما قدرناش نحسب السعر. تأكد إن المكانين داخل ${widget.home.city}.', 'We could not work out the price. Make sure both places are in ${widget.home.city}.');
-      } else {
-        // a change of class, workers or floors moves the suggested price: his price follows it
-        _fare = keepFare && _fare != null ? _fare!.clamp(q.min, q.max) : q.suggested;
+        return;
       }
+      _quotes = q;
+      final mine = _quote;
+      if (mine != null) _fare = keepFare && _fare != null ? _fare!.clamp(mine.min, mine.max) : mine.suggested;
     });
   }
+
+  void _pickClass(String key) => setState(() {
+        _class = key;
+        _fare = _quotes[key]?.suggested;
+        _error = null;
+      });
 
   Future<IcPlace?> _place(TripPointRole role, IcPlace around) =>
       widget.pickPlace != null ? widget.pickPlace!(role) : placeOnMap(context, center: LatLng(around.lat, around.lng), role: role);
@@ -125,8 +140,8 @@ class _FreightPageState extends State<FreightPage> {
       builder: (ctx) => Directionality(
         textDirection: (appRtl ? TextDirection.rtl : TextDirection.ltr),
         child: IcSheet(children: [
-          Text(tr('صورة الحمولة', 'Photo of the load'), style: IcStyle.t(20, w: FontWeight.w900)),
-          Text(tr('الصور تخلي صاحب السيارة يعرف الحمولة ويعطيك سعر صح.', 'Photos help the owner understand the load and give you a fair price.'), style: IcStyle.t(13, w: FontWeight.w600, c: IcStyle.muted)),
+          Text(tr('صورة الحاجات', 'Photo of the things'), style: IcStyle.t(20, w: FontWeight.w900)),
+          Text(tr('الصور تسهّل علينا نجيبولك صاحب سيارة يعطيك سعر صح.', 'Photos help us find you an owner who gives a fair price.'), style: IcStyle.t(13, w: FontWeight.w600, c: IcStyle.muted)),
           const SizedBox(height: 10),
           IcButton(text: tr('صوّر الآن 📷', 'Take a photo now 📷'), onTap: () => Navigator.pop(ctx, ImageSource.camera)),
           const SizedBox(height: 6),
@@ -144,39 +159,8 @@ class _FreightPageState extends State<FreightPage> {
     if (x != null && mounted) setState(() => _photos.add(File(x!.path)));
   }
 
-  Future<void> _pickTime() async {
-    final chosen = await showModalBottomSheet<int>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Directionality(
-        textDirection: (appRtl ? TextDirection.rtl : TextDirection.ltr),
-        child: IcSheet(children: [
-          Text(tr('متى؟', 'When?'), style: IcStyle.t(21, w: FontWeight.w900)),
-          const SizedBox(height: 10),
-          for (var i = 0; i <= _times.length; i++) ...[
-            InkWell(
-              onTap: () => Navigator.pop(ctx, i),
-              borderRadius: BorderRadius.circular(14),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                decoration: BoxDecoration(
-                  color: _when == i ? const Color(0xffEAF2FF) : Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: _when == i ? IcStyle.blue : IcStyle.line, width: _when == i ? 2 : 1.5),
-                ),
-                child: Text(i < _times.length ? _times[i].label : tr('يوم وساعة ثانيين…', 'Another day and time…'), style: IcStyle.t(15)),
-              ),
-            ),
-            const SizedBox(height: 6),
-          ],
-        ]),
-      ),
-    );
-    if (chosen == null || !mounted) return;
-    if (chosen < _times.length) {
-      setState(() => _when = chosen);
-      return;
-    }
+  /// «وقت ثاني»: a day and an hour within the city's booking horizon
+  Future<void> _pickOtherTime() async {
     final now = DateTime.now();
     final day = await showDatePicker(context: context, firstDate: DateTime(now.year, now.month, now.day), lastDate: now.add(Duration(days: widget.home.horizonDays)), initialDate: now.add(const Duration(days: 1)));
     if (day == null || !mounted) return;
@@ -189,9 +173,9 @@ class _FreightPageState extends State<FreightPage> {
   }
 
   String? get _missing {
-    if (_category == null) return tr('اختار شن تنقل.', 'Choose what you are moving.');
+    if (_drop == null) return tr('اختار وين توصل الحاجات.', 'Choose where the things go.');
     if (_class == null) return tr('اختار السيارة المناسبة.', 'Choose the right vehicle.');
-    if (_drop == null) return tr('اختار وين توصل الحمولة.', 'Choose where the load goes.');
+    if (_category == null) return tr('اختار شن تنقل.', 'Choose what you are moving.');
     if (_quote == null || _fare == null) return tr('نستنوا السعر…', 'Waiting for the price…');
     return null;
   }
@@ -253,19 +237,53 @@ class _FreightPageState extends State<FreightPage> {
   Widget build(BuildContext context) {
     final h = widget.home;
     final q = _quote;
+    final top = MediaQuery.of(context).padding.top;
     return IcScaffold(
       title: tr('${FreightHome.homeNameOf(h, true)} · ${h.city}', '${FreightHome.homeNameOf(h, false)} · ${h.city}'),
-      mapHeight: 120,
+      mapHeight: 280,
+      // the real map from where he stands, the road to the drop-off once he picks it
+      map: widget.map?.call(_pick, _drop) ??
+          ParcelMap(pick: LatLng(_pick.lat, _pick.lng), drop: _drop == null ? null : LatLng(_drop!.lat, _drop!.lng), topInset: top, bottomInset: 30, mover: '🚚'),
       bottom: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         if (_error != null) ...[
           Text(_error!, key: const ValueKey('freight-error'), textAlign: TextAlign.center, style: IcStyle.t(13.5, c: const Color(0xffD92D20))),
           const SizedBox(height: 6),
         ],
-        IcButton(text: _fare == null ? tr('اطلب عروض', 'Ask for offers') : tr('اطلب عروض · ${h.currency} ${IcStyle.money(_fare!)}', 'Ask for offers · ${h.currency} ${IcStyle.money(_fare!)}'), busy: _busy, onTap: _send),
+        IcButton(text: _fare == null ? tr('اطلب عروض', 'Ask for offers') : tr('اطلب عروض · ${_money(_fare!)}', 'Ask for offers · ${_money(_fare!)}'), busy: _busy, onTap: _send),
       ]),
       children: [
-        Text(tr('شن تنقل؟ 🚚', 'What are you moving? 🚚'), style: IcStyle.t(22, w: FontWeight.w900)),
+        _places(),
+        const SizedBox(height: 14),
+        Row(children: [
+          Expanded(child: Text(tr('اختار السيارة', 'Choose the vehicle'), style: IcStyle.t(17, w: FontWeight.w900))),
+          Text(_drop == null ? tr('حدد التنزيل وتشوف السعر', 'Set the drop-off to see prices') : tr('السعر المقترح لمشوارك', 'Suggested price for your move'),
+              style: IcStyle.t(11.5, w: FontWeight.w700, c: IcStyle.muted)),
+        ]),
+        const SizedBox(height: 6),
+        for (final c in h.classes) ...[
+          _classRow(c),
+          const SizedBox(height: 6),
+        ],
         const SizedBox(height: 8),
+        _counter(tr('عمال تحميل', 'Loading workers'), tr('${_money(h.workerPrice)} للعامل', '${_money(h.workerPrice)} per worker'), _workers, 0, h.maxWorkers, (v) {
+          setState(() => _workers = v);
+          _requote();
+        }, const ValueKey('freight-workers')),
+        const SizedBox(height: 12),
+        Text(tr('متى؟', 'When?'), style: IcStyle.t(15, w: FontWeight.w900)),
+        const SizedBox(height: 6),
+        Wrap(spacing: 6, runSpacing: 6, children: [
+          for (var i = 0; i < _times.length; i++)
+            IcChip(key: ValueKey('freight-when-$i'), text: _times[i].label, selected: _when == i, onTap: () => setState(() => _when = i)),
+          IcChip(
+              key: const ValueKey('freight-when-other'),
+              text: _when == _times.length ? _whenLabel : tr('وقت ثاني…', 'Another time…'),
+              selected: _when == _times.length,
+              onTap: _pickOtherTime),
+        ]),
+        const SizedBox(height: 14),
+        Text(tr('شن تنقل؟ 🚚', 'What are you moving? 🚚'), style: IcStyle.t(17, w: FontWeight.w900)),
+        const SizedBox(height: 6),
         Wrap(spacing: 6, runSpacing: 6, children: [
           for (final c in h.categories) IcChip(text: c.$2, selected: _category == c.$1, onTap: () => setState(() => _category = c.$1)),
         ]),
@@ -285,6 +303,121 @@ class _FreightPageState extends State<FreightPage> {
           ),
         ),
         const SizedBox(height: 8),
+        _photosRow(h),
+        const SizedBox(height: 12),
+        _floor(tr('دور التحميل', 'Pick-up floor'), _pickFloor, _pickLift, (f) {
+          setState(() => _pickFloor = f);
+          _requote();
+        }, (l) {
+          setState(() => _pickLift = l);
+          _requote();
+        }, 'pick'),
+        const SizedBox(height: 8),
+        _floor(tr('دور التنزيل', 'Drop-off floor'), _dropFloor, _dropLift, (f) {
+          setState(() => _dropFloor = f);
+          _requote();
+        }, (l) {
+          setState(() => _dropLift = l);
+          _requote();
+        }, 'drop'),
+        const SizedBox(height: 14),
+        if (_quoting) const Center(child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator(strokeWidth: 2))),
+        if (q != null && !_quoting && _fare != null) _price(q),
+        const SizedBox(height: 8),
+        Text(tr('أصحاب السيارات يشوفوا طلبك وصورك، ويقبلوا سعرك ولا يبعتوا عرضهم. الدفع نقدًا لصاحب السيارة. الحمولة لو أكبر من الموصوف، يقدر يعتذر بدون عقوبة.',
+                'Owners see your request and photos, then accept your price or send their offer. Pay the owner in cash. If the load is bigger than described, the owner may decline without penalty.'),
+            style: IcStyle.t(12, w: FontWeight.w600, c: IcStyle.muted)),
+      ],
+    );
+  }
+
+  /// where from and where to, each one tap to change
+  Widget _places() {
+    Widget row(String key, IconData icon, Color color, String title, String place, VoidCallback onTap) => InkWell(
+          key: ValueKey('freight-$key-place'),
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(children: [
+              Icon(icon, size: 20, color: color),
+              const SizedBox(width: 6),
+              Text('$title: ', style: IcStyle.t(13.5, w: FontWeight.w900)),
+              Expanded(child: Text(place, maxLines: 1, overflow: TextOverflow.ellipsis, style: IcStyle.t(13.5, w: FontWeight.w600))),
+              Text(tr('غيّر', 'Change'), style: IcStyle.t(12.5, w: FontWeight.w800, c: IcStyle.blue)),
+            ]),
+          ),
+        );
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), border: Border.all(color: IcStyle.line, width: 1.5)),
+      child: Column(children: [
+        row('pick', Icons.my_location_rounded, const Color(0xff16A34A), tr('التحميل', 'Pick-up'), _pick.address.isEmpty ? tr('مكانك الحالي', 'Your current place') : _pick.address, () async {
+          final x = await _place(TripPointRole.pickup, _pick);
+          if (x != null && mounted) {
+            setState(() => _pick = x);
+            _requote(keepFare: true);
+          }
+        }),
+        const Divider(height: 1),
+        row('drop', Icons.place_rounded, const Color(0xffE11D48), tr('التنزيل', 'Drop-off'),
+            _drop == null ? tr('وين توصل؟', 'Where to?') : (_drop!.address.isEmpty ? tr('المكان على الخريطة', 'The place on the map') : _drop!.address), () async {
+          final x = await _place(TripPointRole.destination, _drop ?? _pick);
+          if (x != null && mounted) {
+            setState(() => _drop = x);
+            _requote();
+          }
+        }),
+      ]),
+    );
+  }
+
+  /// one vehicle: its photo (from the admin) or its sign, name, load, and its price for this move
+  Widget _classRow(FreightClass c) {
+    final on = c.key == _class;
+    final q = _quotes[c.key];
+    final picture = c.image == null
+        ? Center(child: Text(FreightPage.icons[c.key] ?? '🚚', style: const TextStyle(fontSize: 26)))
+        : Image.network(c.image!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Center(child: Text(FreightPage.icons[c.key] ?? '🚚', style: const TextStyle(fontSize: 26))));
+    return Semantics(
+      button: true,
+      selected: on,
+      label: c.label,
+      excludeSemantics: true,
+      child: GestureDetector(
+        key: ValueKey('freight-class-${c.key}'),
+        onTap: () => _pickClass(c.key),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: on ? const Color(0xffF5F9FF) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: on ? IcStyle.blue : IcStyle.line, width: on ? 2 : 1.5),
+          ),
+          child: Row(children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Container(width: 72, height: 52, color: const Color(0xffEEF4FF), child: picture),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(c.label, style: IcStyle.t(15.5, w: FontWeight.w900)),
+                Text([c.load, if (c.box.isNotEmpty) c.box].join(' · '), maxLines: 1, overflow: TextOverflow.ellipsis, style: IcStyle.t(11.5, w: FontWeight.w600, c: IcStyle.muted)),
+              ]),
+            ),
+            const SizedBox(width: 6),
+            Text(q != null ? _money(q.suggested) : tr('من ${_money(c.priceFrom)}', 'from ${_money(c.priceFrom)}'),
+                style: IcStyle.t(q != null ? 16.5 : 13, w: FontWeight.w900, c: q != null ? IcStyle.navy : IcStyle.muted)),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  /// «صوّر الحاجات (اختياري)»: up to three photos, and why they help
+  Widget _photosRow(FreightHome h) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         SizedBox(
           height: 64,
           child: ListView(scrollDirection: Axis.horizontal, children: [
@@ -309,112 +442,41 @@ class _FreightPageState extends State<FreightPage> {
                 onTap: _addPhoto,
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
-                  width: 120,
+                  width: 150,
                   height: 64,
-                  decoration: BoxDecoration(color: IcStyle.soft, borderRadius: BorderRadius.circular(12), border: Border.all(color: IcStyle.line, width: 1.5)),
+                  decoration: BoxDecoration(color: const Color(0xffF7FAFF), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xff9CB8E6), width: 1.5)),
                   alignment: Alignment.center,
-                  child: Text(tr('📷 صور الحمولة\n(${_photos.length} من ${h.maxPhotos})', '📷 Photos of the load\n(${_photos.length} of ${h.maxPhotos})'), textAlign: TextAlign.center, style: IcStyle.t(12, w: FontWeight.w800, c: IcStyle.muted)),
+                  child: Text(tr('📷 صوّر الحاجات\n(اختياري · ${_photos.length} من ${h.maxPhotos})', '📷 Photograph them\n(optional · ${_photos.length} of ${h.maxPhotos})'), textAlign: TextAlign.center, style: IcStyle.t(12, w: FontWeight.w800, c: IcStyle.blue)),
                 ),
               ),
           ]),
         ),
-        const SizedBox(height: 14),
-        Text(tr('السيارة المناسبة', 'The right vehicle'), style: IcStyle.t(15, w: FontWeight.w900)),
-        const SizedBox(height: 6),
-        Row(children: [
-          for (final c in h.classes) ...[
-            if (c != h.classes.first) const SizedBox(width: 8),
-            Expanded(child: _classCard(c)),
-          ],
-        ]),
-        const SizedBox(height: 14),
-        _counter(tr('عمال تحميل', 'Loading workers'), tr('${IcStyle.money(h.workerPrice)} للعامل', '${IcStyle.money(h.workerPrice)} per worker'), _workers, 0, h.maxWorkers, (v) {
-          setState(() => _workers = v);
-          _requote();
-        }, const ValueKey('freight-workers')),
-        const SizedBox(height: 10),
-        _side(tr('التحميل', 'Pick-up'), _pick.address.isEmpty ? tr('مكانك الحالي', 'Your current place') : _pick.address, _pickFloor, _pickLift, (p) async {
-          final x = await _place(TripPointRole.pickup, _pick);
-          if (x != null && mounted) {
-            setState(() => _pick = x);
-            _requote(keepFare: true);
-          }
-        }, (f) {
-          setState(() => _pickFloor = f);
-          _requote();
-        }, (l) {
-          setState(() => _pickLift = l);
-          _requote();
-        }, 'pick'),
-        const SizedBox(height: 10),
-        _side(tr('التنزيل', 'Drop-off'), _drop == null ? tr('وين توصل؟', 'Where to?') : (_drop!.address.isEmpty ? tr('المكان على الخريطة', 'The place on the map') : _drop!.address), _dropFloor, _dropLift, (p) async {
-          final x = await _place(TripPointRole.destination, _drop ?? _pick);
-          if (x != null && mounted) {
-            setState(() => _drop = x);
-            _requote();
-          }
-        }, (f) {
-          setState(() => _dropFloor = f);
-          _requote();
-        }, (l) {
-          setState(() => _dropLift = l);
-          _requote();
-        }, 'drop'),
-        const SizedBox(height: 10),
-        InkWell(
-          key: const ValueKey('freight-when'),
-          onTap: _pickTime,
-          borderRadius: BorderRadius.circular(14),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: IcStyle.line, width: 1.5)),
-            child: Row(children: [
-              const Icon(Icons.schedule_rounded, color: IcStyle.navy, size: 21),
-              const SizedBox(width: 8),
-              Expanded(child: Text(tr('الموعد: $_whenLabel', 'Time: $_whenLabel'), style: IcStyle.t(14, w: FontWeight.w700))),
-              Text(tr('غيّر', 'Change'), style: IcStyle.t(13, w: FontWeight.w800, c: IcStyle.blue)),
-            ]),
-          ),
-        ),
-        const SizedBox(height: 14),
-        if (_quoting) const Center(child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator(strokeWidth: 2))),
-        if (q != null && !_quoting && _fare != null) _price(q),
-        const SizedBox(height: 8),
-        Text(tr('أول ${h.freeLoadingMinutes} دقيقة تحميل مجانية. الدفع نقدًا لصاحب السيارة. الحمولة لو أكبر من الموصوف، يقدر يعتذر بدون عقوبة.', 'The first ${h.freeLoadingMinutes} minutes of loading are free. Pay the owner in cash. If the load is bigger than described, the owner may decline without penalty.'),
-            style: IcStyle.t(12, w: FontWeight.w600, c: IcStyle.muted)),
-      ],
-    );
-  }
+        const SizedBox(height: 4),
+        Text(tr('الصور اختيارية، بس تسهّل علينا نجيبولك صاحب سيارة يعطيك سعر صح.', 'Photos are optional, but they help us find you an owner with a fair price.'),
+            style: IcStyle.t(11.5, w: FontWeight.w700, c: IcStyle.muted)),
+      ]);
 
-  Widget _classCard(FreightClass c) {
-    final on = c.key == _class;
-    return Semantics(
-      button: true,
-      selected: on,
-      label: c.label,
-      excludeSemantics: true,
-      child: GestureDetector(
-        onTap: () {
-          setState(() => _class = c.key);
-          _requote();
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-          decoration: BoxDecoration(
-            color: on ? const Color(0xffF5F9FF) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: on ? IcStyle.blue : IcStyle.line, width: on ? 2 : 1.5),
-          ),
-          child: Column(children: [
-            Text(FreightPage.icons[c.key] ?? '🚚', style: const TextStyle(fontSize: 24)),
-            Text(c.label, style: IcStyle.t(14, w: FontWeight.w900)),
-            Text(c.load, style: IcStyle.t(11, w: FontWeight.w600, c: IcStyle.muted)),
-          ]),
-        ),
-      ),
-    );
-  }
+  Widget _floor(String title, int floor, bool lift, ValueChanged<int> onFloor, ValueChanged<bool> onLift, String key) => Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), border: Border.all(color: IcStyle.line, width: 1.5)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          _counter(title, floor == 0 ? tr('أرضي', 'Ground') : (lift ? tr('فيه مصعد', 'There is a lift') : tr('${_money(widget.home.floorPrice)} لكل دور بدون مصعد', '${_money(widget.home.floorPrice)} per floor without a lift')),
+              floor, 0, 30, onFloor, ValueKey('freight-$key-floor')),
+          if (floor > 0)
+            InkWell(
+              key: ValueKey('freight-$key-lift'),
+              onTap: () => onLift(!lift),
+              child: Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Row(children: [
+                  Icon(lift ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded, size: 20, color: lift ? IcStyle.blue : IcStyle.muted),
+                  const SizedBox(width: 6),
+                  Text(tr('فيه مصعد', 'There is a lift'), style: IcStyle.t(13, w: FontWeight.w700)),
+                ]),
+              ),
+            ),
+        ]),
+      );
 
   Widget _counter(String title, String hint, int value, int min, int max, ValueChanged<int> onChanged, Key key) {
     Widget btn(String s, bool on, VoidCallback f, String label) => Semantics(
@@ -446,48 +508,12 @@ class _FreightPageState extends State<FreightPage> {
     ]);
   }
 
-  Widget _side(String title, String place, int floor, bool lift, ValueChanged<void> onPlace, ValueChanged<int> onFloor, ValueChanged<bool> onLift, String key) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), border: Border.all(color: IcStyle.line, width: 1.5)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        InkWell(
-          key: ValueKey('freight-$key-place'),
-          onTap: () => onPlace(null),
-          child: Row(children: [
-            Icon(key == 'pick' ? Icons.my_location_rounded : Icons.place_rounded, size: 20, color: key == 'pick' ? const Color(0xff16A34A) : const Color(0xffE11D48)),
-            const SizedBox(width: 6),
-            Text('$title: ', style: IcStyle.t(13.5, w: FontWeight.w900)),
-            Expanded(child: Text(place, maxLines: 1, overflow: TextOverflow.ellipsis, style: IcStyle.t(13.5, w: FontWeight.w600))),
-            Text(tr('غيّر', 'Change'), style: IcStyle.t(12.5, w: FontWeight.w800, c: IcStyle.blue)),
-          ]),
-        ),
-        const SizedBox(height: 6),
-        _counter(tr('الدور', 'Floor'), floor == 0 ? tr('أرضي', 'Ground') : (lift ? tr('فيه مصعد', 'There is a lift') : tr('${IcStyle.money(widget.home.floorPrice)} لكل دور بدون مصعد', '${IcStyle.money(widget.home.floorPrice)} per floor without a lift')), floor, 0, 30, onFloor, ValueKey('freight-$key-floor')),
-        if (floor > 0)
-          InkWell(
-            key: ValueKey('freight-$key-lift'),
-            onTap: () => onLift(!lift),
-            child: Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Row(children: [
-                Icon(lift ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded, size: 20, color: lift ? IcStyle.blue : IcStyle.muted),
-                const SizedBox(width: 6),
-                Text(tr('فيه مصعد', 'There is a lift'), style: IcStyle.t(13, w: FontWeight.w700)),
-              ]),
-            ),
-          ),
-      ]),
-    );
-  }
-
   Widget _price(FreightQuote q) {
-    final cur = widget.home.currency;
     Widget line(String a, num v) => Padding(
           padding: const EdgeInsets.symmetric(vertical: 1.5),
           child: Row(children: [
             Expanded(child: Text(a, style: IcStyle.t(12.5, w: FontWeight.w600, c: IcStyle.muted))),
-            Text('$cur ${IcStyle.money(v)}', style: IcStyle.t(13, w: FontWeight.w800)),
+            Text(_money(v), style: IcStyle.t(13, w: FontWeight.w800)),
           ]),
         );
     return Container(
@@ -495,19 +521,21 @@ class _FreightPageState extends State<FreightPage> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(color: const Color(0xffEAF2FF), borderRadius: BorderRadius.circular(16)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        line(tr('السيارة', 'The car'), q.base),
+        line(tr('السيارة', 'The vehicle'), q.base),
         if (q.distance > 0) line(tr('المسافة · ${IcStyle.money(q.km)} كم', 'Distance · ${IcStyle.money(q.km)} km'), q.distance),
         if (q.workers > 0) line(tr('العمال', 'Workers'), q.workers),
         if (q.floors > 0) line(tr('الأدوار بدون مصعد', 'Floors without a lift'), q.floors),
         const Divider(height: 14),
         Row(children: [
           Expanded(child: Text(tr('السعر المقترح', 'Suggested price'), style: IcStyle.t(14, w: FontWeight.w900))),
-          Text('$cur ${IcStyle.money(q.suggested)}', style: IcStyle.t(15, w: FontWeight.w900, c: IcStyle.blue)),
+          Text(_money(q.suggested), style: IcStyle.t(15, w: FontWeight.w900, c: IcStyle.blue)),
         ]),
         const SizedBox(height: 8),
         Text(tr('سعرك (أصحاب السيارات يقبلوه أو يبعتوا عروضهم)', 'Your price (owners accept it or send their offers)'), style: IcStyle.t(12.5, w: FontWeight.w700, c: IcStyle.muted)),
         const SizedBox(height: 4),
         IcFareBar(
+          currency: _cur,
+          format: _money,
           value: _fare!,
           onPlus: _fare! + _step <= q.max ? () => setState(() => _fare = _fare! + _step) : null,
           onMinus: _fare! - _step >= q.min ? () => setState(() => _fare = _fare! - _step) : null,

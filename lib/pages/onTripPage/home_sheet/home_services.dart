@@ -64,7 +64,7 @@ class HomeServices {
   }) {
     final freightName = _adminName(freight?.raw, rtl, 'نقل بضائع', 'Moving');
     final parcelsName = _adminName(parcels?.raw, rtl, 'طرود', 'Parcels');
-    final towName = _adminName(tow?.raw, rtl, 'ونش', 'Tow');
+    final towName = _adminName(tow?.raw, rtl, 'ساحبة', 'Tow');
     return [
       HomeService(
         id: 'open_ride',

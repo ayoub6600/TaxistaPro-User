@@ -83,7 +83,7 @@ class ParcelPin {
   }
 
   /// the parcel that moves along the road: 📦 on a white disc
-  static Future<BitmapDescriptor> parcel(double dpr) async {
+  static Future<BitmapDescriptor> parcel(double dpr, {String mover = '📦'}) async {
     const s = 34.0;
     final rec = ui.PictureRecorder();
     final c = Canvas(rec)..scale(dpr);
@@ -91,7 +91,7 @@ class ParcelPin {
       ..color = const Color(0x40102A56)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.5));
     c.drawCircle(const Offset(s / 2, s / 2), s / 2 - 2, Paint()..color = Colors.white);
-    final tp = TextPainter(text: const TextSpan(text: '📦', style: TextStyle(fontSize: 18)), textDirection: TextDirection.ltr)..layout();
+    final tp = TextPainter(text: TextSpan(text: mover, style: const TextStyle(fontSize: 18)), textDirection: TextDirection.ltr)..layout();
     tp.paint(c, Offset((s - tp.width) / 2, (s - tp.height) / 2));
     final img = await rec.endRecording().toImage((s * dpr).ceil(), (s * dpr).ceil());
     final bytes = await img.toByteData(format: ui.ImageByteFormat.png);

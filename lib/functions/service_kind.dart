@@ -29,7 +29,9 @@ class ServiceKind {
     for (final k in kinds) {
       if (_ar[k] == l) return ServiceKind._(k);
     }
-    return null;
+    // the server's older words for the same services
+    final older = const {'ونش': 'tow', 'شحن': 'freight'}[l];
+    return older == null ? null : ServiceKind._(older);
   }
 
   /// «📦 طرد 1234» under a wallet line: the server's service_label (Arabic) with its icon and the trip
@@ -43,7 +45,7 @@ class ServiceKind {
   }
 
   static const _icons = {'ride': '🚕', 'intercity': '🛣', 'parcel': '📦', 'tow': '🚛', 'freight': '🚚'};
-  static const _ar = {'ride': 'رحلة', 'intercity': 'سفر بين المدن', 'parcel': 'طرد', 'tow': 'ونش', 'freight': 'شحن'};
+  static const _ar = {'ride': 'رحلة', 'intercity': 'سفر بين المدن', 'parcel': 'طرد', 'tow': 'ساحبة', 'freight': 'نقل'};
   static const _en = {'ride': 'Ride', 'intercity': 'Intercity trip', 'parcel': 'Parcel', 'tow': 'Tow', 'freight': 'Freight'};
   static const _colors = {
     'ride': Color(0xff0873FF),

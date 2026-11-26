@@ -14,12 +14,15 @@ import 'parcel_pins.dart';
 /// The real map above «شن تبعت؟» (owner 2026-11-19): the green pin where the captain takes it, the blue
 /// pin where it goes, the road between them, and 📦 moving along it. Fits both places in view.
 class ParcelMap extends StatefulWidget {
-  const ParcelMap({super.key, required this.pick, this.drop, this.topInset = 0, this.bottomInset = 0});
+  const ParcelMap({super.key, required this.pick, this.drop, this.topInset = 0, this.bottomInset = 0, this.mover = '📦'});
 
   final LatLng pick;
   final LatLng? drop;
   final double topInset;
   final double bottomInset;
+
+  /// what moves along the road (🚚 on the moving page)
+  final String mover;
 
   static String get pickLabel => tr('الكابتن ياخذها من هنا', 'Picked up here');
   static String get dropLabel => tr('توصل هنا', 'Delivered here');
@@ -72,7 +75,7 @@ class _ParcelMapState extends State<ParcelMap> with SingleTickerProviderStateMix
     final dpr = MediaQuery.of(context).devicePixelRatio;
     final pick = await ParcelPin.bitmap(label: ParcelMap.pickLabel, color: ParcelPin.pickColor, icon: Icons.inventory_2_rounded, dpr: dpr);
     final drop = await ParcelPin.bitmap(label: ParcelMap.dropLabel, color: ParcelPin.dropColor, icon: Icons.flag_rounded, dpr: dpr);
-    final box = await ParcelPin.parcel(dpr);
+    final box = await ParcelPin.parcel(dpr, mover: widget.mover);
     if (mounted) {
       setState(() {
         _pickIcon = pick;
@@ -183,9 +186,9 @@ class _ParcelMapState extends State<ParcelMap> with SingleTickerProviderStateMix
                 child: ParcelPinWidget(label: ParcelMap.dropLabel, color: ParcelPin.dropColor, icon: Icons.flag_rounded)),
           if (box != null)
             fm.Marker(point: p(box), width: 34, height: 34,
-                child: const DecoratedBox(
+                child: DecoratedBox(
                     decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Color(0x40102A56), blurRadius: 5)]),
-                    child: Center(child: Text('📦', style: TextStyle(fontSize: 18))))),
+                    child: Center(child: Text(widget.mover, style: const TextStyle(fontSize: 18))))),
         ]),
         const fm.RichAttributionWidget(attributions: [fm.TextSourceAttribution('OpenStreetMap contributors')]),
       ],

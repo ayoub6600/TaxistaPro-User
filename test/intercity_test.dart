@@ -50,7 +50,7 @@ void main() {
     expect(find.text('سفر'), findsNothing, reason: 'closed in this city: not shown, as before');
     await t.pumpWidget(strip(onTravel: () => travel++));
     await t.pumpAndSettle();
-    for (final l in ['بدون وجهة', 'سفر', 'نقل بضائع', 'طرود', 'ونش']) {
+    for (final l in ['بدون وجهة', 'سفر', 'نقل بضائع', 'طرود', 'ساحبة']) {
       expect(find.text(l), findsOneWidget, reason: l);
     }
     await t.tap(find.text('سفر'));

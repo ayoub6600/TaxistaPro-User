@@ -138,7 +138,7 @@ void main() {
       ),
     ));
     await t.pumpAndSettle();
-    await t.tap(find.text('ونش'));
+    await t.tap(find.text('ساحبة'));
     expect(opened, 1);
   });
 }

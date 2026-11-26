@@ -17,9 +17,10 @@ FreightHome _freight() => FreightHome({
         {'key': 'appliances', 'label': 'أجهزة'},
       ],
       'classes': [
-        {'key': 'pickup', 'zone_type_id': 'zt-pickup', 'label': 'بيك أب', 'load': 'حتى 1 طن', 'base': 40},
-        {'key': 'van', 'zone_type_id': 'zt-van', 'label': 'فان مقفول', 'load': 'حتى 1.5 طن', 'base': 60},
+        {'key': 'van', 'zone_type_id': 'zt-van', 'label': 'بورتر', 'load': 'حتى 1.5 طن', 'base': 60, 'price_from': 60},
+        {'key': 'pickup', 'zone_type_id': 'zt-pickup', 'label': 'دبل جابينا', 'load': 'حتى 1 طن', 'base': 40, 'price_from': 40},
       ],
+      'default_class': 'van',
     });
 
 void main() {
@@ -33,7 +34,7 @@ void main() {
     addTearDown(() => t.binding.setSurfaceSize(null));
   }
 
-  testWidgets('freight: what, which vehicle, workers, floors, where to; the suggested price line by line; his price in the range', (t) async {
+  testWidgets('freight: where to first, every vehicle with its price for the move, the default chosen, workers, floors; his price in the range', (t) async {
     await tall(t);
     Map<String, Object?>? sent;
     final asked = <String>[];
@@ -42,10 +43,14 @@ void main() {
         home: _freight(),
         pick: const IcPlace(32.35, 15.1, 'شارع طرابلس'),
         pickPlace: (role) async => const IcPlace(32.39, 15.13, 'الزروق'),
-        quote: (cls, workers, floors) async {
-          asked.add('$cls/$workers/$floors');
-          final s = 60 + 20 + workers * 25 + floors * 10;
-          return FreightQuote({'suggested': s, 'min': (s * .8).floor(), 'max': (s * 2.5).ceil(), 'km': 5, 'base': 60, 'distance': 20, 'workers': workers * 25, 'floors': floors * 10});
+        map: (pick, drop) => const SizedBox.expand(),
+        quotes: (workers, floors) async {
+          asked.add('$workers/$floors');
+          FreightQuote q(num base) {
+            final s = base + 20 + workers * 25 + floors * 10;
+            return FreightQuote({'suggested': s, 'min': (s * .8).floor(), 'max': (s * 2.5).ceil(), 'km': 5, 'base': base, 'distance': 20, 'workers': workers * 25, 'floors': floors * 10});
+          }
+          return {'van': q(60), 'pickup': q(40)};
         },
         send: (body) async {
           sent = body;
@@ -54,39 +59,53 @@ void main() {
       ),
     ));
 
+    // before the drop-off: «من 60 د.ل» on each vehicle, the city's default (بورتر) chosen
+    expect(find.text('من 60 د.ل'), findsOneWidget);
+    expect(find.text('بورتر'), findsOneWidget);
     await t.tap(find.textContaining('اطلب عروض'));
     await t.pump();
-    expect(find.text('اختار شن تنقل.'), findsOneWidget);
+    expect(find.text('اختار وين توصل الحاجات.'), findsOneWidget);
 
-    await t.tap(find.text('عفش'));
-    await t.tap(find.text('فان مقفول'));
     await t.tap(find.byKey(const ValueKey('freight-drop-place')));
     await t.pumpAndSettle();
-    expect(asked.last, 'van/0/0');
-    expect(find.text('LYD 80'), findsWidgets);
+    expect(asked.last, '0/0');
+    expect(find.text('80 د.ل'), findsWidgets, reason: 'بورتر for this move');
+    expect(find.text('60 د.ل'), findsWidgets, reason: 'دبل جابينا for this move');
+    await t.tap(find.byKey(const ValueKey('freight-class-pickup')));
+    await t.pumpAndSettle();
+    expect(find.text('اطلب عروض · 60 د.ل'), findsOneWidget, reason: 'his price follows the vehicle, no new question to the server');
+    expect(asked.length, 1);
+    await t.tap(find.byKey(const ValueKey('freight-class-van')));
+    await t.pumpAndSettle();
 
+    await t.tap(find.text('عفش'));
     // two workers, the third floor without a lift at the pick-up: the price follows
     await t.tap(find.bySemanticsLabel('عمال تحميل زيادة'));
     await t.pumpAndSettle();
     await t.tap(find.bySemanticsLabel('عمال تحميل زيادة'));
     await t.pumpAndSettle();
     for (var i = 0; i < 3; i++) {
-      await t.tap(find.descendant(of: find.byKey(const ValueKey('freight-pick-floor')), matching: find.bySemanticsLabel('الدور زيادة')));
+      await t.tap(find.descendant(of: find.byKey(const ValueKey('freight-pick-floor')), matching: find.bySemanticsLabel('دور التحميل زيادة')));
       await t.pumpAndSettle();
     }
-    expect(asked.last, 'van/2/3');
-    expect(find.text('LYD 160'), findsWidgets, reason: '60 + 20 + 2×25 + 3×10');
+    expect(asked.last, '2/3');
+    expect(find.text('160 د.ل'), findsWidgets, reason: '60 + 20 + 2×25 + 3×10');
     // a lift there: the floors cost nothing
     await t.tap(find.byKey(const ValueKey('freight-pick-lift')));
     await t.pumpAndSettle();
-    expect(asked.last, 'van/2/0');
+    expect(asked.last, '2/0');
 
+    // «بعد ساعة»
+    await t.tap(find.byKey(const ValueKey('freight-when-1')));
+    await t.pumpAndSettle();
     await t.tap(find.textContaining('اطلب عروض'));
     await t.pumpAndSettle();
     expect(sent!['vehicle_type'], 'zt-van', reason: 'the class service, so the right owners are asked');
     expect([sent!['freight_class'], sent!['freight_category'], sent!['workers'], sent!['pick_floor'], sent!['pick_lift'], sent!['rider_proposed_fare']],
         ['van', 'furniture', 2, 3, 1, 130]);
-    expect(sent!['is_later'], 0);
+    expect(sent!['is_later'], 1);
+    final at = DateTime.parse('${sent!['trip_start_time']}'.replaceFirst(' ', 'T'));
+    expect(at.difference(DateTime.now()).inMinutes, inInclusiveRange(55, 61));
   });
 
   testWidgets('the freight card on the ride says what moves and what happens now', (t) async {
@@ -146,10 +165,10 @@ void main() {
     await tall(t);
     languageDirection = 'ltr';
     addTearDown(() => languageDirection = 'rtl');
-    await t.pumpWidget(MaterialApp(home: FreightPage(home: _freight(), pick: const IcPlace(32.35, 15.1, ''))));
+    await t.pumpWidget(MaterialApp(home: FreightPage(home: _freight(), pick: const IcPlace(32.35, 15.1, ''), map: (pick, drop) => const SizedBox.expand())));
     expect(find.text('What are you moving? 🚚'), findsOneWidget);
     expect(find.text('Furniture'), findsOneWidget);
-    expect(find.text('Closed van'), findsOneWidget);
+    expect(find.text('Small truck'), findsOneWidget);
     expect(find.text('up to 1.5 t'), findsOneWidget);
     expect(find.text('Loading workers'), findsOneWidget);
     expect(find.text('Ask for offers'), findsOneWidget);

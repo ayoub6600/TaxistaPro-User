@@ -452,7 +452,10 @@ class IcPriceChanged extends StatelessWidget {
 
 /// − price + in a light blue bar
 class IcFareBar extends StatelessWidget {
-  const IcFareBar({super.key, required this.value, required this.onPlus, required this.onMinus, this.compact = false, this.currency = 'LYD'});
+  const IcFareBar({super.key, required this.value, required this.onPlus, required this.onMinus, this.compact = false, this.currency = 'LYD', this.format});
+
+  /// how the amount reads («60 د.ل» on the moving page); null = «LYD 60»
+  final String Function(num value)? format;
 
   /// the city's money (Cairo is EGP; it said LYD everywhere, owner 2026-11-20)
   final String currency;
@@ -487,7 +490,7 @@ class IcFareBar extends StatelessWidget {
           height: h,
           alignment: Alignment.center,
           decoration: BoxDecoration(color: compact ? Colors.white : const Color(0xffEAF2FF), borderRadius: BorderRadius.circular(compact ? 14 : 16)),
-          child: Text('$currency ${IcStyle.money(value)}', style: IcStyle.t(compact ? 21 : 24, w: FontWeight.w900)),
+          child: Text(format?.call(value) ?? '$currency ${IcStyle.money(value)}', style: IcStyle.t(compact ? 21 : 24, w: FontWeight.w900)),
         ),
       ),
       const SizedBox(width: 8),
