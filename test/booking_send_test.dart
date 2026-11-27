@@ -75,10 +75,10 @@ void main() {
 
   group('the waiting card explains a slow connection', () {
     test('quiet first, then slow, then very weak', () {
-      expect(connectionNotice(const Duration(seconds: 3), true), isNull);
-      expect(connectionNotice(const Duration(seconds: 7), true)?.title, 'الاتصال بطيء…');
-      expect(connectionNotice(const Duration(seconds: 20), true)?.title, 'الإنترنت ضعيف جدًا');
-      expect(connectionNotice(const Duration(seconds: 20), false)?.title, 'Very weak internet');
+      expect(connectionNotice(const Duration(seconds: 7), true), isNull, reason: 'a busy server is not a slow phone');
+      expect(connectionNotice(const Duration(seconds: 16), true)?.title, 'الاتصال بطيء…');
+      expect(connectionNotice(const Duration(seconds: 31), true)?.title, 'الإنترنت ضعيف جدًا');
+      expect(connectionNotice(const Duration(seconds: 31), false)?.title, 'Very weak internet');
     });
   });
 }

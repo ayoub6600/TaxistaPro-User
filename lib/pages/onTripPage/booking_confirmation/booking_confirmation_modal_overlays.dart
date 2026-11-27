@@ -28,7 +28,6 @@ mixin _BookingConfirmationModalOverlays
         onRetry: () async {
           setState(() {
             noDriverFound = false;
-            isLoading = true;
           });
           await handleRideRequest(media, geo);
         },
@@ -256,7 +255,6 @@ mixin _BookingConfirmationModalOverlays
               onDone: () {
                 setState(() {
                   _locationDenied = false;
-                  isLoading = true;
                 });
                 if (locationAllowed &&
                     (positionStream == null || positionStream!.isPaused)) {
@@ -391,7 +389,13 @@ mixin _BookingConfirmationModalOverlays
               child: ValueListenableBuilder<int>(
                 valueListenable: BookingSend.attempt,
                 builder: (context, attempt, _) => attempt < 2
-                    ? const Loading()
+                    ? (sendingRideRequest
+                        ? Loading(
+                            quiet: true,
+                            message: languageDirection == 'rtl' ? 'نبحث لك عن كابتن…' : 'Finding you a captain…',
+                            submessage: languageDirection == 'rtl' ? 'نوصّل طلبك للكباتن القريبين منك' : 'Sending your request to the captains near you',
+                          )
+                        : const Loading())
                     : Loading(
                         message: languageDirection == 'rtl' ? 'الإنترنت ضعيف…' : 'Weak internet…',
                         submessage: languageDirection == 'rtl'

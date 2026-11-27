@@ -6,8 +6,8 @@ import '../../styles/styles.dart';
 
 /// How long a wait is normal before the rider is told the connection is the
 /// reason - so a slow network is never mistaken for a broken app.
-const slowConnectionAfter = Duration(seconds: 6);
-const verySlowConnectionAfter = Duration(seconds: 18);
+const slowConnectionAfter = Duration(seconds: 15);
+const verySlowConnectionAfter = Duration(seconds: 30);
 
 /// What the waiting card says about the connection after [waited].
 ({String title, String note})? connectionNotice(Duration waited, bool rtl) {
@@ -25,11 +25,14 @@ const verySlowConnectionAfter = Duration(seconds: 18);
 }
 
 class Loading extends StatefulWidget {
-  const Loading({super.key, this.color, this.message, this.submessage});
+  const Loading({super.key, this.color, this.message, this.submessage, this.quiet = false});
 
   final Color? color;
   final String? message;
   final String? submessage;
+
+  /// never says the connection is slow (the caller shows its own notice when a send really timed out)
+  final bool quiet;
 
   @override
   State<Loading> createState() => _LoadingState();
@@ -78,7 +81,7 @@ class _LoadingState extends State<Loading> {
   Widget _buildOverlay(BuildContext context) {
     final rtl = Directionality.of(context) == TextDirection.rtl;
     final size = MediaQuery.sizeOf(context);
-    final notice = connectionNotice(_waited.elapsed, rtl);
+    final notice = widget.quiet ? null : connectionNotice(_waited.elapsed, rtl);
     return SizedBox(
       width: size.width,
       height: size.height,

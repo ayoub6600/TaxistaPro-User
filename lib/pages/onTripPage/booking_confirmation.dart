@@ -190,6 +190,9 @@ int rentalChoosenOption = 0;
 Animation<double>? _animation;
 bool addCoupon = false;
 bool isLoading = false;
+
+/// the ride request is on its way to the server: the rider already sees «نبحث لك عن كابتن…», never «الاتصال بطيء»
+bool sendingRideRequest = false;
 List<fmlt.LatLng> fmpoly = [];
 dynamic addLuggagePreferences;
 dynamic addPetPreferences;

@@ -133,8 +133,8 @@ mixin _BookingConfirmationView
                   if (_controller != null) {
                     final isRegularDriverSearch = userRequestData.isNotEmpty &&
                         userRequestData['accepted_at'] == null &&
-                        !isLegacyBiddingSearchRequest(userRequestData,
-                            userDetails);
+                        !isLegacyBiddingSearchRequest(
+                            userRequestData, userDetails);
                     mapPadding = !dropConfirmed && userRequestData.isEmpty
                         ? media.height * 0.50
                         : isRegularDriverSearch
@@ -714,6 +714,18 @@ mixin _BookingConfirmationView
                                       driverData = jsonDecode(
                                           jsonEncode(snapshots.value));
                                       final driverLocation = driverData['l'];
+                                      // the captain on his way: the camera shows him and the pickup
+                                      if (driverLocation is List &&
+                                          driverLocation.length >= 2 &&
+                                          driverLocation[0] is num &&
+                                          driverLocation[1] is num) {
+                                        _captainAt = LatLng(
+                                            (driverLocation[0] as num)
+                                                .toDouble(),
+                                            (driverLocation[1] as num)
+                                                .toDouble());
+                                        scheduleRouteCameraFit(media);
+                                      }
                                       if (userRequestData.isNotEmpty &&
                                           driverLocation is List &&
                                           driverLocation.length >= 2 &&
@@ -754,62 +766,7 @@ mixin _BookingConfirmationView
                                                 pickupLongitude,
                                               ));
                                             });
-                                            LatLngBounds bound;
-                                            if (userRequestData.isNotEmpty) {
-                                              if (driverData['l'][0] >
-                                                      userRequestData[
-                                                          'pick_lat'] &&
-                                                  driverData['l'][1] >
-                                                      userRequestData[
-                                                          'pick_lng']) {
-                                                bound = LatLngBounds(
-                                                    southwest: LatLng(
-                                                        userRequestData[
-                                                            'pick_lat'],
-                                                        userRequestData[
-                                                            'pick_lng']),
-                                                    northeast: LatLng(
-                                                        driverData['l'][0],
-                                                        driverData['l'][1]));
-                                              } else if (driverData['l'][1] >
-                                                  userRequestData['pick_lng']) {
-                                                bound = LatLngBounds(
-                                                    southwest: LatLng(
-                                                        driverData['l'][0],
-                                                        userRequestData[
-                                                            'pick_lng']),
-                                                    northeast: LatLng(
-                                                        userRequestData[
-                                                            'pick_lat'],
-                                                        driverData['l'][1]));
-                                              } else if (driverData['l'][0] >
-                                                  userRequestData['pick_lat']) {
-                                                bound = LatLngBounds(
-                                                    southwest: LatLng(
-                                                        userRequestData[
-                                                            'pick_lat'],
-                                                        driverData['l'][1]),
-                                                    northeast: LatLng(
-                                                        driverData['l'][0],
-                                                        userRequestData[
-                                                            'pick_lng']));
-                                              } else {
-                                                bound = LatLngBounds(
-                                                    southwest: LatLng(
-                                                        driverData['l'][0],
-                                                        driverData['l'][1]),
-                                                    northeast: LatLng(
-                                                        userRequestData[
-                                                            'pick_lat'],
-                                                        userRequestData[
-                                                            'pick_lng']));
-                                              }
-                                              CameraUpdate cameraUpdate =
-                                                  CameraUpdate.newLatLngBounds(
-                                                      bound, 50);
-                                              _controller!
-                                                  .animateCamera(cameraUpdate);
-                                            }
+                                            // the camera: scheduleRouteCameraFit (captain + pickup, never past zoom 16)
                                           }
                                           var distCalc = calculateDistance(
                                               userRequestData['pick_lat'],
@@ -819,7 +776,8 @@ mixin _BookingConfirmationView
                                           _dist = double.parse(
                                               (distCalc / 1000).toString());
                                           // the captain's in-app navigation (Google, with traffic): a better time than distance × 2
-                                          _navEtaMin = navEtaMinutes(driverData, '${userRequestData['id']}');
+                                          _navEtaMin = navEtaMinutes(driverData,
+                                              '${userRequestData['id']}');
                                         } else if (userRequestData[
                                                     'is_rental'] !=
                                                 true &&

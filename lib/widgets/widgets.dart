@@ -52,11 +52,22 @@ class _ButtonState extends State<Button> {
   // the same page or submit the same action twice.
   final TapLock _tapLock = TapLock();
 
+  /// The tap's work is still running (its onTap returned a Future): a small spinner in place of the words, taps
+  /// ignored — the rider sees the button itself working (owner 2026-11-28: every button smooth and modern).
+  bool _running = false;
+
   VoidCallback? get _guardedTap {
     final onTap = widget.onTap;
     if (onTap == null) return null;
     return () {
-      if (_tapLock.tryAcquire()) onTap();
+      if (_running || !_tapLock.tryAcquire()) return;
+      final result = onTap();
+      if (result is Future) {
+        setState(() => _running = true);
+        result.then((_) {}, onError: (Object e, StackTrace s) => debugPrint('Button action failed: $e')).whenComplete(() {
+          if (mounted) setState(() => _running = false);
+        });
+      }
     };
   }
 
@@ -81,7 +92,13 @@ class _ButtonState extends State<Button> {
           padding: EdgeInsets.only(
               left: media.width * twenty, right: media.width * twenty),
           alignment: Alignment.center,
-          child: FittedBox(
+          child: _running
+              ? SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2.4, color: widget.textcolor is Color ? widget.textcolor as Color : Colors.white),
+                )
+              : FittedBox(
             fit: BoxFit.contain,
             child: Text(
               widget.text,

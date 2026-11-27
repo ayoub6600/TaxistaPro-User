@@ -120,6 +120,7 @@ mixin _BookingConfirmationRequestHandler
         }
         setState(() {
           isLoading = true;
+          sendingRideRequest = !confirmRideLater;
         });
         print('isOutStation15');
         dynamic result;
@@ -134,6 +135,7 @@ mixin _BookingConfirmationRequestHandler
           } else if (result == 'success') {
             timer();
           }
+          sendingRideRequest = false;
           if (mounted) setState(() => isLoading = false);
         }
       }

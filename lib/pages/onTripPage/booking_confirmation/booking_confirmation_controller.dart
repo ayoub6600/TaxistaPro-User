@@ -117,7 +117,8 @@ mixin _BookingConfirmationController
         fare: chosenFareForService(index),
       );
       if (split == null) return null;
-      return PriorBalanceWords(split, service['currency'], arabic: choosenLanguage == 'ar');
+      return PriorBalanceWords(split, service['currency'],
+          arabic: choosenLanguage == 'ar');
     } catch (_) {
       return null;
     }
@@ -239,7 +240,7 @@ mixin _BookingConfirmationController
   bool _cancel = false;
   List driverBck = [];
   bool currentpage = true;
-  final _mapMarkerSC = StreamController<List<Marker>>();
+  final _mapMarkerSC = StreamController<List<Marker>>.broadcast();
   StreamSink<List<Marker>> get _mapMarkerSink => _mapMarkerSC.sink;
   Stream<List<Marker>> get mapMarkerStream => _mapMarkerSC.stream;
   bool dropConfirmed = false;
@@ -248,6 +249,24 @@ mixin _BookingConfirmationController
   bool isFromDate = true;
   String? _lastRouteCameraSignature;
   bool _routeCameraFitScheduled = false;
+
+  /// where the accepted ride's captain is (his Firebase node), for the camera
+  LatLng? _captainAt;
+
+  /// accepted, not arrived yet: the captain and the pickup (owner 2026-11-28: after the accept the map stayed where the
+  /// search left it, or zoomed to 20 on a 20 m box — an empty grey map)
+  List<LatLng>? _captainComingPoints() {
+    if (userRequestData.isEmpty ||
+        userRequestData['accepted_at'] == null ||
+        userRequestData['arrived_at'] != null ||
+        _captainAt == null) {
+      return null;
+    }
+    final lat = double.tryParse('${userRequestData['pick_lat']}');
+    final lng = double.tryParse('${userRequestData['pick_lng']}');
+    if (lat == null || lng == null || (lat == 0 && lng == 0)) return null;
+    return [_captainAt!, LatLng(lat, lng)];
+  }
 
   DateTime fromDate = DateTime.now().add(Duration(
       minutes:
@@ -260,7 +279,8 @@ mixin _BookingConfirmationController
   void scheduleRouteCameraFit(Size media) {
     if (_controller == null || mapType != 'google' || widget.type == 1) return;
 
-    final points = _routeCameraPoints();
+    final coming = _captainComingPoints();
+    final points = coming ?? _routeCameraPoints();
     if (points.length < 2) return;
 
     // The service chooser shows only a narrow map strip. Fitting both ends
@@ -289,11 +309,14 @@ mixin _BookingConfirmationController
     final maxLatitude = points.map((point) => point.latitude).reduce(max);
     final minLongitude = points.map((point) => point.longitude).reduce(min);
     final maxLongitude = points.map((point) => point.longitude).reduce(max);
+    // the captain moves every few seconds: follow him by ~100 m steps, not every metre
+    final digits = coming != null ? 3 : 5;
     final signature = [
-      minLatitude.toStringAsFixed(5),
-      maxLatitude.toStringAsFixed(5),
-      minLongitude.toStringAsFixed(5),
-      maxLongitude.toStringAsFixed(5),
+      if (coming != null) 'captain:${userRequestData['id']}',
+      minLatitude.toStringAsFixed(digits),
+      maxLatitude.toStringAsFixed(digits),
+      minLongitude.toStringAsFixed(digits),
+      maxLongitude.toStringAsFixed(digits),
       mapPadding.round(),
     ].join(':');
 
@@ -312,13 +335,18 @@ mixin _BookingConfirmationController
       try {
         final latitudeSpan = maxLatitude - minLatitude;
         final longitudeSpan = maxLongitude - minLongitude;
-        if (max(latitudeSpan.abs(), longitudeSpan.abs()) < 0.015) {
+        // the captain coming: only the narrow strip above the sheet shows, so anything wider than ~200 m is a
+        // padded bounds fit (a fixed zoom put the pickup under the sheet); closer than that, street level
+        final tight = coming != null ? 0.002 : 0.015;
+        if (max(latitudeSpan.abs(), longitudeSpan.abs()) < tight) {
           final span = max(latitudeSpan.abs(), longitudeSpan.abs());
           await _controller!.animateCamera(
             CameraUpdate.newLatLngZoom(
               LatLng((minLatitude + maxLatitude) / 2,
                   (minLongitude + maxLongitude) / 2),
-              span < 0.003 ? 15 : 14,
+              coming != null
+                  ? (span < 0.003 ? 16 : 15)
+                  : (span < 0.003 ? 15 : 14),
             ),
           );
         } else {
@@ -328,9 +356,11 @@ mixin _BookingConfirmationController
                 southwest: LatLng(minLatitude, minLongitude),
                 northeast: LatLng(maxLatitude, maxLongitude),
               ),
-              36,
+              coming != null ? 40 : 36,
             ),
           );
+          final zoom = await _controller!.getZoomLevel();
+          if (zoom > 18) await _controller!.moveCamera(CameraUpdate.zoomTo(17));
         }
         _lastRouteCameraSignature = signature;
       } catch (error) {
@@ -623,7 +653,8 @@ mixin _BookingConfirmationController
       // the new search screen: two minutes (the admin's), then «مازلت تدوّر؟» instead of ending it
       final offersV2 = OffersV2.activeFor(userRequestData, userDetails);
       offersV2Asking = false;
-      if (offersV2) timing = OffersV2.searchSeconds(userRequestData, userDetails);
+      if (offersV2)
+        timing = OffersV2.searchSeconds(userRequestData, userDetails);
       // The backend's own no-driver-found dispatch doesn't fire until the
       // dispatch-retry cron has ticked PAST this same duration (it cancels
       // once attempts exceed it, one attempt per ~1-minute tick - so it can
@@ -643,7 +674,10 @@ mixin _BookingConfirmationController
       if (mounted) {
         timers = Timer.periodic(const Duration(seconds: 1), (timer) async {
           // a driver is being arranged on the server: the local countdown must not end this ride
-          if (timing != null && timing < 30 && (userRequestData['silent_search'] == true || userRequestData['next_driver'] is Map)) {
+          if (timing != null &&
+              timing < 30 &&
+              (userRequestData['silent_search'] == true ||
+                  userRequestData['next_driver'] is Map)) {
             timing = 30;
           }
           if (timing != null) {
@@ -1081,7 +1115,7 @@ mixin _BookingConfirmationController
   //   fmPolyGot = false;
   // }
 
-/// The blue line starts at the car (owner 2026-11-25: it stayed drawn behind
+  /// The blue line starts at the car (owner 2026-11-25: it stayed drawn behind
   /// the moving car). Called on every captain location update of the ride.
   void trimActiveRouteToCar(double latitude, double longitude) {
     if (polyline.isEmpty || polyList.length < 2) return;
