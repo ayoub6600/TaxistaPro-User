@@ -39,10 +39,16 @@ class _PickupChangePanelState extends State<PickupChangePanel> {
     super.initState();
     PickupChangeState.reload(widget.rideId);
     PickupChangeState.current.addListener(_changed);
+    PickupChangeState.proposeTaps.addListener(_proposeFromSheet);
+  }
+
+  void _proposeFromSheet() {
+    if (!_busy && mounted) _propose();
   }
 
   @override
   void dispose() {
+    PickupChangeState.proposeTaps.removeListener(_proposeFromSheet);
     PickupChangeState.current.removeListener(_changed);
     _noteTimer?.cancel();
     super.dispose();
@@ -172,16 +178,16 @@ class _PickupChangePanelState extends State<PickupChangePanel> {
                   },
             child: Text('إلغاء', style: GoogleFonts.cairo())),
       ]);
+    } else if (_busy || _note != null) {
+      body = Row(children: [
+        const Icon(Icons.edit_location_alt_rounded, color: _blue, size: 20),
+        const SizedBox(width: 8),
+        Expanded(child: Text('نقطة الالتقاط', style: GoogleFonts.cairo(fontSize: 13, fontWeight: FontWeight.w700, color: _blue))),
+        if (_busy) const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+      ]);
     } else {
-      body = InkWell(
-        onTap: _busy ? null : _propose,
-        child: Row(children: [
-          const Icon(Icons.edit_location_alt_rounded, color: _blue, size: 20),
-          const SizedBox(width: 8),
-          Expanded(child: Text('تغيير نقطة الالتقاط', style: GoogleFonts.cairo(fontSize: 13, fontWeight: FontWeight.w700, color: _blue))),
-          if (_busy) const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
-        ]),
-      );
+      // nothing to say: the map stays clear; «تغيير» lives beside the pickup in the ride sheet
+      return const SizedBox.shrink();
     }
     return Directionality(
       textDirection: TextDirection.rtl,

@@ -141,4 +141,8 @@ class PickupChangeState {
   }
 
   static void clear() => current.value = null;
+
+  /// «تغيير» beside the pickup in the ride sheet: the panel opens the point picker (owner 2026-11-28: the bar at the
+  /// top of the map looked out of place)
+  static final ValueNotifier<int> proposeTaps = ValueNotifier<int>(0);
 }

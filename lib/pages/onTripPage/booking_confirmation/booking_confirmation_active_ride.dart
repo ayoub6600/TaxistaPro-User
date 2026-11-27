@@ -278,6 +278,10 @@ mixin _BookingConfirmationActiveRide
         child: child,
       );
 
+  /// accepted, not started: the pickup may still move, by agreement with the captain (the panel does the rest)
+  bool _pickupMayMove(Map d) =>
+      d['accepted_at'] != null && '${d['is_trip_start']}' != '1' && d['is_trip_start'] != true && '${d['is_completed']}' != '1' && '${d['is_later']}' != '1';
+
   /// pickup, the stops in order, the destination — dots joined by a line
   Widget _activeRouteCard(Size media) {
     final rtl = languageDirection == 'rtl';
@@ -306,7 +310,23 @@ mixin _BookingConfirmationActiveRide
                 child: Padding(
                   padding: EdgeInsets.only(bottom: i < places.length - 1 ? 12 : 0),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(places[i].$1, style: GoogleFonts.cairo(color: textColor.withValues(alpha: .5), fontSize: 11.5, fontWeight: FontWeight.w700)),
+                    Row(children: [
+                      Expanded(child: Text(places[i].$1, style: GoogleFonts.cairo(color: textColor.withValues(alpha: .5), fontSize: 11.5, fontWeight: FontWeight.w700))),
+                      if (i == 0 && _pickupMayMove(d))
+                        InkWell(
+                          borderRadius: BorderRadius.circular(20),
+                          onTap: () => PickupChangeState.proposeTaps.value++,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                            decoration: BoxDecoration(color: const Color(0xffEAF2FF), borderRadius: BorderRadius.circular(20)),
+                            child: Row(mainAxisSize: MainAxisSize.min, children: [
+                              const Icon(Icons.edit_location_alt_rounded, size: 15, color: Color(0xff0873FF)),
+                              const SizedBox(width: 4),
+                              Text(rtl ? 'تغيير' : 'Change', style: GoogleFonts.cairo(color: const Color(0xff0873FF), fontSize: 12, fontWeight: FontWeight.w800)),
+                            ]),
+                          ),
+                        ),
+                    ]),
                     Text(places[i].$2, maxLines: 2, overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.cairo(color: textColor, fontSize: 13.5, fontWeight: FontWeight.w700, height: 1.35)),
                   ]),

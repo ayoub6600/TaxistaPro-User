@@ -85,6 +85,7 @@ import '../../navigation/guarded_navigation.dart';
 import '../../functions/calls/admin_call_controller.dart';
 
 import '../pulse/pickup_change_panel.dart';
+import '../../functions/pulse_api.dart' show PickupChangeState;
 import 'booking_confirmation/widgets/booking_tile.dart';
 import '../../games/waiting_games.dart';
 import '../../games/ride_host.dart';
