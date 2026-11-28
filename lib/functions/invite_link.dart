@@ -6,6 +6,7 @@ import 'package:android_play_install_referrer/android_play_install_referrer.dart
 import 'package:http/http.dart' as http;
 
 import 'functions.dart';
+import 'money_label.dart';
 
 /// Who invited this phone, when the server is sure.
 class InviteMatch {
@@ -20,6 +21,15 @@ class InviteMatch {
     if (d == null || code == null || code.isEmpty) return null;
     return InviteMatch(code: code, name: d['name']?.toString() ?? '', reward: d['reward']?.toString());
   }
+}
+
+/// The new rider's first-ride discount as he reads it: «2 د.ل» from the match's «2 دينار», and 2
+/// (the referral setting since 2026-11-09) when the server did not say.
+String inviteeDiscount(String? reward) {
+  const eastern = '٠١٢٣٤٥٦٧٨٩';
+  final western = (reward ?? '').split('').map((c) => eastern.contains(c) ? '${eastern.indexOf(c)}' : (c == '٫' ? '.' : c)).join();
+  final n = double.tryParse(RegExp(r'\d+(?:[.,]\d+)?').firstMatch(western)?.group(0)?.replaceAll(',', '.') ?? '');
+  return '${moneyAmount(n != null && n > 0 ? n : 2)} د.ل';
 }
 
 /// Asked once, right after signing up. Any failure is "nobody" and the old code page appears.
