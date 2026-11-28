@@ -28,8 +28,8 @@ class Button extends StatefulWidget {
   dynamic height;
   dynamic borderRadius;
   dynamic fontweight;
-  // ignore: use_key_in_widget_constructors
   Button({
+    super.key,
     required this.onTap,
     required this.text,
     this.color,

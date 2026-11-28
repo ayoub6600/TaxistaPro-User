@@ -87,6 +87,8 @@ import '../recurring/recurring_rides_page.dart' show RecurringLink, RecurringRid
 import '../../contests/contests_api.dart';
 import '../../posts/post_home_card.dart';
 import '../../posts/posts_api.dart';
+import '../../ambassadors/ambassadors_api.dart';
+import '../../ambassadors/ambassador_home_card.dart';
 import '../../posts/posts_pages.dart' show PostLink, PostsFeedPage;
 import '../NavigatorPages/walletpage.dart';
 import '../NavigatorPages/referral.dart';
@@ -319,6 +321,9 @@ class _MapsState extends State<Maps>
     // «منشورات تاكسيستا»: the newest post's card, and a post push tapped before home was up
     PostsApi.homePost.addListener(_onRecurringRides);
     unawaited(PostsApi.refreshHome());
+    // «سفراء تاكسيستا»: the menu item and the campaign card
+    AmbassadorsApi.homeCard.addListener(_onRecurringRides);
+    unawaited(AmbassadorsApi.refresh());
     WidgetsBinding.instance.addPostFrameCallback((_) => PostLink.flush());
     WidgetsBinding.instance.addPostFrameCallback((_) => IntercityLink.flush());
     unawaited(fetchPendingRecoveryOfferForRider().then((_) {
@@ -369,6 +374,7 @@ class _MapsState extends State<Maps>
   Future<void> _onResumed() async {
     unawaited(PostsApi.refreshHome());
     unawaited(ContestsApi.refreshHome());
+    unawaited(AmbassadorsApi.refresh());
     unawaited(refreshPromotionCampaigns().then((_) {
       if (mounted) {
         setState(() {});
@@ -533,6 +539,7 @@ class _MapsState extends State<Maps>
     RecurringApi.rides.removeListener(_onRecurringRides);
     ContestsApi.homePost.removeListener(_onRecurringRides);
     PostsApi.homePost.removeListener(_onRecurringRides);
+    AmbassadorsApi.homeCard.removeListener(_onRecurringRides);
     RecurringPush.lastAnswer.removeListener(_onRecurringAnswer);
     _pickupSearchController.dispose();
     _homeSheetExpanded.dispose();

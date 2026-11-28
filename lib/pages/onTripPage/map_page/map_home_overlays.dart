@@ -49,6 +49,7 @@ extension _MapHomeOverlays on _MapsState {
               (RecurringApi.pendingTomorrow(RecurringApi.rides.value) != null ||
                   ContestsApi.homePost.value != null ||
                   PostsApi.homePost.value != null ||
+                  AmbassadorsApi.homeCard.value != null ||
                   activePromotionCampaigns.isNotEmpty)))
         Positioned(
           top: MediaQuery.of(context).padding.top + 72,
@@ -82,6 +83,8 @@ extension _MapHomeOverlays on _MapsState {
                       _closable(PostHomeCard(post: PostsApi.homePost.value!), PostsApi.dismissHome),
                     if (ContestsApi.homePost.value != null)
                       _closable(ContestHomeCard(post: ContestsApi.homePost.value!), () => unawaited(ContestsApi.dismissHome())),
+                    // «سفراء تاكسيستا»: «شوف» opens the page, its own × hides it here for 7 days
+                    if (AmbassadorsApi.homeCard.value != null) _homeCardGap(AmbassadorHomeCard(card: AmbassadorsApi.homeCard.value!)),
                     if (activePromotionCampaigns.isNotEmpty)
                       _homeCardGap(_PromotionStrip(campaigns: activePromotionCampaigns, rtl: languageDirection == 'rtl')),
                   ],

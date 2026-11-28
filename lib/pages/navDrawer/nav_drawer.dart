@@ -11,7 +11,6 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../functions/functions.dart';
 import '../../styles/styles.dart';
 import '../../translations/translation.dart';
-import '../../widgets/widgets.dart';
 import '../NavigatorPages/editprofile.dart';
 import '../NavigatorPages/history.dart';
 import '../NavigatorPages/notification.dart';
@@ -23,8 +22,9 @@ import '../NavigatorPages/support.dart';
 import '../NavigatorPages/walletpage.dart';
 import '../onTripPage/map_page.dart';
 import '../../navigation/guarded_navigation.dart';
-import '../../contests/contests_pages.dart';
 import '../../posts/posts_pages.dart';
+import '../../ambassadors/ambassadors_api.dart';
+import '../../ambassadors/ambassadors_pages.dart';
 
 class NavDrawer extends StatefulWidget {
   const NavDrawer({super.key});
@@ -193,6 +193,18 @@ class _NavDrawerState extends State<NavDrawer> {
                             icon: Icons.redeem_rounded,
                             text: rtl ? 'الهدايا والكوبونات' : 'Gifts & coupons',
                             onTap: () => _open(MaterialPageRoute(builder: (context) => const MyGiftsPage())),
+                          ),
+                          // «سفراء تاكسيستا»: only while the server has it on
+                          ValueListenableBuilder<AmbassadorState?>(
+                            valueListenable: AmbassadorsApi.state,
+                            builder: (context, amb, _) => amb == null || !amb.enabled
+                                ? const SizedBox.shrink()
+                                : _DrawerItem(
+                                    icon: Icons.group_add_rounded,
+                                    text: rtl ? 'سفراء تاكسيستا' : 'Taxista Ambassadors',
+                                    tag: rtl ? 'جديد' : 'New',
+                                    onTap: () => _open(MaterialPageRoute(builder: (context) => const AmbassadorsPage())),
+                                  ),
                           ),
                           _DrawerItem(
                             image: 'assets/images/gift.png',

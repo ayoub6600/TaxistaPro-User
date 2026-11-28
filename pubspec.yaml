@@ -80,6 +80,8 @@ dependencies:
   facebook_app_events: 0.31.0
   android_play_install_referrer: ^0.4.0
   livekit_client: 2.13.2
+  # «سفراء تاكسيستا»: the QR of his invite link (the same package the captain app uses)
+  qr_flutter: ^4.1.0
 dev_dependencies:
   fake_async: ^1.3.1
   flutter_launcher_icons: ^0.14.3
