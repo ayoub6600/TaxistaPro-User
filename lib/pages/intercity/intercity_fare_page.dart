@@ -5,6 +5,7 @@ import '../../functions/intercity_api.dart';
 import 'intercity_pay.dart';
 import 'intercity_style.dart';
 import 'intercity_wait_page.dart';
+import '../../functions/money_label.dart';
 
 /// ج · سيارة كاملة: riders, his price (inside the admin's range), time, note, bag → «اطلب عروض السائقين»
 class IntercityFarePage extends StatefulWidget {
@@ -490,7 +491,7 @@ class IcFareBar extends StatelessWidget {
           height: h,
           alignment: Alignment.center,
           decoration: BoxDecoration(color: compact ? Colors.white : const Color(0xffEAF2FF), borderRadius: BorderRadius.circular(compact ? 14 : 16)),
-          child: Text(format?.call(value) ?? '$currency ${IcStyle.money(value)}', style: IcStyle.t(compact ? 21 : 24, w: FontWeight.w900)),
+          child: Text(format?.call(value) ?? moneyText(value, currency, arabic: appRtl), style: IcStyle.t(compact ? 21 : 24, w: FontWeight.w900)),
         ),
       ),
       const SizedBox(width: 8),

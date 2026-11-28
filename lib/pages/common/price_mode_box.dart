@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../functions/tr.dart';
 import '../intercity/intercity_fare_page.dart' show IcFareBar;
 import '../intercity/intercity_style.dart';
+import '../../functions/money_label.dart';
 
 /// «طريقة السعر», as the admin set it for the service: a fixed price (nothing to show), offers (his
 /// own price from the suggested one, captains answer with theirs), or he chooses between the two.
@@ -51,7 +52,7 @@ class PriceModeBox extends StatelessWidget {
         Text(tr('كيف تحب السعر؟', 'How do you want the price?'), style: IcStyle.t(15, w: FontWeight.w900)),
         const SizedBox(height: 6),
         Row(children: [
-          Expanded(child: IcChip(text: tr('سعر ثابت · $currency ${IcStyle.money(suggested)}', 'Fixed · $currency ${IcStyle.money(suggested)}'), selected: !offers, onTap: () => onOffers(false))),
+          Expanded(child: IcChip(text: tr('سعر ثابت · ${moneyText(suggested, currency, arabic: appRtl)}', 'Fixed · ${moneyText(suggested, currency, arabic: appRtl)}'), selected: !offers, onTap: () => onOffers(false))),
           const SizedBox(width: 8),
           Expanded(child: IcChip(text: tr('اطلب عروض', 'Ask for offers'), selected: offers, onTap: () => onOffers(true))),
         ]),

@@ -18,6 +18,7 @@ import 'errand_map.dart';
 import 'errand_mode_switch.dart';
 import 'errand_price.dart';
 import 'errand_stop_card.dart';
+import '../../../functions/money_label.dart';
 
 /// «مشوار بوقفات» (owner approved the board 2026-11-20): the captain passes by up to max_stops
 /// places, takes something at each (already paid, or he pays and photographs the receipt), and
@@ -147,7 +148,7 @@ class _ErrandViewState extends State<ErrandView> {
   String get _payLine {
     final cur = widget.config.currency;
     return switch (ParcelPay.senderWallet(price: _price, balance: _balance, offers: false)) {
-      true => tr('من محفظتك (رصيدك $cur ${IcStyle.money(_balance!)})', 'From your wallet (balance $cur ${IcStyle.money(_balance!)})'),
+      true => tr('من محفظتك (رصيدك ${moneyText(_balance!, cur, arabic: appRtl)})', 'From your wallet (balance ${moneyText(_balance!, cur, arabic: appRtl)})'),
       false => tr('كاش للكابتن', 'Cash to the captain'),
       null => tr('من محفظتك لو رصيدك يكفي، وإلا كاش للكابتن', 'From your wallet if it covers it, else cash to the captain'),
     };
@@ -171,7 +172,7 @@ class _ErrandViewState extends State<ErrandView> {
           ),
       ],
       to: widget.pickIsHere && _d.drop == null ? tr('مكانك الآن · ${_placeName(_drop)}', 'Where you are · ${_placeName(_drop)}') : _placeName(_drop),
-      price: _price == null ? tr('يتحسب عند الطلب', 'Priced when you order') : '$cur ${IcStyle.money(_price!)}',
+      price: _price == null ? tr('يتحسب عند الطلب', 'Priced when you order') : moneyText(_price!, cur, arabic: appRtl),
       pay: _payLine,
       wait: ErrandPrice.waitLine(widget.config),
     );
@@ -230,7 +231,7 @@ class _ErrandViewState extends State<ErrandView> {
         ],
         IcButton(
           key: const ValueKey('errand-request'),
-          text: _price == null ? tr('اطلب المشوار', 'Request the errand') : tr('اطلب المشوار · $cur ${IcStyle.money(_price!)}', 'Request the errand · $cur ${IcStyle.money(_price!)}'),
+          text: _price == null ? tr('اطلب المشوار', 'Request the errand') : tr('اطلب المشوار · ${moneyText(_price!, cur, arabic: appRtl)}', 'Request the errand · ${moneyText(_price!, cur, arabic: appRtl)}'),
           busy: _busy,
           onTap: _send,
         ),

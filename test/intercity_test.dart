@@ -79,7 +79,7 @@ void main() {
         return IntercityResult(false, 'السعر للمشوار هذا لازم يكون بين 145 و270 دينار.');
       },
     )));
-    expect(find.text('LYD 180'), findsOneWidget);
+    expect(find.text('180 د.ل'), findsOneWidget);
     expect(find.text('أغلب الطلبات تنقبل من LYD 175 وفوق 👍'), findsOneWidget);
     await t.tap(find.bySemanticsLabel('نقص'));
     await t.pump();
@@ -90,7 +90,7 @@ void main() {
       await t.tap(find.bySemanticsLabel('زيادة'));
       await t.pump();
     }
-    expect(find.text('LYD 270'), findsOneWidget, reason: 'steps of 10, never past 270');
+    expect(find.text('270 د.ل'), findsOneWidget, reason: 'steps of 10, never past 270');
     await t.tap(find.text('2'));
     await t.scrollUntilVisible(find.text('شنطة كبيرة'), 80, scrollable: find.byType(Scrollable).first);
     await t.tap(find.text('شنطة كبيرة'));
@@ -202,10 +202,10 @@ void main() {
           return IntercityResult(false, 'x');
         },
       )));
-      expect(find.text('LYD 180'), findsOneWidget);
+      expect(find.text('180 د.ل'), findsOneWidget);
       await t.tap(find.bySemanticsLabel('ذهاب ورجوع ⇄'));
       await t.pump();
-      expect(find.text('LYD 324'), findsOneWidget, reason: 'the round-trip price from the admin');
+      expect(find.text('324 د.ل'), findsOneWidget, reason: 'the round-trip price from the admin');
       expect(find.text('نفس اليوم · الكابتن يستناك'), findsOneWidget);
       expect(find.text('8 س'), findsOneWidget, reason: 'up to the admin\'s longest wait');
       await t.tap(find.text('6 س'));
@@ -218,7 +218,7 @@ void main() {
       expect(sent!['fare'], 324);
       await t.tap(find.bySemanticsLabel('ذهاب بس'));
       await t.pump();
-      expect(find.text('LYD 180'), findsOneWidget);
+      expect(find.text('180 د.ل'), findsOneWidget);
     });
 
     testWidgets('«نفس السفرة مرة ثانية»: one tap fills it, and a changed price is said plainly', (t) async {
@@ -237,7 +237,7 @@ void main() {
       await t.tap(find.text('اطلبها مرة ثانية'));
       await t.pumpAndSettle();
       expect(find.text('نفس سفرتك مرة ثانية'), findsOneWidget);
-      expect(find.text('LYD 330'), findsOneWidget);
+      expect(find.text('330 د.ل'), findsOneWidget);
       expect(find.text('2 ركاب'), findsOneWidget);
       expect(find.text('نفس اليوم · الكابتن يستناك'), findsOneWidget);
     });

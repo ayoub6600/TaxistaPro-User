@@ -85,7 +85,7 @@ void main() {
     expect(find.text('من وين ياخذها الكابتن'), findsOneWidget);
     expect(find.text('لوين توصل'), findsOneWidget);
     expect(find.text('مكانك الآن · شارع طرابلس'), findsOneWidget);
-    expect(find.text('من LYD 7'), findsOneWidget, reason: 'before the places: the size\'s own start');
+    expect(find.text('من 7 د.ل'), findsOneWidget, reason: 'before the places: the size\'s own start');
     expect(find.text('اختار لوين توصل 👇'), findsOneWidget);
     await t.tap(find.text('اطلب توصيل'));
     await t.pump();
@@ -97,16 +97,16 @@ void main() {
     expect(find.text('الزروق'), findsOneWidget);
     expect(find.text('محلي'), findsOneWidget);
     expect(asked, ['محلي>الزروق:small', 'محلي>الزروق:medium', 'محلي>الزروق:large']);
-    for (final p in ['LYD 8.5', 'LYD 10.5', 'LYD 14']) {
+    for (final p in ['8.50 د.ل', '10.50 د.ل', '14 د.ل']) {
       expect(find.text(p), findsWidgets, reason: 'each size shows its price for 4.2 km');
     }
-    expect(find.text('4.2 كم · LYD 10.5'), findsOneWidget, reason: 'the chip on the map');
+    expect(find.text('4.2 كم · 10.50 د.ل'), findsOneWidget, reason: 'the chip on the map');
     await t.enterText(find.byKey(const ValueKey('parcel-name')), 'أحمد');
     await t.enterText(find.byKey(const ValueKey('parcel-phone')), '0912345678');
     await t.tap(find.bySemanticsLabel('كبير'));
     await t.tap(find.byKey(const ValueKey('parcel-payer-receiver')));
     await t.pump();
-    expect(find.text('4.2 كم · LYD 14'), findsOneWidget, reason: 'another size: no new question to the server');
+    expect(find.text('4.2 كم · 14 د.ل'), findsOneWidget, reason: 'another size: no new question to the server');
     expect(asked.length, 3);
     await t.tap(find.textContaining('اطلب توصيل'));
     await t.pump();
@@ -155,7 +155,7 @@ void main() {
     expect(find.text('راجع طلبك 📦'), findsNothing);
     await t.tap(find.byKey(const ValueKey('parcel-request')));
     await t.pumpAndSettle();
-    for (final line in ['محلي', 'الزروق', '👜 متوسط', 'LYD 10.5', 'أنا · من محفظتك (رصيدك LYD 50)']) {
+    for (final line in ['محلي', 'الزروق', '👜 متوسط', '10.50 د.ل', 'أنا · من محفظتك (رصيدك 50 د.ل)']) {
       expect(find.descendant(of: find.byType(ParcelConfirmSheet), matching: find.text(line)), findsOneWidget, reason: line);
     }
     expect(find.textContaining('أحمد · '), findsOneWidget);
@@ -171,7 +171,7 @@ void main() {
     expect(ParcelPay.senderWallet(price: 10, balance: 50, offers: true), isFalse);
     expect(ParcelPay.senderWallet(price: null, balance: 50, offers: false), isNull);
     expect(ParcelPay.senderLine(price: 10, balance: 9.5, offers: false, currency: 'LYD'), 'كاش للكابتن لما ياخذ الطرد');
-    expect(ParcelPay.senderLine(price: 10, balance: 12, offers: false, currency: 'LYD'), 'من محفظتك (رصيدك LYD 12)');
+    expect(ParcelPay.senderLine(price: 10, balance: 12, offers: false, currency: 'LYD'), 'من محفظتك (رصيدك 12 د.ل)');
     expect(ParcelPay.receiverLine(), 'كاش للكابتن وقت التسليم');
   });
 
@@ -304,7 +304,7 @@ void main() {
     await t.pumpWidget(const SizedBox());
     await t.pumpWidget(_page(home: ParcelHome({..._home().raw, 'price_mode': 'choice', 'price_default': 'fixed'}), drop: const IcPlace(32.39, 15.13, 'الزروق')));
     await t.pumpAndSettle();
-    expect(find.text('اطلب توصيل · LYD 10.5'), findsOneWidget);
+    expect(find.text('اطلب توصيل · 10.50 د.ل'), findsOneWidget);
   });
 
   testWidgets('«اطلبها مرة ثانية» fills the page: both places, the receiver and the size, priced at once', (t) async {
@@ -317,7 +317,7 @@ void main() {
     expect(find.text('الزروق'), findsOneWidget);
     expect(find.text('شارع طرابلس'), findsOneWidget);
     expect(t.widget<TextField>(find.byKey(const ValueKey('parcel-name'))).controller!.text, 'سالم');
-    expect(find.text('اطلب توصيل · LYD 8.5'), findsOneWidget, reason: 'the small size');
+    expect(find.text('اطلب توصيل · 8.50 د.ل'), findsOneWidget, reason: 'the small size');
   });
 
   testWidgets('the title takes the admin\'s words in turn', (t) async {

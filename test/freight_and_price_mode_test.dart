@@ -148,7 +148,7 @@ void main() {
     await t.tap(find.byKey(const ValueKey('tow-ws-3')));
     await t.pumpAndSettle();
     expect(find.byKey(const ValueKey('price-mode')), findsOneWidget);
-    expect(find.textContaining('اطلب ساحبة · LYD 102'), findsOneWidget, reason: 'fixed until he asks for offers');
+    expect(find.textContaining('اطلب ساحبة · 102 د.ل'), findsOneWidget, reason: 'fixed until he asks for offers');
 
     await t.tap(find.text('اطلب عروض'));
     await t.pumpAndSettle();
@@ -156,7 +156,7 @@ void main() {
     await t.pumpAndSettle();
     await t.tap(find.byKey(const ValueKey('tow-owner')));
     await t.pump();
-    await t.tap(find.textContaining('اطلب عروض · LYD'));
+    await t.tap(find.textContaining('اطلب عروض · '));
     await t.pumpAndSettle();
     expect(sent!['fare'], 97, reason: 'from 102 down one step of 5 (a price over 100)');
   });

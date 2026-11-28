@@ -94,9 +94,9 @@ void main() {
     expect(find.text('محل قطع غيار'), findsOneWidget);
     expect(c.quotes.single.$1.single.address, 'محل قطع غيار');
     expect(c.quotes.single.$2.address, 'شارع طرابلس');
-    expect(find.text('LYD 14'), findsOneWidget);
+    expect(find.text('14 د.ل'), findsOneWidget);
     expect(find.text('+ 1 وقفات × 2'), findsOneWidget);
-    expect(find.text('6.4 كم · LYD 14'), findsOneWidget, reason: 'the chip on the map');
+    expect(find.text('6.4 كم · 14 د.ل'), findsOneWidget, reason: 'the chip on the map');
 
     await t.tap(find.byKey(const ValueKey('errand-request')));
     await t.pump();

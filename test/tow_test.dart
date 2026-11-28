@@ -64,7 +64,7 @@ void main() {
     expect(quotes.last, 'not_starting/sedan/ورشة الحاج سالم');
     expect(find.byKey(const ValueKey('tow-flatbed')), findsNothing);
     expect(find.text('رفع السيارة (يشمل مشوار الساحبة لعندك)'), findsOneWidget);
-    expect(find.text('LYD 102'), findsWidgets);
+    expect(find.text('102 د.ل'), findsWidgets);
 
     await t.tap(find.textContaining('اطلب ساحبة'));
     await t.pump();

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../functions/tr.dart';
 import '../intercity/intercity_style.dart';
+import '../../functions/money_label.dart';
 
 /// How the sender pays, as the server decides it with payment 'auto' (owner 2026-11-19): his wallet
 /// when it holds the price, else cash to the captain at pickup. Offers are always cash (the price is
@@ -16,7 +17,7 @@ class ParcelPay {
 
   static String senderLine({required num? price, required num? balance, required bool offers, required String currency}) =>
       switch (senderWallet(price: price, balance: balance, offers: offers)) {
-        true => tr('من محفظتك (رصيدك $currency ${IcStyle.money(balance!)})', 'From your wallet (balance $currency ${IcStyle.money(balance)})'),
+        true => tr('من محفظتك (رصيدك ${moneyText(balance!, currency, arabic: appRtl)})', 'From your wallet (balance ${moneyText(balance, currency, arabic: appRtl)})'),
         false => tr('كاش للكابتن لما ياخذ الطرد', 'Cash to the captain when he takes the parcel'),
         null => tr('من محفظتك لو رصيدك يكفي، وإلا كاش للكابتن لما ياخذ الطرد', 'From your wallet if it covers it, else cash to the captain at pickup'),
       };

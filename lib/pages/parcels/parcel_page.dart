@@ -22,6 +22,7 @@ import 'parcel_save_sheet.dart';
 import 'parcel_saved_chips.dart';
 import 'parcel_size_card.dart';
 import 'parcel_title.dart';
+import '../../functions/money_label.dart';
 
 /// «نوصلولك طرود»: the real map on top (where the captain takes it → where it goes, owner 2026-11-19),
 /// both places editable (saved places one tap away), the size with its price for this distance, the
@@ -240,8 +241,8 @@ class _ParcelPageState extends State<ParcelPage> {
         price: _price == null
             ? tr('يتحسب عند الطلب', 'Priced when you order')
             : _offers
-                ? tr('سعرك $cur ${IcStyle.money(_fare ?? _price!)} · الكباتن يقبلوه أو يبعتوا عروضهم', 'Your price $cur ${IcStyle.money(_fare ?? _price!)} · captains accept it or offer theirs')
-                : '$cur ${IcStyle.money(_price!)}',
+                ? tr('سعرك ${moneyText(_fare ?? _price!, cur, arabic: appRtl)} · الكباتن يقبلوه أو يبعتوا عروضهم', 'Your price ${moneyText(_fare ?? _price!, cur, arabic: appRtl)} · captains accept it or offer theirs')
+                : moneyText(_price!, cur, arabic: appRtl),
         pay: _payer == 'receiver' ? tr('المستلم · ${ParcelPay.receiverLine()}', 'The receiver · ${ParcelPay.receiverLine()}') : tr('أنا · ${_senderLine(cur)}', 'Me · ${_senderLine(cur)}'),
         needsCode: _needsCode,
       );
@@ -349,8 +350,8 @@ class _ParcelPageState extends State<ParcelPage> {
             text: _price == null
                 ? tr('اطلب توصيل', 'Request delivery')
                 : _offers
-                    ? tr('اطلب عروض · $cur ${IcStyle.money(_fare ?? _price!)}', 'Ask for offers · $cur ${IcStyle.money(_fare ?? _price!)}')
-                    : tr('اطلب توصيل · $cur ${IcStyle.money(_price!)}', 'Request delivery · $cur ${IcStyle.money(_price!)}'),
+                    ? tr('اطلب عروض · ${moneyText(_fare ?? _price!, cur, arabic: appRtl)}', 'Ask for offers · ${moneyText(_fare ?? _price!, cur, arabic: appRtl)}')
+                    : tr('اطلب توصيل · ${moneyText(_price!, cur, arabic: appRtl)}', 'Request delivery · ${moneyText(_price!, cur, arabic: appRtl)}'),
             busy: _busy,
             onTap: _send),
       ]),
@@ -415,7 +416,7 @@ class _ParcelPageState extends State<ParcelPage> {
                       style: IcStyle.t(13.5, w: FontWeight.w700, c: IcStyle.muted))),
               _quoting
                   ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                  : Text(_price == null ? '—' : '$cur ${IcStyle.money(_price!)}', key: const ValueKey('parcel-price'), style: IcStyle.t(22, w: FontWeight.w900)),
+                  : Text(_price == null ? '—' : moneyText(_price!, cur, arabic: appRtl), key: const ValueKey('parcel-price'), style: IcStyle.t(22, w: FontWeight.w900)),
             ]),
           ),
         const SizedBox(height: 10),
@@ -452,7 +453,7 @@ class _ParcelPageState extends State<ParcelPage> {
             ? tr('نحسبوا السعر…', 'Pricing…')
             : _price == null
                 ? null
-                : '${_km != null ? tr('${IcStyle.money(_km!)} كم · ', '${IcStyle.money(_km!)} km · ') : ''}$cur ${IcStyle.money(_price!)}';
+                : '${_km != null ? tr('${IcStyle.money(_km!)} كم · ', '${IcStyle.money(_km!)} km · ') : ''}${moneyText(_price!, cur, arabic: appRtl)}';
     if (text == null) return const SizedBox.shrink();
     return Container(
       key: ValueKey(text),

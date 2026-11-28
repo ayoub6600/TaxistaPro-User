@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../functions/tr.dart';
 import '../intercity/intercity_style.dart';
+import '../../functions/money_label.dart';
 
 /// «شن تبعت؟»: one size with its price for this distance (or the size's own start before the places).
 class ParcelSizeCard extends StatelessWidget {
@@ -43,9 +44,9 @@ class ParcelSizeCard extends StatelessWidget {
               Text(labels[size]!, style: IcStyle.t(14.5, w: FontWeight.w900)),
               Text(hints[size]!, textAlign: TextAlign.center, style: IcStyle.t(11, w: FontWeight.w600, c: IcStyle.muted)),
               if (price != null)
-                Text('$currency ${IcStyle.money(price!)}', style: IcStyle.t(12.5, w: FontWeight.w900, c: IcStyle.blue))
+                Text(moneyText(price!, currency, arabic: appRtl), style: IcStyle.t(12.5, w: FontWeight.w900, c: IcStyle.blue))
               else if (from != null)
-                Text(tr('من $currency ${IcStyle.money(from!)}', 'From $currency ${IcStyle.money(from!)}'),
+                Text(tr('من ${moneyText(from!, currency, arabic: appRtl)}', 'From ${moneyText(from!, currency, arabic: appRtl)}'),
                     style: IcStyle.t(11.5, w: FontWeight.w800, c: IcStyle.blue)),
             ]),
           ),

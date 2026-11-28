@@ -12,6 +12,7 @@ import '../common/price_mode_box.dart';
 import '../onTripPage/open_booked_ride.dart';
 import '../onTripPage/place_on_map.dart';
 import '../onTripPage/trip_place.dart';
+import '../../functions/money_label.dart';
 
 /// «ساحبة · شن صار للسيارة؟»: what happened and which car (that decides if a flatbed is needed),
 /// where the car is and where it goes (a known workshop or any place), an optional photo, the
@@ -212,8 +213,8 @@ class _TowPageState extends State<TowPage> {
             text: q == null
                 ? tr('اطلب ساحبة', 'Request a tow truck')
                 : _offers
-                    ? tr('اطلب عروض · ${h.currency} ${IcStyle.money(_fare ?? q.total)}', 'Ask for offers · ${h.currency} ${IcStyle.money(_fare ?? q.total)}')
-                    : tr('اطلب ساحبة · ${h.currency} ${IcStyle.money(q.total)}', 'Request a tow truck · ${h.currency} ${IcStyle.money(q.total)}'),
+                    ? tr('اطلب عروض · ${moneyText(_fare ?? q.total, h.currency, arabic: appRtl)}', 'Ask for offers · ${moneyText(_fare ?? q.total, h.currency, arabic: appRtl)}')
+                    : tr('اطلب ساحبة · ${moneyText(q.total, h.currency, arabic: appRtl)}', 'Request a tow truck · ${moneyText(q.total, h.currency, arabic: appRtl)}'),
             busy: _busy,
             onTap: _send),
       ]),
@@ -313,7 +314,7 @@ class _TowPageState extends State<TowPage> {
           padding: const EdgeInsets.symmetric(vertical: 2),
           child: Row(children: [
             Expanded(child: Text(a, style: IcStyle.t(13, w: FontWeight.w600, c: IcStyle.muted))),
-            Text('$cur ${IcStyle.money(v)}', style: IcStyle.t(13.5, w: FontWeight.w800)),
+            Text(moneyText(v, cur, arabic: appRtl), style: IcStyle.t(13.5, w: FontWeight.w800)),
           ]),
         );
     return Container(
@@ -328,7 +329,7 @@ class _TowPageState extends State<TowPage> {
         const Divider(height: 14),
         Row(children: [
           Expanded(child: Text(tr('السعر الثابت', 'Fixed price'), style: IcStyle.t(15, w: FontWeight.w900))),
-          Text('$cur ${IcStyle.money(q.total)}', style: IcStyle.t(22, w: FontWeight.w900)),
+          Text(moneyText(q.total, cur, arabic: appRtl), style: IcStyle.t(22, w: FontWeight.w900)),
         ]),
         Text(tr('ما يتغيرش في الطريق. نقدًا للكابتن.', 'It does not change on the way. Cash to the captain.'), style: IcStyle.t(12, w: FontWeight.w600, c: IcStyle.muted)),
       ]),
