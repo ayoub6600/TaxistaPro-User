@@ -352,10 +352,11 @@ class _AmbassadorsPageState extends State<AmbassadorsPage> {
     final (bg, fg) = f.captain ? (const Color(0xFFFEF3C7), const Color(0xFF92400E)) : _avatars[i % _avatars.length];
     final name = f.captain && !f.name.startsWith('كابتن') ? 'كابتن ${f.name}' : f.name;
     final letter = f.name.trim().isEmpty ? '؟' : f.name.trim().characters.first;
+    // the name already says «كابتن»: the server's «كابتن · باقي 5 شهور» / «كابتن، أوراقه…» loses its prefix here
+    final state = f.stateText?.replaceFirst(RegExp(r'^كابتن\s*[·،]\s*'), '');
     final line = [
-      if (f.captain) 'كابتن جبته',
       if (f.rides > 0) ambRides(f.rides),
-      if (f.stateText != null) f.stateText!,
+      if (state != null && state.isNotEmpty) state,
     ].join(' · ');
     return Padding(
       padding: const EdgeInsets.only(top: 10),

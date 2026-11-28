@@ -23,13 +23,15 @@ class InviteMatch {
   }
 }
 
-/// The new rider's first-ride discount as he reads it: «2 د.ل» from the match's «2 دينار», and 2
-/// (the referral setting since 2026-11-09) when the server did not say.
-String inviteeDiscount(String? reward) {
+/// The new rider's first-ride discount as he reads it: «2 د.ل» from the server's «2 دينار», «20 جنيه» in
+/// Egypt; null when the server said nothing (the admin turned the discount off), so no discount is promised.
+String? inviteeDiscount(String? reward) {
+  if (reward == null || reward.trim().isEmpty) return null;
   const eastern = '٠١٢٣٤٥٦٧٨٩';
-  final western = (reward ?? '').split('').map((c) => eastern.contains(c) ? '${eastern.indexOf(c)}' : (c == '٫' ? '.' : c)).join();
+  final western = reward.split('').map((c) => eastern.contains(c) ? '${eastern.indexOf(c)}' : (c == '٫' ? '.' : c)).join();
   final n = double.tryParse(RegExp(r'\d+(?:[.,]\d+)?').firstMatch(western)?.group(0)?.replaceAll(',', '.') ?? '');
-  return '${moneyAmount(n != null && n > 0 ? n : 2)} د.ل';
+  if (n == null || n <= 0) return null;
+  return '${moneyAmount(n)} ${reward.contains('جنيه') ? 'جنيه' : 'د.ل'}';
 }
 
 /// Asked once, right after signing up. Any failure is "nobody" and the old code page appears.

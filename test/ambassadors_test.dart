@@ -68,7 +68,7 @@ Map<String, dynamic> _active({
       'friends': [
         {'name': 'سالم', 'kind': 'rider', 'rides': 6, 'earned_lyd': 0.9, 'state_text': 'باقي 5 شهور'},
         {'name': 'مريم', 'kind': 'rider', 'rides': 0, 'earned_lyd': 0, 'state_text': 'سجّلت، تستنى أول مشوار'},
-        {'name': 'عبدالله', 'kind': 'driver', 'rides': 41, 'earned_lyd': 6.15, 'state_text': null},
+        {'name': 'عبدالله', 'kind': 'driver', 'rides': 41, 'earned_lyd': 6.15, 'state_text': 'كابتن · باقي 4 شهور'},
       ],
       'withdraw': {'allowed': withdrawAllowed, 'min_lyd': 20.0, 'available_lyd': available, 'note': withdrawAllowed ? null : 'السحب للسفير الذهبي', 'requests': requests},
       'home_card': {'show': true, 'title': 'جيب صحابك واكسب', 'sub': 'كودك 67084 · كسبت 9.60 د.ل'},
@@ -139,7 +139,7 @@ void main() {
       expect(s.jar!.totalLyd, 9.6);
       expect(s.jar!.friends, 7);
       expect(s.friends.map((f) => f.captain), [false, false, true]);
-      expect(s.friends.last.stateText, isNull);
+      expect(s.friends.last.stateText, 'كابتن · باقي 4 شهور');
       expect(s.sharePct, 20);
       expect(s.withdraw.canAsk, isTrue);
       final r = s.withdraw.requests.single;
@@ -186,7 +186,8 @@ void main() {
       expect(inviteeDiscount('2 دينار'), '2 د.ل');
       expect(inviteeDiscount('2.5 دينار'), '2.50 د.ل');
       expect(inviteeDiscount('٣ دينار'), '3 د.ل');
-      expect(inviteeDiscount(null), '2 د.ل');
+      expect(inviteeDiscount(null), isNull, reason: 'the admin turned it off: nothing promised');
+      expect(inviteeDiscount('20 جنيه'), '20 جنيه');
     });
 
     test('the server\'s words on 422, a plain «try again» otherwise, «الشبكة ضعيفة» offline', () async {
@@ -358,7 +359,7 @@ void main() {
       expect(find.text('+0.90'), findsOneWidget);
       expect(find.text('سجّلت، تستنى أول مشوار'), findsOneWidget);
       expect(find.text('كابتن عبدالله'), findsOneWidget);
-      expect(find.text('كابتن جبته · 41 مشوار'), findsOneWidget);
+      expect(find.text('41 مشوار · باقي 4 شهور'), findsOneWidget, reason: 'the name says كابتن once');
       expect(find.text('+6.15'), findsOneWidget);
       expect(find.text('20% من ربح تاكسيستا، وتقدر تسحب فلوسك'), findsOneWidget);
       expect(find.textContaining('السحب للسفير الذهبي بس'), findsOneWidget);
@@ -676,6 +677,6 @@ void main() {
     ));
     await tester.pump();
     expect(find.text('دعاك صاحبك لتاكسيستا'), findsOneWidget);
-    expect(find.text('عندك خصم 2 د.ل على أول مشوار'), findsOneWidget);
+    expect(find.byKey(const ValueKey('invite-discount')), findsNothing, reason: 'no reward from the server: no discount promised');
   });
 }

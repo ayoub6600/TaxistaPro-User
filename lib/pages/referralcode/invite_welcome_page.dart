@@ -89,6 +89,7 @@ class _InviteWelcomePageState extends State<InviteWelcomePage> {
                   const SizedBox(height: 14),
                   Text('دعاك $who لتاكسيستا', textAlign: TextAlign.center, style: _t(22, w: FontWeight.w800)),
                   const SizedBox(height: 14),
+                  if (inviteeDiscount(m.reward) case final discount?)
                   Container(
                     key: const ValueKey('invite-discount'),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -102,7 +103,7 @@ class _InviteWelcomePageState extends State<InviteWelcomePage> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text('عندك خصم ${inviteeDiscount(m.reward)} على أول مشوار', style: _t(15, w: FontWeight.w800, h: 1.5)),
+                          Text('عندك خصم $discount على أول مشوار', style: _t(15, w: FontWeight.w800, h: 1.5)),
                           Text('ينحسب وحده، ما تكتب حتى حاجة', style: _t(12.5, color: const Color(0xFF065F46))),
                         ]),
                       ),
